@@ -320,7 +320,12 @@ function AppShellContent({ children }: AppShellProps) {
     <LazyMotion features={domAnimation} strict>
       <ImpersonationBanner />
       <p role="status" aria-live="polite" className="sr-only">{notifStatus}</p>
-      <div className="flex min-h-dvh bg-[var(--bg-canvas)]">
+      {/* The Aurora field is painted on the shell itself, so it costs no extra
+          layer and nothing can sit between it and the content. */}
+      <div
+        className="flex min-h-dvh bg-[var(--bg-canvas)]"
+        style={{ backgroundImage: 'var(--gradient-aurora-soft)' }}
+      >
         {/* Sidebar — desktop */}
         <Sidebar collapsed={sidebarCollapsed} onExpand={() => setSidebarCollapsed(false)} onCollapse={() => setSidebarCollapsed(true)} />
 

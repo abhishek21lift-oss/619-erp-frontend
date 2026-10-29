@@ -75,8 +75,9 @@ describe('the dark theme is not a tint of the light one', () => {
   });
 
   it('uses the brand shade that stays readable in both themes', () => {
-    // --brand is #0067E0 in both, which is 2.5:1 on a dark card. --brand-hi is
-    // the same blue in light and a light blue in dark: readable either way.
+    // --brand is the action fill, which is under 3:1 on a dark card.
+    // --brand-hi is a deeper indigo in light and a lighter one in dark:
+    // readable on either ground.
     expect(page).toContain('var(--brand-hi)');
   });
 });

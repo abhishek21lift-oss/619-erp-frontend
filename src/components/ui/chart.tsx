@@ -14,16 +14,20 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { cn } from './cn';
+import { indigo, emerald, amber, red, gray } from '@/lib/palette';
 
 // ── Theme colours ──────────────────────────────────────────────────────────
+// One ramp for every chart: indigo carries the primary series, then the
+// semantic families. No violet/cyan/sky — those were three more names for the
+// same blue and made two blue series impossible to tell apart.
 export const CHART_COLORS = {
-  brand:   '#0067e0',
-  emerald: '#10b981',
-  amber:   '#f59e0b',
-  rose:    '#ef4444',
-  sky:     '#0067e0',
-  violet:  '#0067e0',
-  slate:   '#64748b',
+  brand:   indigo[500],
+  emerald: emerald[500],
+  amber:   amber[500],
+  rose:    red[500],
+  sky:     indigo[300],
+  violet:  indigo[700],
+  slate:   gray[500],
 } as const;
 
 export type ChartColor = keyof typeof CHART_COLORS;
@@ -192,7 +196,7 @@ function PremiumTooltipBox({ active, payload, label, formatValue }: {
       <div className="space-y-1">
         {payload.map((entry, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: entry.color ?? '#0067e0' }} />
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: entry.color ?? CHART_COLORS.brand }} />
             {entry.name && <span className="text-[var(--text-muted,#94a3b8)]">{entry.name}</span>}
             <span className="ml-auto pl-4 font-bold tabular-nums text-[var(--text-primary,#0F172A)]">
               {typeof entry.value === 'number'
@@ -213,7 +217,7 @@ export interface PremiumBarEntry {
   key: string;
   /** Series name shown in tooltip */
   label: string;
-  /** CSS color, e.g. "#0067e0" or "var(--brand)" */
+  /** CSS color, e.g. "var(--action)" */
   color?: string;
 }
 
@@ -244,7 +248,7 @@ export function PremiumBarChart({
         <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barGap={3}>
           <defs>
             {bars.map((b, i) => {
-              const c = b.color ?? '#0067e0';
+              const c = b.color ?? CHART_COLORS.brand;
               return (
                 <linearGradient key={i} id={`${uid}b${i}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={c} stopOpacity={0.9} />
@@ -353,7 +357,7 @@ export function PremiumAreaChart({
         <AreaChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
           <defs>
             {areas.map((a, i) => {
-              const c = a.color ?? '#0067e0';
+              const c = a.color ?? CHART_COLORS.brand;
               return (
                 <linearGradient key={i} id={`${uid}a${i}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={c} stopOpacity={0.3} />
@@ -392,7 +396,7 @@ export function PremiumAreaChart({
             )}
           />
           {areas.map((a, i) => {
-            const c = a.color ?? '#0067e0';
+            const c = a.color ?? CHART_COLORS.brand;
             return (
               <Area
                 key={a.key}

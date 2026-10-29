@@ -145,9 +145,9 @@ const TONES = {
     borderWidth: '1px',
   },
   brand: {
-    accent: '#0067e0',
-    focusBorder: 'rgba(0,103,224,0.45)',
-    focusRing: '0 0 0 3px rgba(0,103,224,0.12), 0 2px 8px rgba(0,103,224,0.08)',
+    accent: 'var(--action)',
+    focusBorder: 'color-mix(in srgb, var(--action) 45%, transparent)',
+    focusRing: '0 0 0 3px color-mix(in srgb, var(--action) 12%, transparent), 0 2px 8px color-mix(in srgb, var(--action) 8%, transparent)',
     restShadow: '0 1px 2px rgba(15,23,42,0.04)',
     restBorder: 'var(--border-2)',
     borderWidth: '1.5px',

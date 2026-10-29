@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss';
-import { blue } from './src/lib/palette';
+import { indigo } from './src/lib/palette';
 
 const config: Config = {
   content: ['./src/**/*.{ts,tsx,js,jsx}'],
@@ -11,7 +11,7 @@ const config: Config = {
         mono: ['JetBrains Mono', 'SFMono-Regular', 'monospace'],
       },
       colors: {
-        brand: blue,
+        brand: indigo,
       },
       backdropBlur: {
         xs: '2px',

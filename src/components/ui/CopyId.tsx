@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { Copy, Check } from 'lucide-react';
+import { indigo } from '@/lib/palette';
 
 interface Props {
   id: string;
@@ -8,7 +9,7 @@ interface Props {
   className?: string;
 }
 
-export function CopyId({ id, color = '#0067e0', className = '' }: Props) {
+export function CopyId({ id, color = indigo[300], className = '' }: Props) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

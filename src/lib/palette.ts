@@ -1,11 +1,14 @@
 /**
  * The app's colour system — one source of truth for every surface.
  *
- * Five families, each with a meaning. Nothing else is a colour in this app:
+ * Eight families, each with a meaning. Nothing else is a colour in this app:
  *
- *   blue     Primary actions, links, highlights, selected state
+ *   blue     Logo blue — the mark, and the few surfaces that must match it
+ *   indigo   Actions, links, highlights, selected state (the UI accent)
  *   emerald  Success, completed, active, healthy
+ *   mint     Positive accent — deltas, healthy charts, "on track"
  *   amber    Warning, pending, due soon, partial
+ *   orange   Warm accent — one highlight, never a warning or a second CTA
  *   red      Error, expired, overdue, destructive
  *   gray     Surfaces, borders, secondary text — everything neutral
  *
@@ -15,6 +18,10 @@
  * could appear in one card, and the same amber meant "warning" in one place
  * and "this tile is the fourth one" in another, so colour carried no
  * information at all.
+ *
+ * Aurora added indigo, mint and orange back deliberately: indigo is the one
+ * action colour (the logo blue stays on the mark), mint is the positive
+ * accent, and orange is a warm highlight that never means "warning".
  *
  * ── Choosing a tone ────────────────────────────────────────────────────────
  *   50/100    page and chip backgrounds — a wash, not a fill
@@ -29,13 +36,16 @@
  */
 
 /**
- * Royal blue — primary actions, links, highlights.
+ * Logo blue — the mark's own blue.
  *
  * Anchored on the blue measured out of the logo artwork rather than a generic
  * Tailwind blue; see src/lib/brand.ts for how the three brand stops (450, 500,
  * 600) were sampled. 950 is not "darker than 900" — it is a deliberately
  * brighter blue for icons sitting on the near-black gray[900] tiles, where the
  * deep 500 only reaches 3.4:1.
+ *
+ * UI actions moved to `indigo` in Aurora; this ramp remains for the wordmark,
+ * the logo-blue tokens and the surfaces that must visibly match the artwork.
  */
 export const blue = {
   50:  '#F2F8FF',
@@ -52,6 +62,24 @@ export const blue = {
   950: '#1CA3F9',
 } as const;
 
+/**
+ * Indigo — the one action colour. Primary buttons, links, selected rows,
+ * focus rings and the Aurora hero. 600 is the text-safe tone on a light tint;
+ * 500 is the fill and clears AA for white button labels.
+ */
+export const indigo = {
+  50:  '#EEF0FF',
+  100: '#E0E3FF',
+  200: '#C7CBFF',
+  300: '#A5AAFB',
+  400: '#7F86F8',
+  500: '#5B63F6',
+  600: '#3F46D6',
+  700: '#2F35A8',
+  800: '#252A82',
+  900: '#1B1F5C',
+} as const;
+
 /** Emerald — success, completed, active, healthy. */
 export const emerald = {
   50:  '#ECFDF5',
@@ -66,6 +94,20 @@ export const emerald = {
   900: '#064E3B',
 } as const;
 
+/** Mint — positive accent: deltas, healthy charts, "on track". */
+export const mint = {
+  50:  '#E6F8F4',
+  100: '#C9F1E9',
+  200: '#9AE5D7',
+  300: '#63D6C1',
+  400: '#3AC9AF',
+  500: '#20BFA4',
+  600: '#159B85',
+  700: '#117A6A',
+  800: '#0D5C50',
+  900: '#093F37',
+} as const;
+
 /** Amber — warnings, pending, due soon, partial. */
 export const amber = {
   50:  '#FFFBEB',
@@ -78,6 +120,20 @@ export const amber = {
   700: '#B45309',
   800: '#92400E',
   900: '#78350F',
+} as const;
+
+/** Orange — a warm highlight. Never a warning, never a second CTA. */
+export const orange = {
+  50:  '#FFF1E8',
+  100: '#FFE1CE',
+  200: '#FFC7A5',
+  300: '#FFA876',
+  400: '#FF9557',
+  500: '#FF853D',
+  600: '#E56A24',
+  700: '#B8521A',
+  800: '#8C3E14',
+  900: '#662D0F',
 } as const;
 
 /** Red — errors, expired, overdue, destructive actions. */
@@ -97,19 +153,23 @@ export const red = {
 /** Gray — neutral backgrounds, borders, secondary text. A slate ramp. */
 export const gray = {
   0:   '#FFFFFF',
+  25:  '#F7F9FD',
   50:  '#F8FAFC',
   100: '#F1F5F9',
+  150: '#E7EAF0',
   200: '#E2E8F0',
   300: '#CBD5E1',
   400: '#94A3B8',
   500: '#64748B',
+  550: '#667085',
   600: '#475569',
   700: '#334155',
   800: '#1E293B',
   900: '#0F172A',
+  950: '#0E1420',
 } as const;
 
-export const palette = { blue, emerald, amber, red, gray } as const;
+export const palette = { blue, indigo, emerald, mint, amber, orange, red, gray } as const;
 
 /**
  * What each family means, by name rather than by hue.
@@ -119,19 +179,25 @@ export const palette = { blue, emerald, amber, red, gray } as const;
  * being one edit or two hundred.
  */
 export const semantic = {
-  primary:   blue[500],
-  primaryHi: blue[450],
-  primaryLo: blue[600],
-  onDark:    blue[950],
+  primary:    indigo[500],
+  primaryHi:  indigo[400],
+  primaryLo:  indigo[600],
+  actionText: indigo[600],
+  onDark:     indigo[300],
 
-  success:   emerald[500],
-  successLo: emerald[600],
+  success:    emerald[500],
+  successLo:  emerald[600],
+  positive:   mint[500],
+  positiveLo: mint[700],
 
-  warning:   amber[500],
-  warningLo: amber[600],
+  warm:       orange[500],
+  warmLo:     orange[700],
 
-  danger:    red[500],
-  dangerLo:  red[600],
+  warning:    amber[500],
+  warningLo:  amber[600],
+
+  danger:     red[500],
+  dangerLo:   red[600],
 
   ink:       gray[900],
   body:      gray[700],
@@ -145,17 +211,17 @@ export const semantic = {
 /**
  * Categorical series for charts, in order.
  *
- * Five semantic colours cannot also be five arbitrary series colours without
- * "green" starting to mean "the third bar". Where a chart is genuinely
- * categorical rather than semantic, this walks the ramp — the primary, then
- * lighter and darker blues — before borrowing another family, so a two or
- * three series chart stays entirely in one hue and reads as one object.
+ * A semantic colour cannot also be an arbitrary series colour without "green"
+ * starting to mean "the third bar". Where a chart is genuinely categorical
+ * rather than semantic, this walks the indigo ramp — the primary, then lighter
+ * and darker — before borrowing another family, so a two or three series chart
+ * stays entirely in one hue and reads as one object.
  */
 export const series = [
-  blue[500],
-  blue[300],
-  blue[700],
-  emerald[500],
+  indigo[500],
+  indigo[300],
+  indigo[700],
+  mint[500],
   amber[500],
   gray[400],
 ] as const;
@@ -182,33 +248,34 @@ export const band = {
  * Distinguishable tones for things that are merely *different*, not good or bad
  * — avatar initials, trainer chips, template swatches, muscle groups.
  *
- * Deliberately no emerald, amber or red: those four families mean something
- * here, and a client whose avatar came out red should not look overdue. This
- * walks the blue ramp against two greys instead, which is both in-system and
- * how Apple tints this kind of thing.
+ * Deliberately no emerald, mint, amber, orange or red: those families mean
+ * something here, and a client whose avatar came out red should not look
+ * overdue. This walks the indigo ramp against two greys instead, which is both
+ * in-system and how Apple tints this kind of thing.
  *
  * Index into it with a stable hash of the row's id, not its position in a
  * list, or the colour changes when the list re-sorts.
  */
 export const identity = [
-  blue[500],
-  blue[300],
-  blue[700],
+  indigo[500],
+  indigo[300],
+  indigo[700],
   gray[500],
-  blue[400],
+  indigo[400],
   gray[400],
-  blue[900],
-  blue[200],
+  indigo[900],
+  indigo[200],
 ] as const;
 
 /**
  * Founder gold. One badge, and nothing else.
  *
- * This is the second deliberate exception to "five families", and it is made
- * the same way `identity` above is: by being explicitly NOT semantic. The five
- * families each carry a meaning — blue is action, emerald is success, amber is
- * warning, red is failure, gray is neutral — and a colour that means something
- * is exactly what this must not be. Founder status is not a state to act on.
+ * This is the second deliberate exception to the families, and it is made the
+ * same way `identity` above is: by being explicitly NOT semantic. Each family
+ * carries a meaning — indigo is action, emerald is success, mint is positive,
+ * amber is warning, orange is a warm highlight, red is failure, gray is
+ * neutral — and a colour that means something is exactly what this must not
+ * be. Founder status is not a state to act on.
  * It is a permanent mark of who bought in first.
  *
  * Amber was the obvious in-system alternative and is the wrong one twice over:

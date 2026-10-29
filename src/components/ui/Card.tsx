@@ -5,21 +5,20 @@ import { useMotionTemplate, useMotionValue, m } from 'framer-motion';
 import { cn } from './cn';
 
 /**
- * The surface every profile card shares — one definition of the adaptive
- * glass, so a card added later cannot reintroduce a light-only `bg-white`.
+ * The surface every profile card shares — one definition, so a card added
+ * later cannot reintroduce a light-only `bg-white`. Opaque by design: glass
+ * is reserved for overlays that sit over something worth seeing through.
  * `glow` is the section's own tint; it colours the depth, not the state.
  */
 export const cardSurface: React.CSSProperties = {
   background: 'var(--bg-card)',
   border: '1px solid var(--border)',
-  boxShadow: 'var(--glass-shadow), inset 0 1px 0 var(--glass-ring)',
-  backdropFilter: 'saturate(180%) blur(20px)',
-  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+  boxShadow: 'var(--shadow-card)',
 };
 
 export const cardSurfaceGlow = (glow: string): React.CSSProperties => ({
   ...cardSurface,
-  boxShadow: `var(--glass-shadow), inset 0 1px 0 var(--glass-ring), 0 18px 40px -26px ${glow}`,
+  boxShadow: `var(--shadow-card), 0 18px 40px -26px ${glow}`,
 });
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -58,7 +57,7 @@ export function Card({
     mouseY.set(-spotlightSize);
   }, [mouseX, mouseY, spotlight, spotlightSize]);
 
-  const spotlightBg = useMotionTemplate`radial-gradient(${spotlightSize}px circle at ${mouseX}px ${mouseY}px, rgba(var(--brand-rgb, 59 130 246) / 0.07), transparent 70%)`;
+  const spotlightBg = useMotionTemplate`radial-gradient(${spotlightSize}px circle at ${mouseX}px ${mouseY}px, rgba(var(--rgb-brand) / 0.07), transparent 70%)`;
 
   return (
     <div
@@ -66,7 +65,7 @@ export function Card({
       onMouseLeave={handleMouseLeave}
       className={cn(
         'group relative overflow-hidden rounded-[var(--radius-xl,24px)]',
-        'bg-[var(--bg-card)] backdrop-blur-[20px] saturate-[160%]',
+        'bg-[var(--bg-card)]',
         'border border-[var(--border)]',
         'shadow-[var(--shadow-card)]',
         'transition-all duration-250',

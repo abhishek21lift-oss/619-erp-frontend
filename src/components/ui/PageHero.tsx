@@ -5,7 +5,7 @@
  *
  * ── Why this exists ────────────────────────────────────────────────────────
  *
- * The dashboard has a hero: a deep navy gradient panel with rounded corners,
+ * The dashboard has a hero: an indigo Aurora panel with rounded corners,
  * sitting `pt-1` under the top bar and inside the shell's own gutter. Every
  * report page had grown its own version of the idea instead — a pale
  * `--bg-subtle` slab with `borderRadius: '0 0 36px 36px'` and
@@ -87,7 +87,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
             {icon && (
               <span
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white"
-                style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}
+                style={{ background: 'var(--gradient-brand)' }}
               >
                 {icon}
               </span>
@@ -124,11 +124,11 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         boxShadow: `0 26px 56px -24px ${surface.shadow}, inset 0 1px 0 rgba(255,255,255,0.14)`,
       } : {
         background:
-          'radial-gradient(130% 150% at 50% -25%, #0050AD 0%, transparent 55%),'
-          + 'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)',
+          'radial-gradient(130% 150% at 50% -25%, #7F86F8 0%, transparent 58%),'
+          + 'linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%)',
         boxShadow:
-          '0 24px 64px -14px rgba(15,23,42,0.78), 0 8px 26px rgba(0,103,224,0.22),'
-          + 'inset 0 1px 0 rgba(255,255,255,0.10)',
+          '0 24px 64px -14px rgba(47,53,168,0.55), 0 8px 26px rgba(91,99,246,0.24),'
+          + 'inset 0 1px 0 rgba(255,255,255,0.12)',
       }}
     >
       {/* Decorative layers, matching the dashboard hero. All non-interactive
@@ -138,11 +138,11 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
           <>
             <div
               className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
-              style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }}
+              style={{ background: 'radial-gradient(circle, #FF853D 0%, transparent 70%)', filter: 'blur(46px)' }}
             />
             <div
               className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-              style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(54px)' }}
+              style={{ background: 'radial-gradient(circle, #20BFA4 0%, transparent 70%)', filter: 'blur(54px)' }}
             />
           </>
         )}
@@ -156,7 +156,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         </svg>
         <div
           className="absolute inset-0"
-          style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,${surface ? 0.22 : 0.55}) 100%)` }}
+          style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,${surface ? 0.22 : 0.38}) 100%)` }}
         />
       </div>
 
@@ -201,8 +201,8 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
 /**
  * A button for the hero's `actions` slot.
  *
- * The hero is navy in both themes, so the app's own Button variants — built
- * for the page surface — read as grey slabs on it. Pages had started styling
+ * The hero is saturated indigo in both themes, so the app's own Button
+ * variants — built for the page surface — read as grey slabs on it. Pages had started styling
  * their hero buttons by hand, each slightly differently. This is that styling
  * in one place: `solid` (white, the page's primary action) and `glass`
  * (a translucent secondary, e.g. Refresh).

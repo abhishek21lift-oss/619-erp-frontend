@@ -6,7 +6,7 @@
 // in a single card, and the same amber meant "warning" in one place and "this
 // tile is the fourth one" in another, so colour carried no information.
 //
-// It is now five families and 47 values. The last test in this file is the
+// It is now eight families. The last test in this file is the
 // one that matters: it re-scans the whole of src/ and fails on any hex that
 // is not in the palette, because a system like this does not decay by being
 // rewritten, it decays one stray violet at a time. It scans this file too —
@@ -17,14 +17,14 @@ import { join, relative, sep } from 'node:path';
 import { palette, semantic, band, identity, series, founderGold, tint, rgba } from '@/lib/palette';
 import { isDecorativeTheme } from './helpers/token-files';
 
-const FAMILIES = ['blue', 'emerald', 'amber', 'red', 'gray'] as const;
+const FAMILIES = ['blue', 'indigo', 'emerald', 'mint', 'amber', 'orange', 'red', 'gray'] as const;
 
 function allHexes(): string[] {
   return Object.values(palette).flatMap((scale) => Object.values(scale as Record<string, string>));
 }
 
 describe('the palette', () => {
-  it('is exactly five families', () => {
+  it('is exactly eight families', () => {
     expect(Object.keys(palette).sort()).toEqual([...FAMILIES].sort());
   });
 
@@ -53,7 +53,9 @@ describe('the palette', () => {
     for (const f of FAMILIES) {
       const tones = Object.keys(palette[f] as Record<string, string>)
         .map(Number)
-        .filter((t) => t !== 950)   // blue-950 is the on-dark variant, not a step
+        // 950 is the on-dark variant, not a step; 25 is the Aurora canvas,
+        // which sits below 50 rather than between 0 and 50.
+        .filter((t) => t !== 950 && t !== 25)
         .sort((a, b) => a - b);
       for (let i = 1; i < tones.length; i++) {
         const prev = (palette[f] as Record<string, string>)[String(tones[i - 1])];
@@ -80,10 +82,13 @@ describe('the palette', () => {
 
   it('keeps identity colours free of meaning', () => {
     // A client whose avatar came out red must not look overdue, so the
-    // non-semantic ramp borrows nothing from emerald, amber or red.
+    // non-semantic ramp borrows nothing from emerald, mint, amber, orange or
+    // red.
     const meaningful = new Set([
       ...Object.values(palette.emerald),
+      ...Object.values(palette.mint),
       ...Object.values(palette.amber),
+      ...Object.values(palette.orange),
       ...Object.values(palette.red),
     ]);
     for (const c of identity) expect(meaningful.has(c)).toBe(false);
@@ -113,7 +118,7 @@ describe('helpers', () => {
 });
 
 describe('the app uses only the palette', () => {
-  it('has no hex colour outside the five families anywhere in src/', () => {
+  it('has no hex colour outside the palette families anywhere in src/', () => {
     // founderGold is the second deliberate non-semantic exception, after
     // `identity`. It is allowed through here and then confined to one file by
     // the assertion below — the scan alone would let it spread anywhere.
@@ -417,18 +422,18 @@ describe('the app uses only the palette', () => {
   });
 });
 
-describe('the brand blue is one value', () => {
-  it('matches every --rgb-brand to palette.blue[500]', () => {
+describe('the action colour is one value', () => {
+  it('matches every --rgb-brand to palette.indigo[500]', () => {
     const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
     const matches = [...css.matchAll(/--rgb-brand:\s*(\d+)\s+(\d+)\s+(\d+)/g)];
     expect(matches).toHaveLength(2);
-    const hex = palette.blue[500];
+    const hex = palette.indigo[500];
     const expected = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     for (const m of matches) expect(m.slice(1).map(Number)).toEqual(expected);
   });
 
   it('sources the Tailwind brand scale from the palette', async () => {
     const config = (await import('../../tailwind.config')).default;
-    expect(config.theme?.extend?.colors?.brand).toEqual(palette.blue);
+    expect(config.theme?.extend?.colors?.brand).toEqual(palette.indigo);
   });
 });
