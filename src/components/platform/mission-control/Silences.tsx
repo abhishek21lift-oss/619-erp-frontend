@@ -19,6 +19,7 @@ import { api } from '@/lib/api';
 import type { AlertSilence } from '@/lib/api';
 import { rgba, semantic } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
+import { FormField, SelectInput, TextInput } from '@/components/ui/form';
 import { metaFor } from './tokens';
 
 const POLL_MS = 60_000;
@@ -141,50 +142,47 @@ export const Silences: React.FC<{ cards: string[] }> = ({ cards }) => {
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
         >
           <div className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1 text-[10px] font-[700]" style={{ color: 'var(--text-tertiary)' }}>
-              Source
-              <select
+            <FormField label="Source" density="compact" className="w-auto">
+              <SelectInput
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                className="rounded-[8px] border px-2 py-1.5 text-[11.5px] font-[600]"
+                className="h-10 rounded-[8px] px-2 pr-8 text-[11.5px] font-[600]"
                 style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
               >
                 <option value="">All alerts</option>
                 {cards.map((c) => <option key={c} value={c}>{metaFor(c).title}</option>)}
-              </select>
-            </label>
+              </SelectInput>
+            </FormField>
 
-            <label className="flex flex-col gap-1 text-[10px] font-[700]" style={{ color: 'var(--text-tertiary)' }}>
-              For
-              <select
+            <FormField label="For" density="compact" className="w-auto">
+              <SelectInput
                 value={minutes}
-                onChange={(e) => setMinutes(Number(e.target.value))}
-                className="rounded-[8px] border px-2 py-1.5 text-[11.5px] font-[600]"
+                onChange={(e) => setMinutes(DURATIONS.find((d) => String(d.minutes) === e.target.value)?.minutes ?? 60)}
+                className="h-10 rounded-[8px] px-2 pr-8 text-[11.5px] font-[600]"
                 style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
               >
                 {DURATIONS.map((d) => <option key={d.minutes} value={d.minutes}>{d.label}</option>)}
-              </select>
-            </label>
+              </SelectInput>
+            </FormField>
 
-            <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-[10px] font-[700]" style={{ color: 'var(--text-tertiary)' }}>
-              Reason
-              <input
+            <FormField label="Reason" density="compact" className="min-w-[180px] flex-1">
+              <TextInput
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required
                 minLength={3}
                 maxLength={200}
                 placeholder="Redis upgrade, expected restart"
-                className="rounded-[8px] border px-2 py-1.5 text-[11.5px]"
+                className="h-10 rounded-[8px] px-2 text-[11.5px]"
                 style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
               />
-            </label>
+            </FormField>
 
             <button
               type="submit"
               disabled={busy || reason.trim().length < 3}
               className="flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11.5px] font-[800] disabled:opacity-50"
-              style={{ background: semantic.warning, color: 'var(--text-on-accent, #fff)' }}
+              style={{ background: semantic.warning, color: semantic.ink }}
             >
               {busy && <Loader2 size={12} className="animate-spin" />}
               Silence

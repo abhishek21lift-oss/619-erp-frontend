@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { apiBase, tenantAuthHeaders } from '@/lib/http';
+import { SelectInput } from '@/components/ui/form';
 import { semantic, rgba } from '@/lib/palette';
 import type { LogLine, LogTail, LogHistory, LogHistoryStats, PersistedLogLine } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
@@ -152,7 +153,7 @@ export default function LiveLogs() {
   const [paused, setPaused] = useState(false);
   // Export window, independent of the stats strip: the strip answers "how
   // noisy has it been", the export answers "give me these lines".
-  const [exportHours, setExportHours] = useState(24);
+  const [exportHours, setExportHours] = useState('24');
   const [exporting, setExporting] = useState(false);
 
   const [tail, setTail] = useState<LogTail | null>(null);
@@ -231,7 +232,7 @@ export default function LiveLogs() {
     setExporting(true);
     setError('');
     try {
-      const qs = new URLSearchParams({ hours: String(exportHours) });
+      const qs = new URLSearchParams({ hours: exportHours });
       if (level) qs.set('level', level);
       if (query) qs.set('q', query);
 
@@ -412,17 +413,17 @@ export default function LiveLogs() {
             decides what the file should contain. */}
         {tab === 'history' && (
           <>
-            <select
+            <SelectInput
               aria-label="Export window"
               value={exportHours}
-              onChange={(e) => setExportHours(Number(e.target.value))}
-              className="rounded-[8px] px-2 py-1 text-[11px] font-[650]"
+              onChange={(e) => setExportHours(e.target.value)}
+              className="h-10 rounded-[8px] px-2 pr-8 text-[11px] font-[650]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-tertiary)' }}
             >
-              <option value={24}>Last 24h</option>
-              <option value={168}>Last 7 days</option>
-              <option value={720}>Last 30 days</option>
-            </select>
+              <option value="24">Last 24h</option>
+              <option value="168">Last 7 days</option>
+              <option value="720">Last 30 days</option>
+            </SelectInput>
             <button
               type="button"
               onClick={exportHistory}
