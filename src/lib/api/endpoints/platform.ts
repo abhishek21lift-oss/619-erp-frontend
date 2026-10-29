@@ -30,7 +30,8 @@ import type {
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult,
   CommandCenterApiRestartStatus, CommandCenterDryRun,
   CommandCenterStreamTicket, AiModelInventory,
-  SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
+  SystemAlert, SystemAlertList, GuardianReport, GuardianNarration, CommandCenterTimeline,
+  CommandCenterAvailability, AlertSilence, AlertSilenceList,
   LogTail, LogHistory,
   PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
   TenancyAttemptRow, TenancyKnownGap,
@@ -344,10 +345,47 @@ export const superAdmin = {
     );
   },
 
+  /** "What changed": alert lifecycle events plus audited operator commands,
+   *  newest first. `hours` is clamped server-side to 1..720. */
+  commandCenterTimeline: (opts: { hours?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.hours) qs.set('hours', String(opts.hours));
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: CommandCenterTimeline }>(
+      `/api/platform/command-center/timeline${q ? `?${q}` : ''}`,
+    );
+  },
+
+  /** Persisted card status, bucketed for a rail. Answers "has this been
+   *  flapping" across restarts, which the in-memory snapshot cannot. */
+  commandCenterAvailability: (opts: { hours?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.hours) qs.set('hours', String(opts.hours));
+    const q = qs.toString();
+    return http<{ data: CommandCenterAvailability }>(
+      `/api/platform/command-center/availability${q ? `?${q}` : ''}`,
+    );
+  },
+
+  /** Alert silence windows in force. Notification only — detection continues. */
+  commandCenterSilences: () =>
+    http<{ data: AlertSilenceList }>('/api/platform/command-center/silences'),
+
+  createAlertSilence: (body: { source: string | null; reason: string; minutes: number }) =>
+    http<{ data: AlertSilence }>('/api/platform/command-center/silences', {
+      method: 'POST', body,
+    }),
+
+  cancelAlertSilence: (id: string) =>
+    http<{ data: AlertSilence }>(
+      `/api/platform/command-center/silences/${encodeURIComponent(id)}`,
+      { method: 'DELETE' },
+    ),
+
   /** "Seen, I am on it." Does not stop the alert tracking the condition, so an
    *  acknowledged alert that fixes itself still auto-resolves. */
-  acknowledgeAlert: (id: string) =>
-    http<{ data: SystemAlert }>(
+  acknowledgeAlert: (id: string) =>    http<{ data: SystemAlert }>(
       `/api/platform/command-center/alerts/${encodeURIComponent(id)}/ack`,
       { method: 'POST' },
     ),
@@ -538,7 +576,7 @@ export const superAdmin = {
   }) => http<{ data: unknown }>('/api/platform/ai/routing', {
     method: 'PUT', body: JSON.stringify(patch),
   }),
-  saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; warn_at_pct?: number }) =>
+  saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; monthly_cost_inr?: number | null; warn_at_pct?: number }) =>
     http<{ data: AiSettings; studios_already_over: number | null }>('/api/platform/ai/settings', {
       method: 'PUT', body: JSON.stringify(patch),
     }),

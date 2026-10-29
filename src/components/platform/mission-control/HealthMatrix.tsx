@@ -84,6 +84,10 @@ function headlineMetric(card: CommandCenterCard): { label: string; value: string
       if (!del) return null;
       return { label: 'delivered', value: `${del.invitations_sent ?? 0}/${del.invitations_total ?? 0}` };
     }
+    case 'backup': {
+      const age = n((d as { age_hours?: number | null }).age_hours);
+      return age == null ? null : { label: 'age', value: `${Math.round(age)} h` };
+    }
     default: return null;
   }
 }

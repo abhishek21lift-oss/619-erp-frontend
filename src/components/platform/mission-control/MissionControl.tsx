@@ -38,6 +38,9 @@ import LiveLogs from '@/components/platform/live-logs';
 import { GlobalStatus } from './GlobalStatus';
 import { HealthMatrix } from './HealthMatrix';
 import { Topology } from './Topology';
+import { Timeline } from './Timeline';
+import { Availability } from './Availability';
+import { Silences } from './Silences';
 import { ObservabilityBar } from './ObservabilityBar';
 import { AiOperations } from './AiOperations';
 import { surface, toneFor } from './tokens';
@@ -87,6 +90,7 @@ export const MissionControl: React.FC = () => {
       {/* The module hero above names this screen; what stays here is the
           control an operator reaches for — a fresh probe. */}
       <div className="relative flex flex-wrap items-center justify-end gap-3">
+        <Silences cards={Object.keys(snap.cards)} />
         <button
           type="button"
           onClick={handleRefresh}
@@ -106,6 +110,14 @@ export const MissionControl: React.FC = () => {
       <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr] [&>*]:min-w-0">
         <HealthMatrix snap={snap} history={history} />
         <Topology snap={snap} />
+      </div>
+
+      {/* The "what changed" step of the reading order, before the decks that
+          act on it. Availability beside it answers whether the state is new or
+          has been flapping. */}
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_.6fr] [&>*]:min-w-0">
+        <Timeline />
+        <Availability />
       </div>
 
       {/* ── Decks ────────────────────────────────────────────────────────────

@@ -340,6 +340,15 @@ const Traffic: React.FC<{ ai: AiTelemetry | null }> = ({ ai }) => {
         <Fact label="Tokens today" value={fmtNum(t?.tokens)} />
         <Fact label={t?.cost_is_floor ? 'Cost today (floor)' : 'Cost today'} value={cost}
           hint={t?.cost_is_floor ? 'Some models have no rate, so this undercounts' : undefined} />
+        <Fact
+          label="Budget, month to date"
+          value={ai.budget
+            ? `₹${Math.round(ai.budget.spent_month_inr).toLocaleString('en-IN')} / ₹${Math.round(ai.budget.monthly_cost_inr).toLocaleString('en-IN')}`
+            : 'No budget set'}
+          hint={ai.budget
+            ? `${ai.budget.pct}% of the monthly budget${ai.budget.cost_is_floor ? ', and cost is a floor' : ''}`
+            : 'Set one under AI Control Centre → Allowances'}
+        />
       </dl>
       <div className="mt-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
         <p className="text-[10px] font-[750] uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>

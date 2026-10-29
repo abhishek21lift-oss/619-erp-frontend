@@ -2160,6 +2160,11 @@ export interface AiTelemetry {
     requests: number | null; avg_latency_ms?: number | null; max_latency_ms?: number | null;
     fallbacks?: number; fallback_rate: number | null;
   } | null;
+  /** Null when no monthly rupee budget is set — never a guessed target. */
+  budget: {
+    monthly_cost_inr: number; spent_month_inr: number;
+    warn_at_pct: number; pct: number; cost_is_floor: boolean;
+  } | null;
   served_models_24h?: Array<{ model: string; requests: number; last_at: string }> | null;
   gateway: { kind: AiGatewayKind | null; endpoint: string | null; status: CommandCenterStatus; reason: string | null };
   observed?: AiObservedTraffic;
@@ -2310,6 +2315,18 @@ export interface SmtpTelemetry {
   live_probe?: { ok: boolean } | null;
 }
 
+/** The newest backup `scripts/backup-database.js` verified with pg_restore -l. */
+export interface BackupTelemetry {
+  /** Null when no verified run has ever been recorded — not "just now". */
+  last_ok_at: string | null;
+  age_hours: number | null;
+  size_bytes: number | null;
+  tables: number | null;
+  /** False = the dump exists only on the VPS, which is not off-site. */
+  offsite: boolean;
+  stale_after_hours: number;
+}
+
 /** The VPS host (backend `host` collector): /proc + statfs. Ratios are 0–1. */
 export interface HostTelemetry {
   cpu: { cores: number | null; busy_ratio: number | null; steal_ratio: number | null };
@@ -2325,7 +2342,8 @@ export interface HostTelemetry {
 /** The payload union, discriminated by the card's `name`. */
 export type CommandCenterTelemetry =
   | RuntimeTelemetry | HttpTelemetry | DatabaseTelemetry | RedisTelemetry
-  | QueuesTelemetry | AiTelemetry | FreeLlmApiTelemetry | SecurityTelemetry | SmtpTelemetry | HostTelemetry;
+  | QueuesTelemetry | AiTelemetry | FreeLlmApiTelemetry | SecurityTelemetry | SmtpTelemetry
+  | HostTelemetry | BackupTelemetry;
 
 export interface CommandCenterCard {
   name: string;
@@ -2399,6 +2417,11 @@ export interface CommandCenterDegradedReason {
 
 export interface CommandCenterSnapshot {
   status: CommandCenterStatus;
+  /** Which build answered. Same for every card, so it belongs to the reading. */
+  release?: {
+    service: string; version: string; sha: string; builtAt: string | null;
+    env: string; node: string; contract: number; instance: string;
+  };
   observability: CommandCenterObservability;
   degraded_reasons: CommandCenterDegradedReason[];
   collected_at: string;
@@ -2525,6 +2548,79 @@ export interface SystemAlertStats {
 export interface SystemAlertList {
   alerts: SystemAlert[];
   stats: SystemAlertStats;
+}
+
+// ── Incident timeline ─────────────────────────────────────────────────────────
+
+/** Alert lifecycle events carry the alert's severity; a command carries the
+ *  audit outcome instead, so `info` is the only non-alert severity. */
+export type CommandCenterTimelineSeverity = SystemAlertSeverity | 'info';
+
+/** What kind of thing happened, not which store it came from. `ongoing` is the
+ *  alert that opened before the window and is still firing. */
+export type CommandCenterTimelineEventName =
+  | 'opened' | 'ongoing' | 'acknowledged' | 'resolved' | 'command';
+
+export interface CommandCenterTimelineEvent {
+  id: string;
+  at: string;
+  kind: 'alert' | 'command';
+  event: CommandCenterTimelineEventName;
+  severity: CommandCenterTimelineSeverity;
+  /** Collector name for an alert; command name for an operator action. */
+  source: string;
+  title: string;
+  detail: string | null;
+  actor: string | null;
+  outcome: 'ok' | 'error' | null;
+}
+
+export interface CommandCenterTimeline {
+  /** Newest first, already capped by the server. */
+  events: CommandCenterTimelineEvent[];
+  window_hours: number;
+}
+
+// ── Persisted availability ────────────────────────────────────────────────────
+
+/** One bucket of the status rail. `null` is a gap — the sampler did not run,
+ *  or its row is outside retention. A gap must not render as healthy. */
+export interface CommandCenterAvailabilityBucket {
+  at: string;
+  status: CommandCenterStatus | null;
+}
+
+export interface CommandCenterAvailabilityCard {
+  card: string;
+  /** Raw sample count behind the buckets, before rolling up to worst-of. */
+  samples: number;
+  /** Share of MEASURED buckets that were healthy. Null when none were. */
+  healthy_pct: number | null;
+  buckets: CommandCenterAvailabilityBucket[];
+}
+
+export interface CommandCenterAvailability {
+  window_hours: number;
+  bucket_minutes: number;
+  cards: CommandCenterAvailabilityCard[];
+}
+
+// ── Alert silences ────────────────────────────────────────────────────────────
+
+/** A window that suppresses NOTIFICATION, never detection: the alert still
+ *  opens and still appears in the console. `source` null means every card. */
+export interface AlertSilence {
+  id: string;
+  source: string | null;
+  reason: string;
+  starts_at: string;
+  ends_at: string;
+  created_by: string | null;
+  cancelled_at?: string | null;
+}
+
+export interface AlertSilenceList {
+  silences: AlertSilence[];
 }
 
 // ── AI Guardian ───────────────────────────────────────────────────────────────
@@ -3001,6 +3097,8 @@ export type AiRouting = {
 export type AiSettings = {
   enforcement_enabled: boolean;
   default_monthly_tokens: number | string | null;
+  /** Monthly rupee ceiling for AI spend. null = no budget, not zero. */
+  monthly_cost_inr: number | string | null;
   warn_at_pct: number;
   rates: AiModelRate[];
 };
