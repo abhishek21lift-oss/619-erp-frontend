@@ -40,6 +40,7 @@ import { HealthMatrix } from './HealthMatrix';
 import { Topology } from './Topology';
 import { Timeline } from './Timeline';
 import { Availability } from './Availability';
+import { Silences } from './Silences';
 import { ObservabilityBar } from './ObservabilityBar';
 import { AiOperations } from './AiOperations';
 import { surface, toneFor } from './tokens';
@@ -89,6 +90,7 @@ export const MissionControl: React.FC = () => {
       {/* The module hero above names this screen; what stays here is the
           control an operator reaches for — a fresh probe. */}
       <div className="relative flex flex-wrap items-center justify-end gap-3">
+        <Silences cards={Object.keys(snap.cards)} />
         <button
           type="button"
           onClick={handleRefresh}

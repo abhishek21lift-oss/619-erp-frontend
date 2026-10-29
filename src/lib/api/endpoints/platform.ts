@@ -31,7 +31,7 @@ import type {
   CommandCenterApiRestartStatus, CommandCenterDryRun,
   CommandCenterStreamTicket, AiModelInventory,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration, CommandCenterTimeline,
-  CommandCenterAvailability,
+  CommandCenterAvailability, AlertSilence, AlertSilenceList,
   LogTail, LogHistory,
   PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
   TenancyAttemptRow, TenancyKnownGap,
@@ -367,6 +367,21 @@ export const superAdmin = {
       `/api/platform/command-center/availability${q ? `?${q}` : ''}`,
     );
   },
+
+  /** Alert silence windows in force. Notification only — detection continues. */
+  commandCenterSilences: () =>
+    http<{ data: AlertSilenceList }>('/api/platform/command-center/silences'),
+
+  createAlertSilence: (body: { source: string | null; reason: string; minutes: number }) =>
+    http<{ data: AlertSilence }>('/api/platform/command-center/silences', {
+      method: 'POST', body,
+    }),
+
+  cancelAlertSilence: (id: string) =>
+    http<{ data: AlertSilence }>(
+      `/api/platform/command-center/silences/${encodeURIComponent(id)}`,
+      { method: 'DELETE' },
+    ),
 
   /** "Seen, I am on it." Does not stop the alert tracking the condition, so an
    *  acknowledged alert that fixes itself still auto-resolves. */

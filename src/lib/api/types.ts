@@ -2582,6 +2582,24 @@ export interface CommandCenterAvailability {
   cards: CommandCenterAvailabilityCard[];
 }
 
+// ── Alert silences ────────────────────────────────────────────────────────────
+
+/** A window that suppresses NOTIFICATION, never detection: the alert still
+ *  opens and still appears in the console. `source` null means every card. */
+export interface AlertSilence {
+  id: string;
+  source: string | null;
+  reason: string;
+  starts_at: string;
+  ends_at: string;
+  created_by: string | null;
+  cancelled_at?: string | null;
+}
+
+export interface AlertSilenceList {
+  silences: AlertSilence[];
+}
+
 // ── AI Guardian ───────────────────────────────────────────────────────────────
 
 /** One evidence line. `detail` is the readable sentence; `key` identifies the
