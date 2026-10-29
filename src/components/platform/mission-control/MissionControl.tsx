@@ -38,6 +38,7 @@ import LiveLogs from '@/components/platform/live-logs';
 import { GlobalStatus } from './GlobalStatus';
 import { HealthMatrix } from './HealthMatrix';
 import { Topology } from './Topology';
+import { Timeline } from './Timeline';
 import { ObservabilityBar } from './ObservabilityBar';
 import { AiOperations } from './AiOperations';
 import { surface, toneFor } from './tokens';
@@ -107,6 +108,10 @@ export const MissionControl: React.FC = () => {
         <HealthMatrix snap={snap} history={history} />
         <Topology snap={snap} />
       </div>
+
+      {/* The "what changed" step of the reading order, before the decks that
+          act on it. */}
+      <Timeline />
 
       {/* ── Decks ────────────────────────────────────────────────────────────
           Tabs rather than one long scroll: each of these polls its own

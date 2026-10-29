@@ -30,7 +30,7 @@ import type {
   CommandCenterSnapshot, CommandCenterCommand, CommandCenterRunResult,
   CommandCenterApiRestartStatus, CommandCenterDryRun,
   CommandCenterStreamTicket, AiModelInventory,
-  SystemAlert, SystemAlertList, GuardianReport, GuardianNarration,
+  SystemAlert, SystemAlertList, GuardianReport, GuardianNarration, CommandCenterTimeline,
   LogTail, LogHistory,
   PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
   TenancyAttemptRow, TenancyKnownGap,
@@ -344,10 +344,21 @@ export const superAdmin = {
     );
   },
 
+  /** "What changed": alert lifecycle events plus audited operator commands,
+   *  newest first. `hours` is clamped server-side to 1..720. */
+  commandCenterTimeline: (opts: { hours?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.hours) qs.set('hours', String(opts.hours));
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return http<{ data: CommandCenterTimeline }>(
+      `/api/platform/command-center/timeline${q ? `?${q}` : ''}`,
+    );
+  },
+
   /** "Seen, I am on it." Does not stop the alert tracking the condition, so an
    *  acknowledged alert that fixes itself still auto-resolves. */
-  acknowledgeAlert: (id: string) =>
-    http<{ data: SystemAlert }>(
+  acknowledgeAlert: (id: string) =>    http<{ data: SystemAlert }>(
       `/api/platform/command-center/alerts/${encodeURIComponent(id)}/ack`,
       { method: 'POST' },
     ),

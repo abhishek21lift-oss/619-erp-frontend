@@ -2527,6 +2527,37 @@ export interface SystemAlertList {
   stats: SystemAlertStats;
 }
 
+// ── Incident timeline ─────────────────────────────────────────────────────────
+
+/** Alert lifecycle events carry the alert's severity; a command carries the
+ *  audit outcome instead, so `info` is the only non-alert severity. */
+export type CommandCenterTimelineSeverity = SystemAlertSeverity | 'info';
+
+/** What kind of thing happened, not which store it came from. `ongoing` is the
+ *  alert that opened before the window and is still firing. */
+export type CommandCenterTimelineEventName =
+  | 'opened' | 'ongoing' | 'acknowledged' | 'resolved' | 'command';
+
+export interface CommandCenterTimelineEvent {
+  id: string;
+  at: string;
+  kind: 'alert' | 'command';
+  event: CommandCenterTimelineEventName;
+  severity: CommandCenterTimelineSeverity;
+  /** Collector name for an alert; command name for an operator action. */
+  source: string;
+  title: string;
+  detail: string | null;
+  actor: string | null;
+  outcome: 'ok' | 'error' | null;
+}
+
+export interface CommandCenterTimeline {
+  /** Newest first, already capped by the server. */
+  events: CommandCenterTimelineEvent[];
+  window_hours: number;
+}
+
 // ── AI Guardian ───────────────────────────────────────────────────────────────
 
 /** One evidence line. `detail` is the readable sentence; `key` identifies the
