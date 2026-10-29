@@ -2558,6 +2558,30 @@ export interface CommandCenterTimeline {
   window_hours: number;
 }
 
+// ── Persisted availability ────────────────────────────────────────────────────
+
+/** One bucket of the status rail. `null` is a gap — the sampler did not run,
+ *  or its row is outside retention. A gap must not render as healthy. */
+export interface CommandCenterAvailabilityBucket {
+  at: string;
+  status: CommandCenterStatus | null;
+}
+
+export interface CommandCenterAvailabilityCard {
+  card: string;
+  /** Raw sample count behind the buckets, before rolling up to worst-of. */
+  samples: number;
+  /** Share of MEASURED buckets that were healthy. Null when none were. */
+  healthy_pct: number | null;
+  buckets: CommandCenterAvailabilityBucket[];
+}
+
+export interface CommandCenterAvailability {
+  window_hours: number;
+  bucket_minutes: number;
+  cards: CommandCenterAvailabilityCard[];
+}
+
 // ── AI Guardian ───────────────────────────────────────────────────────────────
 
 /** One evidence line. `detail` is the readable sentence; `key` identifies the

@@ -31,6 +31,7 @@ import type {
   CommandCenterApiRestartStatus, CommandCenterDryRun,
   CommandCenterStreamTicket, AiModelInventory,
   SystemAlert, SystemAlertList, GuardianReport, GuardianNarration, CommandCenterTimeline,
+  CommandCenterAvailability,
   LogTail, LogHistory,
   PlatformKpis, TenancyHealth, TenancyOrphans, TenancyOrphanRow,
   TenancyAttemptRow, TenancyKnownGap,
@@ -353,6 +354,17 @@ export const superAdmin = {
     const q = qs.toString();
     return http<{ data: CommandCenterTimeline }>(
       `/api/platform/command-center/timeline${q ? `?${q}` : ''}`,
+    );
+  },
+
+  /** Persisted card status, bucketed for a rail. Answers "has this been
+   *  flapping" across restarts, which the in-memory snapshot cannot. */
+  commandCenterAvailability: (opts: { hours?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.hours) qs.set('hours', String(opts.hours));
+    const q = qs.toString();
+    return http<{ data: CommandCenterAvailability }>(
+      `/api/platform/command-center/availability${q ? `?${q}` : ''}`,
     );
   },
 

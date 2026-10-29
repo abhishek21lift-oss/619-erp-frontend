@@ -39,6 +39,7 @@ import { GlobalStatus } from './GlobalStatus';
 import { HealthMatrix } from './HealthMatrix';
 import { Topology } from './Topology';
 import { Timeline } from './Timeline';
+import { Availability } from './Availability';
 import { ObservabilityBar } from './ObservabilityBar';
 import { AiOperations } from './AiOperations';
 import { surface, toneFor } from './tokens';
@@ -110,8 +111,12 @@ export const MissionControl: React.FC = () => {
       </div>
 
       {/* The "what changed" step of the reading order, before the decks that
-          act on it. */}
-      <Timeline />
+          act on it. Availability beside it answers whether the state is new or
+          has been flapping. */}
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_.6fr] [&>*]:min-w-0">
+        <Timeline />
+        <Availability />
+      </div>
 
       {/* ── Decks ────────────────────────────────────────────────────────────
           Tabs rather than one long scroll: each of these polls its own
