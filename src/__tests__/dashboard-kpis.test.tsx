@@ -274,61 +274,25 @@ describe('the active/expired ratio stays a labelled snapshot', () => {
   });
 });
 
-// ── The tiles are saturated fills now, and white sits on them ─────────────
+// ── The tiles are surfaces again; the hero owns the colour ────────────────
 //
-// They used to be four pale washes behind dark ink — three of the four a
-// shade of blue, which is why a studio described them as looking basic. They
-// are one saturated colour family each with white text on top, which inverts
-// figure and ground and puts one hard constraint on the palette: white has to
-// be legible on the LIGHTEST point of every gradient.
+// They were four saturated gradient fills with white printed on them. That
+// inverted figure and ground on four cards at once: the loudest colour on the
+// dashboard was a grid, and the hero had to compete with it. The approved
+// design spends the colour on the hero and the goal ring and gives every tile
+// a white surface — label, one figure, and a foot band the grid can line up.
 //
-// That constraint is invisible in a diff. `emerald[500]` and `amber[500]` are
-// the colours these two "should" be — a brighter green, a proper saffron —
-// and they carry white at 2.54:1 and 2.15:1. Picking one would look right in
-// the file and be unreadable on a phone, so the check is arithmetic rather
-// than a list of approved hex values.
+// The arithmetic that guarded the old fills (white had to clear 4.5:1 at both
+// ends of every gradient) went with the gradients. What replaces it is the
+// direction itself: a tile may not paint its own background.
 
-import { KPI_TONES_FOR_TEST } from '@/components/dashboards/PtOsDashboard';
-
-function luminance(hex: string): number {
-  const h = hex.replace('#', '');
-  const lin = [0, 2, 4]
-    .map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
-    .map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
-  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
-}
-const onWhite = (hex: string) => 1.05 / (luminance(hex) + 0.05);
-
-describe('the KPI tiles can carry the white text printed on them', () => {
-  const tones = Object.entries(KPI_TONES_FOR_TEST);
-
-  it('has a tone for each metric on the row', () => {
-    expect(tones.map(([k]) => k).sort()).toEqual(
-      ['activeShare', 'clients', 'revenue'],
-    );
-  });
-
-  it.each(tones)('%s clears 4.5:1 for white at BOTH ends of its gradient', (_name, tone) => {
-    // Both ends, not the average: the label and the sub-label are 8.5px and
-    // 9px, and they sit near the foot of the card where the gradient is
-    // darkest — but the trend badge and the icon sit at the top where it is
-    // lightest. Every part of the tile has white on it somewhere.
-    expect(onWhite(tone.from)).toBeGreaterThanOrEqual(4.5);
-    expect(onWhite(tone.to)).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it('gives the two blue tiles visibly different depths', () => {
-    // Active Clients and Active Share are both blue — the palette has five
-    // families and red means error, so a fourth distinct hue is not available
-    // to a metric that is neither a warning nor a fault. They are a royal
-    // blue and a near-navy rather than two shades of the same card, and they
-    // sit diagonally in the 2×2 grid, never side by side.
-    const gap = luminance(KPI_TONES_FOR_TEST.clients.from) - luminance(KPI_TONES_FOR_TEST.activeShare.from);
-    expect(gap).toBeGreaterThan(0.02);
-  });
-
-  it('does not reuse one family for two tiles at the same depth', () => {
-    const froms = tones.map(([, t]) => t.from);
-    expect(new Set(froms).size).toBe(froms.length);
+describe('the KPI tiles are surfaces, not fills', () => {
+  it('gives every tile the card surface instead of a gradient', async () => {
+    render(<PtOsDashboard />);
+    for (const label of ['Active Clients', 'PT Revenue', 'Active Share']) {
+      const card = (await screen.findByText(label)).closest('.group') as HTMLElement;
+      expect(card.style.background, `${label} background`).toBe('');
+      expect(card.className).toContain('bg-[var(--bg-card)]');
+    }
   });
 });

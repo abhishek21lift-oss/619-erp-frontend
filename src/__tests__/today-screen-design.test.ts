@@ -74,11 +74,14 @@ describe('the dark theme is not a tint of the light one', () => {
     expect(page).toContain('var(--bg-subtle)');
   });
 
-  it('uses the brand shade that stays readable in both themes', () => {
+  it('uses the shade that stays readable on its own tint in both themes', () => {
     // --brand is the action fill, which is under 3:1 on a dark card.
-    // --brand-hi is a deeper indigo in light and a lighter one in dark:
-    // readable on either ground.
-    expect(page).toContain('var(--brand-hi)');
+    // --brand-hi is decoration now: a lighter indigo in dark, but only 3:1 on
+    // the light tint it would sit on here. --action-text is the token that
+    // flips to a readable ink in each theme, so the chip keeps its meaning
+    // without the text disappearing.
+    expect(page).toContain('var(--action-text)');
+    expect(page).not.toContain('var(--brand-hi)');
   });
 });
 
