@@ -21,6 +21,7 @@ import { PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { ActivityLogEntry } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { FormField, TextInput } from '@/components/ui/form';
 
 const PAGE_SIZE = 50;
 
@@ -205,26 +206,24 @@ function Inner() {
                 className="grid grid-cols-1 gap-3 rounded-[14px] p-3.5 sm:grid-cols-2"
                 style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
               >
-                <label className="flex flex-col gap-1">
-                  <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Action</span>
-                  <input
+                <FormField label="Action" density="compact">
+                  <TextInput
                     value={action}
                     onChange={(e) => { setAction(e.target.value); setOffset(0); }}
                     placeholder="e.g. client.create, payment.delete"
-                    className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none"
+                    className="h-10 rounded-[10px] px-2.5 text-[12.5px]"
                     style={selectStyle}
                   />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Module</span>
-                  <input
+                </FormField>
+                <FormField label="Module" density="compact">
+                  <TextInput
                     value={entityType}
                     onChange={(e) => { setEntityType(e.target.value); setOffset(0); }}
                     placeholder="e.g. pt_client, pt_payment, pt_trainer"
-                    className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none"
+                    className="h-10 rounded-[10px] px-2.5 text-[12.5px]"
                     style={selectStyle}
                   />
-                </label>
+                </FormField>
                 <div className="sm:col-span-2">
                   <button onClick={reset} className="flex min-h-[36px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
                     <RotateCcw size={12} /> Reset filters

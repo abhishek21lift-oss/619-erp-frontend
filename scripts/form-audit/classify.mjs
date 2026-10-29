@@ -385,13 +385,18 @@ export function coercionSites(source) {
     // answers the question actually being asked.
     let owner = null;
     for (let j = i; j >= Math.max(0, i - 12) && owner === null; j -= 1) {
-      const tag = /<(input|select|textarea)\b/.exec(lines[j]);
+      const tag = /<(input|select|textarea|SelectInput|TextInput|TextArea)\b/.exec(lines[j]);
       if (tag) {
+        // Design-system controls are the same element with a skin on it, so a
+        // coercion inside them is classified by what they render. Without this,
+        // migrating a `<select>` to `SelectInput` turned a bounded read into a
+        // "risky" one purely because the audit no longer recognised the owner.
+        const rendered = { SelectInput: 'select', TextInput: 'input', TextArea: 'textarea' }[tag[1]];
         // The attributes of a multi-line JSX element are spread over the lines
         // BETWEEN the tag and the handler, so `type="range"` is rarely on the
         // same line as `<input`. Taking only that line missed every slider and
         // reported three correct reads as defects.
-        owner = { tag: tag[1], attrs: lines.slice(j, i + 1).join(' ') };
+        owner = { tag: rendered ?? tag[1], attrs: lines.slice(j, i + 1).join(' ') };
       }
     }
 

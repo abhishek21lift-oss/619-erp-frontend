@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { XCircle } from 'lucide-react';
 import { tones } from './profileTheme';
+import { FormField, TextArea, TextInput } from '@/components/ui/form';
 
 /** Character counts at which a field stops reading as a placeholder. */
 export const ABOUT_MINIMUMS = { bio: 80, philosophy: 60 };
@@ -38,21 +39,19 @@ function LongText({
   const short = minimum !== undefined && len > 0 && len < minimum;
 
   return (
-    <div>
-      <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-          {label}
+    <FormField
+      label={label}
+      density="compact"
+      labelAside={minimum !== undefined ? (
+        <span
+          className="tabular-nums text-[10.5px] font-[600]"
+          style={{ color: short ? '#b45309' : 'var(--text-disabled)' }}
+        >
+          {len}/{minimum} min
         </span>
-        {minimum !== undefined && (
-          <span
-            className="tabular-nums text-[10.5px] font-[600]"
-            style={{ color: short ? '#b45309' : 'var(--text-disabled)' }}
-          >
-            {len}/{minimum} min
-          </span>
-        )}
-      </div>
-      <textarea
+      ) : undefined}
+    >
+      <TextArea
         value={value}
         rows={rows}
         maxLength={maxLength}
@@ -60,7 +59,7 @@ function LongText({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={hint}
-        className="w-full resize-y rounded-xl px-3.5 py-3 text-[13px] font-[500] leading-relaxed outline-none transition-colors"
+        className="rounded-xl px-3.5 py-3 text-[13px] font-[500] leading-relaxed"
         style={{
           background: 'var(--bg-subtle)',
           border: `1px solid ${focused ? 'var(--brand)' : 'var(--border)'}`,
@@ -68,7 +67,7 @@ function LongText({
           minHeight: 92,
         }}
       />
-    </div>
+    </FormField>
   );
 }
 
@@ -123,24 +122,26 @@ export function ChipInput({
           </span>
         ))}
       </div>
-      <input
-        value={draft}
-        disabled={full}
-        onChange={(e) => {
-          // A comma is how people naturally separate these, so treat it as
-          // Enter rather than letting it become part of the value.
-          if (e.target.value.includes(',')) commit(e.target.value.replace(/,/g, ''));
-          else setDraft(e.target.value);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
-          if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
-        }}
-        onBlur={() => commit(draft)}
-        placeholder={full ? `That is the maximum of ${max}` : placeholder}
-        className="w-full rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560] outline-none disabled:opacity-60"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-      />
+      <FormField label={placeholder} labelHidden>
+        <TextInput
+          value={draft}
+          disabled={full}
+          onChange={(e) => {
+            // A comma is how people naturally separate these, so treat it as
+            // Enter rather than letting it become part of the value.
+            if (e.target.value.includes(',')) commit(e.target.value.replace(/,/g, ''));
+            else setDraft(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
+            if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
+          }}
+          onBlur={() => commit(draft)}
+          placeholder={full ? `That is the maximum of ${max}` : placeholder}
+          className="rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560] disabled:opacity-60"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+        />
+      </FormField>
     </div>
   );
 }
