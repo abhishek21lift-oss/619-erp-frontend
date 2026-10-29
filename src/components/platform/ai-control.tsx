@@ -30,6 +30,9 @@ import { Panel, SectionLabel, Reveal } from './console';
 import { CcBars, CcCard, CcDonut, CcStat } from './cc-viz';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
+import {
+  CheckboxField, FormField, TextInput, useStandaloneField,
+} from '@/components/ui/form';
 
 const RANGES = [7, 30, 90];
 
@@ -246,6 +249,15 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
     finally { setSaving(false); }
   };
 
+  const enforcementField = useStandaloneField('enforcement_enabled', settings.enforcement_enabled, (next) => {
+    save(
+      { enforcement_enabled: next },
+      next
+        ? 'Switch on enforcement?\n\nStudios already over their allowance will start being refused immediately.'
+        : undefined,
+    );
+  });
+
   const field = { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const;
 
   return (
@@ -254,41 +266,26 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
         <Settings2 size={13} style={{ color: 'var(--text-disabled)' }} /> Allowances
       </p>
 
-      <label className="mt-3 flex cursor-pointer items-start gap-2">
-        <input
-          type="checkbox" checked={settings.enforcement_enabled} className="mt-0.5 h-4 w-4"
-          onChange={(e) => save(
-            { enforcement_enabled: e.target.checked },
-            e.target.checked
-              ? 'Switch on enforcement?\n\nStudios already over their allowance will start being refused immediately.'
-              : undefined,
-          )}
-        />
-        <span>
-          <span className="text-[12.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>Enforce allowances</span>
-          <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Off means limits are recorded and reported but never refuse a request.
-          </span>
-        </span>
-      </label>
+      <CheckboxField
+        field={enforcementField}
+        label="Enforce allowances"
+        description="Off means limits are recorded and reported but never refuse a request."
+        className="mt-3"
+      />
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-            Default monthly tokens
-          </span>
-          <input
+        <FormField label="Default monthly tokens" density="compact" className="w-40">
+          <TextInput
             value={dflt} onChange={(e) => setDflt(e.target.value)} placeholder="unlimited"
-            inputMode="numeric" className="h-9 w-40 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
+            inputMode="numeric" className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Warn at %</span>
-          <input
+        </FormField>
+        <FormField label="Warn at %" density="compact" className="w-20">
+          <TextInput
             value={warn} onChange={(e) => setWarn(e.target.value)} inputMode="numeric"
-            className="h-9 w-20 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
+            className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
-        </label>
+        </FormField>
         <button
           onClick={() => save({
             default_monthly_tokens: dflt.trim() === '' ? null : Number(dflt),
@@ -389,17 +386,19 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
                 </span>
               </div>
               <p className="mb-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>{TIER_BLURB[tier]}</p>
-              <input
-                value={draft[tier]}
-                onChange={(e) => setDraft((d) => ({ ...d, [tier]: e.target.value }))}
-                placeholder={routing.from_env[tier] ?? routing.defaults[tier]}
-                spellCheck={false} autoComplete="off" aria-label={`${tier} model`}
-                className="w-full rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
-                style={{
-                  background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                  color: 'var(--text-primary)', fontFamily: 'ui-monospace, monospace',
-                }}
-              />
+              <FormField label={`${tier} model`} labelHidden>
+                <TextInput
+                  value={draft[tier]}
+                  onChange={(e) => setDraft((d) => ({ ...d, [tier]: e.target.value }))}
+                  placeholder={routing.from_env[tier] ?? routing.defaults[tier]}
+                  spellCheck={false} autoComplete="off"
+                  className="rounded-[10px] px-3 py-2 text-[12.5px]"
+                  style={{
+                    background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                    color: 'var(--text-primary)', fontFamily: 'ui-monospace, monospace',
+                  }}
+                />
+              </FormField>
               <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
                 In force now: <span style={{ fontFamily: 'ui-monospace, monospace' }}>{routing.effective[tier]}</span>
               </p>

@@ -56,8 +56,9 @@ describe('the accessible-name audit itself', () => {
     // that is asserted below with no threshold at all. This one only proves the
     // cross-boundary resolver still works at scale — so it is set well under
     // the current count, which keeps falling as wrappers are replaced by
-    // `FormField` outright rather than merely fixed.
-    expect(audit.wrapped).toBeGreaterThan(50);
+    // `FormField` outright rather than merely fixed. 50 → 35 after the platform
+    // centres' hand-labelled controls moved to FormField.
+    expect(audit.wrapped).toBeGreaterThan(35);
   });
 });
 
