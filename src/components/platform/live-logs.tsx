@@ -29,10 +29,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle, ArrowDownToLine, Database, Info, Pause, Play,
+  AlertTriangle, ArrowDownToLine, Database, Download, Info, Pause, Play,
   ScrollText, Search, Server, XCircle,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { apiBase, tenantAuthHeaders } from '@/lib/http';
 import { semantic, rgba } from '@/lib/palette';
 import type { LogLine, LogTail, LogHistory, LogHistoryStats, PersistedLogLine } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
@@ -149,6 +150,10 @@ export default function LiveLogs() {
   const [level, setLevel] = useState<string>('');
   const [query, setQuery] = useState('');
   const [paused, setPaused] = useState(false);
+  // Export window, independent of the stats strip: the strip answers "how
+  // noisy has it been", the export answers "give me these lines".
+  const [exportHours, setExportHours] = useState(24);
+  const [exporting, setExporting] = useState(false);
 
   const [tail, setTail] = useState<LogTail | null>(null);
   const [history, setHistory] = useState<LogHistory | null>(null);
@@ -214,6 +219,51 @@ export default function LiveLogs() {
       setLoadingOlder(false);
     }
   }, [history?.next_before, loadingOlder, level, query]);
+
+  /**
+   * The History window as a file.
+   *
+   * Raw fetch for the same reason the enrolment PDF uses one: http() parses
+   * JSON and this response is a Blob. The identity headers still have to
+   * travel, or an impersonating operator would export the wrong log.
+   */
+  const exportHistory = useCallback(async () => {
+    setExporting(true);
+    setError('');
+    try {
+      const qs = new URLSearchParams({ hours: String(exportHours) });
+      if (level) qs.set('level', level);
+      if (query) qs.set('q', query);
+
+      const res = await fetch(
+        `${apiBase()}/api/platform/command-center/logs/history/export?${qs.toString()}`,
+        { credentials: 'include', headers: { ...tenantAuthHeaders() } },
+      );
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+
+      const blob = await res.blob();
+      const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1]
+        ?? `command-center-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Revoked on the next tick: Safari has not started reading the blob when
+      // click() returns.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      if (res.headers.get('X-Export-Truncated') === 'true') {
+        setError('Export capped at 20,000 lines — shorten the window or add a filter for the rest.');
+      }
+    } catch (e: unknown) {
+      setError(errorMessage(e, 'Could not export the logs'));
+    } finally {
+      setExporting(false);
+    }
+  }, [exportHours, level, query]);
 
   useEffect(() => {
     let alive = true;
@@ -357,6 +407,34 @@ export default function LiveLogs() {
             style={{ color: 'var(--text-primary)' }}
           />
         </div>
+
+        {/* Export lives beside the filters because that is where the operator
+            decides what the file should contain. */}
+        {tab === 'history' && (
+          <>
+            <select
+              aria-label="Export window"
+              value={exportHours}
+              onChange={(e) => setExportHours(Number(e.target.value))}
+              className="rounded-[8px] px-2 py-1 text-[11px] font-[650]"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-tertiary)' }}
+            >
+              <option value={24}>Last 24h</option>
+              <option value={168}>Last 7 days</option>
+              <option value={720}>Last 30 days</option>
+            </select>
+            <button
+              type="button"
+              onClick={exportHistory}
+              disabled={exporting}
+              className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-[650] disabled:opacity-50"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              <Download size={11} />
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </button>
+          </>
+        )}
       </div>
 
       {error && (
