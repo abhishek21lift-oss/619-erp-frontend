@@ -393,7 +393,6 @@ function WAContent() {
                     onChange={(e) => setCustomMsg(e.target.value)}
                     placeholder="Write your custom message. Use {name} for member name, {date} for expiry date, {amount} for balance."
                     className="rounded-[10px] px-3.5 py-3 text-[13px] leading-relaxed"
-                    style={{ border: '1px solid #d1d5db', background: '#f9fafb', color: 'var(--text-primary)' }}
                   />
                 </FormField>
               ) : (
