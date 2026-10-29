@@ -619,7 +619,7 @@ describe('the hero', () => {
   it('carries the dashboard hero\'s shape and gradient', () => {
     expect(shell).toContain('rounded-[24px]');
     expect(shell).toContain('sm:rounded-[30px]');
-    expect(shell).toContain('linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)');
+    expect(shell).toContain('linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%)');
   });
 
   it('does not copy the infinite sheen sweep', () => {

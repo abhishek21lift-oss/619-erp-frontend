@@ -1,7 +1,8 @@
 /* ══════════════════════════════════════════════════════════════════
    MY PT STUDIO — DESIGN SYSTEM v6.0  ·  PREMIUM EDITION
-   Art direction: one restrained palette — royal blue for action, emerald
-   for success, amber for warning, red for error, slate for everything else.
+   Art direction: one restrained palette — indigo for action, emerald and
+   mint for success, amber for warning, orange for a warm highlight, red for
+   error, slate for everything else.
    Inspired by: Linear, Vercel Dashboard, Stripe, Superhuman.
    ══════════════════════════════════════════════════════════════════ */
 
@@ -28,19 +29,23 @@
   color-scheme: light;
 
   /* ════════════════════════════════════════════════════════════════════
-     THE PALETTE — five families, one meaning each. Everything else in this
+     THE PALETTE — eight families, one meaning each. Everything else in this
      file is an alias onto these, so a colour change happens once here and
      not in two hundred call sites.
 
-       blue     primary actions, links, highlights, selected state
+       blue     logo blue — the mark, and surfaces that must match it
+       indigo   actions, links, highlights, selected state
        emerald  success, completed, active
+       mint     positive accent — deltas, healthy charts
        amber    warning, pending, due soon
+       orange   warm accent — one highlight, never a warning
        red      error, expired, overdue, destructive
        gray     surfaces, borders, secondary text
 
      The TypeScript side of the same table is src/lib/palette.ts — the two
      must stay in step. Blue is the blue measured out of the logo artwork
-     (see src/lib/brand.ts), not a generic blue that looked close.
+     (see src/lib/brand.ts), not a generic blue that looked close. Indigo is
+     the one UI action colour; the logo blue stays on the mark.
      ════════════════════════════════════════════════════════════════════ */
   --blue-50:#F2F8FF; --blue-100:#E1EFFF; --blue-200:#B8D7FF; --blue-300:#7FB4FF;
   --blue-400:#3B8DF5; --blue-450:#0271EB; --blue-500:#0067E0; --blue-600:#0059CE;
@@ -49,21 +54,34 @@
      where the deep 500 only reaches 3.4:1. */
   --blue-on-dark:#1CA3F9;
 
+  --indigo-50:#EEF0FF; --indigo-100:#E0E3FF; --indigo-200:#C7CBFF; --indigo-300:#A5AAFB;
+  --indigo-400:#7F86F8; --indigo-500:#5B63F6; --indigo-600:#3F46D6; --indigo-700:#2F35A8;
+  --indigo-800:#252A82; --indigo-900:#1B1F5C;
+
   --emerald-50:#ECFDF5; --emerald-100:#D1FAE5; --emerald-200:#A7F3D0;
   --emerald-300:#6EE7B7; --emerald-400:#34D399; --emerald-500:#10B981;
   --emerald-600:#059669; --emerald-700:#047857; --emerald-800:#065F46; --emerald-900:#064E3B;
+
+  --mint-50:#E6F8F4; --mint-100:#C9F1E9; --mint-200:#9AE5D7; --mint-300:#63D6C1;
+  --mint-400:#3AC9AF; --mint-500:#20BFA4; --mint-600:#159B85; --mint-700:#117A6A;
+  --mint-800:#0D5C50; --mint-900:#093F37;
 
   --amber-50:#FFFBEB; --amber-100:#FEF3C7; --amber-200:#FDE68A; --amber-300:#FCD34D;
   --amber-400:#FBBF24; --amber-500:#F59E0B; --amber-600:#D97706; --amber-700:#B45309;
   --amber-800:#92400E; --amber-900:#78350F;
 
+  --orange-50:#FFF1E8; --orange-100:#FFE1CE; --orange-200:#FFC7A5; --orange-300:#FFA876;
+  --orange-400:#FF9557; --orange-500:#FF853D; --orange-600:#E56A24; --orange-700:#B8521A;
+  --orange-800:#8C3E14; --orange-900:#662D0F;
+
   --red-50:#FEF2F2; --red-100:#FEE2E2; --red-200:#FECACA; --red-300:#FCA5A5;
   --red-400:#F87171; --red-500:#EF4444; --red-600:#DC2626; --red-700:#B91C1C;
   --red-800:#991B1B; --red-900:#7F1D1D;
 
-  --gray-0:#FFFFFF; --gray-50:#F8FAFC; --gray-100:#F1F5F9; --gray-200:#E2E8F0;
-  --gray-300:#CBD5E1; --gray-400:#94A3B8; --gray-500:#64748B; --gray-600:#475569;
-  --gray-700:#334155; --gray-800:#1E293B; --gray-900:#0F172A;
+  --gray-0:#FFFFFF; --gray-25:#F7F9FD; --gray-50:#F8FAFC; --gray-100:#F1F5F9;
+  --gray-150:#E7EAF0; --gray-200:#E2E8F0; --gray-300:#CBD5E1; --gray-400:#94A3B8;
+  --gray-500:#64748B; --gray-550:#667085; --gray-600:#475569; --gray-700:#334155;
+  --gray-800:#1E293B; --gray-900:#0F172A; --gray-950:#0E1420;
 
   /* Height of the fixed mobile bottom nav (MobileBottomNav.tsx), excluding the
      home-indicator safe area. Every "clear the bottom nav" offset below is
@@ -79,23 +97,31 @@
      which is the hardware, not the design. */
   --bottom-nav-h: 46px;
 
-  /* ── Brand (blue) ─────────────────────────────────────────── */
-  --brand:        var(--blue-500);
-  --brand-hi:     #0067E0;
-  --brand-lo:     #0067E0;
-  --brand-mid:    #0067E0;
-  --brand-soft:   rgba(0,103,224,0.10);
-  --brand-glow:   rgba(0,103,224,0.22);
-  --brand-glow-2: rgba(0,103,224,0.08);
-  --brand-glow-soft: rgba(0,103,224,0.12);
-  --rgb-brand:    0 103 224;
-  --rgb-brand-hi: 96 165 250;
+  /* ── Brand / action (indigo) ──────────────────────────────── */
+  --brand:        var(--indigo-500);
+  --brand-hi:     var(--indigo-400);
+  --brand-lo:     var(--indigo-600);
+  --brand-mid:    var(--indigo-500);
+  --brand-soft:   rgba(91,99,246,0.10);
+  --brand-glow:   rgba(91,99,246,0.26);
+  --brand-glow-2: rgba(91,99,246,0.10);
+  --brand-glow-soft: rgba(91,99,246,0.14);
+  --rgb-brand:    91 99 246;
+  --rgb-brand-hi: 165 170 251;
+
+  /* Aurora semantic aliases. Pages should reach for these names; the raw
+     family ramps above are the implementation. */
+  --action:        var(--indigo-500);
+  --action-hover:  var(--indigo-600);
+  --action-text:   var(--indigo-600);
+  --action-soft:   var(--indigo-50);
+  --action-border: var(--indigo-200);
 
   /* ── Logo blue ────────────────────────────────────────────────
      The literal blue sampled from the MY PT STUDIO cube mark. Deliberately
-     separate from --brand (#0067E0): --brand is the in-product accent scale
-     used across charts, links and states, while this is the artwork's own
-     colour, for the few surfaces that must visibly match the logo. Don't
+     separate from --brand (now indigo): --brand is the in-product action
+     scale used across buttons, links and states, while this is the artwork's
+     own colour, for the few surfaces that must visibly match the logo. Don't
      substitute one for the other — they are close enough that mixing them
      reads as a bug, and far enough apart to notice. */
   --logo-blue:        #0067E0;
@@ -124,34 +150,39 @@
   --saffron-700: #B45309;
   --saffron-900: #78350F;
 
-  /* ── Accent (purple) ───────────────────────────────────────── */
-  --accent:        var(--blue-500);
-  --accent-hi:     var(--blue-450);
-  --accent-soft:   rgba(0,103,224,0.10);
+  /* ── Accent (warm / positive) ─────────────────────────────── */
+  --accent:        var(--indigo-600);
+  --accent-hi:     var(--indigo-400);
+  --accent-soft:   rgba(91,99,246,0.10);
+  --accent-warm:      var(--orange-500);
+  --accent-warm-soft: var(--orange-50);
+  --accent-warm-text: var(--orange-800);
+  --success-accent:      var(--mint-500);
+  --success-accent-soft: var(--mint-50);
+  --success-accent-text: var(--mint-700);
 
-  /* ── Surface palette (slate) ─────────────────────────────── */
-  --bg-canvas:     #F8FAFC;
+  /* ── Surface palette (Aurora) ────────────────────────────── */
+  --bg-canvas:     var(--gray-25);
   --bg-base:       #FFFFFF;
-  --bg-card:       rgba(255,255,255,0.8);
+  --bg-card:       #FFFFFF;
   --bg-white:      #FFFFFF;
   --bg-elevated:   #FFFFFF;
-  --bg-subtle:     #F1F5F9;
-  --bg-hover:      #F1F5F9;
+  --bg-subtle:     var(--gray-100);
+  --bg-hover:      var(--gray-100);
   --bg-overlay:    rgba(15,23,42,0.5);
 
   /* ── Borders ─────────────────────────────────────────────── */
-  --border:        rgba(15,23,42,0.08);
-  --border-2:      rgba(15,23,42,0.12);
-  --border-3:      rgba(15,23,42,0.20);
-  --border-focus:  var(--brand);
+  --border:        var(--gray-150);
+  --border-2:      var(--gray-200);
+  --border-3:      var(--gray-300);
+  --border-focus:  var(--action);
 
   /* ── Text ────────────────────────────────────────────────── */
-  --text-primary:   #0F172A;
-  --text-secondary: #1E293B;
-  /* gray-600, not gray-500. The lighter tone measured 4.34:1 on --bg-subtle —
-     just under AA — and muted text on a subtle-grey chip or panel is one of
-     the most common pairings in the app. See contrast.test.ts. */
-  --text-muted:     #475569;
+  --text-primary:   var(--gray-950);
+  --text-secondary: var(--gray-700);
+  /* gray-550, the Aurora muted tone. It still clears AA on --bg-subtle
+     (4.54:1); the lighter gray-500 does not. See contrast.test.ts. */
+  --text-muted:     var(--gray-550);
   --text-disabled:  #94A3B8;
   --text-inverse:   #FFFFFF;
   --text-brand:     var(--brand);
@@ -184,8 +215,8 @@
    * and only text moved.
    *
    * palette.test.ts still holds — these are existing tones of the existing
-   * five families, not new colours. contrast.test.ts recomputes every ratio
-   * from this file and fails below AA.
+   * families, not new colours. contrast.test.ts recomputes every ratio from
+   * this file and fails below AA.
    */
   --success:        var(--emerald-500);
   --success-text:   var(--emerald-700);   /* 5.01:1 worst case */
@@ -205,11 +236,12 @@
   --danger-soft:    rgba(239,68,68,0.10);
   --danger-bg:      rgba(239,68,68,0.10);
   --danger-border:  rgba(239,68,68,0.20);
-  --info:           var(--blue-500);
-  --info-lo:        #0067E0;
-  --info-soft:      rgba(0,103,224,0.10);
-  --info-bg:        rgba(0,103,224,0.10);
-  --info-border:    rgba(0,103,224,0.20);
+  --info:           var(--indigo-500);
+  --info-text:      var(--indigo-600);
+  --info-lo:        var(--indigo-600);
+  --info-soft:      rgba(91,99,246,0.10);
+  --info-bg:        rgba(91,99,246,0.10);
+  --info-border:    rgba(91,99,246,0.20);
   --neutral-bg:     rgba(100,116,139,0.07);
 
   /* ── Sidebar ─────────────────────────────────────────────── */
@@ -264,12 +296,24 @@
   --ease-out:    cubic-bezier(0, 0, 0.2, 1);
 
   /* ── Gradients ───────────────────────────────────────────── */
-  --gradient-brand:  linear-gradient(135deg, var(--brand-hi) 0%, var(--brand) 50%, var(--brand-lo) 100%);
-  --gradient-brand-h:linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-mid) 100%);
+  /* Neither stop is --brand-hi: that tone is for ink on dark grounds and
+     decorative strokes, and white labels on it measure 3.2:1. */
+  --gradient-brand:  linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 100%);
+  --gradient-brand-h:linear-gradient(135deg, var(--brand-lo) 0%, var(--indigo-700) 100%);
   --gradient-gold:   linear-gradient(135deg, var(--gold-hi) 0%, var(--gold) 60%, var(--gold-mid) 100%);
   --gradient-glass:  linear-gradient(135deg, rgba(255,255,255,0.76) 0%, rgba(255,255,255,0.36) 100%);
-  --gradient-canvas: linear-gradient(160deg, #F8FAFC 0%, #F1F5F9 100%);
-  --gradient-surface:linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.82) 100%);
+  --gradient-canvas: linear-gradient(160deg, var(--gray-25) 0%, var(--gray-100) 100%);
+  --gradient-surface:linear-gradient(180deg, #FFFFFF 0%, var(--gray-25) 100%);
+
+  /* The Aurora field: a saturated indigo hero, and the pale wash the studio
+     shell sits on. The wash is decorative only — body text never sits on it. */
+  --gradient-aurora: linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%);
+  --gradient-aurora-soft:
+    radial-gradient(46% 40% at 88% 0%, rgba(91,99,246,0.12), transparent 72%),
+    radial-gradient(34% 32% at 100% 22%, rgba(255,133,61,0.09), transparent 72%),
+    radial-gradient(40% 36% at 12% 100%, rgba(32,191,164,0.09), transparent 72%);
+  --shadow-aurora: 0 18px 40px -26px rgba(63,70,214,0.45);
+  --aurora-ink:    var(--indigo-700);
 
   /* ── Typography ──────────────────────────────────────────── */
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
@@ -283,17 +327,24 @@
 [data-theme="dark"], .dark {
   color-scheme: dark;
 
-  /* Brand (blue) */
-  --brand:        #0067E0;
-  --brand-hi:     #7FB4FF;
-  --brand-lo:     #0067E0;
-  --brand-mid:    #0067E0;
-  --brand-soft:   rgba(0,103,224,0.15);
-  --brand-glow:   rgba(0,103,224,0.30);
-  --brand-glow-2: rgba(0,103,224,0.10);
-  --brand-glow-soft: rgba(0,103,224,0.12);
-  --rgb-brand:    0 103 224;
-  --rgb-brand-hi: 147 197 253;
+  /* Brand / action (indigo) */
+  --brand:        var(--indigo-500);
+  --brand-hi:     var(--indigo-300);
+  --brand-lo:     var(--indigo-600);
+  --brand-mid:    var(--indigo-500);
+  --brand-soft:   rgba(91,99,246,0.18);
+  --brand-glow:   rgba(91,99,246,0.34);
+  --brand-glow-2: rgba(91,99,246,0.14);
+  --brand-glow-soft: rgba(91,99,246,0.18);
+  --rgb-brand:    91 99 246;
+  --rgb-brand-hi: 165 170 251;
+
+  /* Aurora semantic aliases, dark parity. */
+  --action:        var(--indigo-500);
+  --action-hover:  var(--indigo-400);
+  --action-text:   var(--indigo-300);
+  --action-soft:   rgba(91,99,246,0.16);
+  --action-border: rgba(91,99,246,0.32);
 
   /* Logo blue — #0067E0 is too dim to read as a glyph on the slate-900
      canvas, so the foreground lifts while the plate stays the logo hue. */
@@ -308,15 +359,21 @@
   --gold-soft:     rgba(245,158,11,0.15);
   --gold-glow:     rgba(245,158,11,0.24);
 
-  /* Accent (purple) */
-  --accent:        #0067E0;
-  --accent-hi:     #7FB4FF;
-  --accent-soft:   rgba(0,103,224,0.15);
+  /* Accent (warm / positive) */
+  --accent:        var(--indigo-400);
+  --accent-hi:     var(--indigo-300);
+  --accent-soft:   rgba(91,99,246,0.18);
+  --accent-warm:      var(--orange-400);
+  --accent-warm-soft: rgba(255,133,61,0.16);
+  --accent-warm-text: var(--orange-300);
+  --success-accent:      var(--mint-400);
+  --success-accent-soft: rgba(32,191,164,0.16);
+  --success-accent-text: var(--mint-300);
 
   /* Surface palette (slate) */
   --bg-canvas:     #0F172A;
   --bg-base:       #1E293B;
-  --bg-card:       rgba(30,41,59,0.7);
+  --bg-card:       #1E293B;
   --bg-white:      #1E293B;
   --bg-elevated:   #1E293B;
   --bg-subtle:     #334155;
@@ -361,11 +418,12 @@
   --danger-soft:    rgba(239,68,68,0.15);
   --danger-bg:      rgba(239,68,68,0.15);
   --danger-border:  rgba(239,68,68,0.25);
-  --info:           #0067E0;
-  --info-lo:        #7FB4FF;
-  --info-soft:      rgba(0,103,224,0.15);
-  --info-bg:        rgba(0,103,224,0.15);
-  --info-border:    rgba(0,103,224,0.25);
+  --info:           var(--indigo-500);
+  --info-text:      var(--indigo-300);
+  --info-lo:        var(--indigo-400);
+  --info-soft:      rgba(91,99,246,0.18);
+  --info-bg:        rgba(91,99,246,0.18);
+  --info-border:    rgba(91,99,246,0.30);
   --neutral-bg:     rgba(255,255,255,0.06);
 
   /* Sidebar */
@@ -401,12 +459,21 @@
   --glass-shadow: 0 8px 40px rgba(0,0,0,0.52);
   --glass-ring:   rgba(255,255,255,0.08);
 
-  --gradient-brand:  linear-gradient(135deg, var(--brand-hi) 0%, var(--brand) 50%, var(--brand-lo) 100%);
-  --gradient-brand-h:linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-mid) 100%);
+  /* Neither stop is --brand-hi: that tone is for ink on dark grounds and
+     decorative strokes, and white labels on it measure 3.2:1. */
+  --gradient-brand:  linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 100%);
+  --gradient-brand-h:linear-gradient(135deg, var(--brand-lo) 0%, var(--indigo-700) 100%);
   --gradient-gold:   linear-gradient(135deg, var(--gold-hi) 0%, var(--gold) 50%, var(--gold-mid) 100%);
   --gradient-glass:  linear-gradient(135deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%);
   --gradient-canvas: linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
-  --gradient-surface:linear-gradient(180deg, rgba(30,41,59,0.96) 0%, rgba(15,23,42,0.88) 100%);
+  --gradient-surface:linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  --gradient-aurora: linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%);
+  --gradient-aurora-soft:
+    radial-gradient(46% 40% at 88% 0%, rgba(91,99,246,0.16), transparent 72%),
+    radial-gradient(34% 32% at 100% 22%, rgba(255,133,61,0.08), transparent 72%),
+    radial-gradient(40% 36% at 12% 100%, rgba(32,191,164,0.08), transparent 72%);
+  --shadow-aurora: 0 18px 40px -26px rgba(91,99,246,0.55);
+  --aurora-ink:    var(--indigo-300);
 }
 
 /* ════════════════════════════════════════════════════════════════════

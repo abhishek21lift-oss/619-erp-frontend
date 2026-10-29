@@ -397,19 +397,19 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
       className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
       style={{
         background:
-          'radial-gradient(130% 150% at 50% -25%, #0050AD 0%, transparent 55%),' +
-          'linear-gradient(158deg, #0F172A 0%, #0050AD 42%, #0F172A 72%, #0050AD 100%)',
+          'radial-gradient(130% 150% at 50% -25%, #7F86F8 0%, transparent 58%),' +
+          'linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%)',
         boxShadow:
-          '0 24px 64px -14px rgba(15,23,42,0.78), 0 8px 26px rgba(0,103,224,0.22),' +
-          'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 1px rgba(251,191,36,0.10)',
+          '0 24px 64px -14px rgba(47,53,168,0.55), 0 8px 26px rgba(91,99,246,0.24),' +
+          'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(255,133,61,0.10)',
       }}
     >
       {/* Decorative layers */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-20 -right-14 h-60 w-60 rounded-full opacity-35"
-          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }} />
+          style={{ background: 'radial-gradient(circle, #FF853D 0%, transparent 70%)', filter: 'blur(46px)' }} />
         <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(54px)' }} />
+          style={{ background: 'radial-gradient(circle, #20BFA4 0%, transparent 70%)', filter: 'blur(54px)' }} />
         <svg className="absolute inset-0 w-full h-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
           <defs><pattern id="hh-g" width="34" height="34" patternUnits="userSpaceOnUse">
             <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />

@@ -41,7 +41,7 @@ import { errorMessage } from '@/lib/forms/errors';
 import { fmtDateMedium, fmtDayMonth, fmtMoney } from '@/lib/format';
 import { whatsAppHref } from '@/lib/phone';
 import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
-import { tones, gradient, navyHero, type Tone } from '@/components/profile/profileTheme';
+import { tones, gradient, auroraHero, type Tone } from '@/components/profile/profileTheme';
 import { hasPtTerm } from '@/lib/pt-term';
 import type { ScreeningSummary } from '@/lib/screening';
 import { termEnded } from '@/lib/term-dates';
@@ -694,17 +694,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="relative mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
                 style={{
-                  background: `${navyHero.crown}, ${navyHero.base}`,
-                  boxShadow: navyHero.shadow,
+                  background: `${auroraHero.crown}, ${auroraHero.base}`,
+                  boxShadow: auroraHero.shadow,
                 }}
               >
                 {/* Decoration behind the content, matching the house hero. */}
                 <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                   {/* The house's two lights, blurred behind the content. */}
                   <div className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
-                    style={{ background: `radial-gradient(circle, ${navyHero.glowGold} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
+                    style={{ background: `radial-gradient(circle, ${auroraHero.glowWarm} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
                   <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-                    style={{ background: `radial-gradient(circle, ${navyHero.glowBlue} 0%, transparent 70%)`, filter: 'blur(54px)' }} />
+                    style={{ background: `radial-gradient(circle, ${auroraHero.glowCool} 0%, transparent 70%)`, filter: 'blur(54px)' }} />
                   <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <pattern id="cp-grid" width="34" height="34" patternUnits="userSpaceOnUse">

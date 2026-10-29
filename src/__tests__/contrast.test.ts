@@ -107,6 +107,8 @@ const AA = 4.5;
 const TEXT_TOKENS = [
   'text-primary', 'text-secondary', 'text-muted',
   'success-text', 'warning-text', 'danger-text',
+  // Aurora accents used as text/icon ink on their own soft chips.
+  'info-text', 'action-text', 'success-accent-text', 'accent-warm-text',
 ];
 
 // --text-disabled is deliberately absent. WCAG 1.4.3 exempts text that is part

@@ -1,9 +1,7 @@
 // frontend/src/components/ui/KpiCard.tsx
 //
-// PREMIUM KPI CARD — Colorful gradient backgrounds, glassmorphic icon,
-// animated shimmer, deep glow shadow. Each accent has its own vibrant theme.
-//
-// Designed to look like premium SaaS dashboards (Linear, Stripe, Vercel).
+// A white surface with one tinted icon chip and a tinted delta. The colour is
+// information, not decoration: the figure stays the loudest thing on the card.
 
 'use client';
 
@@ -27,66 +25,20 @@ type Accent =
   | 'orange'
   | 'slate';
 
-const ACCENTS: Record<
-  Accent,
-  {
-    bg: string;        // full gradient background
-    glow: string;      // shadow glow color
-    iconBg: string;    // glassmorphic icon background
-    /** Decorative glow, as "R,G,B" — a VALUE not a class, because it is
-     *  composed into a background-image rather than applied to an element. */
-    decoRgb: string;
-    decoAlpha: number;
-  }
-> = {
-  blue: {
-    bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]',
-    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decoRgb: '147,197,253', decoAlpha: 0.3,
-  },
-  emerald: {
-    bg: 'bg-gradient-to-br from-[#10B981] via-[#059669] to-[#047857]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
-    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decoRgb: '110,231,183', decoAlpha: 0.3,
-  },
-  amber: {
-    bg: 'bg-gradient-to-br from-[#F59E0B] via-[#D97706] to-[#B45309]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
-    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decoRgb: '252,211,77', decoAlpha: 0.3,
-  },
-  cyan: {
-    bg: 'bg-gradient-to-br from-[#0067E0] via-[#0059CE] to-[#0059CE]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]',
-    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decoRgb: '103,232,249', decoAlpha: 0.3,
-  },
-  purple: {
-    bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
-    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decoRgb: '196,181,253', decoAlpha: 0.3,
-  },
-  coral: {
-    bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]',
-    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decoRgb: '252,165,165', decoAlpha: 0.3,
-  },
-  graphite: {
-    bg: 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]',
-    iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25',
-    decoRgb: '100,116,139', decoAlpha: 0.2,
-  },
+const ACCENTS: Record<Accent, { chip: string; ink: string }> = {
+  blue:     { chip: 'var(--info-soft)', ink: 'var(--info-text)' },
+  emerald:  { chip: 'var(--success-soft)', ink: 'var(--success-text)' },
+  amber:    { chip: 'var(--warning-soft)', ink: 'var(--warning-text)' },
+  cyan:     { chip: 'var(--success-accent-soft)', ink: 'var(--success-accent-text)' },
+  purple:   { chip: 'var(--info-soft)', ink: 'var(--info-text)' },
+  coral:    { chip: 'var(--danger-soft)', ink: 'var(--danger-text)' },
+  graphite: { chip: 'var(--bg-subtle)', ink: 'var(--text-secondary)' },
   // backward-compat aliases
-  rose:   { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '253,164,175', decoAlpha: 0.3 },
-  sky:    { bg: 'bg-gradient-to-br from-[#0067E0] via-[#0059CE] to-[#0059CE]', glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '103,232,249', decoAlpha: 0.3 },
-  violet: { bg: 'bg-gradient-to-br from-[#0067E0] via-[#0067E0] to-[#0067E0]', glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '196,181,253', decoAlpha: 0.3 },
-  orange: { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decoRgb: '252,165,165', decoAlpha: 0.3 },
-  slate:  { bg: 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]', glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]', iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25', decoRgb: '100,116,139', decoAlpha: 0.2 },
+  rose:     { chip: 'var(--danger-soft)', ink: 'var(--danger-text)' },
+  sky:      { chip: 'var(--info-soft)', ink: 'var(--info-text)' },
+  violet:   { chip: 'var(--info-soft)', ink: 'var(--info-text)' },
+  orange:   { chip: 'var(--accent-warm-soft)', ink: 'var(--accent-warm-text)' },
+  slate:    { chip: 'var(--bg-subtle)', ink: 'var(--text-secondary)' },
 };
 
 export interface KpiCardProps {
@@ -123,57 +75,22 @@ export function KpiCard({
   const inner = (
     <article
       className={cn(
-        // Base
-        'group relative overflow-hidden rounded-2xl p-5 text-white transition-all duration-300',
-        // Vibrant gradient background
-        tone.bg,
-        // Glow shadow
-        tone.glow,
-        // Hover lift
-        href && 'cursor-pointer hover:-translate-y-1 hover:shadow-2xl focus-within:ring-2 focus-within:ring-white/50',
+        'group relative overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--bg-card)] p-4',
+        'shadow-[var(--shadow-card)] transition-all duration-200',
+        href && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] focus-within:ring-2 focus-within:ring-[var(--action)]/40',
         className,
       )}
     >
-      {/* Decorative corner glows.
-          ONE unfiltered layer, not two blurred circles. `filter: blur()`
-          promotes a child to its own compositing layer, and WebKit then applies
-          the card's `overflow-hidden` + `rounded-2xl` clip to that layer as a
-          RECTANGLE — so the blob's square corner paints outside the card's
-          rounded corner. Reported on iOS against the client profile card, which
-          carries the identical pattern.
-          A gradient needs no filter, so nothing is promoted and the clip holds.
-          Radii fitted against the old rendering by pixel comparison: 140px,
-          mean difference under 0.5/255 for both blobs. */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: [
-            `radial-gradient(circle 140px at calc(100% - 32px) 32px, rgba(${tone.decoRgb},${tone.decoAlpha}), transparent 70%)`,
-            `radial-gradient(circle 140px at 16px calc(100% - 16px), rgba(${tone.decoRgb},${tone.decoAlpha / 2}), transparent 70%)`,
-          ].join(', '),
-        }}
-        aria-hidden
-      />
-
-      {/* Animated shimmer overlay (only on hover) */}
-      <div
-        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
-        aria-hidden
-      />
-
-      {/* Content */}
       <div className="relative z-10">
         {/* Header: label + icon */}
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
             {label}
           </p>
           {icon && (
             <span
-              className={cn(
-                'grid h-10 w-10 place-items-center rounded-xl text-white shadow-inner',
-                tone.iconBg,
-              )}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px]"
+              style={{ background: tone.chip, color: tone.ink }}
               aria-hidden
             >
               {icon}
@@ -182,13 +99,13 @@ export function KpiCard({
         </div>
 
         {/* Big value + delta */}
-        <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="mt-2.5 flex items-end justify-between gap-3">
           {/* Wraps rather than truncating. A clipped "₹1,23,4…" is worse than
               a wrapped one: the card exists to state the figure. clamp() keeps
               mobile cards legible without shrinking desktop ones. */}
-          <p className="min-w-0 text-[clamp(1.5rem,5vw,2rem)] font-bold leading-tight tabular-nums tracking-tight text-white [overflow-wrap:anywhere] drop-shadow-xs">
+          <p className="min-w-0 text-[clamp(1.45rem,4.6vw,1.85rem)] font-bold leading-tight tabular-nums tracking-tight text-[var(--text-primary)] [overflow-wrap:anywhere]">
             {loading ? (
-              <span className="inline-block h-8 w-28 animate-pulse rounded bg-white/30" />
+              <span className="inline-block h-7 w-24 animate-pulse rounded bg-[var(--bg-subtle)]" />
             ) : (
               value
             )}
@@ -200,7 +117,7 @@ export function KpiCard({
 
         {/* Hint line */}
         {hint && (
-          <p className="mt-2 truncate text-xs font-medium text-white/80">
+          <p className="mt-1.5 truncate text-[11.5px] font-medium text-[var(--text-muted)]">
             {hint}
           </p>
         )}
@@ -223,10 +140,10 @@ function DeltaPill({ delta, deltaIs }: { delta: number; deltaIs: 'good' | 'bad' 
   return (
     <span
       className={cn(
-        'inline-flex flex-shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold backdrop-blur-md ring-1',
+        'inline-flex flex-shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold',
         isGreen
-          ? 'bg-emerald-400/30 text-white ring-emerald-200/50'
-          : 'bg-red-400/30 text-white ring-red-200/50',
+          ? 'bg-[var(--success-accent-soft)] text-[var(--success-accent-text)]'
+          : 'bg-[var(--danger-soft)] text-[var(--danger-text)]',
       )}
       aria-label={`Change ${positive ? 'up' : 'down'} ${Math.abs(delta).toFixed(1)} percent`}
     >
