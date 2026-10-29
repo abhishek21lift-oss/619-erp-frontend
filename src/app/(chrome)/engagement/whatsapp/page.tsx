@@ -32,6 +32,7 @@ import type { WhatsAppStatus } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { whatsAppHref, toWhatsAppNumber } from '@/lib/phone';
+import { FormField, TextArea, TextInput } from '@/components/ui/form';
 
 interface Member {
   id: string;
@@ -249,13 +250,15 @@ function WAContent() {
             <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3">
               <div className="flex min-w-[180px] flex-1 items-center gap-2 rounded-[10px] border border-gray-300 bg-white px-3 py-2">
                 <Search size={14} className="text-gray-400" />
-                <input
-                  aria-label="Search members"
-                  placeholder="Search members…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="min-w-0 flex-1 border-none bg-transparent text-[13px] font-medium text-gray-900 outline-none"
-                />
+                <FormField label="Search members" labelHidden className="min-w-0 flex-1">
+                  <TextInput
+                    placeholder="Search members…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="border-none bg-transparent px-0 text-[13px] font-medium"
+                    style={{ minHeight: 0, padding: 0, background: 'transparent', border: 'none', color: 'var(--text-primary)' }}
+                  />
+                </FormField>
                 {search && (
                   <button onClick={() => setSearch('')} aria-label="Clear search" className="text-gray-400 hover:text-gray-600">
                     <X size={13} />
@@ -383,13 +386,16 @@ function WAContent() {
                 ))}
               </div>
               {template.id === 'custom' ? (
-                <textarea
-                  rows={6}
-                  value={customMsg}
-                  onChange={(e) => setCustomMsg(e.target.value)}
-                  placeholder="Write your custom message. Use {name} for member name, {date} for expiry date, {amount} for balance."
-                  className="w-full resize-y rounded-[10px] border border-gray-300 bg-gray-50 px-3.5 py-3 text-[13px] leading-relaxed text-gray-900 outline-none focus:border-blue-500"
-                />
+                <FormField label="Custom message" labelHidden>
+                  <TextArea
+                    rows={6}
+                    value={customMsg}
+                    onChange={(e) => setCustomMsg(e.target.value)}
+                    placeholder="Write your custom message. Use {name} for member name, {date} for expiry date, {amount} for balance."
+                    className="rounded-[10px] px-3.5 py-3 text-[13px] leading-relaxed"
+                    style={{ border: '1px solid #d1d5db', background: '#f9fafb', color: 'var(--text-primary)' }}
+                  />
+                </FormField>
               ) : (
                 <div className="whitespace-pre-wrap rounded-[10px] border border-gray-200 bg-gray-50 p-3.5 text-[13px] leading-relaxed text-gray-700">
                   {template.body}

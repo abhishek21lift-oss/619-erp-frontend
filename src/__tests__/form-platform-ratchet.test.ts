@@ -100,11 +100,12 @@ const CEILING = {
   // 127 → 115 when the dead ModuleWorkspace cluster was deleted, then 115 → 93
   // when FinanceTab, OrgModals and StudiosTab moved to FormField, then 93 → 83
   // for strength-tracking and the builder's ExerciseCard, then 83 → 67 for the
-  // four P2 platform centres, then 67 → 64 for settings/profile. Lower again
-  // when the next phase lands; never raise.
-  unjustified: 64,
+  // four P2 platform centres, then 67 → 64 for settings/profile, then 64 → 60
+  // for the engagement feedback and WhatsApp controls. Lower again when the
+  // next phase lands; never raise.
+  unjustified: 60,
   p0Unjustified: 0,
-  p1Unjustified: 33,
+  p1Unjustified: 29,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -158,7 +159,7 @@ const CEILING = {
 // counts forms that exist; deleting a form legitimately lowers it, and the
 // ratchet still catches a form that quietly stops using the design system.
 const FLOOR = {
-  platformControls: 486,
+  platformControls: 490,
   /** Forms whose errors reach the canonical mapper. */
   errorPlatform: 55,
   /** Forms bound to a named canonical schema. */
@@ -179,7 +180,9 @@ describe('the audit measures the tree', () => {
     // has to prove is that the script read the tree at all.
     expect(a.totals.files).toBeGreaterThan(100);
     expect(a.rows.length).toBe(a.totals.files);
-    expect(a.totals.controls).toBeGreaterThan(150);
+    // The tree is populated. Native controls fall as the migration lands, so
+    // the floor counts the design-system controls alongside them.
+    expect(a.totals.controls + a.totals.platformControls).toBeGreaterThan(150);
     expect(a.totals.platformControls).toBeGreaterThan(150);
   });
 

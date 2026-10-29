@@ -6,6 +6,7 @@ import { PageContainer, PageHero } from '@/components/ui';
 import { Star, MessageSquare, ThumbsUp, ThumbsDown, Clock, CheckCircle2, User, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { FormField, SelectInput, TextInput } from '@/components/ui/form';
 
 interface Feedback { id: string; member: string; trainer?: string; rating: number; category: string; message: string; status: 'open' | 'resolved' | 'in_progress'; date: string; sentiment: 'positive' | 'neutral' | 'negative'; }
 
@@ -113,10 +114,12 @@ function FeedbackContent() {
                 background: cat === c ? 'linear-gradient(135deg, #0067e0, #0059ce)' : '#ffffff', color: cat === c ? '#fff' : '#334155' }}>{c}</button>
           ))}
         </div>
-        <select aria-label="Filter by status" value={statusF} onChange={e => setStatusF(e.target.value as any)}
-          style={{ maxWidth: 160, width: '100%', border: '1px solid #cbd5e1', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', background: '#ffffff', fontFamily: 'inherit' }}>
-          <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
-        </select>
+        <FormField label="Filter by status" labelHidden className="w-full max-w-[160px]">
+          <SelectInput value={statusF} onChange={e => setStatusF(e.target.value as any)}
+            style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', background: '#ffffff', fontFamily: 'inherit' }}>
+            <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
+          </SelectInput>
+        </FormField>
       </m.div>
 
       {/* ── FEEDBACK LIST ── */}
@@ -158,8 +161,10 @@ function FeedbackContent() {
                     </div>
                     {showReply === f.id && (
                       <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
-                        <input value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply to the member…"
-                          style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', fontFamily: 'inherit' }} />
+                        <FormField label="Reply to the member" labelHidden className="flex-1">
+                          <TextInput value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply to the member…"
+                            style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', fontFamily: 'inherit' }} />
+                        </FormField>
                         <button onClick={() => handleReply(f.id)}
                           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,103,224,0.3)' }}>
                           Send &amp; Resolve
