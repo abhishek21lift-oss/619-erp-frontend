@@ -50,6 +50,17 @@
 
 export const JUSTIFIED = {
 
+  'src/app/(chrome)/engagement/whatsapp/page.tsx': {
+    allow: 1,
+    reason:
+      'The one native control is the per-member selection checkbox inside a ' +
+      'row that is itself role="button" with aria-pressed and an accessible ' +
+      'name. CheckboxField renders control-then-caption, which would repeat ' +
+      'the member name inside the row and break the row-click affordance; the ' +
+      'checkbox already carries aria-label and the row handles click, Enter ' +
+      'and Space.',
+  },
+
   'src/app/(chrome)/finance/verify-payments/page.tsx': {
     allow: 2,
     reason:
