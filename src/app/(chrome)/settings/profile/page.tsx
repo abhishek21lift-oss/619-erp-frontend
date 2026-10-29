@@ -54,7 +54,8 @@ import {
   PROFILE_LIMITS, type ProfileIssueMap,
 } from '@/lib/forms/schemas/profile';
 import {
-  FieldSurface, TextField, DateFieldControl, useStandaloneField,
+  FieldSurface, FormField, TextField, TextInput, DateFieldControl, SelectInput,
+  useStandaloneField,
 } from '@/components/ui/form';
 import { checkFile, AVATAR_RULES, GALLERY_RULES, LOGO_RULES } from '@/lib/forms/files';
 import UpiSettingsPanel from '@/components/payments/UpiSettingsPanel';
@@ -384,23 +385,25 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
           </span>
         ))}
       </div>
-      <input
-        value={draft}
-        onChange={(e) => {
-          // A comma is how people naturally separate these, so treat it as Enter
-          // rather than letting it become part of the tag.
-          if (e.target.value.includes(',')) commit(e.target.value.replace(/,/g, ''));
-          else setDraft(e.target.value);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
-          if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
-        }}
-        onBlur={() => commit(draft)}
-        placeholder="Add a specialisation and press Enter"
-        className="w-full rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560] outline-none"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-      />
+      <FormField label="Add a specialisation" labelHidden>
+        <TextInput
+          value={draft}
+          onChange={(e) => {
+            // A comma is how people naturally separate these, so treat it as Enter
+            // rather than letting it become part of the tag.
+            if (e.target.value.includes(',')) commit(e.target.value.replace(/,/g, ''));
+            else setDraft(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
+            if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
+          }}
+          onBlur={() => commit(draft)}
+          placeholder="Add a specialisation and press Enter"
+          className="rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560]"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+        />
+      </FormField>
     </div>
   );
 }
@@ -544,14 +547,16 @@ function SelectRow({ label, description, value, options, onChange }: {
 }) {
   return (
     <SettingRow label={label} description={description}>
-      <select aria-label={label}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="rounded-[10px] px-2.5 py-1.5 text-[12px] font-[660] outline-none"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-      >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      <FormField label={label} labelHidden>
+        <SelectInput
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="rounded-[10px] px-2.5 py-1.5 text-[12px] font-[660]"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+        >
+          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </SelectInput>
+      </FormField>
     </SettingRow>
   );
 }
@@ -1645,15 +1650,14 @@ function ProfilePageInner() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FloatInput tone="brand" upperLifted label="Job title" value={jobTitle} onChange={setJobTitle} />
                     <div>
-                      <label htmlFor="coaching-since" className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                        Coaching since
-                      </label>
-                      <input id="coaching-since"
-                        type="date" value={experienceSince}
-                        onChange={(e) => setExperienceSince(e.target.value)}
-                        className="w-full rounded-xl px-3.5 py-3 text-[13px] font-[560] outline-none"
-                        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                      />
+                      <FormField label="Coaching since">
+                        <TextInput
+                          type="date" value={experienceSince}
+                          onChange={(e) => setExperienceSince(e.target.value)}
+                          className="rounded-xl px-3.5 py-3 text-[13px] font-[560]"
+                          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                        />
+                      </FormField>
                       {/* A date is stored and the duration derived, so this
                           never silently goes stale the way a typed "8 years"
                           would. */}

@@ -182,7 +182,6 @@ describe('captions that had to become labels', () => {
   // would fail on code whose labelling got strictly better.
   const converted: [string, string][] = [
     ['app/(chrome)/pt-os/clients/[id]/workout-log/[sessionId]/page.tsx', 'wl-day'],
-    ['app/(chrome)/settings/profile/page.tsx', 'coaching-since'],
   ];
 
   it.each(converted)('%s: the label for %s is still block-level', (file, id) => {
