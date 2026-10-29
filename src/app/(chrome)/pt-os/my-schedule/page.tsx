@@ -167,7 +167,7 @@ function DayRow({
                 className="inline-flex items-center gap-1 rounded-[7px] px-1.5 py-0.5 text-[11px] font-[800] tabular-nums"
                 style={{
                   background: meta ? meta.bg : 'var(--brand-soft)',
-                  color: meta ? meta.color : 'var(--brand-hi)',
+                  color: meta ? meta.color : 'var(--action-text)',
                 }}
               >
                 <Clock size={10} aria-hidden />
@@ -189,7 +189,7 @@ function DayRow({
             <a
               href={`tel:${booking.client_mobile}`}
               className="mt-1 -ml-1.5 inline-flex h-11 items-center gap-1.5 rounded-[10px] px-1.5 text-[12px] font-[650]"
-              style={{ color: 'var(--brand-hi)' }}
+              style={{ color: 'var(--action-text)' }}
             >
               <Phone size={12} aria-hidden />
               {booking.client_mobile}

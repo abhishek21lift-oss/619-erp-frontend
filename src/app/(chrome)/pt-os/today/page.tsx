@@ -335,7 +335,7 @@ function ClientRow({
               className="mt-[2px] inline-flex shrink-0 items-center gap-1 rounded-[7px] px-1.5 py-0.5 text-[11px] font-[800] tabular-nums"
               style={{
                 background: c.source === 'booked' ? 'var(--brand-soft)' : 'var(--bg-subtle)',
-                color: c.source === 'booked' ? 'var(--brand-hi)' : 'var(--text-secondary)',
+                color: c.source === 'booked' ? 'var(--action-text)' : 'var(--text-secondary)',
               }}
             >
               {c.source === 'booked' ? <CalendarCheck size={10} aria-hidden /> : <Clock size={10} aria-hidden />}

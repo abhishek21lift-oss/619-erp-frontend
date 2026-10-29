@@ -148,7 +148,9 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 // maroon/crimson/purple/rose/cyan, which stopped being useful the moment five
 // of them resolved to the same blue.
 const C = {
-  primary:    palette.blue[500],
+  // Indigo, not the logo blue: the mark keeps #0067E0, the app's action colour
+  // is the indigo ramp. Every accent on this page reads this one value.
+  primary:    palette.indigo[500],
   success:    palette.emerald[500],
   warning:    palette.amber[500],
   danger:     palette.red[600],
@@ -162,20 +164,6 @@ const C = {
 const TRAINER_COLORS = identity;
 
 /**
- * One hue per KPI tile.
- *
- * Four metrics that are merely DIFFERENT, not good or bad, so this walks the
- * blue ramp and borrows emerald once for the money card, where "success"
- * genuinely is the meaning. Nothing here takes amber or red: those mean
- * pending and overdue everywhere else in the app, and Commission wearing the
- * overdue red told a studio their own payroll was a problem.
- *
- * Validated as a categorical set against the light surface — worst adjacent
- * pair ΔE 28.8 (deutan) and 30.5 (normal vision), well clear of the floors.
- * Active Share's step falls under 3:1 against the card, which is why the hue
- * never carries meaning alone: every tile shows its label in ink beside it.
- */
-/**
  * The KPI sparkline, loaded on demand.
  *
  * recharts is ~100KB and this is the home screen, which did not import it at
@@ -188,61 +176,7 @@ const KpiSparkline = dynamic(() => import('@/components/dashboards/KpiSparkline'
   loading: () => <div className="h-8" />,
 });
 
-/**
- * The four tiles' colour, as a gradient each.
- *
- * ── Why these four, and why they are deep ─────────────────────────────────
- *
- * Three of the four used to be blue — blue[500], blue[700] and blue[300] —
- * with a single green among them, each painted as a pale wash of itself
- * behind dark ink. Four near-identical pale tiles in a two-by-two grid is a
- * spreadsheet with rounded corners, which is what a studio was looking at.
- *
- * They are saturated tiles now, one colour family each, with white on them.
- * That inverts figure and ground: the card carries the colour and the number
- * sits on it, rather than the colour hinting at the edges of a white box.
- *
- * ── Why every stop is a 500 or darker ────────────────────────────────────
- *
- * Because white has to be legible on the LIGHTEST point of each gradient, and
- * that rules out most of the vivid end of two of these ramps. Measured, white
- * on the lightest stop of each:
- *
- *   clients      blue[500]     5.23:1
- *   revenue      emerald[700]  5.48:1
- *   commission   amber[700]    5.02:1
- *   activeShare  blue[800]    10.19:1
- *
- * Each gradient ends one step down rather than at the 900: emerald[900] and
- * amber[900] are dark enough that the tile reads as brown or bottle-green
- * mud at the foot instead of as the colour it is named for.
- *
- * emerald[500] and amber[500] are the colours these two "should" be — a
- * brighter green and a proper saffron — and they carry white at 2.54:1 and
- * 2.15:1. A tile nobody can read is not a more colourful tile.
- *
- * Commission moves off blue entirely, to amber: it is the trainer's own
- * earnings, and amber is this app's warning family only where it labels a
- * STATUS. Here it is one of four categorical hues, always accompanied by its
- * text label, which is the condition the palette sets on using a family
- * outside its semantic meaning.
- *
- * Active Share keeps blue but takes the deep end of the ramp, so the two blue
- * tiles are a royal blue and a near-navy rather than two shades of the same
- * card. They sit diagonally in the 2×2 grid, never side by side.
- */
-const KPI = {
-  clients:     { from: palette.blue[500],    to: palette.blue[700],    glow: palette.blue[500] },
-  revenue:     { from: palette.emerald[700], to: palette.emerald[800], glow: palette.emerald[700] },
-  activeShare: { from: palette.blue[800],    to: palette.blue[900],    glow: palette.blue[800] },
-} as const;
 
-type KpiTone = (typeof KPI)[keyof typeof KPI];
-
-/** The tones, for the contrast guard in dashboard-kpis.test.tsx. Exported
- *  rather than duplicated there: a test holding its own copy of these hex
- *  values would pass forever while the tiles drifted away from it. */
-export const KPI_TONES_FOR_TEST = KPI;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -280,21 +214,19 @@ function greeting() {
 /**
  * Month-on-month change.
  *
- * `onColour` is for the KPI tiles, which are saturated fills now. The default
- * badge is green-or-red text on a 12% tint of itself, which is legible on a
- * white card and close to invisible on a deep green one — a green pill on a
- * green tile. On colour it becomes a white glass pill instead, and the arrow
- * carries the direction: up or down is a shape, and a shape survives a
- * background that has already used up the colour budget.
+ * Green-or-red ink on the soft tint of the same family. Both are the text-safe
+ * tokens, so the pill reads on the card surface in either theme; the arrow
+ * carries the direction as a shape as well as a colour.
  */
-function TrendBadge({ pct, onColour = false }: { pct: number | null; onColour?: boolean }) {
+function TrendBadge({ pct }: { pct: number | null }) {
   if (pct === null) return null;
   const up = pct >= 0;
   return (
     <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9.5px] font-[750] tabular-nums"
-      style={onColour
-        ? { background: 'rgba(255,255,255,0.22)', color: '#FFFFFF', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35)' }
-        : { background: up ? 'rgba(16,185,129,0.12)' : 'rgba(220,38,38,0.12)', color: up ? C.success : C.danger }}>
+      style={{
+        background: up ? 'var(--success-soft)' : 'var(--danger-soft)',
+        color: up ? 'var(--success-text)' : 'var(--danger-text)',
+      }}>
       {up ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}{Math.abs(pct).toFixed(0)}%
     </span>
   );
@@ -675,23 +607,22 @@ function MobileQuickActions() {
 //
 // ── Colour ────────────────────────────────────────────────────────────────
 //
-// The hue lives on the icon chip and the mark, never on the text. The value
-// used to be set in the card's own colour, which put a 21px number at 2.5:1
-// against the card on two of the five and made "Commission" read in the
-// same red the app uses for overdue — commission is a cost, not a fault, and
-// the status colours are reserved for status. Ink for the number, muted for
-// the label, hue only where it is a mark.
+// The colour budget on this screen belongs to the hero and the goal ring, so
+// the tiles are surfaces: card ground, ink figure, muted label and foot. The
+// icon is a 13px muted mark beside its label — the approved design's form —
+// rather than a tinted chip, because three chips in a row re-create the
+// colour grid the hero is meant to win.
 //
-// The four hues are stepped off the app's own ramps and validated as a
-// categorical set (worst adjacent pair ΔE 28.8 deutan, 30.5 normal). They
-// clear CVD separation comfortably; the two lighter ones fall under 3:1
-// against the surface, which is why every one of them is always accompanied
-// by its visible text label.
+// The figure is always ink. It was once set in each card's own hue, which put
+// a 21px number at 2.5:1 on two of them and read red on "Commission" — a cost,
+// not a fault. Ink for the number costs nothing and is the only value that
+// stays legible on every theme.
+
 function StatCard({
-  icon, label, value, sub, tone, delay = 0, href, trend, pct, format, className,
+  icon, label, value, sub, delay = 0, href, trend, pct, format, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
-  tone: KpiTone; delay?: number; href?: string;
+  delay?: number; href?: string;
   /** Six months of THIS metric. Omit it unless the series is genuinely this card's. */
   trend?: { label: string; value: number }[]; pct?: number | null;
   /** How the sparkline's tooltip renders a value. */
@@ -705,109 +636,67 @@ function StatCard({
     <m.div
       initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: EASE }}
-      whileHover={{ y: -3, boxShadow: `0 16px 34px ${tone.glow}66` }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
       // 6:5 rather than square. A square at two per row is ~195px on a phone
-      // and most of the upper half was empty — the icon sat alone at the top
+      // and most of the upper half was empty — the label sat alone at the top
       // with the figure pinned to the bottom. Trading that dead band for a
       // shorter tile and a bigger number spends the same pixels on the thing
-      // the tile is for. Still one ratio for all four, so the grid stays even.
-      className={cn('group relative flex aspect-[6/5] cursor-pointer flex-col overflow-hidden rounded-[18px]', className)}
-      style={{
-        background: `linear-gradient(150deg, ${tone.from} 0%, ${tone.to} 100%)`,
-        // The glow is the card's own hue, not a grey drop shadow. Four of
-        // these in a grid is where the colour actually reads.
-        boxShadow: `0 8px 22px ${tone.glow}45`,
-      }}
+      // the tile is for. Still one ratio for all three, so the grid stays even.
+      className={cn(
+        'group relative flex aspect-[6/5] cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]',
+        className,
+      )}
     >
-      {/* Sheen: a single highlight off the top-right corner, which is what
-          stops a flat gradient looking like a printed swatch. Decorative, and
-          the only place opacity is used on this card — see the note on text
-          below. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0"
-        style={{ background: 'radial-gradient(105% 75% at 100% 0%, rgba(255,255,255,0.22) 0%, transparent 60%)' }} />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{ background: 'rgba(255,255,255,0.35)' }} />
-
       {/* min-h-0 is load-bearing. A flex item defaults to min-height:auto,
           so this block refused to shrink below its own content and pushed
-          the foot band out through the bottom of the square — where
+          the foot band out through the bottom of the tile — where
           overflow-hidden sliced the sparkline in half. */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
-        <div className="flex items-start justify-between">
-          {/* Glass chip rather than a second solid colour: on a saturated card
-              a white-tinted well reads as lit from the same direction as the
-              sheen above it. */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-[11px] text-white transition-transform duration-200 group-hover:scale-105 sm:h-9 sm:w-9"
-            style={{
-              background: 'rgba(255,255,255,0.20)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
-            }}>
-            {icon}
-          </div>
-          {pct !== undefined && <TrendBadge pct={pct ?? null} onColour />}
+        <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+          <span aria-hidden className="shrink-0 [&>svg]:h-[13px] [&>svg]:w-[13px]">{icon}</span>
+          <p className="text-[9px] font-[800] uppercase tracking-[0.13em] sm:text-[9.5px]">{label}</p>
         </div>
 
-        {/* ── Why every one of these is SOLID white ────────────────────────
-            The obvious way to build hierarchy on a coloured tile is to fade
-            the label and the sub-label to 70% white. Measured against the
-            lightest stop of these gradients that lands at 3.3:1 and 3.5:1 —
-            under AA for text this size. Hierarchy comes from weight and
-            scale here instead, which costs nothing and reads at arm's length
-            on a gym floor. */}
         <div className="mt-auto">
-          <p className="text-[9px] font-[800] uppercase tracking-[0.13em] text-white sm:text-[9.5px]">{label}</p>
-          <p className="mt-1 text-[28px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-white sm:text-[32px]">{value}</p>
-          {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-white sm:text-[10px]">{sub}</p>}
+          <div className="flex items-end justify-between gap-2">
+            <p className="text-[28px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-[var(--text-primary)] sm:text-[32px]">{value}</p>
+            {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+          </div>
+          {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-[var(--text-muted)] sm:text-[10px]">{sub}</p>}
         </div>
       </div>
 
-      {/* Every card ends on the same 24px band, so the four of them line up
-          whatever they carry. A chart where there is a series worth drawing;
-          a soft wash where there is not.
+      {/* Every card ends on the same band, so the row lines up whatever each
+          one carries. A chart where there is a series worth drawing; the
+          surface's own subtle ground where there is not.
 
-          THREE POINTS IS THE FLOOR. Two months render as two half-width
-          slabs — one pale, one solid — which is not a sparkline, it is a
+          THREE POINTS IS THE FLOOR. Two months render as two half-width slabs
+          — one pale, one solid — which is not a sparkline, it is a
           broken-looking pair of blocks, and that is what a new studio with
           two months of history was being shown. A shape needs three readings
           before it is a shape.
 
-          The bars are WHITE here, not the tile's hue: the hue is now the
-          background, so a chart drawn in it would be a chart drawn in its own
-          colour. */}
-      {/* data-kpi-foot marks the band on BOTH branches. It is what makes
+          data-kpi-foot marks the band on BOTH branches. It is what makes
           "every card ends the same way" assertable: without it a test can
           only see the chart, and the fallback could be deleted — taking the
           grid's level bottom edge with it — while every assertion still
           passed. */}
-      {/* Both branches sit in the same shaded well. On a saturated tile a
-          white bar needs something to be white AGAINST — over the tile's own
-          mid-tone the earlier months read as smudge — and the well doubles as
-          the shared bottom edge that makes a charted card and a bare one end
-          the same way. */}
       {trend && trend.length >= 3 ? (
-        <div data-kpi-foot className="relative z-10 w-full px-2.5" style={{ background: 'rgba(0,0,0,0.16)' }}>
-          {/* Padded clear of the card's own corner radius. Full-bleed, the
+        <div data-kpi-foot className="relative z-10 h-[30px] w-full border-t border-[var(--border)] px-2.5"
+          style={{ background: 'var(--bg-subtle)' }}>
+          {/* Padded clear of the tile's own corner radius. Full-bleed, the
               outermost bar on each side ran into the rounded corner and came
-              out as a half-bar with a diagonal bite taken out of it — which
-              is what made five months read as a row of broken blocks rather
-              than as a chart. */}
+              out as a half-bar with a diagonal bite taken out of it. */}
           <KpiSparkline
-            data={trend} color="#FFFFFF" metric={label} format={format} height={30}
-            trackFill="rgba(255,255,255,0.42)"
+            data={trend} color="var(--action)" metric={label} format={format} height={30}
+            trackFill="var(--action-soft)"
           />
         </div>
       ) : (
-        <div data-kpi-foot className="relative z-10 h-[30px] w-full overflow-hidden" aria-hidden>
-          {/* A fade, not the chart's flat well. Given the same solid shading
-              as a charted card, a card with no series reads as a chart that
-              failed to load — an empty box where the other two have bars.
-              Deepening the tile toward its own foot is the same 30px of
-              height with nothing missing from it. */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.18))' }} />
-          <div className="absolute inset-x-0 bottom-0 h-[3px]" style={{ background: 'rgba(255,255,255,0.45)' }} />
-        </div>
+        <div data-kpi-foot aria-hidden className="relative z-10 h-[30px] w-full border-t border-[var(--border)]"
+          style={{ background: 'var(--bg-subtle)' }} />
       )}
     </m.div>
   );
@@ -2162,9 +2051,9 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
               readable text on the card. */}
           <div className="grid grid-cols-3 gap-2 mb-3.5">
             {[
-              { label: 'Total',    value: stats.this_month_total,     color: KPI.clients.glow },
+              { label: 'Total',    value: stats.this_month_total,     color: C.primary },
               { label: 'Done',     value: stats.this_month_completed, color: C.success },
-              { label: 'Last mo.', value: stats.last_month_completed, color: KPI.activeShare.glow },
+              { label: 'Last mo.', value: stats.last_month_completed, color: palette.indigo[700] },
             ].map(t => (
               <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
                 <p className="mb-0.5 flex items-center gap-1 text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
@@ -2513,13 +2402,13 @@ export default function PtOsDashboard() {
                     revenue's growth as its own. A number with nothing under
                     it is the honest render. */}
                 <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} tone={KPI.clients} delay={0} href="/pt-os/clients" />
+                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients" />
                 <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  sub="this month" tone={KPI.revenue} delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
+                  sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* The Commission card (coach payouts) went with the multi-coach
                     model; a studio is one trainer, so there is no one to pay. */}
                 <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} tone={KPI.activeShare} delay={0.15} href="/insights/renewal" />
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} delay={0.15} href="/insights/renewal" />
               </div>
             </div>
 
