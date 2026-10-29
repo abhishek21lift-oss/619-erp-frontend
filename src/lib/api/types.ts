@@ -2160,6 +2160,11 @@ export interface AiTelemetry {
     requests: number | null; avg_latency_ms?: number | null; max_latency_ms?: number | null;
     fallbacks?: number; fallback_rate: number | null;
   } | null;
+  /** Null when no monthly rupee budget is set — never a guessed target. */
+  budget: {
+    monthly_cost_inr: number; spent_month_inr: number;
+    warn_at_pct: number; pct: number; cost_is_floor: boolean;
+  } | null;
   served_models_24h?: Array<{ model: string; requests: number; last_at: string }> | null;
   gateway: { kind: AiGatewayKind | null; endpoint: string | null; status: CommandCenterStatus; reason: string | null };
   observed?: AiObservedTraffic;
@@ -2310,6 +2315,18 @@ export interface SmtpTelemetry {
   live_probe?: { ok: boolean } | null;
 }
 
+/** The newest backup `scripts/backup-database.js` verified with pg_restore -l. */
+export interface BackupTelemetry {
+  /** Null when no verified run has ever been recorded — not "just now". */
+  last_ok_at: string | null;
+  age_hours: number | null;
+  size_bytes: number | null;
+  tables: number | null;
+  /** False = the dump exists only on the VPS, which is not off-site. */
+  offsite: boolean;
+  stale_after_hours: number;
+}
+
 /** The VPS host (backend `host` collector): /proc + statfs. Ratios are 0–1. */
 export interface HostTelemetry {
   cpu: { cores: number | null; busy_ratio: number | null; steal_ratio: number | null };
@@ -2325,7 +2342,8 @@ export interface HostTelemetry {
 /** The payload union, discriminated by the card's `name`. */
 export type CommandCenterTelemetry =
   | RuntimeTelemetry | HttpTelemetry | DatabaseTelemetry | RedisTelemetry
-  | QueuesTelemetry | AiTelemetry | FreeLlmApiTelemetry | SecurityTelemetry | SmtpTelemetry | HostTelemetry;
+  | QueuesTelemetry | AiTelemetry | FreeLlmApiTelemetry | SecurityTelemetry | SmtpTelemetry
+  | HostTelemetry | BackupTelemetry;
 
 export interface CommandCenterCard {
   name: string;
@@ -2399,6 +2417,11 @@ export interface CommandCenterDegradedReason {
 
 export interface CommandCenterSnapshot {
   status: CommandCenterStatus;
+  /** Which build answered. Same for every card, so it belongs to the reading. */
+  release?: {
+    service: string; version: string; sha: string; builtAt: string | null;
+    env: string; node: string; contract: number; instance: string;
+  };
   observability: CommandCenterObservability;
   degraded_reasons: CommandCenterDegradedReason[];
   collected_at: string;
@@ -3074,6 +3097,8 @@ export type AiRouting = {
 export type AiSettings = {
   enforcement_enabled: boolean;
   default_monthly_tokens: number | string | null;
+  /** Monthly rupee ceiling for AI spend. null = no budget, not zero. */
+  monthly_cost_inr: number | string | null;
   warn_at_pct: number;
   rates: AiModelRate[];
 };

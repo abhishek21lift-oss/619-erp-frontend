@@ -231,6 +231,7 @@ function ModelTable({ rows, onRate }: { rows: AiModelUsage[]; onRate: (m: AiMode
 function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChanged: () => void }) {
   const { toast } = useToast();
   const [dflt, setDflt] = useState(settings.default_monthly_tokens === null ? '' : String(settings.default_monthly_tokens));
+  const [budget, setBudget] = useState(settings.monthly_cost_inr === null ? '' : String(settings.monthly_cost_inr));
   const [warn, setWarn] = useState(String(settings.warn_at_pct));
   const [saving, setSaving] = useState(false);
 
@@ -286,11 +287,26 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
             className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
         </FormField>
+        <FormField label="Monthly cost budget (₹)" density="compact" className="w-44">
+          <TextInput
+            value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="no budget"
+            inputMode="decimal" className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
+          />
+        </FormField>
         <button
-          onClick={() => save({
-            default_monthly_tokens: dflt.trim() === '' ? null : Number(dflt),
-            warn_at_pct: Number(warn),
-          })}
+          onClick={() => {
+            // NaN would JSON-encode as null and silently CLEAR the budget.
+            const cost = budget.trim() === '' ? null : Number(budget);
+            if (cost !== null && (!Number.isFinite(cost) || cost < 0)) {
+              toast.error('Monthly cost budget must be a non-negative number, or blank for none.');
+              return;
+            }
+            save({
+              default_monthly_tokens: dflt.trim() === '' ? null : Number(dflt),
+              monthly_cost_inr: cost,
+              warn_at_pct: Number(warn),
+            });
+          }}
           disabled={saving}
           className="flex h-11 items-center gap-1.5 rounded-[9px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"
           style={{ background: 'var(--brand)' }}
@@ -300,8 +316,8 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
       </div>
       <p className="mt-2 flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
         <Info size={11} className="mt-0.5 shrink-0" />
-        Blank means unlimited. A studio with its own cap ignores this; a studio explicitly
-        exempted stays exempt.
+        Blank tokens means unlimited; a blank cost budget means spend is reported
+        but never graded. A studio with its own token cap ignores the default.
       </p>
     </Panel>
   );

@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { Radio, Wifi, WifiOff, Clock, EyeOff, ShieldAlert } from 'lucide-react';
+import { Radio, Wifi, WifiOff, Clock, EyeOff, ShieldAlert, GitBranch } from 'lucide-react';
 import type { CommandCenterSnapshot } from '@/lib/api';
 import { toneFor } from './tokens';
 
@@ -67,6 +67,13 @@ export const ObservabilityBar: React.FC<{
         <Chip
           Icon={Clock} label="cached" value={String(stale)}
           title="Cards served from the per-collector TTL cache rather than freshly probed."
+        />
+      )}
+      {snap.release && (
+        <Chip
+          Icon={GitBranch} label="build"
+          value={`${snap.release.version} @ ${snap.release.sha === 'unknown' ? 'unknown' : snap.release.sha.slice(0, 7)}`}
+          title={`Backend ${snap.release.service}: sha ${snap.release.sha}, built ${snap.release.builtAt ?? 'unknown'}, env ${snap.release.env}, node ${snap.release.node}`}
         />
       )}
       {violations.length > 0 && (

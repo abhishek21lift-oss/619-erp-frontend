@@ -576,7 +576,7 @@ export const superAdmin = {
   }) => http<{ data: unknown }>('/api/platform/ai/routing', {
     method: 'PUT', body: JSON.stringify(patch),
   }),
-  saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; warn_at_pct?: number }) =>
+  saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; monthly_cost_inr?: number | null; warn_at_pct?: number }) =>
     http<{ data: AiSettings; studios_already_over: number | null }>('/api/platform/ai/settings', {
       method: 'PUT', body: JSON.stringify(patch),
     }),
