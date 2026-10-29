@@ -11,12 +11,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Search, Filter, Download, ChevronDown, ChevronLeft, ChevronRight,
+  Filter, Download, ChevronDown, ChevronLeft, ChevronRight,
   RotateCcw, ScrollText, Loader2, AlertTriangle, Monitor, Globe,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AuditEntry, AuditQuery } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import {
+  FormField, SearchField, SelectInput, TextInput,
+} from '@/components/ui/form';
 
 const PAGE_SIZE = 50;
 
@@ -237,17 +240,15 @@ export default function AuditCentre() {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[180px] flex-1 sm:max-w-xs">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search actor, action, studio…"
-            aria-label="Search the audit log"
-            className="h-10 w-full rounded-[11px] pl-9 pr-3 text-[12.5px] outline-none"
-            style={selectStyle}
-          />
-        </div>
+        <SearchField
+          label="Search the audit log"
+          placeholder="Search actor, action, studio…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="h-10 rounded-[11px] pr-3 text-[12.5px]"
+          style={selectStyle}
+          fieldClassName="min-w-[180px] flex-1 sm:max-w-xs"
+        />
 
         <div className="flex gap-1 rounded-[11px] p-1" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
           {RANGES.map((r) => (
@@ -299,32 +300,28 @@ export default function AuditCentre() {
               className="grid grid-cols-1 gap-3 rounded-[14px] p-3.5 sm:grid-cols-2 lg:grid-cols-4"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Action</span>
-                <select value={action} onChange={(e) => { setAction(e.target.value); setOffset(0); }}
-                  className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={selectStyle}>
+              <FormField label="Action" density="compact">
+                <SelectInput value={action} onChange={(e) => { setAction(e.target.value); setOffset(0); }}
+                  className="h-10 rounded-[10px] px-2.5 pr-8 text-[12.5px]" style={selectStyle}>
                   <option value="">All actions</option>
                   {opts.actions.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Module</span>
-                <select value={entityType} onChange={(e) => { setEntityType(e.target.value); setOffset(0); }}
-                  className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={selectStyle}>
+                </SelectInput>
+              </FormField>
+              <FormField label="Module" density="compact">
+                <SelectInput value={entityType} onChange={(e) => { setEntityType(e.target.value); setOffset(0); }}
+                  className="h-10 rounded-[10px] px-2.5 pr-8 text-[12.5px]" style={selectStyle}>
                   <option value="">All modules</option>
                   {opts.entity_types.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>From</span>
-                <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setOffset(0); }}
-                  className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={selectStyle} />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>To</span>
-                <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setOffset(0); }}
-                  className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={selectStyle} />
-              </label>
+                </SelectInput>
+              </FormField>
+              <FormField label="From" density="compact">
+                <TextInput type="date" value={from} onChange={(e) => { setFrom(e.target.value); setOffset(0); }}
+                  className="h-10 rounded-[10px] px-2.5 text-[12.5px]" style={selectStyle} />
+              </FormField>
+              <FormField label="To" density="compact">
+                <TextInput type="date" value={to} onChange={(e) => { setTo(e.target.value); setOffset(0); }}
+                  className="h-10 rounded-[10px] px-2.5 text-[12.5px]" style={selectStyle} />
+              </FormField>
               <div className="sm:col-span-2 lg:col-span-4">
                 <button onClick={reset} className="flex min-h-[44px] items-center gap-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
                   <RotateCcw size={12} /> Reset filters
