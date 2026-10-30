@@ -28,9 +28,8 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import type {
-  UpiQueueRow, UpiQueueStats, UpiQueueParams, UpiRejectReason, MembershipPlan, Client,
+  UpiQueueRow, UpiQueueStats, UpiQueueParams, UpiRejectReason, Client,
 } from '@/lib/api';
-import { PLAN_DURATION_MONTHS } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { PageHero, HeroButton, EmptyState, cn } from '@/components/ui';
@@ -728,6 +727,9 @@ function ProofDialog({ row, onClose }: { row: UpiQueueRow | null; onClose: () =>
  * is re-read server-side either way, so what is typed here can never undercut
  * a plan's actual price.
  */
+/** The columns the package picker reads. pt_packages is sold in days. */
+type PlanOption = { id: string; name: string; price: number | string; duration_days: number };
+
 function NewRequestDialog({
   onClose, onCreated, toast,
 }: {
@@ -740,7 +742,7 @@ function NewRequestDialog({
   const [searching, setSearching] = useState(false);
   const [member, setMember] = useState<Client | null>(null);
 
-  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [plans, setPlans] = useState<PlanOption[]>([]);
   // The plan picker seeds the fields below; it is not itself a form field.
   const [planId, setPlanId] = useState('');
 
@@ -764,7 +766,9 @@ function NewRequestDialog({
   // Plans are a nicety, not a requirement — a studio with none must still be
   // able to take a payment, so a failure here is swallowed.
   useEffect(() => {
-    void api.membershipPlans.list().then((rows) => setPlans(rows ?? [])).catch(() => setPlans([]));
+    void api.automation.ptPackages.list()
+      .then((res) => setPlans((res.data as PlanOption[]) ?? []))
+      .catch(() => setPlans([]));
   }, []);
 
   const dialogRef = useDialogA11y({ open: true, onClose, escapeCloses: !f.isSubmitting });
@@ -792,8 +796,8 @@ function NewRequestDialog({
       // clears the plan as soon as a trainer types their own package.
       const seed = { dontRunListeners: true } as const;
       f.form.setFieldValue('plan_name', plan.name, seed);
-      f.form.setFieldValue('base_amount', String(Number(plan.final_amount)), seed);
-      f.form.setFieldValue('duration_months', String(PLAN_DURATION_MONTHS[plan.duration] ?? 1), seed);
+      f.form.setFieldValue('base_amount', String(Number(plan.price)), seed);
+      f.form.setFieldValue('duration_months', String(Math.max(1, Math.round(Number(plan.duration_days) / 30))), seed);
     }
   };
 
@@ -886,7 +890,7 @@ function NewRequestDialog({
                   <option value="">Custom package…</option>
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — {fmtMoney(p.final_amount)} ({p.duration})
+                      {p.name} — {fmtMoney(p.price)} ({p.duration_days} days)
                     </option>
                   ))}
                 </SelectInput>

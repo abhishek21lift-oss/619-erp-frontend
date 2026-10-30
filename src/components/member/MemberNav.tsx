@@ -29,7 +29,7 @@ import { useFeatures } from '@/lib/features-context';
  * create a class session, and booking was written against the retired
  * members / member_memberships tables, so every member saw an empty list
  * and every booking attempt failed. The studios this serves run 1-on-1 PT,
- * so the tab is gone and /member/classes redirects home.
+ * so the tab is gone and the route went with the gym-ERP surface.
  *
  * Workout, Diet and Check-in came next, once /api/me could answer them:
  * the plan the trainer wrote, the diet they were given, and a way to tell the
@@ -39,7 +39,7 @@ import { useFeatures } from '@/lib/features-context';
  *
  * Lifted out of member/dashboard/page.tsx, where it was a local component, so
  * every page in the portal renders the same one. Only the dashboard had it:
- * /member/classes rendered no bar at all — a member there could reach nothing
+ * the retired classes page rendered no bar at all — a member there could reach nothing
  * but the browser's back button, while .member-main still reserved the space
  * for a bar that was never drawn — and /member/payments borrowed the STUDIO
  * shell, so it showed members Clients / Sessions / Check-in, tabs that bounce

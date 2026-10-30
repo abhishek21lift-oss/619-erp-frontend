@@ -115,7 +115,7 @@ const KNOWN = [
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
   // 442 -> 436: the side-tab stripe removal deleted the six-line category
   // colour table above this site. File set and per-file count unchanged.
-  'app/(chrome)/settings/integrations/page.tsx:436',
+  'app/(chrome)/settings/integrations/page.tsx:269',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
   // 1864 -> 1859 -> 1856 and 2156 -> 2151 -> 2148: a UI-copy pass removed

@@ -1,4 +1,4 @@
-// API endpoints: workouts, exercises, diet, classes, bookings, calendar.
+// API endpoints: workouts, exercises, diet.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -314,39 +314,6 @@ export const diet = {
   supplements: {
     list: () => http<unknown[]>('/api/diet/supplements'),
   },
-};
-
-export const classes = {
-  sessions: (params?: Record<string, string | number>) =>
-    http<unknown[]>(`/api/classes/sessions${buildQs(params)}`),
-};
-
-// ── Member Portal ────────────────────────────────────────────
-export const bookings = {
-  list: (params?: Record<string, string | number>) =>
-    http<unknown[]>(`/api/bookings${buildQs(params)}`),
-  create: (data: { session_id: string }) =>
-    http<{ message: string; booking: unknown }>('/api/bookings', {
-      method: 'POST', body: JSON.stringify(data),
-    }),
-};
-
-// ── Google Calendar ─────────────────────────────────────────────
-export const calendar = {
-  status: () =>
-    http<{ connected: boolean; connectedAt?: string; lastSyncAt?: string; calendarId?: string }>('/api/calendar/status'),
-  authUrl: () =>
-    http<{ url: string }>('/api/calendar/auth-url'),
-  /**
-   * Finish a Google consent round-trip. The backend exchanges the code only
-   * when `state` was minted for the signed-in caller, so a consent link
-   * started from someone else's account cannot attach this Google account
-   * to theirs.
-   */
-  complete: (body: { code: string; state: string }) =>
-    http<{ connected: boolean }>('/api/calendar/complete', { method: 'POST', body: JSON.stringify(body) }),
-  disconnect: () =>
-    http<{ message: string }>('/api/calendar/disconnect', { method: 'DELETE' }),
 };
 
 // ── Workout Generator ────────────────────────────────────────────

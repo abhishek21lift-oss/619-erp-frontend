@@ -41,7 +41,6 @@ vi.mock('@/lib/api', () => ({
       requestCorrection: mocks.requestCorrection,
     },
   },
-  PLAN_DURATION_MONTHS: {},
 }));
 
 import VerifyPaymentsPage from '@/app/(chrome)/finance/verify-payments/page';
