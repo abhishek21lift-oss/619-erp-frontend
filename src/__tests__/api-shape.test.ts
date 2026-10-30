@@ -93,3 +93,21 @@ describe('api surface', () => {
     });
   });
 });
+
+describe('booking endpoints', () => {
+  it('exposes the trainer and member booking methods', () => {
+    for (const key of [
+      'availability', 'saveAvailability', 'timeOff', 'addTimeOff',
+      'removeTimeOff', 'bookingSettings', 'saveBookingSettings',
+    ]) {
+      expect(api.pt, `api.pt.${key}`).toHaveProperty(key);
+      expect((api.pt as unknown as Record<string, unknown>)[key]).toBeTypeOf('function');
+    }
+    for (const key of [
+      'bookingAvailability', 'bookings', 'book', 'rescheduleBooking', 'cancelBooking',
+    ]) {
+      expect(api.me, `api.me.${key}`).toHaveProperty(key);
+      expect((api.me as unknown as Record<string, unknown>)[key]).toBeTypeOf('function');
+    }
+  });
+});

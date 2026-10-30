@@ -8,6 +8,7 @@ import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
   MeGoals,
+  AvailabilityWindow, BookingSettings, TimeOff, TrainerAvailability,
   ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
 } from '../types';
@@ -148,4 +149,24 @@ export const pt = {
     convert: (id: string) =>
       http<{ data: { client_id: string } }>(`/api/pt-os/leads/${id}/convert`, { method: 'POST' }),
   },
+  /**
+   * Client self-booking, trainer side. Publishing a week replaces it wholesale,
+   * so always send all seven days the trainer wants bookable.
+   */
+  availability: () => http<{ data: TrainerAvailability }>('/api/pt-os/availability'),
+  saveAvailability: (windows: AvailabilityWindow[]) =>
+    http<{ data: { windows: AvailabilityWindow[]; warnings: { id: string; session_date: string; start_time: string }[] } }>(
+      '/api/pt-os/availability',
+      { method: 'PUT', body: JSON.stringify({ windows }) },
+    ),
+  timeOff: () => http<{ data: TimeOff[] }>('/api/pt-os/time-off'),
+  addTimeOff: (data: { starts_on: string; ends_on: string; reason?: string }) =>
+    http<{ data: TimeOff }>('/api/pt-os/time-off', { method: 'POST', body: JSON.stringify(data) }),
+  removeTimeOff: (id: string) =>
+    http<{ data: { id: string } }>(`/api/pt-os/time-off/${id}`, { method: 'DELETE' }),
+  bookingSettings: () => http<{ data: BookingSettings }>('/api/pt-os/booking-settings'),
+  saveBookingSettings: (data: Omit<BookingSettings, 'ics_token'>) =>
+    http<{ data: BookingSettings }>('/api/pt-os/booking-settings', {
+      method: 'PUT', body: JSON.stringify(data),
+    }),
 };

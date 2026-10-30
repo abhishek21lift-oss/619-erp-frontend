@@ -5374,3 +5374,48 @@ export interface ProgressHabitPreferences {
   reminder_time: string | null;
   wearable_provider: string | null;
 }
+
+// ── Client self-booking ─────────────────────────────────────────────────────
+
+export interface AvailabilityWindow {
+  weekday: number; // 0 = Sunday, matching Date#getUTCDay
+  start_time: string; // 'HH:MM'
+  end_time: string;
+}
+
+export interface TimeOff {
+  id: string;
+  starts_on: string; // 'YYYY-MM-DD', inclusive
+  ends_on: string;
+  reason: string | null;
+}
+
+export interface BookingSettings {
+  slot_minutes: number;
+  buffer_minutes: number;
+  min_notice_hours: number;
+  horizon_days: number;
+  cancel_cutoff_hours: number;
+  ics_token: string | null;
+}
+
+export interface TrainerAvailability {
+  windows: AvailabilityWindow[];
+  timeOff: TimeOff[];
+  settings: BookingSettings;
+}
+
+export interface MeBooking {
+  id: string;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  status: string;
+  can_cancel: boolean;
+}
+
+export interface MeBookingAvailability {
+  days: { date: string; slots: { start: string; end: string }[] }[];
+  settings: { slot_minutes: number; cancel_cutoff_hours: number; horizon_days: number };
+}
