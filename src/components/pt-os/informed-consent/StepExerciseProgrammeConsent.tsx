@@ -16,7 +16,7 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
   return (
     <div className="space-y-7">
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#5B63F6' }}>
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#A33757' }}>
           <FileSignature size={20} color="#fff" />
         </div>
         <div>
@@ -50,11 +50,11 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         type="button" onClick={() => set('exerciseConsentChecked', !form.exerciseConsentChecked)}
         className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
         style={{
-          background: form.exerciseConsentChecked ? 'rgba(63,70,214,0.06)' : 'var(--bg-subtle)',
-          border: form.exerciseConsentChecked ? '1.5px solid #5B63F6' : '1.5px solid var(--border)',
+          background: form.exerciseConsentChecked ? 'rgba(133,46,78,0.06)' : 'var(--bg-subtle)',
+          border: form.exerciseConsentChecked ? '1.5px solid #A33757' : '1.5px solid var(--border)',
         }}>
         <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]"
-          style={{ background: form.exerciseConsentChecked ? '#5B63F6' : 'var(--bg-card)', border: form.exerciseConsentChecked ? 'none' : '1.5px solid var(--border-2)' }}>
+          style={{ background: form.exerciseConsentChecked ? '#A33757' : 'var(--bg-card)', border: form.exerciseConsentChecked ? 'none' : '1.5px solid var(--border-2)' }}>
           {form.exerciseConsentChecked && <Check size={13} color="#fff" strokeWidth={3} />}
         </span>
         <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
@@ -101,8 +101,8 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
         onClick={() => set('physicianAdvisedAgainst', value)}
         className="min-h-[44px] flex-1 rounded-[12px] px-4 text-[13px] font-[700] transition-all"
         style={{
-          background: on ? (value ? 'rgba(220,38,38,0.08)' : 'rgba(63,70,214,0.06)') : 'var(--bg-subtle)',
-          border: on ? `1.5px solid ${value ? '#dc2626' : '#5B63F6'}` : '1.5px solid var(--border)',
+          background: on ? (value ? 'rgba(220,38,38,0.08)' : 'rgba(133,46,78,0.06)') : 'var(--bg-subtle)',
+          border: on ? `1.5px solid ${value ? '#dc2626' : '#A33757'}` : '1.5px solid var(--border)',
           color: on ? (value ? '#dc2626' : '#0f172a') : 'var(--text-secondary)',
         }}
       >

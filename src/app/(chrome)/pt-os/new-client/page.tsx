@@ -392,9 +392,9 @@ function NewClientForm() {
           <m.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             className="mb-5 flex items-center gap-3 rounded-[14px] px-4 py-3"
-            style={{ background: 'rgba(63,70,214,0.07)', border: '1px solid rgba(63,70,214,0.18)' }}
+            style={{ background: 'rgba(133,46,78,0.07)', border: '1px solid rgba(133,46,78,0.18)' }}
           >
-            <FileSpreadsheet size={15} style={{ color: '#3F46D6', flexShrink: 0 }} />
+            <FileSpreadsheet size={15} style={{ color: '#852E4E', flexShrink: 0 }} />
             <span className="text-[12.5px] font-[640] flex-1" style={{ color: '#065f46' }}>
               {sheetRowCount} records imported — enter mobile number to auto-fill fields
             </span>
@@ -479,9 +479,9 @@ function NewClientForm() {
                     <m.div
                       initial={{ opacity: 0, y: -4, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                       className="mt-1.5 flex items-center gap-2 rounded-[10px] px-3 py-2"
-                      style={{ background: 'rgba(63,70,214,0.08)', border: '1px solid rgba(63,70,214,0.18)' }}
+                      style={{ background: 'rgba(133,46,78,0.08)', border: '1px solid rgba(133,46,78,0.18)' }}
                     >
-                      <CheckCircle2 size={12} style={{ color: '#3F46D6', flexShrink: 0 }} />
+                      <CheckCircle2 size={12} style={{ color: '#852E4E', flexShrink: 0 }} />
                       <span className="text-[11.5px] font-[640]" style={{ color: '#065f46' }}>{autofillNote}</span>
                     </m.div>
                   )}

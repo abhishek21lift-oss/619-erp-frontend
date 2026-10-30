@@ -63,7 +63,7 @@ function fmtDayLabel(ymd: string): string {
    ('scheduled','completed','cancelled','no_show'), which is the only set
    the database will accept. Note the underscore in no_show. */
 const STATUS_META: Record<PtSessionStatus, { label: string; color: string; bg: string }> = {
-  scheduled: { label: 'Scheduled', color: '#3F46D6', bg: 'rgba(91,99,246,0.12)' },
+  scheduled: { label: 'Scheduled', color: '#852E4E', bg: 'rgba(163,55,87,0.12)' },
   completed: { label: 'Completed', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   cancelled: { label: 'Cancelled', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
   no_show:   { label: 'No Show',   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
@@ -135,7 +135,7 @@ function DayRow({
           name={name}
           photoUrl={client?.client_photo}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-[13px] font-[800] text-white"
-          style={{ background: restDay ? 'var(--text-muted)' : 'linear-gradient(135deg,#5B63F6,#3F46D6)' }}
+          style={{ background: restDay ? 'var(--text-muted)' : 'linear-gradient(135deg,#A33757,#852E4E)' }}
         >
           {initialsOf(name)}
         </ClientAvatar>
@@ -227,7 +227,7 @@ function DayRow({
                 // the one question this screen exists to answer. Today already
                 // draws it this way; this page rendered all five identically.
                 style={done || restDay ? undefined : {
-                  background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff',
+                  background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff',
                 }}
               >
                 {done ? 'View' : inProgress ? 'Resume' : 'Start'}
@@ -478,7 +478,7 @@ export default function MySchedulePage() {
                       <span className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{monthLabel}</span>
                       <button type="button" onClick={jumpToToday}
                         className="rounded-full px-2.5 py-1 text-[10.5px] font-[750] uppercase tracking-wide transition-opacity hover:opacity-80"
-                        style={{ background: 'rgba(91,99,246,0.12)', color: '#3F46D6' }}>
+                        style={{ background: 'rgba(163,55,87,0.12)', color: '#852E4E' }}>
                         Today
                       </button>
                     </div>
@@ -499,7 +499,7 @@ export default function MySchedulePage() {
                         <button key={ymd} type="button" onClick={() => setSelectedDay(ymd)}
                           className="flex flex-col items-center gap-1 rounded-[12px] py-2 transition-all"
                           style={isSelected
-                            ? { background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }
+                            ? { background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }
                             : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
                           <span className="text-[9.5px] font-[700] uppercase" style={{ opacity: isSelected ? 0.85 : 0.6 }}>
                             {WEEKDAY_INITIALS[i]}
@@ -508,11 +508,11 @@ export default function MySchedulePage() {
                           <span className="flex h-1.5 items-center">
                             {count > 0 && (
                               <span className="h-1.5 w-1.5 rounded-full"
-                                style={{ background: isSelected ? '#fff' : '#5B63F6' }} />
+                                style={{ background: isSelected ? '#fff' : '#A33757' }} />
                             )}
                           </span>
                           {isToday && !isSelected && (
-                            <span className="text-[9px] font-[800] uppercase tracking-wide" style={{ color: '#3F46D6' }}>now</span>
+                            <span className="text-[9px] font-[800] uppercase tracking-wide" style={{ color: '#852E4E' }}>now</span>
                           )}
                         </button>
                       );
@@ -523,8 +523,8 @@ export default function MySchedulePage() {
                 {/* Week stats */}
                 <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {[
-                    { label: 'On This Day', value: dayStats.total, color: '#3F46D6' },
-                    { label: 'To Do', value: dayStats.toDo, color: '#3F46D6' },
+                    { label: 'On This Day', value: dayStats.total, color: '#852E4E' },
+                    { label: 'To Do', value: dayStats.toDo, color: '#852E4E' },
                     { label: 'Completed', value: dayStats.done, color: '#10b981' },
                     { label: 'Missed', value: dayStats.missed, color: '#f59e0b' },
                   ].map((s) => (
@@ -553,7 +553,7 @@ export default function MySchedulePage() {
 
                 {(schedule.loading || roster.loading) && !roster.data && !schedule.data && (
                   <div className="flex flex-col items-center justify-center gap-3 py-16">
-                    <Loader2 size={26} className="animate-spin" style={{ color: '#3F46D6' }} />
+                    <Loader2 size={26} className="animate-spin" style={{ color: '#852E4E' }} />
                     <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Loading your schedule…</p>
                   </div>
                 )}

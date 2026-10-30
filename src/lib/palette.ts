@@ -63,21 +63,34 @@ export const blue = {
 } as const;
 
 /**
- * Indigo — the one action colour. Primary buttons, links, selected rows,
- * focus rings and the Aurora hero. 600 is the text-safe tone on a light tint;
- * 500 is the fill and clears AA for white button labels.
+ * The action ramp — primary buttons, links, selected rows, focus rings and the
+ * hero. Values are the warm ramp (peach #FFBB94 through plum #4C1D3D) chosen
+ * over the original indigo; the family keeps its module name so every import
+ * stays put, and renaming it is separate work.
+ *
+ * Same index rules as before, checked against the new values:
+ *   300  the tone that survives on a dark surface (peach on near-black)
+ *   400  decoration only — 2.1:1 on white, never a label
+ *   450  decoration only — 3.7:1 on white, never a label
+ *   500  the fill; white labels clear AA at 6.5:1
+ *   600  text-safe tone on a light tint, and hover on a 500 fill, at 8.4:1
+ *
+ * The ramp is one hue, so it cannot also serve as the "merely different"
+ * colour that `identity` and `series` want — those stay listable but now read
+ * as the brand, not as a neutral alternative.
  */
 export const indigo = {
-  50:  '#EEF0FF',
-  100: '#E0E3FF',
-  200: '#C7CBFF',
-  300: '#A5AAFB',
-  400: '#7F86F8',
-  500: '#5B63F6',
-  600: '#3F46D6',
-  700: '#2F35A8',
-  800: '#252A82',
-  900: '#1B1F5C',
+  50:  '#FFF7F3',
+  100: '#FFE9E0',
+  200: '#FFD0C6',
+  300: '#FFBB94',
+  400: '#FB9590',
+  450: '#DC586D',
+  500: '#A33757',
+  600: '#852E4E',
+  700: '#6B2440',
+  800: '#4C1D3D',
+  900: '#2B1220',
 } as const;
 
 /** Emerald — success, completed, active, healthy. */

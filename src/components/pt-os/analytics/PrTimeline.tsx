@@ -16,7 +16,7 @@ import type { WorkoutPr } from '@/lib/api';
 
 /** Fixed per kind, so a kind keeps its colour down the list. */
 const KIND_TONE: Record<string, string> = {
-  weight: '#d97706', reps: '#5B63F6', volume: '#5B63F6',
+  weight: '#d97706', reps: '#A33757', volume: '#A33757',
 };
 
 export default function PrTimeline({ prs, limit = 12 }: { prs: WorkoutPr[]; limit?: number }) {

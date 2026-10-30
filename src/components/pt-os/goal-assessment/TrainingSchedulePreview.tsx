@@ -6,15 +6,15 @@ export default function TrainingSchedulePreview({ trainingDays, goal, experience
   const schedule = useMemo(() => recommendTrainingSplit(trainingDays, { goal, experience, preferredDays }), [trainingDays, goal, experience, preferredDays]);
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#5B63F6,#A5AAFB)' }} />
+      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#A33757,#FFBB94)' }} />
       <div className="p-6">
         <p className="text-[13px] font-[760] text-[color:var(--text-primary)]">{schedule.label}</p>
         <p className="text-[12px] text-[color:var(--text-muted)] mt-1">{schedule.notes}</p>
         <div className="grid grid-cols-7 gap-2 mt-4">
           {schedule.calendar.map((d) => (
-            <div key={d.dayIndex} className="rounded-[10px] p-2 text-center" style={{ background: d.type === 'training' ? 'rgba(91,99,246,0.10)' : 'var(--bg-subtle)', border: d.type === 'training' ? '1px solid rgba(91,99,246,0.3)' : '1px solid var(--border)' }}>
+            <div key={d.dayIndex} className="rounded-[10px] p-2 text-center" style={{ background: d.type === 'training' ? 'rgba(163,55,87,0.10)' : 'var(--bg-subtle)', border: d.type === 'training' ? '1px solid rgba(163,55,87,0.3)' : '1px solid var(--border)' }}>
               <p className="text-[10px] font-[700] uppercase" style={{ color: 'var(--text-muted)' }}>{d.dayName.slice(0,3)}</p>
-              <p className="text-[10px] font-[600] mt-1" style={{ color: d.type === 'training' ? '#3F46D6' : 'var(--text-muted)' }}>{d.type === 'training' ? (d.session || 'Train') : 'Rest'}</p>
+              <p className="text-[10px] font-[600] mt-1" style={{ color: d.type === 'training' ? '#852E4E' : 'var(--text-muted)' }}>{d.type === 'training' ? (d.session || 'Train') : 'Rest'}</p>
             </div>
           ))}
         </div>

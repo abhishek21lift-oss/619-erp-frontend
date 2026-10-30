@@ -17,7 +17,7 @@ const theme = readFileSync(srcPath('components', 'profile', 'profileTheme.ts'), 
 
 /** The house hero's gradient, spelled the same way in both existing heroes. */
 const HOUSE =
-  'linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%)';
+  'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)';
 
 const hero = () => page.slice(page.indexOf('── HERO ──'), page.indexOf('── ACTIONS ──'));
 

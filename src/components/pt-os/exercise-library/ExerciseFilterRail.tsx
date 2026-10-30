@@ -286,7 +286,7 @@ function ToggleRow({
         aria-hidden
         className={cn(
           'relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors duration-200',
-          'peer-focus-visible:ring-2 peer-focus-visible:ring-[rgba(91,99,246,0.4)]',
+          'peer-focus-visible:ring-2 peer-focus-visible:ring-[rgba(163,55,87,0.4)]',
           checked ? 'bg-[var(--success)]' : 'bg-slate-300 dark:bg-white/20',
         )}
       >

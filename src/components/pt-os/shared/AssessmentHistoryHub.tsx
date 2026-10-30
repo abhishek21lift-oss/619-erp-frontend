@@ -24,7 +24,7 @@ export function AssessmentHistoryHub({
   assessments, renderCard, renderComparison,
 }: AssessmentHistoryHubProps) {
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>;
   }
   if (loadError) {
     return (
@@ -58,7 +58,7 @@ export function AssessmentHistoryHub({
         {sorted.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">{emptyLabel}</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={onNew} style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}>
+            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={onNew} style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}>
               Start First Assessment
             </Button>
           </div>

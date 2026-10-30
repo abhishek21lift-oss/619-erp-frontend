@@ -145,7 +145,7 @@ function ProgressRoster() {
             placeholder="Search by name, email or mobile…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#5B63F6]"
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
@@ -199,7 +199,7 @@ function ProgressRoster() {
             <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
               {data.clients.map((c) => (
                 <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
-                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A5AAFB] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#FFBB94] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
                   style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                   <ClientAvatar name={c.name} />
                   <div className="min-w-0 flex-1">
@@ -353,7 +353,7 @@ function ProgressHub({ clientId }: { clientId: string }) {
                 className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[720] transition-all"
                 style={active ? {
                   background: `linear-gradient(135deg,${indigo[500]},${indigo[700]})`, color: '#fff',
-                  boxShadow: '0 6px 18px rgba(91,99,246,0.28)',
+                  boxShadow: '0 6px 18px rgba(163,55,87,0.28)',
                 } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                 <Icon size={14} /> {s.label}
               </button>
@@ -441,10 +441,10 @@ const signed = (v: number | null, suffix = '') => {
 const STATE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
   missing_baseline: { bg: 'rgba(239,68,68,0.10)', color: '#b91c1c', label: 'No baseline' },
   not_scheduled: { bg: 'rgba(245,158,11,0.12)', color: '#b45309', label: 'Not scheduled' },
-  upcoming: { bg: 'rgba(91,99,246,0.10)', color: indigo[700], label: 'Upcoming' },
+  upcoming: { bg: 'rgba(163,55,87,0.10)', color: indigo[700], label: 'Upcoming' },
   due: { bg: 'rgba(245,158,11,0.14)', color: '#b45309', label: 'Due' },
   overdue: { bg: 'rgba(239,68,68,0.12)', color: '#b91c1c', label: 'Overdue' },
-  rescheduled: { bg: 'rgba(91,99,246,0.10)', color: indigo[700], label: 'Rescheduled' },
+  rescheduled: { bg: 'rgba(163,55,87,0.10)', color: indigo[700], label: 'Rescheduled' },
   completed: { bg: 'rgba(16,185,129,0.12)', color: '#047857', label: 'Completed' },
 };
 
@@ -1002,7 +1002,7 @@ function AnalyticsSection({ data, days, setDays }: { data: HubData; days: number
         <Panel title="Sleep duration" subtitle={`${days}-day window · 7–9 h is a general adult reference, not a prescription`}>
           {sleepPoints.length < 2 ? <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>At least two sleep entries draw the trend.</p> : (
             <PremiumAreaChart data={sleepPoints} xKey="date"
-              areas={[{ key: 'sleep', label: 'Sleep (h)', color: '#3F46D6' }]} height={190}
+              areas={[{ key: 'sleep', label: 'Sleep (h)', color: '#852E4E' }]} height={190}
               formatValue={(v) => `${v}h`} />
           )}
           <div className="mt-2 flex flex-wrap gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
@@ -1079,7 +1079,7 @@ function InsightsSection({ clientId, data, reload }: { clientId: string; data: H
       {error && <p className="rounded-[12px] px-4 py-2.5 text-[12px]" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>{error}</p>}
 
       <div className="rounded-[18px] px-4 py-3.5"
-        style={{ background: 'linear-gradient(135deg, rgba(91,99,246,0.08), rgba(16,185,129,0.06))', border: '1px solid var(--border)' }}>
+        style={{ background: 'linear-gradient(135deg, rgba(163,55,87,0.08), rgba(16,185,129,0.06))', border: '1px solid var(--border)' }}>
         <p className="flex items-center gap-2 text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>
           <Sparkles size={15} style={{ color: 'var(--brand)' }} /> Observations first, suggestions second
         </p>

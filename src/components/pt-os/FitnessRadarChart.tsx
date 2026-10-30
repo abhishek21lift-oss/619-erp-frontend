@@ -27,7 +27,7 @@ interface FitnessRadarChartProps {
 
 /** 6-category fitness score radar (Body Composition / Strength / Endurance / Flexibility / Cardio / Health Score). */
 export function FitnessRadarChart({
-  data, height = 280, variant = 'onDark', accent = '#5B63F6',
+  data, height = 280, variant = 'onDark', accent = '#A33757',
 }: FitnessRadarChartProps) {
   const onCard = variant === 'onCard';
   const labelFill = onCard ? 'currentColor' : 'rgba(255,255,255,0.65)';

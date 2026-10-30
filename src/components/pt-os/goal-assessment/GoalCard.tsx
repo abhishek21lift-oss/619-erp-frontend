@@ -74,7 +74,7 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
         <div className="flex items-center gap-2">
           {/* Target is also the 'custom' goal icon, which is the right
               fallback for a goal_type this build does not know about. */}
-          {(() => { const Icon = meta?.icon ?? Target; return <Icon size={15} strokeWidth={2} className="flex-shrink-0" style={{ color: '#3F46D6' }} />; })()}
+          {(() => { const Icon = meta?.icon ?? Target; return <Icon size={15} strokeWidth={2} className="flex-shrink-0" style={{ color: '#852E4E' }} />; })()}
           <p className="text-[14px] font-[760] text-[color:var(--text-primary)] truncate">{label}</p>
           {!goal.is_active && (
             <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: 'rgba(148,163,184,0.15)', color: 'var(--text-muted)' }}>Inactive</span>
@@ -82,7 +82,7 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {!!goal.status && (
-            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(91,99,246,0.10)', color: '#3F46D6' }}>
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(163,55,87,0.10)', color: '#852E4E' }}>
               {String(goal.status)}
             </span>
           )}
@@ -92,7 +92,7 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
             </span>
           )}
           {!!measureLabel && (
-            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(91,99,246,0.08)', color: '#3F46D6' }}>
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(163,55,87,0.08)', color: '#852E4E' }}>
               {measureLabel}
             </span>
           )}

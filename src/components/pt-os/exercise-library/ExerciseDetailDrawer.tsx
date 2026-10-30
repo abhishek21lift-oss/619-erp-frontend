@@ -168,7 +168,7 @@ export function ExerciseDetailDrawer({
                     <Pencil size={15} />
                   </IconButton>
                 )}
-                <IconButton label="Version history" onClick={loadVersions} className={showVersions ? 'bg-[rgba(91,99,246,0.1)] text-[var(--brand)]' : undefined}>
+                <IconButton label="Version history" onClick={loadVersions} className={showVersions ? 'bg-[rgba(163,55,87,0.1)] text-[var(--brand)]' : undefined}>
                   <History size={15} />
                 </IconButton>
               </>

@@ -79,8 +79,9 @@ export const heroMesh = {
 } as const;
 
 /**
- * The house hero — the Aurora indigo the dashboard and every PageHero page
- * open on, not this file's spectrum.
+ * The house hero — the brand ramp the dashboard and every PageHero page open
+ * on, not this file's spectrum. The export keeps its old name so the client
+ * profile and its test stay put; renaming is separate work.
  *
  * The client profile used to paint itself from `heroMesh` above, which made
  * the page a trainer opens most the one page in the app that did not look
@@ -90,11 +91,11 @@ export const heroMesh = {
  * overflow-hidden, which is what keeps the blur clipped to the corner.
  */
 export const auroraHero = {
-  base: 'linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%)',
-  crown: 'radial-gradient(130% 150% at 50% -25%, #7F86F8 0%, transparent 58%)',
-  glowWarm: '#FF853D',
-  glowCool: '#20BFA4',
-  shadow: '0 24px 64px -14px rgba(47,53,168,0.55), 0 8px 26px rgba(91,99,246,0.24), inset 0 1px 0 rgba(255,255,255,0.12)',
+  base: 'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)',
+  crown: 'radial-gradient(130% 150% at 50% -25%, #FB9590 0%, transparent 58%)',
+  glowWarm: '#FFBB94',
+  glowCool: '#DC586D',
+  shadow: '0 24px 64px -14px rgba(107,36,64,0.55), 0 8px 26px rgba(163,55,87,0.24), inset 0 1px 0 rgba(255,255,255,0.12)',
 } as const;
 
 /** The completion ring's stops — Move-ring warm to cool. */

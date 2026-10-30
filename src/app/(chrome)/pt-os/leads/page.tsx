@@ -20,8 +20,8 @@ import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  new:             { label: 'New',             color: '#3F46D6', bg: 'rgba(91,99,246,0.12)' },
-  contacted:       { label: 'Contacted',        color: '#3F46D6', bg: 'rgba(91,99,246,0.12)' },
+  new:             { label: 'New',             color: '#852E4E', bg: 'rgba(163,55,87,0.12)' },
+  contacted:       { label: 'Contacted',        color: '#852E4E', bg: 'rgba(163,55,87,0.12)' },
   trial_scheduled: { label: 'Trial Scheduled',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
   converted:       { label: 'Converted',        color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   lost:            { label: 'Lost',             color: '#94a3b8', bg: 'rgba(148,163,184,0.14)' },
@@ -66,7 +66,7 @@ function LeadCard({
         <div className="flex min-w-0 items-center gap-3">
           <div
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px] text-[12px] font-[800] text-white"
-            style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)' }}
+            style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)' }}
           >
             {initials || '?'}
           </div>
@@ -303,8 +303,8 @@ export default function LeadsPage() {
                 zero is a real zero. */}
             <div className="mt-4 grid grid-cols-2 gap-3.5 sm:mt-5 sm:grid-cols-4 sm:gap-4">
               {[
-                { label: 'Total Leads', value: counts.total, icon: <Users size={21} className="text-white" strokeWidth={2.1} />, from: '#5B63F6', to: '#5B63F6' },
-                { label: 'New', value: counts.new, icon: <Target size={21} className="text-white" strokeWidth={2.1} />, from: '#7F86F8', to: '#5B63F6' },
+                { label: 'Total Leads', value: counts.total, icon: <Users size={21} className="text-white" strokeWidth={2.1} />, from: '#A33757', to: '#A33757' },
+                { label: 'New', value: counts.new, icon: <Target size={21} className="text-white" strokeWidth={2.1} />, from: '#FB9590', to: '#A33757' },
                 { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={21} className="text-white" strokeWidth={2.1} />, from: '#F59E0B', to: '#D97706' },
                 { label: 'Converted', value: counts.converted, icon: <TrendingUp size={21} className="text-white" strokeWidth={2.1} />, from: '#10B981', to: '#059669' },
               ].map((c) => (
@@ -362,7 +362,7 @@ export default function LeadsPage() {
                 aria-label="Search leads"
                 type="text" placeholder="Search leads…" value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-[52px] w-full rounded-[15px] pl-12 pr-4 text-[15px] font-[500] outline-none transition-all focus:border-[#7F86F8] sm:max-w-sm"
+                className="h-[52px] w-full rounded-[15px] pl-12 pr-4 text-[15px] font-[500] outline-none transition-all focus:border-[#FB9590] sm:max-w-sm"
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
@@ -385,7 +385,7 @@ export default function LeadsPage() {
                   aria-pressed={statusFilter === f.value}
                   className="rounded-[11px] px-2.5 py-2 text-[11.5px] font-[700] transition-all active:scale-[0.97] sm:px-3.5 sm:text-[13px]"
                   style={statusFilter === f.value
-                    ? { background: 'linear-gradient(140deg, #5B63F6, #3F46D6)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(91,99,246,0.6)' }
+                    ? { background: 'linear-gradient(140deg, #A33757, #852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
                     : { color: 'var(--text-secondary)' }}>
                   {f.label}
                 </button>
@@ -395,7 +395,7 @@ export default function LeadsPage() {
             {/* List */}
             {leads.loading && !leads.data && (
               <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <Loader2 size={26} className="animate-spin" style={{ color: '#3F46D6' }} />
+                <Loader2 size={26} className="animate-spin" style={{ color: '#852E4E' }} />
                 <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Loading leads…</p>
               </div>
             )}
@@ -468,7 +468,7 @@ export default function LeadsPage() {
           >
             <div
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
-              style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', boxShadow: '0 6px 20px rgba(91,99,246,0.32)' }}
+              style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 20px rgba(163,55,87,0.32)' }}
             >
               <UserSearch size={19} className="text-white" />
             </div>
@@ -502,7 +502,7 @@ export default function LeadsPage() {
               type="button" loading={saving} disabled={saving}
               iconLeft={!saving ? <Check size={15} /> : undefined}
               onClick={handleSave}
-              style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
             >
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>

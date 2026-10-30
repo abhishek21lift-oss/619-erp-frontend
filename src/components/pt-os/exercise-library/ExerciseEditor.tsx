@@ -789,7 +789,7 @@ function inputCls(hasError: boolean) {
     'placeholder:text-slate-400 dark:bg-white/[0.04] dark:placeholder:text-white/25',
     hasError
       ? 'border-[rgba(239,68,68,0.5)] focus:border-[var(--danger)]'
-      : 'border-slate-200 focus:border-[rgba(91,99,246,0.5)] focus:ring-2 focus:ring-[rgba(91,99,246,0.15)] dark:border-white/10',
+      : 'border-slate-200 focus:border-[rgba(163,55,87,0.5)] focus:ring-2 focus:ring-[rgba(163,55,87,0.15)] dark:border-white/10',
   );
 }
 
@@ -892,7 +892,7 @@ function ListField({
           onClick={add}
           disabled={!draft.trim()}
           aria-label={`Add to ${label}`}
-          className="shrink-0 rounded-xl border border-slate-200 px-2.5 text-[var(--text-muted)] transition-colors hover:border-[rgba(91,99,246,0.4)] hover:text-[var(--brand)] disabled:opacity-40 dark:border-white/10"
+          className="shrink-0 rounded-xl border border-slate-200 px-2.5 text-[var(--text-muted)] transition-colors hover:border-[rgba(163,55,87,0.4)] hover:text-[var(--brand)] disabled:opacity-40 dark:border-white/10"
         >
           <Plus size={14} />
         </button>

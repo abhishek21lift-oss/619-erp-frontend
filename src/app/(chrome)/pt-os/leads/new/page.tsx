@@ -97,7 +97,7 @@ function NewLeadForm() {
             type="button" loading={saving} disabled={saving}
             iconLeft={!saving ? <Check size={15} /> : undefined}
             onClick={handleSave}
-            style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+            style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
           >
             {saving ? 'Saving…' : 'Add Lead'}
           </Button>

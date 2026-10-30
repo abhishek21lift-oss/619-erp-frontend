@@ -34,14 +34,14 @@ function fmtShortINR(n: number): string {
 }
 
 const CLIENT_PALETTES = [
-  { from: '#5B63F6', to: '#5B63F6', glow: 'rgba(91,99,246,0.35)' },
-  { from: '#3F46D6', to: '#3F46D6', glow: 'rgba(63,70,214,0.35)' },
+  { from: '#A33757', to: '#A33757', glow: 'rgba(163,55,87,0.35)' },
+  { from: '#852E4E', to: '#852E4E', glow: 'rgba(133,46,78,0.35)' },
   { from: '#059669', to: '#047857', glow: 'rgba(5,150,105,0.35)' },
   { from: '#d97706', to: '#b45309', glow: 'rgba(217,119,6,0.35)' },
-  { from: '#5B63F6', to: '#5B63F6', glow: 'rgba(91,99,246,0.35)' },
-  { from: '#5B63F6', to: '#5B63F6', glow: 'rgba(91,99,246,0.35)' },
+  { from: '#A33757', to: '#A33757', glow: 'rgba(163,55,87,0.35)' },
+  { from: '#A33757', to: '#A33757', glow: 'rgba(163,55,87,0.35)' },
   { from: '#f59e0b', to: '#b91c1c', glow: 'rgba(245,158,11,0.35)' },
-  { from: '#3F46D6', to: '#3F46D6', glow: 'rgba(63,70,214,0.35)' },
+  { from: '#852E4E', to: '#852E4E', glow: 'rgba(133,46,78,0.35)' },
 ];
 
 /**
@@ -59,8 +59,8 @@ function getStatusInfo(status: string, days_left: number | null, has_pt_term = f
   // Enrolled", while a provisional enrolment (term written, screening still
   // outstanding) is "Activation Pending".
   if (status === 'pending' && has_pt_term) return { label: 'Activation Pending', color: '#d97706', bg: 'rgba(217,119,6,0.12)', dot: '#d97706' };
-  if (status === 'pending') return { label: 'Not Enrolled', color: '#7F86F8', bg: 'rgba(165,170,251,0.14)', dot: '#5B63F6' };
-  if (status === 'frozen') return { label: 'Frozen', color: '#3F46D6', bg: 'rgba(91,99,246,0.12)', dot: '#5B63F6' };
+  if (status === 'pending') return { label: 'Not Enrolled', color: '#64748B', bg: 'rgba(100,116,139,0.10)', dot: '#64748B' };
+  if (status === 'frozen') return { label: 'Frozen', color: '#852E4E', bg: 'rgba(163,55,87,0.12)', dot: '#A33757' };
   // days_left 0 is the term's last day, which is still a valid day (lib/term-dates.ts).
   if (days_left == null || termEnded(days_left)) return { label: 'Expired', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   if (days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
@@ -112,10 +112,10 @@ function DaysArc({ days_left }: { days_left: number | null }) {
 }
 
 const STATUS_FILTERS = [
-  { value: 'all',     label: 'All',     from: '#5B63F6', to: '#5B63F6' },
+  { value: 'all',     label: 'All',     from: '#A33757', to: '#A33757' },
   { value: 'active',  label: 'Active',  from: '#10b981', to: '#059669' },
   { value: 'pending', label: 'Pending', from: '#d97706', to: '#b45309' },
-  { value: 'frozen',  label: 'Frozen',  from: '#5B63F6', to: '#5B63F6' },
+  { value: 'frozen',  label: 'Frozen',  from: '#A33757', to: '#A33757' },
   { value: 'expired', label: 'Expired', from: '#64748b', to: '#475569' },
 ];
 
@@ -330,7 +330,7 @@ export default function PtClientsPage() {
                   value={search} onChange={e => setSearch(e.target.value)}
                   className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] text-gray-900 outline-none transition-all duration-200 placeholder:text-slate-400"
                   style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)' }}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(91,99,246,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(91,99,246,0.08)'; }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(163,55,87,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(163,55,87,0.08)'; }}
                   onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
                 />
               </div>
@@ -437,7 +437,7 @@ export default function PtClientsPage() {
               <div className="flex flex-col items-center justify-center gap-4 py-24">
                 <div className="relative h-12 w-12">
                   <div className="absolute inset-0 rounded-full"
-                    style={{ border: '2px solid rgba(91,99,246,0.12)', borderTopColor: '#3F46D6', animation: 'spin 0.9s linear infinite' }} />
+                    style={{ border: '2px solid rgba(163,55,87,0.12)', borderTopColor: '#852E4E', animation: 'spin 0.9s linear infinite' }} />
                 </div>
                 <p className="text-[13px] font-[500] text-slate-500">Loading clients…</p>
               </div>
@@ -455,8 +455,8 @@ function EmptyState({ search, statusFilter, onNew }: { search: string; statusFil
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20">
       <div className="flex h-20 w-20 items-center justify-center rounded-[24px]"
-        style={{ background: 'rgba(91,99,246,0.07)', border: '1px solid rgba(91,99,246,0.15)' }}>
-        <Users size={32} style={{ color: '#3F46D6' }} />
+        style={{ background: 'rgba(163,55,87,0.07)', border: '1px solid rgba(163,55,87,0.15)' }}>
+        <Users size={32} style={{ color: '#852E4E' }} />
       </div>
       <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">
         {isFiltered ? 'No PT clients found' : 'Add your first client'}
@@ -469,7 +469,7 @@ function EmptyState({ search, statusFilter, onNew }: { search: string; statusFil
       {!isFiltered && (
         <button onClick={onNew}
           className="mt-2 inline-flex items-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:-translate-y-0.5"
-          style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', boxShadow: '0 6px 24px rgba(91,99,246,0.35)' }}>
+          style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 24px rgba(163,55,87,0.35)' }}>
           <UserPlus size={14} />New Client
         </button>
       )}

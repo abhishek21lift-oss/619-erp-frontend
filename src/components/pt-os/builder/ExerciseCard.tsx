@@ -42,8 +42,8 @@ import { FormField, SelectInput, TextArea, TextInput } from '@/components/ui/for
 
 /** Muscle-group hues. Fixed per group so a group keeps its colour everywhere. */
 const GROUP_TONE: Record<string, string> = {
-  chest: '#dc2626', back: '#5B63F6', legs: '#5B63F6', shoulders: '#f59e0b',
-  arms: '#3F46D6', core: '#d97706', cardio: '#059669', 'full body': '#64748b',
+  chest: '#dc2626', back: '#A33757', legs: '#A33757', shoulders: '#f59e0b',
+  arms: '#852E4E', core: '#d97706', cardio: '#059669', 'full body': '#64748b',
 };
 const toneFor = (group?: string | null) =>
   GROUP_TONE[(group || '').toLowerCase()] ?? 'var(--brand)';

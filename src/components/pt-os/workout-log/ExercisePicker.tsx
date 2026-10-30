@@ -554,9 +554,9 @@ export function ExercisePickerPanel({
             onClick={() => onCreateExercise!(customName)}
             data-testid="create-exercise"
             className="mb-2 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:opacity-90"
-            style={{ background: 'rgba(91,99,246,0.07)', border: '1px dashed rgba(91,99,246,0.38)', minHeight: 48 }}
+            style={{ background: 'rgba(163,55,87,0.07)', border: '1px dashed rgba(163,55,87,0.38)', minHeight: 48 }}
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]" style={{ background: '#5B63F6', color: '#fff' }}>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]" style={{ background: '#A33757', color: '#fff' }}>
               <PlusCircle size={15} />
             </span>
             <span className="min-w-0 flex-1">
@@ -579,13 +579,13 @@ export function ExercisePickerPanel({
             data-testid="custom-exercise"
             className="mb-2 flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:opacity-90"
             style={{
-              background: customName ? 'rgba(91,99,246,0.07)' : 'var(--bg-subtle)',
-              border: `1px dashed ${customName ? 'rgba(91,99,246,0.38)' : 'var(--border)'}`,
+              background: customName ? 'rgba(163,55,87,0.07)' : 'var(--bg-subtle)',
+              border: `1px dashed ${customName ? 'rgba(163,55,87,0.38)' : 'var(--border)'}`,
               minHeight: 48,
             }}
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]"
-              style={{ background: customName ? '#5B63F6' : 'var(--bg-card)', color: customName ? '#fff' : '#94a3b8' }}>
+              style={{ background: customName ? '#A33757' : 'var(--bg-card)', color: customName ? '#fff' : '#94a3b8' }}>
               <PlusCircle size={15} />
             </span>
             <span className="min-w-0 flex-1">
@@ -594,7 +594,7 @@ export function ExercisePickerPanel({
                   {customName ? `Use “${customName}”` : 'Custom exercise'}
                 </span>
                 <span className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wide"
-                  style={{ background: 'rgba(91,99,246,0.12)', color: '#3F46D6' }}>
+                  style={{ background: 'rgba(163,55,87,0.12)', color: '#852E4E' }}>
                   Custom
                 </span>
               </span>
@@ -653,7 +653,7 @@ export function ExercisePickerPanel({
                       <span
                         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px] transition"
                         style={{
-                          background: chosen ? 'linear-gradient(135deg, #5B63F6, #7F86F8)' : 'var(--bg-subtle)',
+                          background: chosen ? 'linear-gradient(135deg, #A33757, #FB9590)' : 'var(--bg-subtle)',
                           color: chosen ? '#fff' : undefined,
                         }}
                       >
@@ -728,8 +728,8 @@ export function ExercisePickerPanel({
               disabled={selected.length === 0 || busy}
               className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-40"
               style={{
-                background: 'linear-gradient(135deg, #5B63F6, #7F86F8)',
-                boxShadow: selected.length > 0 ? '0 4px 14px -4px rgba(91,99,246,0.5)' : 'none',
+                background: 'linear-gradient(135deg, #A33757, #FB9590)',
+                boxShadow: selected.length > 0 ? '0 4px 14px -4px rgba(163,55,87,0.5)' : 'none',
               }}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}

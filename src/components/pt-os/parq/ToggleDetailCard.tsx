@@ -24,8 +24,8 @@ export function ToggleDetailCard({
     <div
       className="rounded-[16px] overflow-hidden transition-all"
       style={{
-        border: checked ? '2px solid #5B63F6' : '2px solid var(--border)',
-        background: checked ? 'rgba(91,99,246,0.04)' : 'var(--bg-subtle)',
+        border: checked ? '2px solid #A33757' : '2px solid var(--border)',
+        background: checked ? 'rgba(163,55,87,0.04)' : 'var(--bg-subtle)',
       }}
     >
       <button
@@ -36,7 +36,7 @@ export function ToggleDetailCard({
         <span className="flex items-center gap-3">
           <span
             className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px] transition-all"
-            style={{ background: checked ? '#5B63F6' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}
+            style={{ background: checked ? '#A33757' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}
           >
             {checked && <Check size={13} color="#fff" strokeWidth={3} />}
           </span>

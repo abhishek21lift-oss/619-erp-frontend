@@ -39,9 +39,9 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           <ToggleDetailCard label="Currently Under Treatment" checked={ch.current_treatment} onToggle={(v) => setCh('current_treatment', v)} details={ch.current_treatment_details} onDetailsChange={(v) => setCh('current_treatment_details', v)} detailsLabel="Treatment details" />
         </div>
 
-        <div className="rounded-[16px] overflow-hidden" style={{ border: ch.has_pain ? '2px solid #5B63F6' : '2px solid var(--border)', background: ch.has_pain ? 'rgba(91,99,246,0.04)' : 'var(--bg-subtle)' }}>
+        <div className="rounded-[16px] overflow-hidden" style={{ border: ch.has_pain ? '2px solid #A33757' : '2px solid var(--border)', background: ch.has_pain ? 'rgba(163,55,87,0.04)' : 'var(--bg-subtle)' }}>
           <button type="button" onClick={() => set('currentHealth', { ...ch, has_pain: !ch.has_pain, pain_scale: !ch.has_pain && !ch.pain_scale ? '5' : ch.pain_scale })} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
-            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: ch.has_pain ? '#5B63F6' : 'var(--bg-card)', border: ch.has_pain ? 'none' : '1.5px solid var(--border-2)' }} />
+            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: ch.has_pain ? '#A33757' : 'var(--bg-card)', border: ch.has_pain ? 'none' : '1.5px solid var(--border-2)' }} />
             <span className="text-[13.5px] font-[700]" style={{ color: ch.has_pain ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Currently Experiencing Pain</span>
           </button>
           {ch.has_pain && (

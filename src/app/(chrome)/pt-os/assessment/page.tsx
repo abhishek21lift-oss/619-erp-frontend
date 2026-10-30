@@ -174,7 +174,7 @@ function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean,
 export default function PtAssessmentPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>}>
         <AssessmentContent />
       </Suspense>
     </Guard>
@@ -600,7 +600,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} />
+        <Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} />
       </div>
     );
   }
@@ -715,7 +715,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
               <Button
                 iconLeft={<Download size={14} />}
                 onClick={() => downloadAssessmentPdf(lastSaved, clientName)}
-                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
                 Download PDF Report
               </Button>
@@ -825,7 +825,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                 <Button
                   iconLeft={<ArrowRight size={14} />}
                   onClick={handleNext}
-                  style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                  style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
                 >
                   {step === 7 ? 'Review' : 'Next'}
                 </Button>
@@ -834,7 +834,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                   iconLeft={!saving ? <Check size={14} /> : undefined}
                   loading={saving} disabled={saving}
                   onClick={handleSubmit}
-                  style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                  style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
                 >
                   {saving ? 'Saving...' : editingId ? 'Update Assessment' : 'Save Assessment'}
                 </Button>

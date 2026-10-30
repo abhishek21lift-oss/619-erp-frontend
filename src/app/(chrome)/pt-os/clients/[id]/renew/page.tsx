@@ -186,8 +186,8 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
           {/* Section: Plan */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(91,99,246,0.12)' }}>
-                <Dumbbell size={13} style={{ color: '#3F46D6' }} />
+              <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(163,55,87,0.12)' }}>
+                <Dumbbell size={13} style={{ color: '#852E4E' }} />
               </div>
               <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Package Details</h2>
             </div>

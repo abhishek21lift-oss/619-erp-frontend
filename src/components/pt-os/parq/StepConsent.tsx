@@ -56,9 +56,9 @@ export function StepConsent({ form, set, error, stepLabel, resignRequired }: Ste
               <button
                 key={f.key} type="button" onClick={() => toggleCheckbox(f.key)}
                 className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
-                style={{ background: checked ? 'rgba(91,99,246,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #5B63F6' : '1.5px solid var(--border)' }}
+                style={{ background: checked ? 'rgba(163,55,87,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #A33757' : '1.5px solid var(--border)' }}
               >
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#5B63F6' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}>
+                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#A33757' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}>
                   {checked && <Check size={13} color="#fff" strokeWidth={3} />}
                 </span>
                 <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{f.label}</span>

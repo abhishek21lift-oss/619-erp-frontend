@@ -25,7 +25,7 @@ interface ClientOption { id: string; name: string; }
 
 /** The one accent this page uses. Six rotating card gradients were six
  *  different meanings for a colour that never meant anything. */
-const ACCENT = '#5B63F6';
+const ACCENT = '#A33757';
 
 /**
  * Which week of a programme a client is actually in.
@@ -381,7 +381,7 @@ function Inner() {
               type="button"
               onClick={openCreate}
               className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] sm:flex-none"
-              style={{ background: ACCENT, minHeight: 44, boxShadow: '0 2px 10px rgba(91,99,246,0.28)' }}>
+              style={{ background: ACCENT, minHeight: 44, boxShadow: '0 2px 10px rgba(163,55,87,0.28)' }}>
               <Plus size={16} /> New Plan
             </button>
           </div>
@@ -527,7 +527,7 @@ function Inner() {
                 <div className="flex flex-col items-center px-5 py-14 text-center">
                   <span
                     className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px] text-white"
-                    style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', boxShadow: '0 6px 16px -4px rgba(91,99,246,0.40)' }}
+                    style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 16px -4px rgba(163,55,87,0.40)' }}
                   >
                     <Dumbbell size={22} />
                   </span>
@@ -541,7 +541,7 @@ function Inner() {
                     type="button"
                     onClick={openCreate}
                     className="mt-4 inline-flex items-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98]"
-                    style={{ background: 'linear-gradient(135deg, #5B63F6, #7F86F8)', minHeight: 44, boxShadow: '0 3px 12px -2px rgba(91,99,246,0.40)' }}
+                    style={{ background: 'linear-gradient(135deg, #A33757, #FB9590)', minHeight: 44, boxShadow: '0 3px 12px -2px rgba(163,55,87,0.40)' }}
                   >
                     <Plus size={15} /> New Plan
                   </button>
@@ -613,7 +613,7 @@ function Inner() {
                   {(['All', ...bodyParts.slice(0, 12)]).map((bp) => (
                     <button key={bp}
                       onClick={() => setActiveBodyPart(bp)}
-                      style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(91,99,246,0.1)' : 'transparent', color: activeBodyPart === bp ? '#3F46D6' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(91,99,246,0.3)' : 'var(--border)' }}>
+                      style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(163,55,87,0.1)' : 'transparent', color: activeBodyPart === bp ? '#852E4E' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(163,55,87,0.3)' : 'var(--border)' }}>
                       {bp}
                     </button>
                   ))}
@@ -670,7 +670,7 @@ function Inner() {
               <div className="mx-auto max-w-[640px] px-1 py-6 text-center sm:py-8">
                 <span
                   className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] text-white"
-                  style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', boxShadow: '0 6px 18px -4px rgba(91,99,246,0.45)' }}
+                  style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 18px -4px rgba(163,55,87,0.45)' }}
                 >
                   <Sparkles size={24} />
                 </span>
@@ -682,7 +682,7 @@ function Inner() {
                 </p>
                 <button onClick={() => setAiPanelOpen(true)}
                   className="mt-5 inline-flex items-center gap-2 rounded-[12px] px-5 text-[13.5px] font-[700] text-white transition-transform active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(135deg, #5B63F6, #7F86F8)', minHeight: 44, boxShadow: '0 4px 16px -3px rgba(91,99,246,0.45)' }}>
+                  style={{ background: 'linear-gradient(135deg, #A33757, #FB9590)', minHeight: 44, boxShadow: '0 4px 16px -3px rgba(163,55,87,0.45)' }}>
                   <Sparkles size={15} /> Open AI Coach
                 </button>
 
