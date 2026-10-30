@@ -49,3 +49,18 @@ describe('editing a goal keeps the saved blueprint choices', () => {
     expect(form.equipment).toBe('full_gym');
   });
 });
+
+describe('editing a goal saved before milestones had a description', () => {
+  it('fills the missing text instead of handing undefined to the form', () => {
+    const form = formFromGoalRow({
+      milestones: [
+        { label: 'Start', date: '2026-10-18', type: 'start' },
+        { label: 'Week 8 checkpoint', date: '2026-12-13', type: 'short_term' },
+      ],
+    });
+    expect(form.milestones).toEqual([
+      { type: 'start', label: 'Start', date: '2026-10-18', description: '' },
+      { type: 'short_term', label: 'Week 8 checkpoint', date: '2026-12-13', description: '' },
+    ]);
+  });
+});

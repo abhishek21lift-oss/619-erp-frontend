@@ -58,7 +58,20 @@ export function formFromGoalRow(row: Record<string, unknown>): GoalFormData {
   const coaching = blueprint.coaching || {};
   const k11 = blueprint.k11 || {};
   const measure = k11.measure || {};
-  const milestones = Array.isArray(row.milestones) ? (row.milestones as GoalMilestone[]) : [];
+  // Goals saved before the K11 wizard stored {label, date, type} milestones
+  // with no description; reading one untouched crashed step 10 on
+  // `value.length` inside FloatInput, so every saved field is settled here.
+  const milestones: GoalMilestone[] = Array.isArray(row.milestones)
+    ? (row.milestones as (Partial<GoalMilestone> | null)[]).flatMap((m) =>
+        m && typeof m === 'object'
+          ? [{
+              type: m.type ?? 'short_term',
+              label: String(m.label ?? ''),
+              date: m.date ? String(m.date).slice(0, 10) : '',
+              description: String(m.description ?? ''),
+            }]
+          : [])
+    : [];
   const preferred = Array.isArray(row.preferred_training_days) ? (row.preferred_training_days as string[]) : [];
   const metric = measure.metric || (row.target_weight != null ? 'weight' : row.target_body_fat != null ? 'body_fat' : '');
   return {
