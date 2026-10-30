@@ -19,7 +19,7 @@ import type { CheckinInsight } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 
-const BLUE = palette.blue[500];
+const BLUE = palette.indigo[500];
 const AMBER = palette.amber[500];
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -99,7 +99,7 @@ export default function WeeklyCheckinInsightCard({ clientId, checkinsCount }: We
     >
       <div className="flex items-start gap-2.5">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] text-white"
-          style={{ background: `linear-gradient(135deg, ${BLUE}, ${palette.blue[600]})` }}>
+          style={{ background: `linear-gradient(135deg, ${BLUE}, ${palette.indigo[600]})` }}>
           <Sparkles size={14} />
         </span>
         <div className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ export default function WeeklyCheckinInsightCard({ clientId, checkinsCount }: We
                 onClick={() => void generate()}
                 disabled={busy}
                 className="mt-2.5 flex h-[32px] items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-45"
-                style={{ background: `linear-gradient(135deg, ${BLUE}, ${palette.blue[600]})` }}
+                style={{ background: `linear-gradient(135deg, ${BLUE}, ${palette.indigo[600]})` }}
               >
                 {busy ? <><Loader2 size={12} className="animate-spin" /> Reading check-ins&hellip;</> : <><Sparkles size={12} /> Get insight</>}
               </button>

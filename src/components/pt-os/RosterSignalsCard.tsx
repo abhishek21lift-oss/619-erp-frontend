@@ -79,7 +79,7 @@ const TONE: Record<RosterSignalSeverity, { label: string; color: string; fill: s
   info: {
     label: 'Note',
     color: 'var(--text-secondary)',
-    fill: rgba(palette.blue[500], 0.08),
+    fill: rgba(palette.indigo[500], 0.08),
     Icon: Info,
   },
 };
@@ -201,7 +201,7 @@ export default function RosterSignalsCard() {
   // client tints the whole surface, a roster that is merely quiet does not.
   const accent = sweep.critical > 0
     ? palette.red[500]
-    : sweep.warning > 0 ? palette.amber[500] : palette.blue[500];
+    : sweep.warning > 0 ? palette.amber[500] : palette.indigo[500];
 
   return (
     <Shell
@@ -265,7 +265,7 @@ function NotAssessable({ n, lead = false }: { n: number; lead?: boolean }) {
 }
 
 function Shell({
-  children, swept, flagged, urgent, accent = palette.blue[500],
+  children, swept, flagged, urgent, accent = palette.indigo[500],
 }: {
   children: React.ReactNode;
   swept?: number;
@@ -291,8 +291,8 @@ function Shell({
             aria-hidden
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white"
             style={{
-              background: `linear-gradient(150deg, ${palette.blue[400]}, ${palette.blue[700]})`,
-              boxShadow: `0 10px 20px -8px ${rgba(palette.blue[600], 0.65)}`,
+              background: `linear-gradient(150deg, ${palette.indigo[400]}, ${palette.indigo[700]})`,
+              boxShadow: `0 10px 20px -8px ${rgba(palette.indigo[600], 0.65)}`,
             }}
           >
             <PhoneCall size={19} />

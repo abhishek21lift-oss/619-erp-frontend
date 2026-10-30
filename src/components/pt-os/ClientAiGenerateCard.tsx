@@ -70,7 +70,7 @@ import { palette, rgba } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 import { ApiError } from '@/lib/http';
 
-const BLUE = palette.blue[500];
+const BLUE = palette.indigo[500];
 const GREEN = palette.emerald[500];
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -581,7 +581,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
               : blockedFields.length > 0 ? `Record ${blockedFields.join(', ')} first` : undefined}
             className="flex h-[44px] w-full items-center justify-center gap-1.5 rounded-[13px] px-3 text-[12.5px] font-[720] text-white transition-transform active:scale-[0.985] disabled:opacity-45"
             style={{
-              background: `linear-gradient(135deg, ${BLUE}, ${palette.blue[600]})`,
+              background: `linear-gradient(135deg, ${BLUE}, ${palette.indigo[600]})`,
               boxShadow: `0 5px 14px ${rgba(BLUE, 0.32)}`,
             }}
           >

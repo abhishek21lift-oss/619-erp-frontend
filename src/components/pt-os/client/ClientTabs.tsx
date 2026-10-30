@@ -49,7 +49,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 // own icon tiles from the exact same five values, rather than the page that
 // renders them inventing a second rotation that could drift from this one.
 export const TAB_COLOR = {
-  primary:    palette.blue[500],
+  primary:    palette.indigo[500],
   success:    palette.emerald[500],
   warning:    palette.amber[500],
   danger:     palette.red[600],
@@ -367,7 +367,7 @@ export function EmptyPanel({
             <Link key={a.href} href={a.href}
               className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] transition-all hover:-translate-y-0.5"
               style={i === 0
-                ? { background: 'var(--brand)', color: '#fff', boxShadow: `0 4px 14px ${rgba(palette.blue[500], 0.35)}` }
+                ? { background: 'var(--brand)', color: '#fff', boxShadow: `0 4px 14px ${rgba(palette.indigo[500], 0.35)}` }
                 : { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
               {a.label} <ChevronRight size={13} />
             </Link>

@@ -41,7 +41,7 @@ type OfferClient = {
   final_amount?: number | string | null;
 };
 
-const BLUE = palette.blue[500];
+const BLUE = palette.indigo[500];
 const GOOD = palette.emerald[500];
 const inr = (n: number | string) => `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const day = (v: string) => new Date(v).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
