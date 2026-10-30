@@ -76,6 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Calendar',
     items: [
       { href: '/pt-os/schedule-session',  label: 'Book Session',        icon: 'CalendarPlus' },
+      { href: '/pt-os/availability',      label: 'Availability',        icon: 'CalendarClock' },
       { href: '/pt-os/session-balance',   label: 'Session Balance',     icon: 'Gauge' },
       { href: '/pt-os/sessions',          label: 'Session History',     icon: 'History' },
       { href: '/attendance',              label: 'Attendance Records',  icon: 'ClipboardList', feature: 'attendance', roles: ['trainer'] },
@@ -176,6 +177,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/member/workout',   label: 'Workout',   icon: 'Dumbbell',        roles: ['member'] },
       { href: '/member/diet',      label: 'Diet',      icon: 'Apple',           roles: ['member'] },
       { href: '/member/checkin',   label: 'Check-in',  icon: 'ClipboardCheck',  roles: ['member'] },
+      { href: '/member/book',      label: 'Book',      icon: 'CalendarPlus',    roles: ['member'] },
       { href: '/member/payments',  label: 'Payments',  icon: 'Receipt',         roles: ['member'] },
       { href: '/member/more',      label: 'Profile',   icon: 'UserRound',       roles: ['member'] },
     ],

@@ -57,6 +57,7 @@ const BARE = [
   'forgot-password',
   'login',
   'member-login',
+  'member/book',
   'member/dashboard',
   'member/payments',
   'member/pay/[orderId]',

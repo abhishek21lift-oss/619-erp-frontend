@@ -16,6 +16,7 @@ import type {
   MeProfile, MeCoach, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
+  MeBooking, MeBookingAvailability,
   ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
   ProgressHabitPreferences, ProgressDashboard,
   InvitationPreview, InvoiceQuery, InvoiceTotals, LoginEvent, LoginEventQuery,
@@ -920,6 +921,23 @@ export const me = {
   measurements: () => http<{ data: MeMeasurement[] }>('/api/me/measurements'),
   /** Sessions the trainer logged, newest first, with the sets done. */
   sessions: () => http<{ data: MeSession[] }>('/api/me/sessions'),
+  /** Free slots inside the trainer's published availability, starting today. */
+  bookingAvailability: (days?: number) =>
+    http<{ data: MeBookingAvailability }>(
+      `/api/me/booking/availability${days ? `?days=${days}` : ''}`,
+    ),
+  /** This client's upcoming booked sessions, with the cutoff already applied. */
+  bookings: () => http<{ data: MeBooking[] }>('/api/me/booking'),
+  book: (date: string, start: string) =>
+    http<{ data: MeBooking }>('/api/me/booking', {
+      method: 'POST', body: JSON.stringify({ date, start }),
+    }),
+  rescheduleBooking: (id: string, date: string, start: string) =>
+    http<{ data: MeBooking }>(`/api/me/booking/${id}`, {
+      method: 'PATCH', body: JSON.stringify({ date, start }),
+    }),
+  cancelBooking: (id: string) =>
+    http<{ data: { id: string; status: string } }>(`/api/me/booking/${id}`, { method: 'DELETE' }),
   workout: () => http<{ data: MeWorkoutPlan[] }>('/api/me/workout'),
   diet: () => http<{ data: MeDietPlan[] }>('/api/me/diet'),
   checkins: () => http<{ data: { this_week: string; checkins: MeCheckin[] } }>('/api/me/checkins'),
