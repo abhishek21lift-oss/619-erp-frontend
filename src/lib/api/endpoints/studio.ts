@@ -1,4 +1,4 @@
-// API endpoints: gymSettings, qr, subscription, membershipPlans.
+// API endpoints: gymSettings, qr, subscription.
 //
 // Lifted verbatim from the single `api` object in the 4,185-line api.ts.
 // Method names, URLs and request shapes are unchanged; index.ts composes these
@@ -6,7 +6,7 @@
 
 import { http } from '../../http';
 import type {
-  CouponValidation, MembershipPlan, PlanChangeQuote, SubCheckoutRequest, SubInvoice,
+  CouponValidation, PlanChangeQuote, SubCheckoutRequest, SubInvoice,
   SubPayment, SubPlan, SubscriptionStatus, UpiPaymentView, UpiRejectReason,
 } from '../types';
 
@@ -151,13 +151,4 @@ export const subscription = {
       `/api/subscription/validate-coupon?code=${encodeURIComponent(code)}`
       + (planCode ? `&plan_code=${encodeURIComponent(planCode)}` : ''),
     ),
-};
-
-/**
- * Membership plans (the `plans` table). Read-only here — plans are managed
- * elsewhere; this exists so the UPI flow can offer real plans at their real
- * price instead of asking staff to retype an amount.
- */
-export const membershipPlans = {
-  list: () => http<MembershipPlan[]>('/api/plans?kind=Membership&active=true'),
 };

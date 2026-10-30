@@ -39,10 +39,9 @@ vi.mock('@/lib/toast', () => ({
 vi.mock('@/lib/api', () => ({
   api: {
     upiPayments: { pending: mocks.pending, create: mocks.create },
-    membershipPlans: { list: mocks.plans },
+    automation: { ptPackages: { list: mocks.plans } },
     clients: { search: mocks.search },
   },
-  PLAN_DURATION_MONTHS: { Monthly: 1, Quarterly: 3, 'Half Yearly': 6, Yearly: 12 },
 }));
 
 import VerifyPaymentsPage from '@/app/(chrome)/finance/verify-payments/page';
@@ -60,12 +59,9 @@ const CLIENT = { id: 'client-1', name: 'Asha Rao', mobile: '9876543210' };
 
 const PLAN = {
   id: 'plan-1',
-  kind: 'membership',
   name: 'Gold Quarterly',
-  description: null,
-  duration: 'Quarterly',
-  final_amount: '9000.00',
-  is_active: true,
+  price: '9000.00',
+  duration_days: 90,
 };
 
 beforeAll(() => {
@@ -86,7 +82,7 @@ afterAll(() => { vi.unstubAllGlobals(); });
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.pending.mockResolvedValue({ data: [], total: 0, stats: STATS, reject_reasons: {} });
-  mocks.plans.mockResolvedValue([PLAN]);
+  mocks.plans.mockResolvedValue({ data: [PLAN] });
   mocks.search.mockResolvedValue([CLIENT]);
   mocks.create.mockResolvedValue({
     data: { order: { id: 'order-9' }, payment: {}, reused: false },

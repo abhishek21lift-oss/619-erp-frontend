@@ -57,7 +57,6 @@ const BARE = [
   'forgot-password',
   'login',
   'member-login',
-  'member/classes',              // the member portal has its own shell
   'member/dashboard',
   'member/payments',
   'member/pay/[orderId]',

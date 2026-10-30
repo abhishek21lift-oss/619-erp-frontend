@@ -2179,8 +2179,8 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 :root { --muted: var(--text-muted); }
 
 /* ════════════════════════════════════════════════════════════════════
-   MEMBER PORTAL SHELL — /member/dashboard and /member/classes render a
-   standalone mobile-first portal (own header + bottom nav, no AppShell).
+   MEMBER PORTAL SHELL — /member/dashboard renders a standalone
+   mobile-first portal (own header + bottom nav, no AppShell).
    The classes were referenced but never defined.
    ════════════════════════════════════════════════════════════════════ */
 .member-shell {

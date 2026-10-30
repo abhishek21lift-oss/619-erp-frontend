@@ -1572,22 +1572,6 @@ export interface SearchResponse {
 }
 
 
-export type MembershipPlan = {
-  id: string;
-  kind: string;
-  name: string;
-  description: string | null;
-  /** An enum of words ('Monthly' … 'Yearly'), not a number of months. */
-  duration: string;
-  final_amount: string;
-  is_active: boolean;
-};
-
-/** plans.duration is a word; the order needs a count. Mirrors the backend map. */
-export const PLAN_DURATION_MONTHS: Record<string, number> = {
-  'Monthly': 1, 'Quarterly': 3, 'Half Yearly': 6, 'Yearly': 12,
-};
-
 // ── Subscription self-checkout types ─────────────────────────────────────────
 //
 // Amounts here are INTEGER whole rupees (matching subscription_plans.price_inr

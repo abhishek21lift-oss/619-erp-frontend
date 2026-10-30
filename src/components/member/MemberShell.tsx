@@ -8,7 +8,7 @@ import MemberNav, { MEMBER_NAV_CLEARANCE } from './MemberNav';
  * not go through.
  *
  * The portal had drifted into three different shells for three pages: this
- * one (local to the dashboard), the .member-* CSS classes (/member/classes),
+ * one (local to the dashboard), the retired classes page's .member-* CSS,
  * and the staff AppShell (/member/payments). Sharing one is what stops the
  * insets from having to be got right three separate times.
  */

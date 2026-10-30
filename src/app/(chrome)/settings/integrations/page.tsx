@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
-  Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
-  Settings, Clock, CheckCircle2, RefreshCw, Bot, Activity,
+  Camera, BarChart3, Loader2,
+  Settings, Clock, CheckCircle2, Bot, Activity,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { PageHero } from '@/components/ui';
@@ -41,9 +40,9 @@ interface Integration {
 // therefore read-only and reports what the server says, which is why
 // `managed: 'server'` exists.
 //
-// WhatsApp, Google Calendar and OpenRouter are not in this list either: each
-// has a live card below with its own lifecycle (a device pairing, an OAuth
-// grant, a model health check) rather than a stored string.
+// WhatsApp and OpenRouter are not in this list either: each has a live card
+// below with its own lifecycle (a device pairing, a model health check) rather
+// than a stored string.
 const STATIC_INTEGRATIONS: Integration[] = [
   { id: 'razorpay', name: 'Razorpay', description: 'Payment gateway for fees, memberships & PT packages', category: 'payments', icon: 'CreditCard', color: '#A33757', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
 ];
@@ -53,11 +52,10 @@ const CATEGORIES = [
   { id: 'payments',     label: 'Payments' },
   { id: 'communication',label: 'Communication' },
   { id: 'ai',           label: 'AI & Automation' },
-  { id: 'scheduling',   label: 'Scheduling' },
 ];
 
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
-  CreditCard, Smartphone, MessageSquare, Send, Calendar, Camera, BarChart3,
+  CreditCard, Smartphone, MessageSquare, Send, Camera, BarChart3,
 };
 
 const glass = {
@@ -206,169 +204,6 @@ function OpenRouterCard() {
   );
 }
 
-// ── Google Calendar Card (live OAuth) ─────────────────────────────────────────
-function GoogleCalendarCard({ flashSuccess, errorText }: { flashSuccess: boolean; errorText?: string | null }) {
-  const [status, setStatus]         = useState<{ connected: boolean; connectedAt?: string; lastSyncAt?: string } | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [flash, setFlash]           = useState(flashSuccess);
-
-  const fetchStatus = useCallback(async () => {
-    try {
-      const s = await api.calendar.status();
-      setStatus(s);
-    } catch {
-      setStatus({ connected: false });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchStatus(); }, [fetchStatus]);
-
-  // Clear the flash after 4 seconds
-  useEffect(() => {
-    if (!flash) return;
-    const t = setTimeout(() => setFlash(false), 4000);
-    return () => clearTimeout(t);
-  }, [flash]);
-
-  const handleConnect = async () => {
-    setConnecting(true);
-    try {
-      const { url } = await api.calendar.authUrl();
-      window.location.href = url;
-    } catch {
-      setConnecting(false);
-    }
-  };
-
-  const handleDisconnect = async () => {
-    setDisconnecting(true);
-    try {
-      await api.calendar.disconnect();
-      setStatus({ connected: false });
-    } catch {
-      // ignore
-    } finally {
-      setDisconnecting(false);
-    }
-  };
-
-  const isConnected = status?.connected ?? false;
-  const currentStatus: Status = loading ? 'pending' : isConnected ? 'connected' : 'unavailable';
-
-  const fmtDate = (iso?: string) => {
-    if (!iso) return '';
-    try { return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    catch { return iso; }
-  };
-
-  return (
-    <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
-      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, position: 'relative', overflow: 'hidden' }}
-    >
-      {/* Success flash */}
-      <AnimatePresence>
-        {flash && (
-          <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '8px 16px', background: 'linear-gradient(90deg,#10b981,#059669)', fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, zIndex: 10 }}
-          >
-            <CheckCircle2 size={13} /> Google Calendar connected successfully!
-          </m.div>
-        )}
-      </AnimatePresence>
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14, marginTop: flash ? 28 : 0, transition: 'margin-top 0.2s' }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#A33757' }}>
-          <Calendar size={20} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Google Calendar</div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            Sync class bookings to your Google Calendar automatically
-          </p>
-        </div>
-      </div>
-
-      {errorText && (
-        <p
-          role="alert"
-          style={{
-            fontSize: 12, lineHeight: 1.4, margin: '0 0 12px', padding: '8px 10px', borderRadius: 10,
-            color: 'var(--danger-text)', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)',
-          }}
-        >
-          {errorText}
-        </p>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        {loading ? (
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></m.span>
-            Checking…
-          </span>
-        ) : (
-          <>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: sc[currentStatus] }}>
-              {isConnected ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[currentStatus], display: 'inline-block' }} />}
-              {sl[currentStatus]}
-            </span>
-            {isConnected && status?.connectedAt && (
-              <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>
-                Connected {fmtDate(status.connectedAt)}
-              </span>
-            )}
-          </>
-        )}
-      </div>
-
-      {isConnected && status?.lastSyncAt && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--text-disabled)', marginBottom: 12 }}>
-          <RefreshCw size={9} /> Last sync: {fmtDate(status.lastSyncAt)}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: 8 }}>
-        {isConnected ? (
-          <>
-            <button
-              disabled
-              style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'var(--bg-subtle)', color: 'var(--text-muted)', opacity: 0.6 }}
-            >
-              <Settings size={13} /> Auto-sync on
-            </button>
-            <button
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              style={{ padding: '8px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, fontWeight: 600, cursor: disconnecting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
-            >
-              {disconnecting
-                ? <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span>
-                : <Unlink size={13} />
-              }
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={handleConnect}
-            disabled={connecting || loading}
-            style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (connecting || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#ffffff', boxShadow: '0 4px 12px rgba(163,55,87,0.3)', opacity: (connecting || loading) ? 0.7 : 1 }}
-          >
-            {connecting
-              ? <><m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> Redirecting…</>
-              : <><Link2 size={13} /> Connect with Google</>
-            }
-          </button>
-        )}
-      </div>
-    </m.div>
-  );
-}
-
 // ── Static integration card ───────────────────────────────────────────────────
 function StaticCard({ integration, isConnected, connectedAt }: {
   integration: Integration; isConnected: boolean; connectedAt?: string;
@@ -421,8 +256,6 @@ type ApiIntegration = { id: string; status: string; connected_at?: string; last_
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function IntegrationsPage() {
-  const searchParams  = useSearchParams();
-  const router        = useRouter();
   const [category, setCategory]   = useState('all');
   const [search,   setSearch]     = useState('');
   const [apiData,  setApiData]    = useState<Record<string, ApiIntegration>>({});
@@ -436,50 +269,7 @@ export default function IntegrationsPage() {
     }).catch(() => {});
   }, []);
 
-  // Detect OAuth callback result
-  const calendarParam = searchParams.get('calendar');
-  const [calendarResult, setCalendarResult] = useState<'connected' | 'error' | null>(null);
-  const [calendarError, setCalendarError]   = useState<string | null>(null);
-  const flashSuccess  = calendarParam === 'connected' || calendarResult === 'connected';
-
-  // ?calendar=confirm&code=…&state=… — the backend callback hands the Google
-  // code here instead of storing it, and this session completes it. The
-  // backend accepts it only if `state` was minted for the signed-in user.
-  // Guarded by a ref: the code is single-use, and a second POST (StrictMode's
-  // double effect, a re-render) would fail and overwrite the success.
-  const completingRef = useRef(false);
-  useEffect(() => {
-    if (calendarParam !== 'confirm' || completingRef.current) return;
-    const code  = searchParams.get('code');
-    const state = searchParams.get('state');
-    if (!code || !state) return;
-    completingRef.current = true;
-    api.calendar.complete({ code, state })
-      .then(() => setCalendarResult('connected'))
-      .catch((err: unknown) => {
-        setCalendarResult('error');
-        setCalendarError(errorMessage(err, 'Could not connect Google Calendar. Please try again.'));
-      });
-  }, [calendarParam, searchParams]);
-
-  // Clear the ?calendar= query params from the URL so they don't persist on
-  // refresh — including the one-time code, which must not sit in history.
-  useEffect(() => {
-    if (calendarParam) {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const key of ['calendar', 'code', 'state', 'scope', 'reason']) params.delete(key);
-      const newUrl = params.toString() ? `?${params.toString()}` : '/settings/integrations';
-      router.replace(newUrl, { scroll: false });
-    }
-  }, [calendarParam, searchParams, router]);
-
   const isConnected = (id: string) => apiData[id]?.status === 'connected';
-
-  // Build the filtered list: inject calendar card placeholder for layout purposes
-  const ALL_IDS_WITH_CALENDAR = [
-    ...STATIC_INTEGRATIONS.map((i) => i.id),
-    'calendar',
-  ];
 
   const filtered = useMemo(() => {
     const staticFiltered = STATIC_INTEGRATIONS.filter((i) => {
@@ -487,16 +277,13 @@ export default function IntegrationsPage() {
       if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !i.description.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-    const showCalendar =
-      (category === 'all' || category === 'scheduling') &&
-      (!search || 'google calendar'.includes(search.toLowerCase()) || 'sync sessions bookings'.includes(search.toLowerCase()));
     const showOpenRouter =
       (category === 'all' || category === 'ai') &&
       (!search || 'openrouter ai'.includes(search.toLowerCase()) || 'coaching workout diet insights'.includes(search.toLowerCase()));
     const showWhatsApp =
       (category === 'all' || category === 'communication') &&
       (!search || 'whatsapp'.includes(search.toLowerCase()) || 'messages reminders receipts qr'.includes(search.toLowerCase()));
-    return { staticFiltered, showCalendar, showOpenRouter, showWhatsApp };
+    return { staticFiltered, showOpenRouter, showWhatsApp };
   }, [category, search]);
 
   return (
@@ -541,13 +328,6 @@ export default function IntegrationsPage() {
                 connectedAt={apiData[integration.id]?.connected_at}
               />
             ))}
-            {filtered.showCalendar && (
-              <GoogleCalendarCard
-                key={`calendar-${calendarResult ?? 'initial'}`}
-                flashSuccess={flashSuccess}
-                errorText={calendarError}
-              />
-            )}
             {filtered.showOpenRouter && (
               <OpenRouterCard key="openrouter" />
             )}
@@ -557,7 +337,7 @@ export default function IntegrationsPage() {
           </AnimatePresence>
         </div>
 
-        {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showOpenRouter && !filtered.showWhatsApp && (
+        {!filtered.staticFiltered.length && !filtered.showOpenRouter && !filtered.showWhatsApp && (
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
