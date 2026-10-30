@@ -359,7 +359,7 @@ function BoardRow({ row, top, i, reduce }: { row: BoardRow; top: number; i: numb
         name={row.name}
         photoUrl={row.photo}
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[12px] font-[800] text-white"
-        style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}
+        style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)' }}
       >
         {initialsOf(row.name)}
       </ClientAvatar>

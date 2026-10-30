@@ -228,7 +228,7 @@ function PasskeysContent() {
       {credentials.length > 0 && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
           {[
-            { label: 'Total', val: credentials.length, color: '#0067E0' },
+            { label: 'Total', val: credentials.length, color: '#A33757' },
             { label: 'Active', val: activeCount, color: '#10b981' },
             ...(disabledCount > 0 ? [{ label: 'Disabled', val: disabledCount, color: '#f59e0b' }] : []),
           ].map(s => (
@@ -304,8 +304,8 @@ function PasskeysContent() {
       {showForm && supported && available && (
         <div style={{
           padding: '22px 24px', borderRadius: 18, marginBottom: 20,
-          background: 'var(--bg-card)', border: '1px solid rgba(0,103,224,0.28)',
-          boxShadow: '0 4px 24px rgba(0,103,224,0.10)',
+          background: 'var(--bg-card)', border: '1px solid rgba(163,55,87,0.28)',
+          boxShadow: '0 4px 24px rgba(163,55,87,0.10)',
         }}>
           <p style={{ fontSize: 15, fontWeight: 720, color: 'var(--text-primary)', marginBottom: 4 }}>
             Register a new passkey
@@ -336,7 +336,7 @@ function PasskeysContent() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 7,
                 padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 660,
-                background: 'linear-gradient(135deg,#0067E0,#0059CE)',
+                background: 'linear-gradient(135deg,#A33757,#852E4E)',
                 color: '#fff', border: 'none',
                 cursor: registering ? 'not-allowed' : 'pointer',
                 opacity: registering ? 0.7 : 1,
@@ -381,7 +381,7 @@ function PasskeysContent() {
           </span>
           <span style={{
             fontSize: 11.5, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
-            background: 'rgba(0,103,224,0.10)', color: '#0067E0',
+            background: 'rgba(163,55,87,0.10)', color: '#A33757',
           }}>
             {credentials.length}
           </span>
@@ -396,9 +396,9 @@ function PasskeysContent() {
           <div style={{ padding: '44px 24px', textAlign: 'center' }}>
             <div style={{
               width: 52, height: 52, borderRadius: 14, margin: '0 auto 16px',
-              background: 'rgba(0,103,224,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(163,55,87,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Fingerprint size={24} style={{ color: '#0067E0', opacity: 0.5 }} />
+              <Fingerprint size={24} style={{ color: '#A33757', opacity: 0.5 }} />
             </div>
             <p style={{ fontSize: 15, fontWeight: 680, color: 'var(--text-secondary)', marginBottom: 6 }}>
               No passkeys registered
@@ -412,9 +412,9 @@ function PasskeysContent() {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '10px 20px', borderRadius: 11, fontSize: 13, fontWeight: 660,
-                  background: 'linear-gradient(135deg,#0067E0,#0059CE)',
+                  background: 'linear-gradient(135deg,#A33757,#852E4E)',
                   color: '#fff', border: 'none', cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(0,103,224,0.3)',
+                  boxShadow: '0 4px 14px rgba(163,55,87,0.3)',
                 }}
               >
                 <Plus size={15} /> Add Your First Passkey
@@ -438,9 +438,9 @@ function PasskeysContent() {
                   <div style={{
                     width: 42, height: 42, borderRadius: 11, flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: cred.is_active ? 'rgba(0,103,224,0.10)' : 'rgba(0,0,0,0.05)',
-                    border: `1px solid ${cred.is_active ? 'rgba(0,103,224,0.2)' : 'rgba(0,0,0,0.08)'}`,
-                    color: cred.is_active ? '#0067E0' : '#94a3b8',
+                    background: cred.is_active ? 'rgba(163,55,87,0.10)' : 'rgba(0,0,0,0.05)',
+                    border: `1px solid ${cred.is_active ? 'rgba(163,55,87,0.2)' : 'rgba(0,0,0,0.08)'}`,
+                    color: cred.is_active ? '#A33757' : '#94a3b8',
                   }}>
                     <DeviceIcon type={cred.device_type} />
                   </div>
@@ -456,7 +456,7 @@ function PasskeysContent() {
                           onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenameId(null); }}
                           style={{
                             padding: '5px 10px', borderRadius: 8, fontSize: 13,
-                            background: 'var(--bg-subtle)', border: '1.5px solid rgba(0,103,224,0.4)',
+                            background: 'var(--bg-subtle)', border: '1.5px solid rgba(163,55,87,0.4)',
                             color: 'var(--text-primary)', fontFamily: 'inherit',
                             maxWidth: 200,
                           }}
@@ -516,9 +516,9 @@ function PasskeysContent() {
                           color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s',
                         }}
                         onMouseEnter={e => {
-                          e.currentTarget.style.background = 'rgba(0,103,224,0.08)';
-                          e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)';
-                          e.currentTarget.style.color = '#0067e0';
+                          e.currentTarget.style.background = 'rgba(163,55,87,0.08)';
+                          e.currentTarget.style.borderColor = 'rgba(163,55,87,0.2)';
+                          e.currentTarget.style.color = '#A33757';
                         }}
                         onMouseLeave={e => {
                           e.currentTarget.style.background = 'transparent';
@@ -588,8 +588,8 @@ function PasskeysContent() {
       {/* Security info */}
       <div style={{
         padding: '18px 22px', borderRadius: 16,
-        background: 'rgba(0,103,224,0.04)',
-        border: '1px solid rgba(0,103,224,0.14)',
+        background: 'rgba(163,55,87,0.04)',
+        border: '1px solid rgba(163,55,87,0.14)',
       }}>
         <p style={{ fontSize: 13, fontWeight: 680, color: 'var(--text-secondary)', marginBottom: 8 }}>
           How passkeys work

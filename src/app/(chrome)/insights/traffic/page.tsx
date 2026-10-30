@@ -182,7 +182,7 @@ function Inner() {
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)' }} />
+              <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #A33757, #852E4E)' }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Check-ins by Hour</span>
             </div>
           </div>
@@ -190,8 +190,8 @@ function Inner() {
             <div style={{ height: 220, background: 'var(--bg-subtle)', borderRadius: 10 }} />
           ) : totalCheckins === 0 ? (
             <div style={{ height: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.04))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,103,224,0.15)' }}>
-                <BarChart3 size={24} color="#0059ce" />
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.04))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(163,55,87,0.15)' }}>
+                <BarChart3 size={24} color="#852E4E" />
               </div>
               <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-muted)' }}>No check-in data for this period</div>
               <div style={{ fontSize: 12, color: 'var(--text-disabled)', maxWidth: 300, textAlign: 'center' }}>Select a different date range to see attendance patterns.</div>
@@ -215,12 +215,12 @@ function Inner() {
                   <div key={i} data-hour-index={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', gap: 4 }}
                     onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
                     {hovered === i && h.count > 0 && (
-                      <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: 'rgba(0,103,224,0.9)', borderRadius: 6, padding: '3px 8px', marginBottom: 2, whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: 'rgba(163,55,87,0.9)', borderRadius: 6, padding: '3px 8px', marginBottom: 2, whiteSpace: 'nowrap' }}>
                         {h.count} check-ins
                       </div>
                     )}
                     <div style={{ fontSize: 10, color: 'var(--text-disabled)', marginTop: 'auto', fontWeight: 600 }}>{hovered !== i ? (h.count > 0 ? h.count : '') : ''}</div>
-                    <div style={{ width: '100%', height: `${Math.max((h.count / max) * 100, h.count > 0 ? 4 : 0)}%`, background: h.count > 0 ? 'linear-gradient(180deg, #0067e0 0%, #0059ce 50%, rgba(0,103,224,0.3) 100%)' : '#f1f5f9', borderRadius: '6px 6px 0 0', minHeight: h.count > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: h.count > 0 ? '0 2px 8px rgba(0,103,224,0.2)' : 'none' }} />
+                    <div style={{ width: '100%', height: `${Math.max((h.count / max) * 100, h.count > 0 ? 4 : 0)}%`, background: h.count > 0 ? 'linear-gradient(180deg, #A33757 0%, #852E4E 50%, rgba(163,55,87,0.3) 100%)' : '#f1f5f9', borderRadius: '6px 6px 0 0', minHeight: h.count > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: h.count > 0 ? '0 2px 8px rgba(163,55,87,0.2)' : 'none' }} />
                   </div>
                 ))}
               </div>

@@ -29,7 +29,7 @@ export function StepDietPreference({ form, set, error }: StepDietPreferenceProps
     <div>
       <div className="flex items-start gap-4 mb-7">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Utensils size={20} color="#1CA3F9" />
+          <Utensils size={20} color="#FFBB94" />
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Diet Preference</h2>

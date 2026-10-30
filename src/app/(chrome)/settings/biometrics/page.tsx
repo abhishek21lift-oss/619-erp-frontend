@@ -33,8 +33,8 @@ function timeAgo(iso: string | null): string {
 
 const EVENT_COLORS: Record<string, string> = {
   webauthn_login_success: '#34D399',
-  webauthn_registered:    '#0067E0',
-  action_verified:        '#7FB4FF',
+  webauthn_registered:    '#A33757',
+  action_verified:        '#A33757',
   webauthn_login_failed:  '#F87171',
   action_verify_failed:   '#F87171',
   webauthn_register_failed: '#FBBF24',
@@ -170,8 +170,8 @@ function BiometricInner() {
         </div>
       ) : stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-          <StatCard label="Total Passkeys"     value={stats.total_credentials}   icon={Fingerprint}  color="#7FB4FF" />
-          <StatCard label="Enrolled Users"     value={stats.users_with_passkeys} icon={Users}        color="#0067E0" />
+          <StatCard label="Total Passkeys"     value={stats.total_credentials}   icon={Fingerprint}  color="#A33757" />
+          <StatCard label="Enrolled Users"     value={stats.users_with_passkeys} icon={Users}        color="#A33757" />
           <StatCard label="Active"             value={stats.active_credentials}  icon={ShieldCheck}  color="#34D399" />
           <StatCard label="Used (7 days)"      value={stats.used_last_7_days}    icon={ShieldAlert}  color="#F87171" />
         </div>

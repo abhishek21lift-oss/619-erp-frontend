@@ -26,7 +26,7 @@ const CATEGORIES: { value: PlatformKnowledgeDocument['category']; label: string 
 
 const INGESTION: Record<PlatformKnowledgeDocument['status'], { label: string; fg: string; bg: string; icon: typeof CheckCircle2 }> = {
   ready: { label: 'Ready', fg: '#059669', bg: 'rgba(16,185,129,0.12)', icon: CheckCircle2 },
-  processing: { label: 'Processing', fg: '#0067e0', bg: 'rgba(0,103,224,0.10)', icon: Loader2 },
+  processing: { label: 'Processing', fg: '#A33757', bg: 'rgba(163,55,87,0.10)', icon: Loader2 },
   failed: { label: 'Failed', fg: '#DC2626', bg: 'rgba(220,38,38,0.10)', icon: AlertTriangle },
 };
 
@@ -223,7 +223,7 @@ export default function KnowledgeTab() {
                   aria-pressed={category === c.value}
                   className="rounded-[9px] px-3 py-2 text-[12px] font-[750] transition"
                   style={category === c.value
-                    ? { border: '1.5px solid #0067e0', background: 'rgba(0,103,224,0.10)', color: '#0067e0' }
+                    ? { border: '1.5px solid #A33757', background: 'rgba(163,55,87,0.10)', color: '#A33757' }
                     : { border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)' }}>
                   {c.label}
                 </button>
@@ -256,7 +256,7 @@ export default function KnowledgeTab() {
             </button>
             <button type="button" onClick={() => void handleUpload()} disabled={!file || uploading}
               className="flex h-10 items-center gap-1.5 rounded-[10px] px-3.5 text-[12.5px] font-[750] text-white disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}>
+              style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)' }}>
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Upload
             </button>
           </div>

@@ -33,7 +33,7 @@ const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--borde
 
 const STATUS: Record<TicketStatus, { label: string; bg: string; fg: string }> = {
   open:     { label: 'Open',     bg: 'rgba(239,68,68,0.12)',  fg: '#dc2626' },
-  pending:  { label: 'Pending',  bg: 'rgba(0,103,224,0.12)', fg: '#0067e0' },
+  pending:  { label: 'Pending',  bg: 'rgba(163,55,87,0.12)', fg: '#A33757' },
   resolved: { label: 'Resolved', bg: 'rgba(16,185,129,0.12)', fg: '#059669' },
   closed:   { label: 'Closed',   bg: 'var(--bg-subtle)',      fg: 'var(--text-muted)' },
 };

@@ -28,8 +28,8 @@ function fmtDate(d?: string) {
 function nameGradient(name: string): string {
   const palettes = [
     'linear-gradient(135deg,#ef4444,#dc2626)',
-    'linear-gradient(135deg,#0067e0,#0059ce)',
-    'linear-gradient(135deg,#0067e0,#0059ce)',
+    'linear-gradient(135deg,#A33757,#852E4E)',
+    'linear-gradient(135deg,#A33757,#852E4E)',
     'linear-gradient(135deg,#f59e0b,#d97706)',
   ];
   let h = 0;

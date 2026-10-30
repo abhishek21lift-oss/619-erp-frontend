@@ -35,9 +35,9 @@ const PALETTES = {
     muted: 'rgba(255,255,255,0.55)',
     border: 'rgba(255,255,255,0.12)',
     codeBg: 'rgba(255,255,255,0.08)',
-    codeText: '#b8d7ff',
+    codeText: '#FFD0C6',
     blockBg: 'rgba(0,0,0,0.28)',
-    link: '#7fb4ff',
+    link: '#FFBB94',
     thBg: 'rgba(255,255,255,0.06)',
   },
   themed: {
@@ -46,9 +46,9 @@ const PALETTES = {
     muted: 'var(--text-muted)',
     border: 'var(--border)',
     codeBg: 'var(--bg-subtle)',
-    codeText: '#0067e0',
+    codeText: '#A33757',
     blockBg: 'var(--bg-subtle)',
-    link: '#0067e0',
+    link: '#A33757',
     thBg: 'var(--bg-subtle)',
   },
 } as const;

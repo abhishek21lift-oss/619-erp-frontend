@@ -45,7 +45,7 @@ interface Integration {
 // has a live card below with its own lifecycle (a device pairing, an OAuth
 // grant, a model health check) rather than a stored string.
 const STATIC_INTEGRATIONS: Integration[] = [
-  { id: 'razorpay', name: 'Razorpay', description: 'Payment gateway for fees, memberships & PT packages', category: 'payments', icon: 'CreditCard', color: '#0067e0', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
+  { id: 'razorpay', name: 'Razorpay', description: 'Payment gateway for fees, memberships & PT packages', category: 'payments', icon: 'CreditCard', color: '#A33757', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
 ];
 
 const CATEGORIES = [
@@ -122,7 +122,7 @@ function OpenRouterCard() {
       style={{ ...glass, borderRadius: 20, padding: 20 }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#0067e0' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#A33757' }}>
           <Bot size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -197,7 +197,7 @@ function OpenRouterCard() {
       <button
         onClick={checkHealth}
         disabled={checking || !settings?.configured}
-        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#0067e0,#0059ce)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(0,103,224,0.3)' : 'none' }}
+        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#A33757,#852E4E)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(163,55,87,0.3)' : 'none' }}
       >
         {checking ? <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> : <Activity size={13} />}
         {checking ? 'Pinging models…' : 'Check Model Health'}
@@ -282,7 +282,7 @@ function GoogleCalendarCard({ flashSuccess, errorText }: { flashSuccess: boolean
       </AnimatePresence>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14, marginTop: flash ? 28 : 0, transition: 'margin-top 0.2s' }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#0067e0' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#A33757' }}>
           <Calendar size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -356,7 +356,7 @@ function GoogleCalendarCard({ flashSuccess, errorText }: { flashSuccess: boolean
           <button
             onClick={handleConnect}
             disabled={connecting || loading}
-            style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (connecting || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#0067e0,#0059ce)', color: '#ffffff', boxShadow: '0 4px 12px rgba(0,103,224,0.3)', opacity: (connecting || loading) ? 0.7 : 1 }}
+            style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (connecting || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#ffffff', boxShadow: '0 4px 12px rgba(163,55,87,0.3)', opacity: (connecting || loading) ? 0.7 : 1 }}
           >
             {connecting
               ? <><m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> Redirecting…</>

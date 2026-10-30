@@ -15,9 +15,9 @@ import { errorMessage } from '@/lib/forms/errors';
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
 
 const KPIS = [
-  { label:'Total Offers', key:'total', color:'#0067e0', icon:<Tag size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Total Offers', key:'total', color:'#A33757', icon:<Tag size={18}/>, bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
   { label:'Active', key:'active', color:'#10b981', icon:<CheckCircle2 size={18}/>, bg:'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
-  { label:'Total Used', key:'used', color:'#0067e0', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
+  { label:'Total Used', key:'used', color:'#A33757', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(133,46,78,0.05))' },
   { label:'Expired', key:'expired', color:'#ef4444', icon:<Clock size={18}/>, bg:'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05))' },
 ];
 
@@ -146,9 +146,9 @@ function OffersContent() {
             const isActive = tab===t;
             return (
               <button key={t} onClick={()=>setTab(t)}
-                style={{ padding:'7px 18px', borderRadius:10, border:`1px solid ${isActive?'#0067e0':'#e2e8f0'}`, fontSize:12, fontWeight:600, textTransform:'capitalize', cursor:'pointer',
-                  background:isActive?'linear-gradient(135deg, #0067e0, #0059ce)':'#ffffff', color:isActive?'#fff':'#334155',
-                  boxShadow:isActive?'0 4px 14px rgba(0,103,224,0.3)':'none' }}>
+                style={{ padding:'7px 18px', borderRadius:10, border:`1px solid ${isActive?'#A33757':'#e2e8f0'}`, fontSize:12, fontWeight:600, textTransform:'capitalize', cursor:'pointer',
+                  background:isActive?'linear-gradient(135deg, #A33757, #852E4E)':'#ffffff', color:isActive?'#fff':'#334155',
+                  boxShadow:isActive?'0 4px 14px rgba(163,55,87,0.3)':'none' }}>
                 {t} {t==='all'?`(${offers.length})`:t==='active'?`(${active})`:''}
               </button>
             );
@@ -178,14 +178,14 @@ function OffersContent() {
                       <div style={{ fontWeight:700, fontSize:15, color:'#0F172A', marginBottom:4 }}>{o.name}</div>
                       <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:sb, color:sc, textTransform:'capitalize' }}>{o.status}</span>
                     </div>
-                    <div style={{ fontSize:24, fontWeight:900, color:'#0067e0', marginLeft:12, whiteSpace:'nowrap' }}>
-                      {o.type==='percent'?<>{o.value}%</>:o.type==='flat'?<>₹{o.value}</>:<Gift size={18} color="#0067e0"/>}
+                    <div style={{ fontSize:24, fontWeight:900, color:'#A33757', marginLeft:12, whiteSpace:'nowrap' }}>
+                      {o.type==='percent'?<>{o.value}%</>:o.type==='flat'?<>₹{o.value}</>:<Gift size={18} color="#A33757"/>}
                     </div>
                   </div>
                   {o.plan&&<div style={{ fontSize:12, color:'#64748b', marginBottom:10 }}>📦 {o.plan}</div>}
                   <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f8fafc', borderRadius:10, padding:'8px 14px', marginBottom:12, border:'1px solid #e2e8f0' }}>
                     <Tag size={13} color='#94a3b8'/>
-                    <span style={{ fontFamily:'monospace', fontWeight:800, letterSpacing:'1px', fontSize:14, color:'#0067e0', flex:1 }}>{o.code}</span>
+                    <span style={{ fontFamily:'monospace', fontWeight:800, letterSpacing:'1px', fontSize:14, color:'#A33757', flex:1 }}>{o.code}</span>
                     <button onClick={()=>{navigator.clipboard.writeText(o.code);setCopied(o.id);setTimeout(()=>setCopied(''),2000);}} title="Copy code"
                       style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'transparent', color:copied===o.id?'#10b981':'#94a3b8', cursor:'pointer' }}>
                       {copied===o.id?<CheckCircle2 size={14}/>:<Copy size={14}/>}
@@ -196,7 +196,7 @@ function OffersContent() {
                       <span>Used: {o.used}/{o.usageLimit}</span><span>{Math.round(pct)}%</span>
                     </div>
                     <div style={{ height:6, background:'#f1f5f9', borderRadius:999, overflow:'hidden', border:'1px solid #e2e8f0' }}>
-                      <div style={{ height:'100%', background:'linear-gradient(90deg, #0067e0, #0059ce)', borderRadius:999, width:`${Math.min(100,pct)}%`, transition:'width 0.3s' }}/>
+                      <div style={{ height:'100%', background:'linear-gradient(90deg, #A33757, #852E4E)', borderRadius:999, width:`${Math.min(100,pct)}%`, transition:'width 0.3s' }}/>
                     </div>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:'#94a3b8' }}>

@@ -116,8 +116,8 @@ export default function HelpPage() {
         {/* ── Support contacts ── */}
         <m.div {...fadeUp} transition={{ duration: 0.5, delay: 0.25 }}
           style={{ ...lightCard, borderRadius: 20, padding: 28, marginTop: 8 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.12)', marginBottom: 16 }}>
-            <HelpCircle size={22} color="#0067e0" />
+          <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(163,55,87,0.08)', border: '1px solid rgba(163,55,87,0.12)', marginBottom: 16 }}>
+            <HelpCircle size={22} color="#A33757" />
           </div>
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Still need help?</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -128,14 +128,14 @@ export default function HelpPage() {
             <Link href="/support"
               style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                borderRadius: 16, background: 'rgba(0,103,224,0.06)',
-                border: '1px solid rgba(0,103,224,0.18)', textDecoration: 'none',
+                borderRadius: 16, background: 'rgba(163,55,87,0.06)',
+                border: '1px solid rgba(163,55,87,0.18)', textDecoration: 'none',
               }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,103,224,0.12)',
+                background: 'rgba(163,55,87,0.12)',
               }}>
-                <LifeBuoy size={18} color="#0067e0" />
+                <LifeBuoy size={18} color="#A33757" />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Raise a support ticket</p>
@@ -150,13 +150,13 @@ export default function HelpPage() {
                 border: '1px solid var(--border)', textDecoration: 'none',
                 transition: 'all 0.2s',
               }}
-              onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(163,55,87,0.05)'; e.currentTarget.style.borderColor = 'rgba(163,55,87,0.2)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,103,224,0.08)',
+                background: 'rgba(163,55,87,0.08)',
               }}>
-                <Mail size={18} color="#0067e0" />
+                <Mail size={18} color="#A33757" />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Email Support</p>
@@ -170,13 +170,13 @@ export default function HelpPage() {
                 border: '1px solid var(--border)', textDecoration: 'none',
                 transition: 'all 0.2s',
               }}
-              onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(163,55,87,0.05)'; e.currentTarget.style.borderColor = 'rgba(163,55,87,0.2)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,103,224,0.08)',
+                background: 'rgba(163,55,87,0.08)',
               }}>
-                <Phone size={18} color="#0067e0" />
+                <Phone size={18} color="#A33757" />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Call Us</p>
@@ -190,13 +190,13 @@ export default function HelpPage() {
                 border: '1px solid var(--border)', textDecoration: 'none',
                 transition: 'all 0.2s',
               }}
-              onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,103,224,0.2)'; }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(163,55,87,0.05)'; e.currentTarget.style.borderColor = 'rgba(163,55,87,0.2)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
               <div style={{
                 width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,103,224,0.08)',
+                background: 'rgba(163,55,87,0.08)',
               }}>
-                <MessageCircle size={18} color="#0067e0" />
+                <MessageCircle size={18} color="#A33757" />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>WhatsApp Support</p>

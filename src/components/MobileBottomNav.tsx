@@ -56,8 +56,8 @@ const SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as con
 // on this bar, under AA. 0.62 is ~6.7:1 over the bar flattened on white.
 export const BOTTOM_NAV_COLORS = {
   background:    'rgba(15,23,42,0.94)',
-  activeLabel:   '#b8d7ff',
-  activeIcon:    '#7fb4ff',
+  activeLabel:   '#FFD0C6',
+  activeIcon:    '#FFBB94',
   inactiveLabel: 'rgba(255,255,255,0.62)',
   inactiveIcon:  'rgba(255,255,255,0.40)',
 } as const;
@@ -96,7 +96,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(127,180,255,0.18) 30%, rgba(127,180,255,0.30) 50%, rgba(127,180,255,0.18) 70%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,187,148,0.18) 30%, rgba(255,187,148,0.30) 50%, rgba(255,187,148,0.18) 70%, transparent 100%)',
         }}
       />
 
@@ -131,7 +131,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   style={{
                     top:    3,
                     bottom: 3,
-                    background: 'rgba(127,180,255,0.13)',
+                    background: 'rgba(255,187,148,0.13)',
                   }}
                   transition={reducedMotion ? { duration: 0 } : SPRING}
                 />

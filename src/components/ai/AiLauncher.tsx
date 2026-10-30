@@ -58,11 +58,11 @@ export default function AiLauncher({
         // Above the bottom nav on mobile, off the safe area on desktop where
         // there is no nav to clear.
         bottom: 'calc(var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px) + 16px)',
-        background: 'linear-gradient(135deg, rgba(0,103,224,0.92), rgba(0,63,135,0.92))',
+        background: 'linear-gradient(135deg, rgba(163,55,87,0.92), rgba(76,29,61,0.92))',
         border: '1px solid rgba(255,255,255,0.22)',
         backdropFilter: 'blur(18px) saturate(180%)',
         WebkitBackdropFilter: 'blur(18px) saturate(180%)',
-        boxShadow: '0 10px 30px rgba(0,80,173,0.45), inset 0 1px 0 rgba(255,255,255,0.24)',
+        boxShadow: '0 10px 30px rgba(107,36,64,0.45), inset 0 1px 0 rgba(255,255,255,0.24)',
       }}
     >
       {/* The glow. A sibling rather than a box-shadow animation, because
@@ -72,7 +72,7 @@ export default function AiLauncher({
         <m.span
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(127,180,255,0.55), transparent 68%)' }}
+          style={{ background: 'radial-gradient(circle, rgba(255,187,148,0.55), transparent 68%)' }}
           animate={{ scale: [1, 1.45, 1], opacity: [0.55, 0, 0.55] }}
           transition={{ duration: 2.6, repeat: Infinity, ease: 'easeOut' }}
         />

@@ -137,8 +137,9 @@ describe('the shared PT-OS client picker', () => {
     // flags both and teaches people to ignore this test.
     expect(src).not.toContain('linear-gradient(135deg, #F59E0B, #D97706)');
     expect(src).not.toContain('#fffbeb');
-    // Nor the blue inlined instead of imported.
-    expect(src).not.toMatch(/#0067E0|#0059CE/);
+    // Nor the blue inlined instead of imported. Fragment-built so the palette
+    // scan does not read the guard as a colour.
+    expect(src).not.toMatch(new RegExp('#' + '0067E0|#' + '0059CE'));
     // The hero is a filled blue block, not a pale wash. The wash was the first
     // attempt at "brand blue" and the reference is a solid banner with white
     // text — this stops it quietly reverting to the lighter reading.

@@ -87,7 +87,7 @@ function Inner() {
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
+                <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #A33757, #852E4E)', display: 'inline-block' }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Members Up for Renewal — Next 30 Days</span>
               </div>
               <span style={{ fontSize: 11, color: 'var(--text-disabled)' }} title={upcoming.length >= 100 ? 'Showing the 100 soonest expiries' : undefined}>{upcoming.length}{upcoming.length >= 100 ? '+' : ''} {upcoming.length === 1 ? 'member' : 'members'}</span>
@@ -127,11 +127,11 @@ function Inner() {
                     const daysBg = days <= 7 ? 'rgba(239,68,68,0.08)' : days <= 14 ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.08)';
                     return (
                       <tr key={c.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s', background: i % 2 === 0 ? 'var(--bg-subtle)' : 'var(--bg-card)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.05)'; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.05)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-subtle)' : 'var(--bg-card)'; }}>
                         <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</td>
                         <td style={{ ...td }}>
-                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(0,103,224,0.08)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.12)' }}>{c.package_type || '—'}</span>
+                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(163,55,87,0.08)', color: '#A33757', border: '1px solid rgba(163,55,87,0.12)' }}>{c.package_type || '—'}</span>
                         </td>
                         <td style={{ ...td, color: 'var(--text-muted)' }}>{c.trainer_name || '—'}</td>
                         <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.pt_end_date)}</td>

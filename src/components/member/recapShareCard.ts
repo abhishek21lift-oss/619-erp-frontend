@@ -50,7 +50,7 @@ export function drawRecapCard(canvas: HTMLCanvasElement, r: MeRecap): void {
   bg.addColorStop(1, palette.blue[700]);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
-  for (const [x, y, rad, color] of [[900, 260, 520, 'rgba(59,141,245,0.35)'], [120, 1650, 600, 'rgba(16,185,129,0.22)']] as const) {
+  for (const [x, y, rad, color] of [[900, 260, 520, 'rgba(251,149,144,0.35)'], [120, 1650, 600, 'rgba(16,185,129,0.22)']] as const) {
     const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
     g.addColorStop(0, color);
     g.addColorStop(1, 'rgba(0,0,0,0)');

@@ -68,8 +68,8 @@ const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
 // colour each tier is.
 const PLAN_ACCENT: Record<string, string> = {
   starter: 'linear-gradient(90deg,#64748b,#475569)',
-  growth: 'linear-gradient(90deg,#0067e0,#0059ce)',
-  professional: 'linear-gradient(90deg,#0067e0,#0059ce)',
+  growth: 'linear-gradient(90deg,#A33757,#852E4E)',
+  professional: 'linear-gradient(90deg,#A33757,#852E4E)',
   elite: 'linear-gradient(90deg,#f59e0b,#d97706)',
 };
 const NO_PLAN_ACCENT = 'linear-gradient(90deg,var(--border),var(--border))';
@@ -634,7 +634,7 @@ function SubscriptionScreen() {
           label={status.renewal_due ? 'Renews soon' : 'Renews'}
           value={status.current_period_end ? fmtShortDate(status.current_period_end) : 'No expiry'}
           bar={periodPct ?? undefined}
-          barColour={status.renewal_due ? '#FCD34D' : '#7fb4ff'}
+          barColour={status.renewal_due ? '#FCD34D' : '#FFBB94'}
           detail={status.period_days_left != null ? `${plural(status.period_days_left, 'day')} left` : undefined}
         />
       ) : (

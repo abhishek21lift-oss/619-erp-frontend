@@ -320,7 +320,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 'radial-gradient(circle 180px at calc(100% - 48px) 24px, rgba(163,55,87,0.40), transparent 70%)',
                 'linear-gradient(135deg, #6B2440 0%, #4C1D3D 55%, #4C1D3D 100%)',
               ].join(', '),
-              boxShadow: '0 20px 48px rgba(0,80,173,0.35)',
+              boxShadow: '0 20px 48px rgba(107,36,64,0.35)',
             }}>
             <div className="flex items-center gap-4">
               {/* ── The photo option that did not exist ──

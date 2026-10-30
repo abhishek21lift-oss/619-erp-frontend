@@ -24,18 +24,18 @@ interface ExerciseCardProps {
 
 const MUSCLE_GROUP_COLORS: Record<string, string> = {
   Chest: '#ef4444',
-  Back: '#0067e0',
+  Back: '#A33757',
   Legs: '#f59e0b',
-  Shoulders: '#0067e0',
-  Arms: '#0067e0',
+  Shoulders: '#A33757',
+  Arms: '#A33757',
   Core: '#10b981',
   Cardio: '#f59e0b',
-  'Full Body': '#0067e0',
+  'Full Body': '#A33757',
 }
 
 function getMuscleColor(muscleGroup?: string): string {
-  if (!muscleGroup) return '#0067e0'
-  return MUSCLE_GROUP_COLORS[muscleGroup] ?? '#0067e0'
+  if (!muscleGroup) return '#A33757'
+  return MUSCLE_GROUP_COLORS[muscleGroup] ?? '#A33757'
 }
 
 function hexToRgba(hex: string, alpha: number): string {

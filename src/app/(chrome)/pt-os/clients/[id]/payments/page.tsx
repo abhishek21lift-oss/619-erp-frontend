@@ -392,7 +392,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       border: '1px solid #cbd5e1',
                       color: 'var(--text-primary)',
                     }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = '#FFBB94'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(255,187,148,0.15)'; }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#A33757'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(163,55,87,0.15)'; }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
                   />
                 </div>

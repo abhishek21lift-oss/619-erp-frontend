@@ -123,7 +123,7 @@ function MessagesContent() {
         <div className="relative grid overflow-hidden rounded-[26px] lg:grid-cols-[340px_1fr]"
           style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)',
-            boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 18px 40px -28px rgba(0,45,97,0.35)',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 18px 40px -28px rgba(43,18,32,0.35)',
             height: 'calc(100dvh - 200px)', minHeight: 440,
           }}>
           {/* ── Inbox ── */}

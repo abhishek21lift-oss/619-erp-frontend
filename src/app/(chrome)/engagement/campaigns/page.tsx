@@ -58,9 +58,9 @@ interface CampaignStats { active: number; total_sent: number; conversions: numbe
 
 const KPIS = [
   { label: 'Active', color: '#10b981', icon: <TrendingUp size={18} />, bg: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
-  { label: 'Total Sent', color: '#0067e0', icon: <Send size={18} />, bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
-  { label: 'Conversions', color: '#0067e0', icon: <CheckCircle2 size={18} />, bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
-  { label: 'Conv. Rate', color: '#0067e0', icon: <Target size={18} />, bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label: 'Total Sent', color: '#A33757', icon: <Send size={18} />, bg: 'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
+  { label: 'Conversions', color: '#A33757', icon: <CheckCircle2 size={18} />, bg: 'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(133,46,78,0.05))' },
+  { label: 'Conv. Rate', color: '#A33757', icon: <Target size={18} />, bg: 'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -201,7 +201,7 @@ function CampaignContent() {
         <m.div initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
           style={{ ...CARD, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: 24 }}>
           <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', gap: 8, alignItems: 'center' }}>
-            <TrendingUp size={16} color="#0067e0" /> Create Campaign
+            <TrendingUp size={16} color="#A33757" /> Create Campaign
           </h3>
           <form
             noValidate
@@ -267,7 +267,7 @@ function CampaignContent() {
               <button type="button" onClick={() => setShowForm(false)}
                 style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border-2)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
               <button type="submit" disabled={!f.canSubmit}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '8px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: f.isSubmitting ? 'not-allowed' : 'pointer', opacity: f.isSubmitting ? 0.7 : 1, boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '8px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff', border: 'none', cursor: f.isSubmitting ? 'not-allowed' : 'pointer', opacity: f.isSubmitting ? 0.7 : 1, boxShadow: '0 4px 16px rgba(163,55,87,0.35)' }}>
                 {f.isSubmitting ? <><Loader2 size={13} className="animate-spin" /> Creating…</> : <><Plus size={13} /> Create Campaign</>}
               </button>
             </div>
@@ -328,7 +328,7 @@ function CampaignContent() {
                     <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
                       {[
                         { label: 'Sent', value: c.sent, color: 'var(--text-muted)' },
-                        { label: 'Opened', value: c.opened, color: '#0067e0' },
+                        { label: 'Opened', value: c.opened, color: '#A33757' },
                         { label: 'Open Rate', value: openRate + '%', color: '#d97706' },
                         { label: 'Converted', value: `${c.converted} (${convR}%)`, color: '#10b981' },
                       ].map(metric => (

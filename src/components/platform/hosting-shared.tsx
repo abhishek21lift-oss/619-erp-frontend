@@ -193,7 +193,7 @@ export const SAFETY_FALLBACK: Record<HostingerSafety, string> = {
 };
 
 const SAFETY_STYLE: Record<HostingerSafety, { fg: string; bg: string; border: string; icon: React.ReactNode }> = {
-  read: { fg: '#0050AD', bg: 'rgba(0,80,173,0.10)', border: 'rgba(0,80,173,0.25)', icon: <ShieldCheck size={11} /> },
+  read: { fg: '#6B2440', bg: 'rgba(107,36,64,0.10)', border: 'rgba(107,36,64,0.25)', icon: <ShieldCheck size={11} /> },
   mutate: { fg: '#b45309', bg: 'rgba(180,83,9,0.10)', border: 'rgba(180,83,9,0.25)', icon: <ShieldAlert size={11} /> },
   destructive: { fg: '#b91c1c', bg: 'rgba(185,28,28,0.10)', border: 'rgba(185,28,28,0.28)', icon: <AlertTriangle size={11} /> },
 };

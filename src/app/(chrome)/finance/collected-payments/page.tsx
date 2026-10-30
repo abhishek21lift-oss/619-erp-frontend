@@ -46,9 +46,9 @@ const METHOD_ICONS: Record<string, React.ReactNode> = {
 };
 
 const METHOD_COLORS: Record<string, string> = {
-  UPI: '#0067e0',
+  UPI: '#A33757',
   Cash: '#10b981',
-  Card: '#0067e0',
+  Card: '#A33757',
   Bank: '#f59e0b',
 };
 
@@ -272,14 +272,14 @@ function Inner() {
               placeholder="Search by client, receipt, notes..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full h-11 rounded-xl outline-none transition-all focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
+              className="w-full h-11 rounded-xl outline-none transition-all focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(163,55,87,0.10)]"
               style={{ padding: '10px 14px 10px 36px', border: '1.5px solid var(--border)', fontSize: 14, background: 'var(--bg-card)', color: 'var(--text-primary)' }}
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
             {['all', ...methods].map(m => {
               const isActive = methodFilter === m;
-              const color = METHOD_COLORS[m] || '#0067e0';
+              const color = METHOD_COLORS[m] || '#A33757';
               return (
                 <button key={m} onClick={() => { setMethodFilter(m); setPage(0); }}
                   className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold whitespace-nowrap transition-all duration-150"
@@ -316,7 +316,7 @@ function Inner() {
               {!search && (
                 <button onClick={() => router.push('/finance/record-payment')}
                   className="mt-4 flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-white"
-                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
+                  style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)' }}>
                   <Banknote size={14} /> Record Payment
                 </button>
               )}
@@ -331,12 +331,12 @@ function Inner() {
                   <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
-                        style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)' }}>
+                        style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)' }}>
                         <User size={14} color="white" />
                       </div>
                       <span className="font-semibold text-[14px] text-[#0F172A] truncate">{p.client_name || '—'}</span>
                     </div>
-                    <span className="shrink-0 text-[18px] font-[800] tabular-nums ml-2" style={{ color: '#0067e0', letterSpacing: '-0.02em' }}>{fmtINR(p.amount)}</span>
+                    <span className="shrink-0 text-[18px] font-[800] tabular-nums ml-2" style={{ color: '#A33757', letterSpacing: '-0.02em' }}>{fmtINR(p.amount)}</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-[600]"
@@ -445,13 +445,13 @@ function Inner() {
                       onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                       <td style={{ padding: '14px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #0067e0, #0059ce)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #A33757, #852E4E)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <User size={14} color="white" />
                           </div>
                           <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{p.client_name || '—'}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: '#0067e0', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                      <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: '#A33757', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                         {fmtINR(p.amount)}
                       </td>
                       <td style={{ padding: '14px 20px' }}>
@@ -491,7 +491,7 @@ function Inner() {
                 if (pIdx >= pageCount) return null;
                 return (
                   <button key={pIdx} onClick={() => setPage(pIdx)}
-                    style={{ width: 34, height: 34, borderRadius: 8, border: pIdx === page ? 'none' : '1px solid #e2e8f0', background: pIdx === page ? 'linear-gradient(135deg,#0067e0,#0059ce)' : 'white', color: pIdx === page ? 'white' : '#0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                    style={{ width: 34, height: 34, borderRadius: 8, border: pIdx === page ? 'none' : '1px solid #e2e8f0', background: pIdx === page ? 'linear-gradient(135deg,#A33757,#852E4E)' : 'white', color: pIdx === page ? 'white' : '#0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                     {pIdx + 1}
                   </button>
                 );

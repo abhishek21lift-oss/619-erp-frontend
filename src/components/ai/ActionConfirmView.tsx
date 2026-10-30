@@ -114,7 +114,7 @@ export default function ActionConfirmView({
             They will read
           </p>
           <p className="mt-1.5 rounded-[12px] px-3 py-2.5 text-[11.5px] font-[560] leading-[1.55]"
-            style={{ background: 'rgba(0,103,224,0.07)', color: '#1e293b' }}>
+            style={{ background: 'rgba(163,55,87,0.07)', color: '#1e293b' }}>
             {plan.sample_message}
           </p>
         </>
@@ -135,7 +135,7 @@ export default function ActionConfirmView({
         </button>
         <button type="button" onClick={onConfirm} disabled={running || plan.count === 0}
           className="flex h-[40px] flex-[1.4] items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] text-white disabled:opacity-45"
-          style={{ background: 'linear-gradient(135deg,#0067e0,#003f87)' }}>
+          style={{ background: 'linear-gradient(135deg,#A33757,#4C1D3D)' }}>
           {running ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
           {running ? 'Sending…' : `Send to ${plan.count}`}
         </button>

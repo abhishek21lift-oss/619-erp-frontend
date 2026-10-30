@@ -20,7 +20,7 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
     <div className="space-y-7">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <ShieldCheck size={20} color="#1CA3F9" />
+          <ShieldCheck size={20} color="#FFBB94" />
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Confidentiality, Participation & Declaration</h2>

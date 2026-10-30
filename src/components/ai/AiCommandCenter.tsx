@@ -283,7 +283,7 @@ export default function AiCommandCenter({
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 top-0 h-[2px]"
                 style={{
-                  background: 'linear-gradient(90deg, transparent, #0067e0, #7fb4ff, transparent)',
+                  background: 'linear-gradient(90deg, transparent, #A33757, #FFBB94, transparent)',
                   backgroundSize: '50% 100%',
                 }}
                 animate={{ backgroundPosition: ['-50% 0%', '150% 0%'] }}
@@ -303,7 +303,7 @@ export default function AiCommandCenter({
                 </button>
               ) : (
                 <span className="flex h-8 w-8 items-center justify-center rounded-[11px]"
-                  style={{ background: 'linear-gradient(135deg,#0067e0,#003f87)' }}>
+                  style={{ background: 'linear-gradient(135deg,#A33757,#4C1D3D)' }}>
                   <Sparkles size={15} className="text-white" />
                 </span>
               )}
@@ -352,7 +352,7 @@ export default function AiCommandCenter({
                   disabled={!streaming && !input.trim()}
                   aria-label={streaming ? 'Stop' : 'Send'}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-35"
-                  style={{ background: 'linear-gradient(135deg,#0067e0,#003f87)' }}>
+                  style={{ background: 'linear-gradient(135deg,#A33757,#4C1D3D)' }}>
                   {streaming ? <Square size={12} fill="currentColor" /> : <ArrowUp size={15} />}
                 </button>
               </div>
@@ -400,7 +400,7 @@ export default function AiCommandCenter({
                         {FOLLOW_UPS.map((f) => (
                           <button key={f} type="button" onClick={() => ask(f)}
                             className="rounded-full px-2.5 py-1.5 text-[11.5px] font-[650] transition-colors"
-                            style={{ background: 'rgba(0,103,224,0.09)', color: '#0067e0' }}>
+                            style={{ background: 'rgba(163,55,87,0.09)', color: '#A33757' }}>
                             {f}
                           </button>
                         ))}
@@ -417,7 +417,7 @@ export default function AiCommandCenter({
                         className="flex items-center gap-2 rounded-[13px] px-2.5 py-2.5 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
                         style={{ background: 'rgba(255,255,255,0.78)', border: '1px solid rgba(15,23,42,0.07)' }}>
                         {planning === a.id
-                          ? <Loader2 size={14} className="animate-spin" style={{ color: '#0067e0' }} />
+                          ? <Loader2 size={14} className="animate-spin" style={{ color: '#A33757' }} />
                           : <span className="text-[15px] leading-none" aria-hidden>{a.emoji}</span>}
                         <span className="min-w-0 flex-1 text-[11.5px] font-[680] leading-[1.25]" style={{ color: '#0f172a' }}>
                           {a.label}

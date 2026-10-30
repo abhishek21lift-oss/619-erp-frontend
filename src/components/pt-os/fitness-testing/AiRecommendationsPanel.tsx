@@ -166,7 +166,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.motivation_message && (
               <div className="rounded-[16px] p-5" style={{ background: deepMesh }}>
-                <Quote size={16} color="#1CA3F9" />
+                <Quote size={16} color="#FFBB94" />
                 <p className="mt-2 text-[13px] italic leading-relaxed text-white/80">{analysis.motivation_message}</p>
               </div>
             )}

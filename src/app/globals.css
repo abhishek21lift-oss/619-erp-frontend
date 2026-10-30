@@ -23,7 +23,7 @@
 
 /* ════════════════════════════════════════════════════════════════════
    LIGHT MODE TOKENS  —  Vibrant Edition
-   Palette: slate canvas · vibrant blue · emerald · amber · red · purple
+   Palette: slate canvas · warm plum · emerald · amber · red · purple
    ════════════════════════════════════════════════════════════════════ */
 :root {
   color-scheme: light;
@@ -33,8 +33,8 @@
      file is an alias onto these, so a colour change happens once here and
      not in two hundred call sites.
 
-       blue     logo blue — the mark, and surfaces that must match it
-       indigo   actions, links, highlights, selected state
+       blue     compatibility alias for indigo in src/lib/palette.ts
+       indigo   actions, links, highlights, selected state, mark
        emerald  success, completed, active
        mint     positive accent — deltas, healthy charts
        amber    warning, pending, due soon
@@ -43,17 +43,10 @@
        gray     surfaces, borders, secondary text
 
      The TypeScript side of the same table is src/lib/palette.ts — the two
-     must stay in step. Blue is the blue measured out of the logo artwork
-     (see src/lib/brand.ts), not a generic blue that looked close. Indigo is
-     the one UI action colour; the logo blue stays on the mark.
+     must stay in step. The mark and the whole UI now share the indigo ramp;
+     the old cool values were swept out, so CSS has one action family rather
+     than an alias of it.
      ════════════════════════════════════════════════════════════════════ */
-  --blue-50:#F2F8FF; --blue-100:#E1EFFF; --blue-200:#B8D7FF; --blue-300:#7FB4FF;
-  --blue-400:#3B8DF5; --blue-450:#0271EB; --blue-500:#0067E0; --blue-600:#0059CE;
-  --blue-700:#0050AD; --blue-800:#003F87; --blue-900:#002D61;
-  /* Brighter than 500 on purpose: for icons on the near-black gray-900 tiles,
-     where the deep 500 only reaches 3.4:1. */
-  --blue-on-dark:#1CA3F9;
-
   --indigo-50:#FFF7F3; --indigo-100:#FFE9E0; --indigo-200:#FFD0C6; --indigo-300:#FFBB94;
   --indigo-400:#FB9590; --indigo-500:#A33757; --indigo-600:#852E4E; --indigo-700:#6B2440;
   --indigo-800:#4C1D3D; --indigo-900:#2B1220;
@@ -117,13 +110,13 @@
   --action-soft:   var(--indigo-50);
   --action-border: var(--indigo-200);
 
-  /* ── Logo blue ────────────────────────────────────────────────
-     The literal blue sampled from the MY PT STUDIO cube mark. Deliberately
-     separate from --brand (now indigo): --brand is the in-product action
-     scale used across buttons, links and states, while this is the artwork's
-     own colour, for the few surfaces that must visibly match the logo. Don't
-     substitute one for the other — they are close enough that mixing them
-     reads as a bug, and far enough apart to notice. */
+  /* ── Logo ramp ────────────────────────────────────────────────
+     The mark's ramp. It now carries the same Rosé values as --brand — one
+     identity, so there is no second blue to drift away from it. The names
+     keep their historical "blue" because call sites and the artwork tests
+     reference them; renaming is separate work. The on-dark step is the bright
+     one, for icons on the dark #0f172a tiles where the deep steps only
+     reach 3:1. */
   --logo-blue:        #A33757;
   --logo-blue-soft:   rgba(163,55,87,0.10);
   --logo-blue-soft-h: rgba(163,55,87,0.18);
@@ -245,13 +238,13 @@
 
   /* ── Sidebar ─────────────────────────────────────────────── */
   --sidebar-bg:          #0f172a;
-  --sidebar-border:      rgba(127,180,255,0.15);
-  --sidebar-item-hover:  rgba(127,180,255,0.08);
-  --sidebar-item-active: rgba(127,180,255,0.15);
+  --sidebar-border:      rgba(255,187,148,0.15);
+  --sidebar-item-hover:  rgba(255,187,148,0.08);
+  --sidebar-item-active: rgba(255,187,148,0.15);
   --sidebar-text:        rgba(255,255,255,0.88);
   --sidebar-text-muted:  rgba(255,255,255,0.55);
   --sidebar-icon:        rgba(255,255,255,0.38);
-  --sidebar-icon-active: #7fb4ff;
+  --sidebar-icon-active: #FFBB94;
   --sidebar-w:           256px;
   --sidebar-w-collapsed: 68px;
 
@@ -428,13 +421,13 @@
 
   /* Sidebar */
   --sidebar-bg:          #0f172a;
-  --sidebar-border:      rgba(127,180,255,0.15);
-  --sidebar-item-hover:  rgba(127,180,255,0.08);
-  --sidebar-item-active: rgba(127,180,255,0.15);
+  --sidebar-border:      rgba(255,187,148,0.15);
+  --sidebar-item-hover:  rgba(255,187,148,0.08);
+  --sidebar-item-active: rgba(255,187,148,0.15);
   --sidebar-text:        rgba(255,255,255,0.88);
   --sidebar-text-muted:  rgba(255,255,255,0.55);
   --sidebar-icon:        rgba(255,255,255,0.38);
-  --sidebar-icon-active: #7fb4ff;
+  --sidebar-icon-active: #FFBB94;
 
   /* Top bar */
   --topbar-bg:     rgba(15,23,42,0.85);
@@ -2154,7 +2147,7 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 @keyframes ck-float1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px,-20px) scale(1.08); } }
 @keyframes ck-float2 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-40px) scale(1.12); } 66% { transform: translate(-20px,10px) scale(0.95); } }
 @keyframes ck-float3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,30px) scale(1.06); } }
-@keyframes ck-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(0,103,224,0.3); } 100% { box-shadow: 0 0 0 20px rgba(0,103,224,0); } }
+@keyframes ck-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(163,55,87,0.3); } 100% { box-shadow: 0 0 0 20px rgba(163,55,87,0); } }
 @keyframes ck-guide-pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
 @media (max-width: 640px) {
   .ck-hero-padding { padding: 12px 16px !important; }
@@ -2226,8 +2219,8 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   padding: 20px;
   margin-bottom: 16px;
   color: #fff;
-  background: linear-gradient(135deg, var(--brand), #0067E0);
-  box-shadow: 0 8px 28px rgba(0,103,224, 0.25);
+  background: linear-gradient(135deg, var(--brand), var(--brand-lo));
+  box-shadow: 0 8px 28px rgba(163,55,87, 0.25);
 }
 .member-bottom-nav {
   position: fixed;
@@ -2282,8 +2275,8 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   font-size: 13px;
 }
 .badge-frozen {
-  background: rgba(0,103,224, 0.12);
-  color: #0067E0;
+  background: rgba(163,55,87, 0.12);
+  color: #A33757;
 }
 
 /* Missing companions for the legacy scaffold pages */

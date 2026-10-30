@@ -1,8 +1,8 @@
 // The drawer footer has to be readable, and "readable" is a number.
 //
 // Profile, Settings and Logout were reported as invisible. They were: the
-// mobile drawer's background is a gradient ending at #0050AD, and the three
-// controls sat on that blue end at rgba(255,255,255,0.42) and
+// mobile drawer's background is a gradient ending at the deep plum ground, and
+// the three controls sat on the light end at rgba(255,255,255,0.42) and
 // rgba(239,68,68,0.48) — 2.59:1, 2.59:1 and 1.09:1. WCAG AA wants 4.5:1 for
 // text this size. The logout icon at 1.09:1 was very nearly the same colour
 // as the background it was drawn on.
@@ -74,8 +74,8 @@ const AA = 4.5;
 const ground = parse(FOOTER_COLORS.drawerGround).rgb;
 
 describe('the drawer footer clears AA on the worst part of the gradient', () => {
-  // Every pairing is measured against #0050AD, the bottom of the drawer's
-  // gradient. The top (#0F172A) is far darker and every light foreground only
+  // Every pairing is measured against the plum ground at the bottom of the
+  // drawer's gradient. The top is far darker and every light foreground only
   // improves there, so passing here passes everywhere.
   const cases: Array<[string, string, string | null]> = [
     ['Profile label', FOOTER_COLORS.neutralFore, FOOTER_COLORS.neutralFill],
@@ -96,18 +96,23 @@ describe('the drawer footer clears AA on the worst part of the gradient', () => 
     // exact values that shipped, and they must still measure as failures.
     const neutral = flatten(FOOTER_COLORS.neutralFill, ground);
     expect(contrast(flatten('rgba(255,255,255,0.42)', neutral), neutral)).toBeLessThan(AA);
-    expect(contrast(flatten('rgba(239,68,68,0.48)', ground), ground)).toBeLessThan(2);
+    // 2.02:1 on the plum ground — no longer the 1.09:1 it was on the old blue,
+    // but still nowhere near legible.
+    expect(contrast(flatten('rgba(239,68,68,0.48)', ground), ground)).toBeLessThan(3);
   });
 });
 
-describe('red on blue', () => {
+describe('red on plum', () => {
   it('is why the logout icon is pale rather than a strong red', () => {
     // The instinct is a vivid red for a destructive action. On this ground it
-    // is unreadable — the darker the red, the closer to the blue's luminance.
+    // is unreadable — the darker the red, the closer to the ground's
+    // luminance.
     // red[200] is the first step that clears AA, so the danger signal comes
     // from the tinted fill and border, not from the icon's own colour.
     const fill = flatten(FOOTER_COLORS.dangerFill, ground);
-    for (const tooDark of ['#EF4444', '#DC2626', '#F87171']) {
+    // red[400] clears AA on the plum ground; the two deeper reds still do not,
+    // which is why the icon stays pale and the fill carries the signal.
+    for (const tooDark of ['#EF4444', '#DC2626']) {
       expect(contrast(flatten(tooDark, fill), fill)).toBeLessThan(AA);
     }
     expect(contrast(flatten(FOOTER_COLORS.dangerFore, fill), fill)).toBeGreaterThanOrEqual(AA);

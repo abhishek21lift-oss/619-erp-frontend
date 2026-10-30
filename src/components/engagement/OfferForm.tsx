@@ -114,7 +114,7 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
           alignItems: 'center',
         }}
       >
-        <Gift size={16} color="#0067e0" /> {editing ? 'Edit Offer' : 'Create New Offer'}
+        <Gift size={16} color="#A33757" /> {editing ? 'Edit Offer' : 'Create New Offer'}
       </h3>
 
       <form
@@ -216,9 +216,9 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
                     height: 44,
                     padding: '0 14px',
                     borderRadius: 10,
-                    border: '1px solid #0067e0',
-                    background: 'rgba(0,103,224,0.08)',
-                    color: '#0067e0',
+                    border: '1px solid #A33757',
+                    background: 'rgba(163,55,87,0.08)',
+                    color: '#A33757',
                     cursor: 'pointer',
                   }}
                 >
@@ -294,12 +294,12 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
               fontWeight: 700,
               padding: '8px 20px',
               borderRadius: 12,
-              background: 'linear-gradient(135deg, #0067e0, #0059ce)',
+              background: 'linear-gradient(135deg, #A33757, #852E4E)',
               color: '#fff',
               border: 'none',
               cursor: f.isSubmitting ? 'not-allowed' : 'pointer',
               opacity: f.isSubmitting ? 0.7 : 1,
-              boxShadow: '0 4px 16px rgba(0,103,224,0.35)',
+              boxShadow: '0 4px 16px rgba(163,55,87,0.35)',
             }}
           >
             {f.isSubmitting ? (

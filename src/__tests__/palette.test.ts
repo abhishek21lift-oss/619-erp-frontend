@@ -102,18 +102,18 @@ describe('the palette', () => {
 
 describe('helpers', () => {
   it('appends an 8-bit alpha suffix', () => {
-    expect(tint('#0067E0', 1)).toBe('#0067E0ff');
-    expect(tint('#0067E0', 0)).toBe('#0067E000');
-    expect(tint('#0067E0', 0.1)).toBe('#0067E01a');
+    expect(tint('#A33757', 1)).toBe('#A33757ff');
+    expect(tint('#A33757', 0)).toBe('#A3375700');
+    expect(tint('#A33757', 0.1)).toBe('#A337571a');
   });
 
   it('clamps alpha rather than emitting nonsense', () => {
-    expect(tint('#0067E0', 5)).toBe('#0067E0ff');
-    expect(tint('#0067E0', -2)).toBe('#0067E000');
+    expect(tint('#A33757', 5)).toBe('#A33757ff');
+    expect(tint('#A33757', -2)).toBe('#A3375700');
   });
 
   it('converts to rgba', () => {
-    expect(rgba('#0067E0', 0.1)).toBe('rgba(0,103,224,0.1)');
+    expect(rgba('#A33757', 0.1)).toBe('rgba(163,55,87,0.1)');
   });
 });
 

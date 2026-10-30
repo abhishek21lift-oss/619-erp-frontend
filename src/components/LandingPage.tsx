@@ -85,7 +85,7 @@ export default function LandingPage() {
         />
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(120% 90% at 50% -8%, rgba(0,103,224,0.08), transparent 60%)' }}
+          style={{ background: 'radial-gradient(120% 90% at 50% -8%, rgba(163,55,87,0.08), transparent 60%)' }}
         />
       </div>
 

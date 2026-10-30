@@ -533,13 +533,13 @@ export default function DietGeneratorPage() {
             {plan.hydration_ml ? (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={2}
                 className="flex items-center gap-4 rounded-[18px] px-5 py-4"
-                style={{ background: '#F1F5F9', border: '1px solid #B8D7FF' }}>
+                style={{ background: '#F1F5F9', border: '1px solid #FFD0C6' }}>
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px]"
-                  style={{ background: 'linear-gradient(135deg, #0067E0, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
+                  style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 18px rgba(163,55,87,0.3)' }}>
                   <Droplets size={20} color="#fff" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: '#0067E0' }}>Daily Hydration Target</div>
+                  <div className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: '#A33757' }}>Daily Hydration Target</div>
                   <div className="mt-0.5 text-[18px] font-[800]" style={{ color: 'var(--text-primary)' }}>
                     {plan.hydration_ml} <span className="text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>ml / day</span>
                   </div>

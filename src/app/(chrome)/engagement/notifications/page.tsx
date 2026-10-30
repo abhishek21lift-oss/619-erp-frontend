@@ -19,10 +19,10 @@ import {
 interface Notif { id:string; title:string; body:string; type:string; audience:string; status:'sent'|'scheduled'; created_at:string; recipients:number; }
 
 const KPIS = [
-  { label:'Total', key:'total', color:'#0067e0', icon:<Bell size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Total', key:'total', color:'#A33757', icon:<Bell size={18}/>, bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
   { label:'Sent', key:'sent', color:'#10b981', icon:<CheckCircle2 size={18}/>, bg:'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
   { label:'Scheduled', key:'scheduled', color:'#f59e0b', icon:<Clock size={18}/>, bg:'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05))' },
-  { label:'Active Members', key:'members', color:'#0067e0', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
+  { label:'Active Members', key:'members', color:'#A33757', icon:<Users size={18}/>, bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(133,46,78,0.05))' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -96,7 +96,7 @@ function NContent() {
   };
   const typeColor = (t: string) => {
     const k = typeKey(t);
-    return k === 'expiry' ? '#f59e0b' : k === 'dues' ? '#ef4444' : '#0067e0';
+    return k === 'expiry' ? '#f59e0b' : k === 'dues' ? '#ef4444' : '#A33757';
   };
   const typeEmoji = (t: string) => {
     const k = typeKey(t);
@@ -151,7 +151,7 @@ function NContent() {
       {showForm&&(
         <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
           style={{ borderRadius:20, background:'var(--bg-card)', border:'1px solid var(--border)', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24 }}>
-          <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'var(--text-primary)', display:'flex', gap:8, alignItems:'center' }}><Send size={16} color="#0067e0"/> Compose Notification</h3>
+          <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'var(--text-primary)', display:'flex', gap:8, alignItems:'center' }}><Send size={16} color="#A33757"/> Compose Notification</h3>
           <form noValidate onSubmit={(e) => { e.preventDefault(); f.submit(); }} style={{ display:'grid', gap:16 }}>
             <FormErrorBanner errors={f.errors} />
             <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap:14 }}>
@@ -202,7 +202,7 @@ function NContent() {
               <button type="button" onClick={()=>setShowForm(false)}
                 style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid var(--border-2)', background:'transparent', color:'var(--text-muted)', cursor:'pointer' }}>Cancel</button>
               <button type="submit" disabled={!f.canSubmit}
-                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:f.isSubmitting?'not-allowed':'pointer', opacity:f.isSubmitting?0.7:1, boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
+                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #A33757, #852E4E)', color:'#fff', border:'none', cursor:f.isSubmitting?'not-allowed':'pointer', opacity:f.isSubmitting?0.7:1, boxShadow:'0 4px 16px rgba(163,55,87,0.35)' }}>
                 {f.isSubmitting?<><RefreshCw size={13} className="animate-spin"/> Sending…</>:<><Send size={13}/> Send Now</>}
               </button>
             </div>
@@ -214,7 +214,7 @@ function NContent() {
       <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         style={{ borderRadius:20, background:'var(--bg-card)', border:'1px solid var(--border)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden' }}>
         <div style={{ padding:'14px 20px', borderBottom:'1px solid var(--border)', fontWeight:700, fontSize:14, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:8, background:'var(--bg-subtle)' }}>
-          <MessageSquare size={15} color="#0067e0"/> Notification History ({items.length})
+          <MessageSquare size={15} color="#A33757"/> Notification History ({items.length})
         </div>
         {loading ? (
           <div style={{ padding:'56px 20px', textAlign:'center' }}><Loader2 size={28} color="#cbd5e1" style={{ animation:'spin 1s linear infinite' }} /></div>

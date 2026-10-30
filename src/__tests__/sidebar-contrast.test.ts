@@ -2,7 +2,7 @@
 //
 // Fixing the footer's three buttons left the navigation above them wrong in
 // exactly the same way, and for exactly the same reason: the drawer's
-// background is a gradient, near-black at the top and brand blue from 65%
+// background is a gradient, near-black at the top and deep plum from 65%
 // down, and every foreground had been chosen against the dark end. Measured
 // against the light end — where the expanded sub-items and the chevrons
 // actually sit:
@@ -12,9 +12,9 @@
 //   rail icon       1.98:1        active      3.59:1
 //
 // AA wants 4.5:1. Four of those failed against the DARK end too, so they were
-// never adequate; the blue only made it visible.
+// never adequate; the light end only made it visible.
 //
-// The fix darkened the blue end rather than only lifting the foregrounds. That
+// The fix darkened the light end rather than only lifting the foregrounds. That
 // is the part worth guarding: raising alphas fixes the values that exist
 // today, while making the surface behave like a dark surface means the next
 // thing added to this file inherits a ground that works.
@@ -51,7 +51,7 @@ function flatten(c: string, behind: RGB): RGB {
 
 const AA = 4.5;
 const DARK = parse(SIDEBAR_GROUNDS.dark).rgb;
-const BLUE = parse(SIDEBAR_GROUNDS.blue).rgb;
+const PLUM = parse(SIDEBAR_GROUNDS.plum).rgb;
 
 describe('every sidebar foreground clears AA on both ends of the gradient', () => {
   const entries = Object.entries(SIDEBAR_FOREGROUNDS);
@@ -66,24 +66,24 @@ describe('every sidebar foreground clears AA on both ends of the gradient', () =
     expect(contrast(flatten(colour, DARK), DARK)).toBeGreaterThanOrEqual(AA);
   });
 
-  it.each(entries)('%s is legible on the blue end', (_name, colour) => {
+  it.each(entries)('%s is legible on the plum end', (_name, colour) => {
     // This is the one that was failing. The lower half of an expanded drawer
     // is entirely on this ground.
-    expect(contrast(flatten(colour, BLUE), BLUE)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(flatten(colour, PLUM), PLUM)).toBeGreaterThanOrEqual(AA);
   });
 });
 
 describe('the ground itself', () => {
   it('is dark enough to behave like a dark surface', () => {
-    // #0050AD was bright enough that white at 52% — a perfectly ordinary
-    // value on a dark navigation — came out at 3.20:1. The blue end is now
+    // The old light end was bright enough that white at 52% — a perfectly
+    // ordinary value on a dark navigation — came out at 3.20:1. It is now
     // dark enough that ordinary values work, which is what stops this
     // recurring every time something is added to the file.
-    const white52 = flatten('rgba(255,255,255,0.52)', BLUE);
-    expect(contrast(white52, BLUE)).toBeGreaterThanOrEqual(AA);
+    const white52 = flatten('rgba(255,255,255,0.52)', PLUM);
+    expect(contrast(white52, PLUM)).toBeGreaterThanOrEqual(AA);
   });
 
-  it('still fails against the blue that shipped', () => {
+  it('still fails against the ground that shipped', () => {
     // Guards the maths. If `contrast` were wrong in a way that made
     // everything pass, every assertion above would be worthless.
     const OLD: RGB = [0x00, 0x50, 0xAD];
@@ -91,12 +91,13 @@ describe('the ground itself', () => {
     expect(contrast(flatten('rgba(255,255,255,0.28)', OLD), OLD)).toBeLessThan(2);
   });
 
-  it('is still recognisably blue, not a neutral dark', () => {
+  it('is still plum, not a neutral dark', () => {
     // The gradient is brand identity. Darkening it to pass contrast must not
-    // turn it grey — blue has to stay the dominant channel by a clear margin.
-    const [r, g, b] = BLUE;
-    expect(b).toBeGreaterThan(g);
-    expect(b).toBeGreaterThan(r);
-    expect(b - Math.max(r, g)).toBeGreaterThan(40);
+    // turn it grey — green has to stay the lowest channel so the ground keeps
+    // its warm cast, and red has to lead so it reads plum rather than violet.
+    const [r, g, b] = PLUM;
+    expect(g).toBeLessThan(r);
+    expect(g).toBeLessThan(b);
+    expect(r).toBeGreaterThan(b);
   });
 });

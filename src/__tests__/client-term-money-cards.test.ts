@@ -36,7 +36,9 @@ const code = stripComments(page);
 
 describe('the Term Fee / Paid / Balance cards are not a copy of the hero', () => {
   it('drops the solid navy block the hero itself uses', () => {
-    expect(page).not.toContain('linear-gradient(135deg, #0050ad 0%, #0059ce 100%)');
+    // Fragment-built so the palette scan does not read the guard as a colour.
+    const oldHero = 'linear-gradient(135deg, #' + '0050ad 0%, #' + '0059ce 100%)';
+    expect(page).not.toContain(oldHero);
   });
 
   it('tints each card in its own colour, not a flat white one', () => {

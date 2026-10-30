@@ -187,7 +187,7 @@ export default function RegistrationsTab() {
                     href={waLink(r.mobile, `Hi ${r.full_name}, this is MY PT STUDIO about your studio application for ${r.business_name}.`)}
                     target="_blank" rel="noopener noreferrer"
                     className="flex h-10 items-center gap-1.5 rounded-[10px] px-3.5 text-[12.5px] font-[750] transition active:scale-[0.98]"
-                    style={{ background: 'rgba(0,103,224,0.08)', color: '#0059ce' }}>
+                    style={{ background: 'rgba(163,55,87,0.08)', color: '#852E4E' }}>
                     <MessageCircle size={14} /> Contact Applicant
                   </a>
                 </div>
