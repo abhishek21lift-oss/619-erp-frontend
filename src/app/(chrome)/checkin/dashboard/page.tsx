@@ -22,7 +22,7 @@ const METHOD_ICONS: Record<string, React.ReactNode> = {
 };
 
 const METHOD_COLORS: Record<string, string> = {
-  face: '#0067e0', qr: '#0067e0', manual: '#f59e0b', biometric: '#10b981',
+  face: '#5B63F6', qr: '#5B63F6', manual: '#f59e0b', biometric: '#10b981',
 };
 
 const glass = {
@@ -122,8 +122,8 @@ export default function DashboardPage() {
           {/* KPI row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
             <StatCard label="Currently Inside" value={data?.currently_inside.total ?? 0} icon={Users} color="#10b981" />
-            <StatCard label="Today's Check-ins" value={data?.today.total ?? 0} icon={CheckCircle2} color="#0067e0" />
-            <StatCard label="Members Inside" value={(data?.currently_inside.breakdown as Record<string, number> | undefined)?.client ?? 0} icon={User} color="#0067e0" />
+            <StatCard label="Today's Check-ins" value={data?.today.total ?? 0} icon={CheckCircle2} color="#3F46D6" />
+            <StatCard label="Members Inside" value={(data?.currently_inside.breakdown as Record<string, number> | undefined)?.client ?? 0} icon={User} color="#3F46D6" />
             <StatCard
               label="Peak Hour"
               value={peakHour !== null ? HOUR_LABELS[peakHour] : '—'}
@@ -136,7 +136,7 @@ export default function DashboardPage() {
             {/* Hourly bar chart */}
             <div style={{ ...glass, borderRadius: 16, padding: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Clock size={14} color="#0067e0" /> Hourly Check-in Distribution — Today
+                <Clock size={14} color="#3F46D6" /> Hourly Check-in Distribution — Today
               </div>
               <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <div style={{ minWidth: 420 }}>
@@ -147,13 +147,13 @@ export default function DashboardPage() {
                       const isNow = new Date().getHours() === h;
                       return (
                         <div key={h} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }} title={`${HOUR_LABELS[h]}: ${count} check-ins`}>
-                          <div style={{ fontSize: 9, color: count > 0 ? '#0067e0' : 'var(--text-disabled)', fontWeight: count > 0 ? 700 : 400 }}>{count || ''}</div>
+                          <div style={{ fontSize: 9, color: count > 0 ? '#3F46D6' : 'var(--text-disabled)', fontWeight: count > 0 ? 700 : 400 }}>{count || ''}</div>
                           <div style={{
                             width: '100%',
-                            background: count > 0 ? `rgba(0,103,224,${0.15 + pct * 0.85})` : 'var(--bg-subtle)',
+                            background: count > 0 ? `rgba(91,99,246,${0.15 + pct * 0.85})` : 'var(--bg-subtle)',
                             borderRadius: 3,
                             height: Math.max(4, pct * 60),
-                            border: isNow ? '1px solid #0067e0' : 'none',
+                            border: isNow ? '1px solid #5B63F6' : 'none',
                             transition: 'height 0.4s ease',
                           }} />
                         </div>

@@ -25,7 +25,7 @@ type Session = {
 };
 
 const STATUS_STYLES: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  scheduled: { label: 'Scheduled', color: '#0067E0', bg: 'rgba(0,103,224,0.08)', dot: '#0067E0' },
+  scheduled: { label: 'Scheduled', color: '#5B63F6', bg: 'rgba(91,99,246,0.08)', dot: '#5B63F6' },
   completed: { label: 'Completed', color: '#10B981', bg: 'rgba(16,185,129,0.08)', dot: '#10B981' },
   cancelled: { label: 'Cancelled', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', dot: '#EF4444' },
   // no_show with an underscore — that is the only spelling the pt_sessions
@@ -148,7 +148,7 @@ export default function PTSessionsPage() {
             <input aria-label="Search by client name or mobile"
               type="text" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search by client name or mobile..."
-              className="w-full h-11 rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-4 text-[13px] text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:border-[#0067E0]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
+              className="w-full h-11 rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-4 text-[13px] text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:border-[#5B63F6]/30 focus:shadow-[0_0_0_3px_rgba(91,99,246,0.06)]"
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -173,7 +173,7 @@ export default function PTSessionsPage() {
         {/* Session List */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 rounded-full border-[3px] border-[#0067E0]/20 border-t-[#0067E0] animate-spin" />
+            <div className="h-8 w-8 rounded-full border-[3px] border-[#5B63F6]/20 border-t-[#5B63F6] animate-spin" />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -181,13 +181,13 @@ export default function PTSessionsPage() {
               <XCircle className="h-6 w-6" />
             </div>
             <p className="text-sm font-medium text-[#EF4444]">{error}</p>
-            <button onClick={loadSessions} className="mt-3 text-[13px] font-medium text-[#0067E0] hover:underline">
+            <button onClick={loadSessions} className="mt-3 text-[13px] font-medium text-[#3F46D6] hover:underline">
               Try again
             </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-[rgba(0,103,224,0.06)] text-[#0067E0]">
+            <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-[rgba(91,99,246,0.06)] text-[#3F46D6]">
               <Calendar className="h-7 w-7" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-medium text-[#64748B]">No sessions found</p>
