@@ -26,7 +26,7 @@ const METHOD_ICONS: Record<Method, React.ReactNode> = {
 const METHOD_COLORS: Record<Method, string> = {
   Cash: 'from-emerald-500 to-green-500',
   UPI: 'from-[var(--brand-hi)] to-[var(--brand)]',
-  Card: 'from-violet-700 to-violet-600',
+  Card: 'from-slate-700 to-slate-600',
   Bank: 'from-amber-500 to-orange-500',
 };
 
