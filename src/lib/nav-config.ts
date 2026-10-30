@@ -76,6 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Calendar',
     items: [
       { href: '/pt-os/schedule-session',  label: 'Book Session',        icon: 'CalendarPlus' },
+      { href: '/pt-os/availability',      label: 'Availability',        icon: 'CalendarClock' },
       { href: '/pt-os/session-balance',   label: 'Session Balance',     icon: 'Gauge' },
       { href: '/pt-os/sessions',          label: 'Session History',     icon: 'History' },
       { href: '/attendance',              label: 'Attendance Records',  icon: 'ClipboardList', feature: 'attendance', roles: ['trainer'] },
