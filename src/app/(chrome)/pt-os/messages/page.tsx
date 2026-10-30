@@ -33,8 +33,8 @@ import { palette, rgba } from '@/lib/palette';
 
 const INK = 'var(--text-primary)';
 const MUTED = 'var(--text-muted)';
-const ACCENT = palette.blue[500];
-const UNREAD_GRADIENT = `linear-gradient(135deg, ${palette.blue[400]}, ${palette.blue[600]})`;
+const ACCENT = palette.indigo[500];
+const UNREAD_GRADIENT = `linear-gradient(135deg, ${palette.indigo[400]}, ${palette.indigo[600]})`;
 
 export default function TrainerMessagesPage() {
   return (
@@ -118,7 +118,7 @@ function MessagesContent() {
           entirely behind the card. */}
       <div className="relative">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-8 h-40"
-          style={{ background: `radial-gradient(60% 100% at 50% 0%, ${rgba(palette.blue[500], 0.08)}, transparent 72%)` }} />
+          style={{ background: `radial-gradient(60% 100% at 50% 0%, ${rgba(palette.indigo[500], 0.08)}, transparent 72%)` }} />
 
         <div className="relative grid overflow-hidden rounded-[26px] lg:grid-cols-[340px_1fr]"
           style={{
@@ -130,14 +130,14 @@ function MessagesContent() {
           <aside className={`${openId ? 'hidden lg:flex' : 'flex'} min-h-0 flex-col`}
             style={{ borderRight: '1px solid var(--border)' }}>
             <div className="px-4 pb-3 pt-4"
-              style={{ background: `linear-gradient(180deg, ${rgba(palette.blue[500], 0.06)}, transparent)`, borderBottom: '1px solid var(--border)' }}>
+              style={{ background: `linear-gradient(180deg, ${rgba(palette.indigo[500], 0.06)}, transparent)`, borderBottom: '1px solid var(--border)' }}>
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 className="text-[11px] font-[800] uppercase tracking-[0.12em]" style={{ color: MUTED }}>
                   Inbox
                 </h2>
                 {totalUnread > 0 && (
                   <span className="rounded-full px-2 py-[3px] text-[10.5px] font-[800] text-white"
-                    style={{ background: UNREAD_GRADIENT, boxShadow: `0 4px 10px -4px ${rgba(palette.blue[600], 0.7)}` }}>
+                    style={{ background: UNREAD_GRADIENT, boxShadow: `0 4px 10px -4px ${rgba(palette.indigo[600], 0.7)}` }}>
                     {totalUnread} unread
                   </span>
                 )}
@@ -171,7 +171,7 @@ function MessagesContent() {
               ) : shown.length === 0 ? (
                 <div className="px-6 py-10 text-center">
                   <span aria-hidden className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full"
-                    style={{ background: rgba(palette.blue[500], 0.1), color: ACCENT }}>
+                    style={{ background: rgba(palette.indigo[500], 0.1), color: ACCENT }}>
                     <MessagesSquare size={19} />
                   </span>
                   <p className="text-[13.5px] font-[720]" style={{ color: INK }}>
@@ -191,8 +191,8 @@ function MessagesContent() {
                           aria-current={active ? 'true' : undefined}
                           className="relative flex items-center gap-3 rounded-[16px] px-2.5 py-2.5 transition-colors hover:bg-[var(--bg-subtle)]"
                           style={active ? {
-                            background: `linear-gradient(135deg, ${rgba(palette.blue[500], 0.12)}, ${rgba(palette.blue[950], 0.06)})`,
-                            boxShadow: `inset 0 0 0 1px ${rgba(palette.blue[500], 0.22)}`,
+                            background: `linear-gradient(135deg, ${rgba(palette.indigo[500], 0.12)}, ${rgba(palette.indigo[900], 0.06)})`,
+                            boxShadow: `inset 0 0 0 1px ${rgba(palette.indigo[500], 0.22)}`,
                           } : undefined}>
                           {active && (
                             <span aria-hidden className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-full"
@@ -236,7 +236,7 @@ function MessagesContent() {
                 <Centered>
                   <div className="px-6 text-center">
                     <span aria-hidden className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-[20px] text-white"
-                      style={{ background: UNREAD_GRADIENT, boxShadow: `0 12px 26px -12px ${rgba(palette.blue[700], 0.75)}` }}>
+                      style={{ background: UNREAD_GRADIENT, boxShadow: `0 12px 26px -12px ${rgba(palette.indigo[700], 0.75)}` }}>
                       <MessagesSquare size={22} />
                     </span>
                     <p className="text-[15px] font-[780]" style={{ color: INK }}>Pick a conversation</p>
@@ -290,7 +290,7 @@ function ThreadPane({ clientId, onChanged }: { clientId: string; onChanged: () =
   return (
     <>
       <header className="flex min-w-0 items-center gap-3 px-4 py-3"
-        style={{ borderBottom: '1px solid var(--border)', background: `linear-gradient(180deg, ${rgba(palette.blue[500], 0.05)}, transparent)` }}>
+        style={{ borderBottom: '1px solid var(--border)', background: `linear-gradient(180deg, ${rgba(palette.indigo[500], 0.05)}, transparent)` }}>
         <Link href="/pt-os/messages" aria-label="Back to conversations"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] lg:hidden"
           style={{ color: INK, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>

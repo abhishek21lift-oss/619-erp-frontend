@@ -437,3 +437,26 @@ describe('the action colour is one value', () => {
     expect(config.theme?.extend?.colors?.brand).toEqual(palette.indigo);
   });
 });
+
+describe('the logo blue stays on the mark', () => {
+  it('is not used as an accent anywhere in the PT-OS surfaces', () => {
+    // #0067E0 is the wordmark's measured blue, kept in brand.ts for the mark.
+    // It stopped being the UI accent in Aurora: actions, links and selected
+    // states are indigo. `palette.blue` was the easy way to keep reaching for
+    // it, so this ratchet names the module and fails on the next one. Other
+    // modules still carry the old hex inline; those are per-phase work, not a
+    // reason to let this one grow back.
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (readFileSync(p, 'utf8').includes('palette.blue')) offenders.push(p);
+      }
+    };
+    walk(join(process.cwd(), 'src', 'components', 'pt-os'));
+    walk(join(process.cwd(), 'src', 'app', '(chrome)', 'pt-os'));
+    expect(offenders).toEqual([]);
+  });
+});

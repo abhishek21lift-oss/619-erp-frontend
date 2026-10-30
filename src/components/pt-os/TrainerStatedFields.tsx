@@ -118,7 +118,7 @@ export default function TrainerStatedFields({
         {count > 0 && (
           <span
             className="rounded-full px-1.5 py-px text-[10px] font-[750]"
-            style={{ background: rgba(palette.blue[500], 0.12), color: palette.blue[500] }}
+            style={{ background: rgba(palette.indigo[500], 0.12), color: palette.indigo[500] }}
           >
             {count}
           </span>
@@ -135,7 +135,7 @@ export default function TrainerStatedFields({
           className="mt-1.5 rounded-[12px] px-3 py-2.5"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
         >
-          <p className="mb-2 text-[10.5px] font-[750] uppercase tracking-[0.07em]" style={{ color: palette.blue[500] }}>
+          <p className="mb-2 text-[10.5px] font-[750] uppercase tracking-[0.07em]" style={{ color: palette.indigo[500] }}>
             Trainer-stated for this generation
           </p>
           {/* Said on the screen, not only in the code. A trainer who thinks
