@@ -44,10 +44,10 @@ export function MultiSelectChips({ value, onChange, options }: MultiSelectChipsP
             onClick={() => toggle(opt.value)}
             className="flex items-center gap-1.5 rounded-[11px] px-3.5 py-2.5 text-[12.5px] font-[640] transition-all duration-200"
             style={{
-              background: selected ? 'linear-gradient(135deg, #5B63F6, #3F46D6)' : 'var(--bg-subtle)',
+              background: selected ? 'linear-gradient(135deg, #A33757, #852E4E)' : 'var(--bg-subtle)',
               color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
               border: selected ? 'none' : '1.5px solid var(--border)',
-              boxShadow: selected ? '0 4px 14px rgba(91,99,246,0.30)' : 'none',
+              boxShadow: selected ? '0 4px 14px rgba(163,55,87,0.30)' : 'none',
               transform: selected ? 'scale(1.03)' : 'scale(1)',
             }}
           >

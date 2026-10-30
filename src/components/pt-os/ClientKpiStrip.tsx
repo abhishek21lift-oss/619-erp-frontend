@@ -55,9 +55,9 @@ export interface ClientKpiStripProps {
 
 /** Blue, emerald and the two greys are decoration; only Balance's red means something. */
 const DOT = {
-  clients: '#5B63F6',
+  clients: '#A33757',
   revenue: '#059669',
-  paid: '#3F46D6',
+  paid: '#852E4E',
   balanceOwed: '#DC2626',
   balanceClear: '#94A3B8',
 } as const;

@@ -69,7 +69,7 @@ export default function JourneyNextButton({ clientId, current, className = '' }:
   return (
     <button type="button" onClick={() => router.push(stepHref(next.key, clientId, next.state))}
       className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] px-5 text-[13.5px] font-[720] text-white transition active:scale-[0.99] ${className}`}
-      style={{ background: 'linear-gradient(135deg,#5B63F6,#3F46D6)' }}>
+      style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)' }}>
       {next.state === 'renew' ? 'Renew PT' : `Continue to ${STEP_LABEL[next.key]}`} <ArrowRight size={15} />
     </button>
   );

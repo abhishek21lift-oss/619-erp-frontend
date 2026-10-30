@@ -45,7 +45,7 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
                   <div
                     className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
                     style={{
-                      background: i === milestones.length - 1 ? '#5B63F6' : i === 0 ? '#0f172a' : 'var(--bg-subtle)',
+                      background: i === milestones.length - 1 ? '#A33757' : i === 0 ? '#0f172a' : 'var(--bg-subtle)',
                       color: i === milestones.length - 1 || i === 0 ? '#fff' : 'var(--text-muted)',
                     }}
                   >
@@ -55,7 +55,7 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
                   <span className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>{fmtDate(m.date)}</span>
                 </div>
                 {i < milestones.length - 1 && (
-                  <div className="h-[2px] w-10 sm:w-16 mx-1.5 mb-6 rounded-full" style={{ background: 'linear-gradient(90deg, #5B63F6, #3F46D6)' }} />
+                  <div className="h-[2px] w-10 sm:w-16 mx-1.5 mb-6 rounded-full" style={{ background: 'linear-gradient(90deg, #A33757, #852E4E)' }} />
                 )}
               </div>
             ))}

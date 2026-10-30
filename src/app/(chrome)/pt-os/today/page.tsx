@@ -299,7 +299,7 @@ function ClientRow({
           name={c.client_name}
           photoUrl={c.client_photo}
           className="flex h-11 w-11 items-center justify-center rounded-[14px] text-[13px] font-[800] text-white"
-          style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#5B63F6,#3F46D6)' }}
+          style={{ background: c.is_rest_day ? 'var(--text-muted)' : 'linear-gradient(135deg,#A33757,#852E4E)' }}
         >
           {initials(c.client_name)}
         </ClientAvatar>

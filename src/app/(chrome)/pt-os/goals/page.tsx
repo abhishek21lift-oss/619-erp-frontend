@@ -172,7 +172,7 @@ function measureForForm(form: GoalFormData, currentWeight: number | null, curren
 export default function PtGoalsPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>}>
         <GoalsContent />
       </Suspense>
     </Guard>
@@ -402,7 +402,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>;
   }
   if (loadError) {
     return (
@@ -451,7 +451,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         {goals.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No goals set yet.</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}>
+            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}>
               Set First Goal
             </Button>
           </div>
@@ -463,7 +463,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
               {(['active','paused','completed','archived'] as const).map((st) => (
                 <button key={st} type="button" onClick={() => setStatus(String(g.id), st)}
                   className="rounded-full px-3 py-1.5 text-[11px] font-[700]"
-                  style={{ border: '1px solid var(--border)', color: g.status === st ? '#3F46D6' : 'var(--text-secondary)', background: g.status === st ? 'rgba(91,99,246,0.08)' : 'transparent' }}>
+                  style={{ border: '1px solid var(--border)', color: g.status === st ? '#852E4E' : 'var(--text-secondary)', background: g.status === st ? 'rgba(163,55,87,0.08)' : 'transparent' }}>
                   {st}
                 </button>
               ))}
@@ -865,7 +865,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
               <Button
                 iconLeft={<ArrowRight size={14} />}
                 onClick={handleNext}
-                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
                 {step === LAST_STEP ? 'Review' : 'Next'}
               </Button>
@@ -874,7 +874,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
                 iconLeft={!saving ? <Check size={14} /> : undefined}
                 loading={saving} disabled={saving}
                 onClick={handleSubmit}
-                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
                 {saving ? 'Saving...' : goalId ? 'Update Goal' : 'Save Goal'}
               </Button>

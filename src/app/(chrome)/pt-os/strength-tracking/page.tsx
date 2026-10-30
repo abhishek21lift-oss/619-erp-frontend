@@ -67,7 +67,7 @@ const CATEGORIES: { label: string; exercises: string[] }[] = [
   { label: 'Core', exercises: ['Plank', 'Side Plank', 'Curl Up'] },
 ];
 
-const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#f59e0b', 'Lower Body': '#5B63F6', Core: '#059669' };
+const CATEGORY_COLOR: Record<string, string> = { 'Upper Body': '#f59e0b', 'Lower Body': '#A33757', Core: '#059669' };
 
 const LEVEL_STYLE: Record<FitnessCategory, { bg: string; color: string }> = {
   Superior: { bg: 'rgba(16,185,129,0.18)', color: '#047857' },
@@ -88,7 +88,7 @@ const LEVEL_STYLE: Record<FitnessCategory, { bg: string; color: string }> = {
 export default function StrengthTrackingPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>}>
         <StrengthTrackingContent />
       </Suspense>
     </Guard>
@@ -207,7 +207,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
   };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>;
   }
   if (loadError) {
     return (
@@ -515,7 +515,7 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
         <span className="font-bold" style={{ color: '#f59e0b' }}>{log.weight_kg} kg</span>
         <span style={{ color: 'var(--text-muted)' }}>{log.sets_done} × {log.reps_done}</span>
         {log.one_rm_estimate != null && (
-          <span className="flex items-center gap-1" style={{ color: '#3F46D6' }}>
+          <span className="flex items-center gap-1" style={{ color: '#852E4E' }}>
             <TrendingUp size={11} /> 1RM: {log.one_rm_estimate} kg
           </span>
         )}

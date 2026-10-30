@@ -27,14 +27,14 @@ export function StepPrimaryGoal({ form, set, step, error }: StepPrimaryGoalProps
               aria-pressed={selected}
               className="flex flex-col items-center gap-2 rounded-[16px] px-4 py-5 text-center transition-all duration-200"
               style={{
-                background: selected ? 'rgba(91,99,246,0.06)' : 'var(--bg-subtle)',
-                border: selected ? '2px solid #5B63F6' : '2px solid var(--border)',
-                boxShadow: selected ? '0 4px 16px rgba(91,99,246,0.18)' : 'none',
+                background: selected ? 'rgba(163,55,87,0.06)' : 'var(--bg-subtle)',
+                border: selected ? '2px solid #A33757' : '2px solid var(--border)',
+                boxShadow: selected ? '0 4px 16px rgba(163,55,87,0.18)' : 'none',
                 transform: selected ? 'scale(1.02)' : 'scale(1)',
               }}
             >
               {/* Inherits the selected colour, which an emoji could not. */}
-              <g.icon size={24} strokeWidth={1.75} color={selected ? '#3F46D6' : 'var(--text-muted)'} />
+              <g.icon size={24} strokeWidth={1.75} color={selected ? '#852E4E' : 'var(--text-muted)'} />
               <span className="text-[12.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{g.label}</span>
             </button>
           );

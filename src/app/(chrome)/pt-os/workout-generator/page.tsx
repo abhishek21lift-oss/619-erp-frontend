@@ -292,7 +292,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
                 <li key={ex.id} className="rounded-[12px] border p-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="text-[14px] font-[600]">{i + 1}. {ex.name}</span>
-                    <span className="text-[12px] px-2 py-0.5 rounded-full bg-[#5B63F6]/10">{ex.phase}</span>
+                    <span className="text-[12px] px-2 py-0.5 rounded-full bg-[#A33757]/10">{ex.phase}</span>
                   </div>
                   <div className="mt-1 text-[12px]">
                     {ex.prescription.sets} sets × {ex.prescription.reps} reps · rest {ex.prescription.restSeconds}s

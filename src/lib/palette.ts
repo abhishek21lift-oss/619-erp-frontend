@@ -3,8 +3,8 @@
  *
  * Eight families, each with a meaning. Nothing else is a colour in this app:
  *
- *   blue     Logo blue — the mark, and the few surfaces that must match it
- *   indigo   Actions, links, highlights, selected state (the UI accent)
+ *   blue     Legacy logo blue — sidebar, chat, cockpit and platform accents
+ *   indigo   The brand ramp — actions, links, highlights, selected state, mark
  *   emerald  Success, completed, active, healthy
  *   mint     Positive accent — deltas, healthy charts, "on track"
  *   amber    Warning, pending, due soon, partial
@@ -20,8 +20,9 @@
  * information at all.
  *
  * Aurora added indigo, mint and orange back deliberately: indigo is the one
- * action colour (the logo blue stays on the mark), mint is the positive
- * accent, and orange is a warm highlight that never means "warning".
+ * action colour, mint is the positive accent, and orange is a warm highlight
+ * that never means "warning". The Rosé pass later moved indigo — and the mark
+ * — onto the warm ramp; `blue` is what the remaining cool surfaces still use.
  *
  * ── Choosing a tone ────────────────────────────────────────────────────────
  *   50/100    page and chip backgrounds — a wash, not a fill
@@ -36,16 +37,16 @@
  */
 
 /**
- * Logo blue — the mark's own blue.
+ * Legacy logo blue — no longer the mark's colour.
  *
- * Anchored on the blue measured out of the logo artwork rather than a generic
- * Tailwind blue; see src/lib/brand.ts for how the three brand stops (450, 500,
- * 600) were sampled. 950 is not "darker than 900" — it is a deliberately
- * brighter blue for icons sitting on the near-black gray[900] tiles, where the
- * deep 500 only reaches 3.4:1.
+ * The artwork was recoloured to the `indigo` ramp in the Rosé pass, and
+ * `brand.ts` moved with it. This ramp survives for the surfaces that have not
+ * had their own pass yet: the sidebar, chat, cockpit, revenue hero and the
+ * platform console. Treat it as a to-do, not as brand identity.
  *
- * UI actions moved to `indigo` in Aurora; this ramp remains for the wordmark,
- * the logo-blue tokens and the surfaces that must visibly match the artwork.
+ * 950 is not "darker than 900" — it is a deliberately brighter blue for icons
+ * sitting on the near-black gray[900] tiles, where the deep 500 only reaches
+ * 3.4:1.
  */
 export const blue = {
   50:  '#F2F8FF',
@@ -63,21 +64,34 @@ export const blue = {
 } as const;
 
 /**
- * Indigo — the one action colour. Primary buttons, links, selected rows,
- * focus rings and the Aurora hero. 600 is the text-safe tone on a light tint;
- * 500 is the fill and clears AA for white button labels.
+ * The action ramp — primary buttons, links, selected rows, focus rings and the
+ * hero. Values are the warm ramp (peach #FFBB94 through plum #4C1D3D) chosen
+ * over the original indigo; the family keeps its module name so every import
+ * stays put, and renaming it is separate work.
+ *
+ * Same index rules as before, checked against the new values:
+ *   300  the tone that survives on a dark surface (peach on near-black)
+ *   400  decoration only — 2.1:1 on white, never a label
+ *   450  decoration only — 3.7:1 on white, never a label
+ *   500  the fill; white labels clear AA at 6.5:1
+ *   600  text-safe tone on a light tint, and hover on a 500 fill, at 8.4:1
+ *
+ * The ramp is one hue, so it cannot also serve as the "merely different"
+ * colour that `identity` and `series` want — those stay listable but now read
+ * as the brand, not as a neutral alternative.
  */
 export const indigo = {
-  50:  '#EEF0FF',
-  100: '#E0E3FF',
-  200: '#C7CBFF',
-  300: '#A5AAFB',
-  400: '#7F86F8',
-  500: '#5B63F6',
-  600: '#3F46D6',
-  700: '#2F35A8',
-  800: '#252A82',
-  900: '#1B1F5C',
+  50:  '#FFF7F3',
+  100: '#FFE9E0',
+  200: '#FFD0C6',
+  300: '#FFBB94',
+  400: '#FB9590',
+  450: '#DC586D',
+  500: '#A33757',
+  600: '#852E4E',
+  700: '#6B2440',
+  800: '#4C1D3D',
+  900: '#2B1220',
 } as const;
 
 /** Emerald — success, completed, active, healthy. */

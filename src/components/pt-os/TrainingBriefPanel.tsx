@@ -334,7 +334,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
           </>
         )}
         {s.limitations.posture && (
-          <Chips label="Posture" items={s.limitations.posture.issues} tone="#3F46D6" emptyNote="Nothing flagged" />
+          <Chips label="Posture" items={s.limitations.posture.issues} tone="#852E4E" emptyNote="Nothing flagged" />
         )}
         {s.limitations.has_asymmetry && <Row label="Asymmetry" value="Present — check left/right loading" />}
       </Card>
@@ -342,7 +342,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
       {/* ── 3. Capacity ── */}
       <Card
         icon={<Activity size={14} />}
-        tone="#3F46D6"
+        tone="#852E4E"
         title="Fitness capacity"
         asOf={s.capacity.as_of}
         section="capacity"
@@ -386,7 +386,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
       {/* ── 5. Lifestyle ── */}
       <Card
         icon={<Moon size={14} />}
-        tone="#3F46D6"
+        tone="#852E4E"
         title="Recovery capacity"
         asOf={s.lifestyle.as_of}
         section="lifestyle"
@@ -425,7 +425,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
       {/* ── 7. Current programme ── */}
       <Card
         icon={<History size={14} />}
-        tone="#3F46D6"
+        tone="#852E4E"
         title="Current programme"
         asOf={null}
         section="history"

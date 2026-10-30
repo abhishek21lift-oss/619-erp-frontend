@@ -1,6 +1,7 @@
-// Aurora moved actions, links and selected states from the wordmark blue onto
-// the indigo ramp. `#0067E0` is measured from the mark and stays in brand.ts —
-// it is the logo's colour, not the UI's.
+// The wordmark blue used to be the app's accent. Aurora moved actions, links
+// and selected states onto the indigo ramp, and the Rosé pass then moved the
+// ramp itself to the warm values — the mark was recoloured to match, so the
+// old blue no longer belongs anywhere.
 //
 // This is the ratchet for the surfaces already repainted: every PT-OS surface
 // and the check-in kiosk. It catches the three ways the old blue comes back —

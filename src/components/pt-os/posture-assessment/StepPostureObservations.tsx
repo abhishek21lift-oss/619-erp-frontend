@@ -61,7 +61,7 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
                 {count > 0 && (
                   <span
                     className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-[800]"
-                    style={{ background: selected ? '#5B63F6' : 'var(--border)', color: selected ? '#fff' : 'var(--text-muted)' }}
+                    style={{ background: selected ? '#A33757' : 'var(--border)', color: selected ? '#fff' : 'var(--text-muted)' }}
                   >
                     {count}
                   </span>

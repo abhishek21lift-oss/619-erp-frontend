@@ -71,7 +71,7 @@ function formFromRow(row: Record<string, unknown>): MobilityFormData {
 export default function PtMobilityAssessmentPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>}>
         <MobilityContent />
       </Suspense>
     </Guard>
@@ -313,7 +313,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
               <Button
                 iconLeft={<ArrowRight size={14} />}
                 onClick={handleNext}
-                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
                 {step === 3 ? 'Review' : 'Next'}
               </Button>
@@ -322,7 +322,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
                 iconLeft={!saving ? <Check size={14} /> : undefined}
                 loading={saving} disabled={saving}
                 onClick={handleSubmit}
-                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
                 {saving ? 'Saving...' : assessmentId ? 'Update Assessment' : 'Save Assessment'}
               </Button>

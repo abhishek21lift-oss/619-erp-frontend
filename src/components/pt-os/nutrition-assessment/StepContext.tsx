@@ -49,9 +49,9 @@ export function StepContext({ form, set }: StepContextProps) {
                   onClick={() => set('mealPreparer', o.value)}
                   className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                   style={{
-                    background: selected ? 'rgba(91,99,246,0.06)' : 'var(--bg-subtle)',
-                    border: selected ? '2px solid #5B63F6' : '2px solid var(--border)',
-                    boxShadow: selected ? '0 4px 16px rgba(91,99,246,0.18)' : 'none',
+                    background: selected ? 'rgba(163,55,87,0.06)' : 'var(--bg-subtle)',
+                    border: selected ? '2px solid #A33757' : '2px solid var(--border)',
+                    boxShadow: selected ? '0 4px 16px rgba(163,55,87,0.18)' : 'none',
                   }}
                 >
                   <span className="text-[20px]">{o.icon}</span>

@@ -54,9 +54,9 @@
      where the deep 500 only reaches 3.4:1. */
   --blue-on-dark:#1CA3F9;
 
-  --indigo-50:#EEF0FF; --indigo-100:#E0E3FF; --indigo-200:#C7CBFF; --indigo-300:#A5AAFB;
-  --indigo-400:#7F86F8; --indigo-500:#5B63F6; --indigo-600:#3F46D6; --indigo-700:#2F35A8;
-  --indigo-800:#252A82; --indigo-900:#1B1F5C;
+  --indigo-50:#FFF7F3; --indigo-100:#FFE9E0; --indigo-200:#FFD0C6; --indigo-300:#FFBB94;
+  --indigo-400:#FB9590; --indigo-500:#A33757; --indigo-600:#852E4E; --indigo-700:#6B2440;
+  --indigo-800:#4C1D3D; --indigo-900:#2B1220;
 
   --emerald-50:#ECFDF5; --emerald-100:#D1FAE5; --emerald-200:#A7F3D0;
   --emerald-300:#6EE7B7; --emerald-400:#34D399; --emerald-500:#10B981;
@@ -102,12 +102,12 @@
   --brand-hi:     var(--indigo-400);
   --brand-lo:     var(--indigo-600);
   --brand-mid:    var(--indigo-500);
-  --brand-soft:   rgba(91,99,246,0.10);
-  --brand-glow:   rgba(91,99,246,0.26);
-  --brand-glow-2: rgba(91,99,246,0.10);
-  --brand-glow-soft: rgba(91,99,246,0.14);
-  --rgb-brand:    91 99 246;
-  --rgb-brand-hi: 165 170 251;
+  --brand-soft:   rgba(163,55,87,0.10);
+  --brand-glow:   rgba(163,55,87,0.26);
+  --brand-glow-2: rgba(163,55,87,0.10);
+  --brand-glow-soft: rgba(163,55,87,0.14);
+  --rgb-brand:    163 55 87;
+  --rgb-brand-hi: 251 149 144;
 
   /* Aurora semantic aliases. Pages should reach for these names; the raw
      family ramps above are the implementation. */
@@ -124,16 +124,15 @@
      own colour, for the few surfaces that must visibly match the logo. Don't
      substitute one for the other — they are close enough that mixing them
      reads as a bug, and far enough apart to notice. */
-  --logo-blue:        #0067E0;
-  --logo-blue-soft:   rgba(0,103,224,0.10);
-  --logo-blue-soft-h: rgba(0,103,224,0.18);
+  --logo-blue:        #A33757;
+  --logo-blue-soft:   rgba(163,55,87,0.10);
+  --logo-blue-soft-h: rgba(163,55,87,0.18);
   /* Gradient ends, and a bright variant for icons on the dark #0f172a step
-     tiles, where the deep blue only reaches 3.4:1 (the amber it replaced was
-     8.3:1). Sampled with the rest — see src/lib/brand.ts, which holds the same
-     values for the TypeScript side and documents how they were measured. */
-  --logo-blue-hi:     #0271EB;
-  --logo-blue-lo:     #0059CE;
-  --logo-blue-on-dark: #1CA3F9;
+     tiles, where the deep steps only reach 3:1. Same values as the TypeScript
+     side — see src/lib/brand.ts, which documents how they are derived. */
+  --logo-blue-hi:     #DC586D;
+  --logo-blue-lo:     #852E4E;
+  --logo-blue-on-dark: #FB9590;
 
   /* ── Gold (amber) ─────────────────────────────────────────── */
   --gold:          var(--amber-500);
@@ -153,7 +152,7 @@
   /* ── Accent (warm / positive) ─────────────────────────────── */
   --accent:        var(--indigo-600);
   --accent-hi:     var(--indigo-400);
-  --accent-soft:   rgba(91,99,246,0.10);
+  --accent-soft:   rgba(163,55,87,0.10);
   --accent-warm:      var(--orange-500);
   --accent-warm-soft: var(--orange-50);
   --accent-warm-text: var(--orange-800);
@@ -239,9 +238,9 @@
   --info:           var(--indigo-500);
   --info-text:      var(--indigo-600);
   --info-lo:        var(--indigo-600);
-  --info-soft:      rgba(91,99,246,0.10);
-  --info-bg:        rgba(91,99,246,0.10);
-  --info-border:    rgba(91,99,246,0.20);
+  --info-soft:      rgba(163,55,87,0.10);
+  --info-bg:        rgba(163,55,87,0.10);
+  --info-border:    rgba(163,55,87,0.20);
   --neutral-bg:     rgba(100,116,139,0.07);
 
   /* ── Sidebar ─────────────────────────────────────────────── */
@@ -305,14 +304,14 @@
   --gradient-canvas: linear-gradient(160deg, var(--gray-25) 0%, var(--gray-100) 100%);
   --gradient-surface:linear-gradient(180deg, #FFFFFF 0%, var(--gray-25) 100%);
 
-  /* The Aurora field: a saturated indigo hero, and the pale wash the studio
+  /* The Aurora field: a saturated brand hero, and the pale wash the studio
      shell sits on. The wash is decorative only — body text never sits on it. */
-  --gradient-aurora: linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%);
+  --gradient-aurora: linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%);
   --gradient-aurora-soft:
-    radial-gradient(46% 40% at 88% 0%, rgba(91,99,246,0.12), transparent 72%),
+    radial-gradient(46% 40% at 88% 0%, rgba(163,55,87,0.12), transparent 72%),
     radial-gradient(34% 32% at 100% 22%, rgba(255,133,61,0.09), transparent 72%),
     radial-gradient(40% 36% at 12% 100%, rgba(32,191,164,0.09), transparent 72%);
-  --shadow-aurora: 0 18px 40px -26px rgba(63,70,214,0.45);
+  --shadow-aurora: 0 18px 40px -26px rgba(133,46,78,0.45);
   --aurora-ink:    var(--indigo-700);
 
   /* ── Typography ──────────────────────────────────────────── */
@@ -332,25 +331,26 @@
   --brand-hi:     var(--indigo-300);
   --brand-lo:     var(--indigo-600);
   --brand-mid:    var(--indigo-500);
-  --brand-soft:   rgba(91,99,246,0.18);
-  --brand-glow:   rgba(91,99,246,0.34);
-  --brand-glow-2: rgba(91,99,246,0.14);
-  --brand-glow-soft: rgba(91,99,246,0.18);
-  --rgb-brand:    91 99 246;
-  --rgb-brand-hi: 165 170 251;
+  --brand-soft:   rgba(163,55,87,0.18);
+  --brand-glow:   rgba(163,55,87,0.34);
+  --brand-glow-2: rgba(163,55,87,0.14);
+  --brand-glow-soft: rgba(163,55,87,0.18);
+  --rgb-brand:    163 55 87;
+  --rgb-brand-hi: 251 149 144;
 
   /* Aurora semantic aliases, dark parity. */
   --action:        var(--indigo-500);
   --action-hover:  var(--indigo-400);
   --action-text:   var(--indigo-300);
-  --action-soft:   rgba(91,99,246,0.16);
-  --action-border: rgba(91,99,246,0.32);
+  --action-soft:   rgba(163,55,87,0.16);
+  --action-border: rgba(163,55,87,0.32);
 
-  /* Logo blue — #0067E0 is too dim to read as a glyph on the slate-900
-     canvas, so the foreground lifts while the plate stays the logo hue. */
-  --logo-blue:        #0067E0;
-  --logo-blue-soft:   rgba(0,103,224,0.26);
-  --logo-blue-soft-h: rgba(0,103,224,0.38);
+  /* Logo ramp — the deep steps are too dim to read as a glyph on the
+     slate-900 canvas, so the foreground lifts while the plate stays the
+     brand hue. */
+  --logo-blue:        #A33757;
+  --logo-blue-soft:   rgba(163,55,87,0.26);
+  --logo-blue-soft-h: rgba(163,55,87,0.38);
 
   /* Gold (amber) */
   --gold:          #FBBF24;
@@ -362,7 +362,7 @@
   /* Accent (warm / positive) */
   --accent:        var(--indigo-400);
   --accent-hi:     var(--indigo-300);
-  --accent-soft:   rgba(91,99,246,0.18);
+  --accent-soft:   rgba(163,55,87,0.18);
   --accent-warm:      var(--orange-400);
   --accent-warm-soft: rgba(255,133,61,0.16);
   --accent-warm-text: var(--orange-300);
@@ -421,9 +421,9 @@
   --info:           var(--indigo-500);
   --info-text:      var(--indigo-300);
   --info-lo:        var(--indigo-400);
-  --info-soft:      rgba(91,99,246,0.18);
-  --info-bg:        rgba(91,99,246,0.18);
-  --info-border:    rgba(91,99,246,0.30);
+  --info-soft:      rgba(163,55,87,0.18);
+  --info-bg:        rgba(163,55,87,0.18);
+  --info-border:    rgba(163,55,87,0.30);
   --neutral-bg:     rgba(255,255,255,0.06);
 
   /* Sidebar */
@@ -467,12 +467,12 @@
   --gradient-glass:  linear-gradient(135deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%);
   --gradient-canvas: linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
   --gradient-surface:linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
-  --gradient-aurora: linear-gradient(128deg, #2F35A8 0%, #5B63F6 46%, #3F46D6 100%);
+  --gradient-aurora: linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%);
   --gradient-aurora-soft:
-    radial-gradient(46% 40% at 88% 0%, rgba(91,99,246,0.16), transparent 72%),
+    radial-gradient(46% 40% at 88% 0%, rgba(163,55,87,0.16), transparent 72%),
     radial-gradient(34% 32% at 100% 22%, rgba(255,133,61,0.08), transparent 72%),
     radial-gradient(40% 36% at 12% 100%, rgba(32,191,164,0.08), transparent 72%);
-  --shadow-aurora: 0 18px 40px -26px rgba(91,99,246,0.55);
+  --shadow-aurora: 0 18px 40px -26px rgba(163,55,87,0.55);
   --aurora-ink:    var(--indigo-300);
 }
 

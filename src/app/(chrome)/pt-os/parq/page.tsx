@@ -62,7 +62,7 @@ function validateStep(
 export default function PtParqPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>}>
         <ParqContent />
       </Suspense>
     </Guard>
@@ -133,7 +133,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
   const closeWizard = (refresh: boolean) => { setView('list'); setEditingId(null); if (refresh) loadData(); };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>;
   }
   if (loadError) {
     return (
@@ -176,7 +176,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
         {forms.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-[color:var(--text-muted)]">No PAR-Q screenings yet.</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}>
+            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}>
               Start First Screening
             </Button>
           </div>
@@ -448,7 +448,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   };
 
   if (detailLoading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#852E4E' }} /></div>;
   }
 
   if (submitResult) {
@@ -503,7 +503,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
               iconLeft={!(saving || creatingDraft) ? (isLastStep ? <Check size={14} /> : <ArrowRight size={14} />) : undefined}
               loading={saving || creatingDraft} disabled={saving || creatingDraft}
               onClick={handleNext}
-              style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
             >
               {saving ? 'Submitting...' : creatingDraft ? 'Starting...' : isLastStep ? 'Submit' : 'Next'}
             </Button>

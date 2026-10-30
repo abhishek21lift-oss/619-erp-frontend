@@ -34,11 +34,11 @@ interface ClientOption { id: string; name: string; photoUrl: string | null; }
 // avatars whenever the list is filtered — which defeats the point of having a
 // colour to recognise.
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #5B63F6, #3F46D6)',
+  'linear-gradient(135deg, #A33757, #852E4E)',
   'linear-gradient(135deg, #10b981, #34d399)',
   'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #5B63F6, #3F46D6)',
-  'linear-gradient(135deg, #5B63F6, #3F46D6)',
+  'linear-gradient(135deg, #A33757, #852E4E)',
+  'linear-gradient(135deg, #A33757, #852E4E)',
   'linear-gradient(135deg, #ef4444, #f87171)',
 ];
 
@@ -107,7 +107,7 @@ export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor 
           <input aria-label="Search clients"
             type="text" placeholder="Search clients..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#5B63F6]"
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
@@ -155,7 +155,7 @@ export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor 
             <button
               key={c.id}
               onClick={() => router.push(hrefFor ? hrefFor(c.id) : `${basePath}?client_id=${encodeURIComponent(c.id)}`)}
-              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A5AAFB] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#FFBB94] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
               <ClientAvatar name={c.name} photoUrl={c.photoUrl} />

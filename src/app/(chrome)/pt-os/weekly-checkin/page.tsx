@@ -116,9 +116,9 @@ export default function WeeklyCheckinPage() {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #3F46D6, #5B63F6)',
+                  background: 'linear-gradient(135deg, #852E4E, #A33757)',
                   color: '#fff', fontSize: 13, fontWeight: 700,
-                  boxShadow: '0 4px 12px rgba(63,70,214,0.25)',
+                  boxShadow: '0 4px 12px rgba(133,46,78,0.25)',
                 }}
               >
                 Retry
@@ -326,7 +326,7 @@ export default function WeeklyCheckinPage() {
 
               <Button type="submit" disabled={!clientId || isSubmitting}
                 className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                style={{ background: !clientId || isSubmitting ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #3F46D6, #5B63F6)', color: '#fff' }}>
+                style={{ background: !clientId || isSubmitting ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #852E4E, #A33757)', color: '#fff' }}>
                 {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : <Plus size={16} />}
                 {isSubmitting ? 'Saving...' : saved ? 'Saved!' : 'Log Check-In'}
               </Button>

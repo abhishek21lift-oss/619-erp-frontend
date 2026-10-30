@@ -317,8 +317,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             className="relative overflow-hidden rounded-[22px] p-5"
             style={{
               background: [
-                'radial-gradient(circle 180px at calc(100% - 48px) 24px, rgba(91,99,246,0.40), transparent 70%)',
-                'linear-gradient(135deg, #2F35A8 0%, #252A82 55%, #252A82 100%)',
+                'radial-gradient(circle 180px at calc(100% - 48px) 24px, rgba(163,55,87,0.40), transparent 70%)',
+                'linear-gradient(135deg, #6B2440 0%, #4C1D3D 55%, #4C1D3D 100%)',
               ].join(', '),
               boxShadow: '0 20px 48px rgba(0,80,173,0.35)',
             }}>
