@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 import { fmtDateMedium } from '@/lib/format';
-import { blue, emerald } from '@/lib/palette';
+import { indigo, emerald } from '@/lib/palette';
 
 type Channel = 'whatsapp_opt_out' | 'email_opt_out';
 
@@ -29,7 +29,7 @@ export interface MessagePreferencesProps {
 
 const ROWS: { key: Channel; label: string; icon: React.ReactNode; color: string }[] = [
   { key: 'whatsapp_opt_out', label: 'WhatsApp reminders & offers', icon: <MessageCircle size={14} />, color: emerald[500] },
-  { key: 'email_opt_out', label: 'Email reminders & offers', icon: <Mail size={14} />, color: blue[500] },
+  { key: 'email_opt_out', label: 'Email reminders & offers', icon: <Mail size={14} />, color: indigo[500] },
 ];
 
 export default function MessagePreferences({ clientId, whatsappOptOut, emailOptOut, updatedAt, onSaved }: MessagePreferencesProps) {

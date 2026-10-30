@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { CalendarRange, Lightbulb, Plus, Trash2 } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import { SelectInput } from '@/components/ui';
-import { blue, gray, tint } from '@/lib/palette';
+import { indigo, gray, tint } from '@/lib/palette';
 import { MILESTONE_TIERS, defaultMilestones, validateMilestones, weeksFrom } from '@/lib/goal-plan';
 import type { GoalMilestone, MilestoneTier } from '@/lib/goal-plan';
 import GoalStepCard from './GoalStepCard';
@@ -100,7 +100,7 @@ export function StepMilestones({ form, set, step, today, error }: StepMilestones
           <button
             type="button" onClick={() => { set('milestones', suggestions); setShowSuggestions(true); }}
             className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700]"
-            style={{ background: tint(blue[500], 0.1), color: blue[700] }}
+            style={{ background: tint(indigo[500], 0.1), color: indigo[700] }}
           >
             <Lightbulb size={14} /> Suggest from goal window
           </button>

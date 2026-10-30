@@ -35,14 +35,14 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
             <button
               key={f.key} type="button" onClick={() => toggle(f.key)}
               className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
-              style={{ background: checked ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
+              style={{ background: checked ? 'rgba(91,99,246,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #5B63F6' : '1.5px solid var(--border)' }}
             >
-              <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}>
+              <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#5B63F6' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)' }}>
                 {checked && <Check size={13} color="#fff" strokeWidth={3} />}
               </span>
               <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                 {f.label}
-                <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
+                <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
               </span>
             </button>
           );

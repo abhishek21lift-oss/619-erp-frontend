@@ -19,7 +19,7 @@ import {
   Sparkles, X, Send, Loader2, AlertTriangle, User, Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { blue, rgba } from '@/lib/palette';
+import { indigo, rgba } from '@/lib/palette';
 import { stateTone } from '@/lib/state-tone';
 import {
   streamClientAi, ClientAiError, SUGGESTED_QUESTIONS,
@@ -220,7 +220,7 @@ export default function ClientAiPanel({
         <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
           <div
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-            style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}
+            style={{ background: `linear-gradient(135deg, ${indigo[500]}, ${indigo[600]})` }}
           >
             <Sparkles size={16} className="text-white" />
           </div>
@@ -251,9 +251,9 @@ export default function ClientAiPanel({
             <div className="flex flex-col items-center gap-4 pt-6 text-center">
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-full"
-                style={{ background: rgba(blue[500], 0.12) }}
+                style={{ background: rgba(indigo[500], 0.12) }}
               >
-                <Sparkles size={20} style={{ color: blue[500] }} />
+                <Sparkles size={20} style={{ color: indigo[500] }} />
               </div>
               <div>
                 <p className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
@@ -285,7 +285,7 @@ export default function ClientAiPanel({
                 {msg.role === 'user' ? (
                   <div
                     className="max-w-[85%] rounded-[14px] rounded-br-[4px] px-3.5 py-2.5 text-[12.5px] font-[560]"
-                    style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, color: '#fff' }}
+                    style={{ background: `linear-gradient(135deg, ${indigo[500]}, ${indigo[600]})`, color: '#fff' }}
                   >
                     {msg.content}
                   </div>
@@ -314,7 +314,7 @@ export default function ClientAiPanel({
                         <span
                           aria-hidden
                           className="ml-0.5 inline-block animate-pulse align-baseline"
-                          style={{ width: 2, height: '0.95em', background: blue[500] }}
+                          style={{ width: 2, height: '0.95em', background: indigo[500] }}
                         />
                       )}
                     </p>
@@ -436,7 +436,7 @@ export default function ClientAiPanel({
             disabled={busy || !draft.trim()}
             aria-label="Send"
             iconLeft={busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, color: '#fff', minHeight: 44 }}
+            style={{ background: `linear-gradient(135deg, ${indigo[500]}, ${indigo[600]})`, color: '#fff', minHeight: 44 }}
           >
             Send
           </Button>

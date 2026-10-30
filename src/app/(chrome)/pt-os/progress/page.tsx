@@ -23,7 +23,7 @@ import { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
 import {
   Button, Card, EmptyState, PageContainer, PageHero, PremiumAreaChart, Skeleton,
 } from '@/components/ui';
-import { blue, emerald, gray } from '@/lib/palette';
+import { indigo, emerald, gray } from '@/lib/palette';
 import { DateFieldControl, SelectField, TextAreaField, useStandaloneField } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type {
@@ -145,7 +145,7 @@ function ProgressRoster() {
             placeholder="Search by name, email or mobile…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#0271EB]"
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#5B63F6]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
@@ -199,7 +199,7 @@ function ProgressRoster() {
             <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
               {data.clients.map((c) => (
                 <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
-                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#7FB4FF] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A5AAFB] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
                   style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                   <ClientAvatar name={c.name} />
                   <div className="min-w-0 flex-1">
@@ -352,8 +352,8 @@ function ProgressHub({ clientId }: { clientId: string }) {
                 onClick={() => setTab(s.key)}
                 className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[720] transition-all"
                 style={active ? {
-                  background: `linear-gradient(135deg,${blue[500]},${blue[700]})`, color: '#fff',
-                  boxShadow: '0 6px 18px rgba(0,103,224,0.28)',
+                  background: `linear-gradient(135deg,${indigo[500]},${indigo[700]})`, color: '#fff',
+                  boxShadow: '0 6px 18px rgba(91,99,246,0.28)',
                 } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                 <Icon size={14} /> {s.label}
               </button>
@@ -441,10 +441,10 @@ const signed = (v: number | null, suffix = '') => {
 const STATE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
   missing_baseline: { bg: 'rgba(239,68,68,0.10)', color: '#b91c1c', label: 'No baseline' },
   not_scheduled: { bg: 'rgba(245,158,11,0.12)', color: '#b45309', label: 'Not scheduled' },
-  upcoming: { bg: 'rgba(0,103,224,0.10)', color: blue[700], label: 'Upcoming' },
+  upcoming: { bg: 'rgba(91,99,246,0.10)', color: indigo[700], label: 'Upcoming' },
   due: { bg: 'rgba(245,158,11,0.14)', color: '#b45309', label: 'Due' },
   overdue: { bg: 'rgba(239,68,68,0.12)', color: '#b91c1c', label: 'Overdue' },
-  rescheduled: { bg: 'rgba(0,103,224,0.10)', color: blue[700], label: 'Rescheduled' },
+  rescheduled: { bg: 'rgba(91,99,246,0.10)', color: indigo[700], label: 'Rescheduled' },
   completed: { bg: 'rgba(16,185,129,0.12)', color: '#047857', label: 'Completed' },
 };
 
@@ -471,7 +471,7 @@ function OverviewSection({ data, days, setDays }: {
     <div className="space-y-3.5">
       <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
         <div className="relative overflow-hidden rounded-[22px] p-5 text-white"
-          style={{ background: `radial-gradient(120% 160% at 10% 0%, ${blue[700]} 0%, transparent 55%), linear-gradient(145deg,${gray[900]} 0%,${blue[900]} 55%,${gray[900]} 100%)`, boxShadow: '0 18px 44px -20px rgba(15,23,42,0.7)' }}>
+          style={{ background: `radial-gradient(120% 160% at 10% 0%, ${indigo[700]} 0%, transparent 55%), linear-gradient(145deg,${gray[900]} 0%,${indigo[900]} 55%,${gray[900]} 100%)`, boxShadow: '0 18px 44px -20px rgba(15,23,42,0.7)' }}>
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full"
             style={{ background: 'radial-gradient(circle,rgba(252,211,77,0.28),transparent 70%)', filter: 'blur(26px)' }} />
           <div className="relative flex items-start justify-between gap-3">
@@ -561,7 +561,7 @@ function OverviewSection({ data, days, setDays }: {
                 </p>
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-                <div className="h-full rounded-full" style={{ width: `${dashboard.goal.progress_percent ?? 0}%`, background: `linear-gradient(90deg,${blue[500]},${emerald[500]})` }} />
+                <div className="h-full rounded-full" style={{ width: `${dashboard.goal.progress_percent ?? 0}%`, background: `linear-gradient(90deg,${indigo[500]},${emerald[500]})` }} />
               </div>
               <p className="mt-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{dashboard.goal.summary}</p>
             </>
@@ -1002,7 +1002,7 @@ function AnalyticsSection({ data, days, setDays }: { data: HubData; days: number
         <Panel title="Sleep duration" subtitle={`${days}-day window · 7–9 h is a general adult reference, not a prescription`}>
           {sleepPoints.length < 2 ? <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>At least two sleep entries draw the trend.</p> : (
             <PremiumAreaChart data={sleepPoints} xKey="date"
-              areas={[{ key: 'sleep', label: 'Sleep (h)', color: '#0067e0' }]} height={190}
+              areas={[{ key: 'sleep', label: 'Sleep (h)', color: '#3F46D6' }]} height={190}
               formatValue={(v) => `${v}h`} />
           )}
           <div className="mt-2 flex flex-wrap gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
@@ -1079,7 +1079,7 @@ function InsightsSection({ clientId, data, reload }: { clientId: string; data: H
       {error && <p className="rounded-[12px] px-4 py-2.5 text-[12px]" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>{error}</p>}
 
       <div className="rounded-[18px] px-4 py-3.5"
-        style={{ background: 'linear-gradient(135deg, rgba(0,103,224,0.08), rgba(16,185,129,0.06))', border: '1px solid var(--border)' }}>
+        style={{ background: 'linear-gradient(135deg, rgba(91,99,246,0.08), rgba(16,185,129,0.06))', border: '1px solid var(--border)' }}>
         <p className="flex items-center gap-2 text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>
           <Sparkles size={15} style={{ color: 'var(--brand)' }} /> Observations first, suggestions second
         </p>

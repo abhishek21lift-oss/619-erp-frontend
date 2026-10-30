@@ -16,7 +16,7 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
   return (
     <div className="space-y-7">
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0059ce' }}>
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#5B63F6' }}>
           <FileSignature size={20} color="#fff" />
         </div>
         <div>
@@ -50,16 +50,16 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         type="button" onClick={() => set('exerciseConsentChecked', !form.exerciseConsentChecked)}
         className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
         style={{
-          background: form.exerciseConsentChecked ? 'rgba(0,89,206,0.06)' : 'var(--bg-subtle)',
-          border: form.exerciseConsentChecked ? '1.5px solid #0059ce' : '1.5px solid var(--border)',
+          background: form.exerciseConsentChecked ? 'rgba(63,70,214,0.06)' : 'var(--bg-subtle)',
+          border: form.exerciseConsentChecked ? '1.5px solid #5B63F6' : '1.5px solid var(--border)',
         }}>
         <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]"
-          style={{ background: form.exerciseConsentChecked ? '#0059ce' : 'var(--bg-card)', border: form.exerciseConsentChecked ? 'none' : '1.5px solid var(--border-2)' }}>
+          style={{ background: form.exerciseConsentChecked ? '#5B63F6' : 'var(--bg-card)', border: form.exerciseConsentChecked ? 'none' : '1.5px solid var(--border-2)' }}>
           {form.exerciseConsentChecked && <Check size={13} color="#fff" strokeWidth={3} />}
         </span>
         <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
           {EXERCISE_PROGRAMME_CHECKBOX_LABEL}
-          <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
+          <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
         </span>
       </button>
 
@@ -101,8 +101,8 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
         onClick={() => set('physicianAdvisedAgainst', value)}
         className="min-h-[44px] flex-1 rounded-[12px] px-4 text-[13px] font-[700] transition-all"
         style={{
-          background: on ? (value ? 'rgba(220,38,38,0.08)' : 'rgba(0,89,206,0.06)') : 'var(--bg-subtle)',
-          border: on ? `1.5px solid ${value ? '#dc2626' : '#0059ce'}` : '1.5px solid var(--border)',
+          background: on ? (value ? 'rgba(220,38,38,0.08)' : 'rgba(63,70,214,0.06)') : 'var(--bg-subtle)',
+          border: on ? `1.5px solid ${value ? '#dc2626' : '#5B63F6'}` : '1.5px solid var(--border)',
           color: on ? (value ? '#dc2626' : '#0f172a') : 'var(--text-secondary)',
         }}
       >
@@ -113,7 +113,7 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
   const field = (key: 'physicianName' | 'physicianHospital' | 'medicalCondition', label: string, required = false) => (
     <label className="block">
       <span className="mb-1.5 block text-[12px] font-[650] text-[color:var(--text-secondary)]">
-        {label}{required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
+        {label}{required && <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>}
       </span>
       <input
         value={form[key]} onChange={(e) => set(key, e.target.value)} maxLength={key === 'medicalCondition' ? 1000 : 255}
@@ -128,7 +128,7 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
     <div className="rounded-[16px] p-4 sm:p-5 space-y-3.5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
       <p id="physician-advice-q" className="text-[13px] font-[700] text-[color:var(--text-primary)]">
         Has a doctor ever advised this client against physical activity?
-        <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
+        <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
       </p>
       <div role="radiogroup" aria-labelledby="physician-advice-q" className="flex gap-2.5">
         {option(false, 'No')}

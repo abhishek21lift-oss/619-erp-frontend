@@ -103,7 +103,7 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
     <div className="rounded-[20px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="mb-1 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-          style={{ background: 'rgba(0,103,224,0.14)', color: '#0067e0' }}>
+          style={{ background: 'rgba(91,99,246,0.14)', color: '#3F46D6' }}>
           <FileText size={14} />
         </div>
         <span className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
@@ -124,7 +124,7 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
             onClick={() => void draftWithAi()}
             disabled={drafting}
             className="flex items-center gap-1 text-[10.5px] font-[700] transition-opacity hover:opacity-75 disabled:opacity-50"
-            style={{ color: '#0067e0' }}
+            style={{ color: '#3F46D6' }}
           >
             {drafting ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
             {drafting ? 'Drafting…' : 'Draft with AI'}

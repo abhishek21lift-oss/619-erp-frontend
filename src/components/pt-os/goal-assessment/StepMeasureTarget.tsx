@@ -7,7 +7,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import GoalStepCard from './GoalStepCard';
-import { amber, blue, gray, tint } from '@/lib/palette';
+import { amber, indigo, gray, tint } from '@/lib/palette';
 import type { GoalMeasureMetric } from '@/lib/goal-plan';
 import type { GoalFormData } from './types';
 import { n } from './types';
@@ -75,12 +75,12 @@ export function StepMeasureTarget({
                   onClick={() => set('targetMetric', m.value)}
                   className="flex flex-col items-center gap-2 rounded-[14px] px-2 py-3 text-center transition-all"
                   style={{
-                    background: selected ? tint(blue[500], 0.08) : gray[50],
-                    border: selected ? `2px solid ${blue[500]}` : `2px solid ${gray[200]}`,
+                    background: selected ? tint(indigo[500], 0.08) : gray[50],
+                    border: selected ? `2px solid ${indigo[500]}` : `2px solid ${gray[200]}`,
                   }}
                 >
-                  <Icon size={17} style={{ color: selected ? blue[700] : gray[500] }} />
-                  <span className="text-[12px] font-[760]" style={{ color: selected ? blue[700] : gray[700] }}>{m.label}</span>
+                  <Icon size={17} style={{ color: selected ? indigo[700] : gray[500] }} />
+                  <span className="text-[12px] font-[760]" style={{ color: selected ? indigo[700] : gray[700] }}>{m.label}</span>
                   <span className="text-[10.5px] leading-tight" style={{ color: gray[500] }}>{m.hint}</span>
                 </button>
               );

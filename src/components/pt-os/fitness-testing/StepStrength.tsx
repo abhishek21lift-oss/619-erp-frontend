@@ -82,8 +82,8 @@ export function StepStrength({ form, set, gender, age, error, isBeginner }: Step
       />
 
       {isBeginner && (
-        <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.06)', border: '1px solid rgba(0,103,224,0.18)' }}>
-          <Info size={15} style={{ color: '#0067E0', flexShrink: 0, marginTop: 1 }} />
+        <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(91,99,246,0.06)', border: '1px solid rgba(91,99,246,0.18)' }}>
+          <Info size={15} style={{ color: '#3F46D6', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             This client&apos;s workout experience is set to <strong>Beginner</strong>. K11 guidance is that beginners should not undergo an initial maximal 1RM test — the priority is learning movement patterns and technique. Skip this step with Next and use the technique-focused alternative: log a comfortable submaximal set (8–12 reps) in <strong>Strength Tracking</strong> instead.
           </p>
@@ -216,9 +216,9 @@ function StrengthTestBlock({
                   onClick={() => onFormula(f)}
                   className="rounded-[10px] px-3.5 py-2 text-[12px] font-[640] capitalize transition-all"
                   style={{
-                    background: formula === f ? '#0067E0' : 'var(--bg-card)',
+                    background: formula === f ? '#5B63F6' : 'var(--bg-card)',
                     color: formula === f ? 'var(--bg-card)' : 'var(--text-muted)',
-                    border: formula === f ? '1.5px solid #0067E0' : '1.5px solid var(--border)',
+                    border: formula === f ? '1.5px solid #5B63F6' : '1.5px solid var(--border)',
                   }}
                 >
                   {f}

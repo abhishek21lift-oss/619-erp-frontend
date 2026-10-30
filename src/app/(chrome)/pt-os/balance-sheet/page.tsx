@@ -312,7 +312,7 @@ export default function BalanceSheetPage() {
               ['DUE', 'Due'],
             ] as const).map(([value, label]) => {
               const active = filter === value;
-              const cfg = value === 'ALL' ? { color: '#0067e0', bg: 'rgba(0,103,224,0.1)', border: 'rgba(0,103,224,0.25)' } : value === 'OVERDUE' ? { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.25)' } : { color: '#b45309', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' };
+              const cfg = value === 'ALL' ? { color: '#3F46D6', bg: 'rgba(91,99,246,0.1)', border: 'rgba(91,99,246,0.25)' } : value === 'OVERDUE' ? { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.25)' } : { color: '#b45309', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' };
               return (
                 <button key={value} onClick={() => setFilter(value)}
                   aria-pressed={active}
@@ -444,7 +444,7 @@ export default function BalanceSheetPage() {
 
         {bs.loading && !bs.data && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 20px' }}>
-            <div style={{ width: 24, height: 24, border: '2.5px solid #0067e0', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ width: 24, height: 24, border: '2.5px solid #5B63F6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}

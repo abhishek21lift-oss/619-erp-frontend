@@ -5,7 +5,7 @@ import Link from 'next/link';
 import FloatInput from '@/components/ui/FloatInput';
 import { ArrowUpRight, HeartHandshake } from 'lucide-react';
 import GoalStepCard from './GoalStepCard';
-import { amber, emerald, gray, red, tint, blue } from '@/lib/palette';
+import { amber, emerald, gray, red, tint, indigo } from '@/lib/palette';
 import { calcLifestyleReadinessScore } from '@/lib/goal-calculations';
 import type { ClientContext, GoalFormData, LifestyleAnswers } from './types';
 
@@ -133,7 +133,7 @@ export function StepLifestyle({ form, set, step, context, clientId, error }: Ste
       ) : undefined}
     >
       <div className="space-y-6">
-        <div className="rounded-[18px] p-5" style={{ background: tint(blue[500], 0.05), border: `1px solid ${tint(blue[500], 0.18)}` }}>
+        <div className="rounded-[18px] p-5" style={{ background: tint(indigo[500], 0.05), border: `1px solid ${tint(indigo[500], 0.18)}` }}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[13px] font-[760]" style={{ color: gray[800] }}>Client context</p>
@@ -147,7 +147,7 @@ export function StepLifestyle({ form, set, step, context, clientId, error }: Ste
                   key={s.path}
                   href={`/pt-os/${s.path}?client_id=${encodeURIComponent(clientId)}`}
                   className="inline-flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[11.5px] font-[700]"
-                  style={{ background: 'var(--bg-card)', color: blue[700], border: `1px solid ${tint(blue[500], 0.25)}` }}
+                  style={{ background: 'var(--bg-card)', color: indigo[700], border: `1px solid ${tint(indigo[500], 0.25)}` }}
                 >
                   {s.label} <ArrowUpRight size={11} />
                 </Link>

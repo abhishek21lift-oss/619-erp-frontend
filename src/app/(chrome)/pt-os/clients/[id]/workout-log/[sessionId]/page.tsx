@@ -363,14 +363,14 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
           the deliberate action a half-logged workout deserves. */}
       <div className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
         style={{
-          background: 'linear-gradient(150deg, #0050AD 0%, #0050AD 45%, #0F172A 100%)',
+          background: 'linear-gradient(150deg, #2F35A8 0%, #2F35A8 45%, #0F172A 100%)',
           boxShadow: '0 16px 40px -20px rgba(15,23,42,0.8)',
         }}>
         {/* Decorative wash, clipped by the rounded parent. */}
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-52 w-52 rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.42) 0%, transparent 70%)', filter: 'blur(52px)' }} />
         <span aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(127,180,255,0.34) 0%, transparent 70%)', filter: 'blur(56px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(165,170,251,0.34) 0%, transparent 70%)', filter: 'blur(56px)' }} />
 
         <div className="relative mx-auto max-w-3xl px-5 pb-5 pt-4 sm:px-7">
           <div className="mb-2.5 flex flex-wrap items-center gap-2">
@@ -497,7 +497,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                       it belongs to — and if the trainer wrote this week by hand
                       it is an instruction, not something the rule produced. */}
                   {session.planned.week != null && (
-                    <p className="text-[11px] font-[650]" style={{ color: '#7fb4ff' }}>
+                    <p className="text-[11px] font-[650]" style={{ color: '#7F86F8' }}>
                       Week {session.planned.week}
                       {session.planned.duration_weeks ? ` of ${session.planned.duration_weeks}` : ''}
                       {session.planned.source === 'override' ? ' · written for this week' : ''}
@@ -516,13 +516,13 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                 return (
                   <div key={`${ex.exercise_id || ex.name}-${i}`} className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5" style={{ background: '#fff', border: '1px solid rgba(91,99,246,0.12)' }}>
                     <div className="min-w-0">
-                      <p className="truncate text-[12.5px] font-[650]" style={{ color: '#0050ad' }}>{ex.name}</p>
+                      <p className="truncate text-[12.5px] font-[650]" style={{ color: '#2F35A8' }}>{ex.name}</p>
                       {/* The load belongs here. It used to be dropped: the
                           server resolved the week's prescribed weight and the
                           card showed only sets × reps, so the one number that
                           changes from week to week was invisible on the only
                           screen used at the rack. */}
-                      <p className="text-[11px]" style={{ color: '#7fb4ff' }}>
+                      <p className="text-[11px]" style={{ color: '#7F86F8' }}>
                         {describePrescription({
                           kind: effectiveKind(ex),
                           sets: ex.sets, reps: ex.reps, target_weight: ex.target_weight,

@@ -86,7 +86,7 @@ export function SearchableSelect({
     <div className="relative" ref={wrapRef}>
       {!hideLabel && (
         <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-          {label} {required && <span style={{ color: '#0067E0' }}>*</span>}
+          {label} {required && <span style={{ color: '#3F46D6' }}>*</span>}
         </p>
       )}
       <button
@@ -105,8 +105,8 @@ export function SearchableSelect({
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{
           background: open ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: error ? '1.5px solid rgba(239,68,68,0.5)' : open ? '1.5px solid rgba(2,113,235,0.50)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: open ? '0 0 0 3px rgba(2,113,235,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
+          border: error ? '1.5px solid rgba(239,68,68,0.5)' : open ? '1.5px solid rgba(91,99,246,0.50)' : '1.5px solid rgba(15,23,42,0.09)',
+          boxShadow: open ? '0 0 0 3px rgba(91,99,246,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
         }}
       >
         <span className={cn('flex-1 text-[13px] font-[500]', value ? 'text-[rgb(15,23,42)]' : 'text-[rgb(148,163,184)]')}>
@@ -165,7 +165,7 @@ export function SearchableSelect({
                       varies by platform — so the same option is announced
                       differently on two devices. */}
                   <span>{opt.icon && <span className="mr-2" aria-hidden>{opt.icon}</span>}{opt.label}</span>
-                  {value === opt.value && <Check size={12} style={{ color: '#0067E0' }} />}
+                  {value === opt.value && <Check size={12} style={{ color: '#3F46D6' }} />}
                 </button>
               ))}
               {allowCustom && query.trim() && !exactMatch && (
@@ -173,7 +173,7 @@ export function SearchableSelect({
                   type="button"
                   onClick={() => { onChange(query.trim()); setOpen(false); setQuery(''); }}
                   className="flex w-full items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
-                  style={{ color: '#0067E0' }}
+                  style={{ color: '#3F46D6' }}
                 >
                   <Plus size={12} /> Use &quot;{query.trim()}&quot;
                 </button>

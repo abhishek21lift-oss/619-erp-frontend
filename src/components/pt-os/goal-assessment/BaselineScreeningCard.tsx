@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ArrowUpRight, ClipboardCheck } from 'lucide-react';
-import { amber, blue, emerald, gray, tint } from '@/lib/palette';
+import { amber, indigo, emerald, gray, tint } from '@/lib/palette';
 import GoalStepCard from './GoalStepCard';
 
 export interface BaselineSource {
@@ -96,7 +96,7 @@ export function BaselineScreeningCard({
                 <Link
                   href={s.href}
                   className="inline-flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[11.5px] font-[700]"
-                  style={{ background: tint(blue[500], 0.1), color: blue[700] }}
+                  style={{ background: tint(indigo[500], 0.1), color: indigo[700] }}
                 >
                   Open <ArrowUpRight size={12} />
                 </Link>

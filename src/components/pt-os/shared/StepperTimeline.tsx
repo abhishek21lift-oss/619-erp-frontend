@@ -53,7 +53,7 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep }: S
                 <div
                   className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-[800] transition-all duration-300"
                   style={{
-                    background: done ? '#0067E0' : active ? '#fff' : 'rgba(255,255,255,0.14)',
+                    background: done ? '#5B63F6' : active ? '#fff' : 'rgba(255,255,255,0.14)',
                     color: done ? '#fff' : active ? '#0F172A' : 'rgba(255,255,255,0.7)',
                     boxShadow: active ? '0 0 0 4px rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.2)' : 'none',
                     transform: active ? 'scale(1.08)' : 'scale(1)',
@@ -77,7 +77,7 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep }: S
                     the connector sits level with every circle. */}
                 <span
                   className="min-h-[26px] max-w-[90px] text-center text-[10.5px] font-[680] leading-tight tracking-tight"
-                  style={{ color: active ? '#fff' : done ? '#7FB4FF' : 'rgba(255,255,255,0.55)' }}
+                  style={{ color: active ? '#fff' : done ? '#A5AAFB' : 'rgba(255,255,255,0.55)' }}
                 >
                   {s.label}
                 </span>
@@ -86,7 +86,7 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep }: S
                 <div className="relative h-[2px] w-8 sm:w-12 mx-1.5 mb-5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.18)' }}>
                   <m.div
                     className="absolute inset-y-0 left-0 rounded-full"
-                    style={{ background: 'linear-gradient(90deg, #0067E0, #0059CE)' }}
+                    style={{ background: 'linear-gradient(90deg, #5B63F6, #3F46D6)' }}
                     animate={{ width: done ? '100%' : '0%' }}
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   />

@@ -200,7 +200,7 @@ export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3,
       {label && (
         <p id={labelId} className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
           {label}
-          {required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
+          {required && <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>}
         </p>
       )}
       <div

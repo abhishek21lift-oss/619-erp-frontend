@@ -159,11 +159,11 @@ export default function PhotoCropModal({
               {...activatable(() => fileRef.current?.click(), { label: 'Choose a photo to upload' })}
               className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors"
               style={{
-                borderColor: dragOver ? 'var(--logo-blue, #0067E0)' : 'var(--border-2)',
-                background: dragOver ? 'color-mix(in srgb, var(--logo-blue, #0067E0) 6%, transparent)' : 'var(--bg-subtle)',
+                borderColor: dragOver ? 'var(--action, #5B63F6)' : 'var(--border-2)',
+                background: dragOver ? 'color-mix(in srgb, var(--action, #5B63F6) 6%, transparent)' : 'var(--bg-subtle)',
               }}
             >
-              <UploadCloud size={30} style={{ color: dragOver ? 'var(--logo-blue, #0067E0)' : 'var(--text-muted)' }} />
+              <UploadCloud size={30} style={{ color: dragOver ? 'var(--action, #5B63F6)' : 'var(--text-muted)' }} />
               <p className="text-[13.5px] font-semibold text-[var(--text-secondary)]">
                 {dragOver ? 'Drop here' : 'Tap to choose a photo, or drag & drop'}
               </p>
@@ -218,7 +218,7 @@ export default function PhotoCropModal({
                 type="button" fullWidth disabled={camera.status !== 'active'}
                 iconLeft={<Camera size={15} />}
                 onClick={capturePhoto}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
               >
                 Capture
               </Button>
@@ -246,7 +246,7 @@ export default function PhotoCropModal({
               <input
                 type="range" min={1} max={3} step={0.05} value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="flex-1 accent-[#0067E0]"
+                className="flex-1 accent-[#5B63F6]"
                 aria-label="Zoom"
               />
             </div>
@@ -261,7 +261,7 @@ export default function PhotoCropModal({
               <Button
                 type="button" fullWidth loading={saving} iconLeft={!saving ? <Check size={15} /> : undefined}
                 onClick={handleConfirm}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
               >
                 {saving ? 'Saving...' : 'Use Photo'}
               </Button>

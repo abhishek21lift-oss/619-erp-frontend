@@ -10,7 +10,7 @@
 // one file rather than eleven.
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { blue, gray, rgba } from '@/lib/palette';
+import { indigo, gray, rgba } from '@/lib/palette';
 import { LAST_STEP } from './types';
 
 interface GoalStepCardProps {
@@ -32,16 +32,16 @@ export function GoalStepCard({ icon: Icon, title, hint, step, badge, children }:
       className="rounded-[24px] overflow-hidden"
       style={{ background: 'var(--bg-card)', border: `1px solid ${gray[200]}`, boxShadow: `0 4px 24px ${rgba(gray[900], 0.06)}` }}
     >
-      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${blue[500]}, ${blue[300]})` }} />
+      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${indigo[500]}, ${indigo[300]})` }} />
       <div className="p-7 sm:p-10">
         {title && (
           <header className="mb-7 flex items-start gap-4">
             {Icon && (
               <div
                 className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]"
-                style={{ background: blue[50], border: `1px solid ${blue[100]}` }}
+                style={{ background: indigo[50], border: `1px solid ${indigo[100]}` }}
               >
-                <Icon size={20} strokeWidth={1.75} style={{ color: blue[600] }} />
+                <Icon size={20} strokeWidth={1.75} style={{ color: indigo[600] }} />
               </div>
             )}
             <div className="min-w-0 flex-1">

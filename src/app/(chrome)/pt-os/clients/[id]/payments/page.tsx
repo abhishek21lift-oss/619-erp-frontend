@@ -71,7 +71,7 @@ function StatusBadge({ status, days_left }: { status: string; days_left: number 
   const styles: Record<string, { label: string; bg: string; fg: string }> = {
     active: { label: 'Active', bg: '#10b98133', fg: '#10b981' },
     expired: { label: 'Expired', bg: '#f43f5e33', fg: '#ef4444' },
-    frozen: { label: 'Frozen', bg: '#3b82f633', fg: '#0067e0' },
+    frozen: { label: 'Frozen', bg: '#3b82f633', fg: '#5B63F6' },
   };
   let s = styles[status] || { label: status, bg: '#6b728033', fg: '#64748b' };
   if (status === 'active' && days_left !== null && days_left <= 7)
@@ -89,7 +89,7 @@ function PaymentStatusBadge({ status }: { status: string }) {
     completed: { label: 'Completed', bg: '#10b98112', fg: '#10b981' },
     pending: { label: 'Pending', bg: '#f59e0b12', fg: '#f59e0b' },
     failed: { label: 'Failed', bg: '#ef444412', fg: '#ef4444' },
-    refunded: { label: 'Refunded', bg: '#6366f112', fg: '#0067e0' },
+    refunded: { label: 'Refunded', bg: '#6366f112', fg: '#5B63F6' },
   };
   const c = colors[status] || { label: status, bg: '#6b728012', fg: '#64748b' };
   return (
@@ -102,10 +102,10 @@ function PaymentStatusBadge({ status }: { status: string }) {
 
 const paymentMethods = [
   { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
-  { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#0067e0' },
-  { value: 'CARD', label: 'Card', icon: CreditCard, color: '#0067e0' },
+  { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#3F46D6' },
+  { value: 'CARD', label: 'Card', icon: CreditCard, color: '#3F46D6' },
   { value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Landmark, color: '#f59e0b' },
-  { value: 'CHEQUE', label: 'Cheque', icon: Receipt, color: '#0067e0' },
+  { value: 'CHEQUE', label: 'Cheque', icon: Receipt, color: '#3F46D6' },
 ];
 
 const GradientCard = ({ children, from, to, className = '' }: { children: React.ReactNode; from: string; to: string; className?: string }) => (
@@ -297,7 +297,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 </div>
               </GradientCard>
 
-              <GradientCard from="#0067e0" to="#0067e0">
+              <GradientCard from="#5B63F6" to="#5B63F6">
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
@@ -372,8 +372,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   <Wallet size={14} style={{ color: 'var(--text-muted)' }} />
                   <h3 className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>Payment History</h3>
                   <span className="text-[11px] px-2 py-0.5 rounded-[6px] font-[600]" style={{
-                    background: 'rgba(0,103,224,0.10)',
-                    color: '#0067e0',
+                    background: 'rgba(91,99,246,0.10)',
+                    color: '#3F46D6',
                   }}>
                     {payments.length} total
                   </span>
@@ -392,7 +392,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       border: '1px solid #cbd5e1',
                       color: 'var(--text-primary)',
                     }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = '#7fb4ff'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(127,180,255,0.15)'; }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#A5AAFB'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(165,170,251,0.15)'; }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
                   />
                 </div>
@@ -736,8 +736,8 @@ function RecordPaymentSheet({
                           <div className="flex gap-2">
                             {[
                               { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
-                              { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#0067e0' },
-                              { value: 'CARD', label: 'Card', icon: CreditCard, color: '#0067e0' },
+                              { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#3F46D6' },
+                              { value: 'CARD', label: 'Card', icon: CreditCard, color: '#3F46D6' },
                               { value: 'BANK_TRANSFER', label: 'Bank', icon: Landmark, color: '#f59e0b' },
                             ].map((pill) => {
                               const Icon = pill.icon;

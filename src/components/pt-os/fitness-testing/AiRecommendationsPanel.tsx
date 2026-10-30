@@ -59,7 +59,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
           <button
             type="button" onClick={generate}
             className="flex items-center gap-2 rounded-[13px] px-5 py-3 text-[13px] font-[700] transition-all"
-            style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+            style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
           >
             <Sparkles size={15} /> Generate AI Recommendations
           </button>
@@ -67,7 +67,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
         {loading && (
           <div className="flex items-center gap-3 py-6">
-            <Loader2 size={18} className="animate-spin" style={{ color: '#0067E0' }} />
+            <Loader2 size={18} className="animate-spin" style={{ color: '#3F46D6' }} />
             <span className="text-[13px] font-[600]" style={{ color: 'var(--text-muted)' }}>Analysing assessment…</span>
           </div>
         )}
@@ -158,8 +158,8 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
             )}
 
             {analysis.suggested_next_test_focus && (
-              <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.2)' }}>
-                <Target size={16} style={{ color: '#0067E0', flexShrink: 0, marginTop: 1 }} />
+              <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(91,99,246,0.08)', border: '1px solid rgba(91,99,246,0.2)' }}>
+                <Target size={16} style={{ color: '#3F46D6', flexShrink: 0, marginTop: 1 }} />
                 <p className="text-[12.5px] font-[600]" style={{ color: 'var(--text-secondary)' }}>{analysis.suggested_next_test_focus}</p>
               </div>
             )}
