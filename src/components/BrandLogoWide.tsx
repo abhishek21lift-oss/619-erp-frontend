@@ -16,8 +16,8 @@
  * wider, much fainter bloom — enough to read as emitted light without hazing
  * the text underneath.
  *
- * The blue is sampled from the artwork itself (#0067E0), not guessed, so the
- * halo looks like the mark is glowing rather than sitting on an unrelated
+ * The halo is the mark's own accent (#A33757), not a guessed tint, so it
+ * looks like the artwork is glowing rather than sitting on an unrelated
  * coloured cloud.
  */
 
@@ -25,8 +25,8 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 
-/** Sampled from the dominant saturated blue in the logo artwork. */
-const NEON = '#0067E0';
+/** The mark's accent, from the Rosé ramp. */
+const NEON = '#A33757';
 
 export default function BrandLogoWide({
   width,
@@ -98,8 +98,8 @@ export default function BrandLogoWide({
         className="relative object-contain"
         style={{
           width, height,
-          // Two-stop drop shadow: a tight blue rim that hugs the glyph edges,
-          // then a soft neutral shadow for depth. Blue alone reads as a print
+          // Two-stop drop shadow: a tight brand rim that hugs the glyph edges,
+          // then a soft neutral shadow for depth. Brand alone reads as a print
           // mis-registration; neutral alone kills the neon.
           filter: `drop-shadow(0 0 ${Math.round(width * 0.02)}px ${NEON}${intensity >= 1 ? '99' : '66'}) drop-shadow(0 ${Math.round(width * 0.03)}px ${Math.round(width * 0.06)}px rgba(15,23,42,0.18))`,
         }}
