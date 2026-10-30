@@ -176,6 +176,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/member/workout',   label: 'Workout',   icon: 'Dumbbell',        roles: ['member'] },
       { href: '/member/diet',      label: 'Diet',      icon: 'Apple',           roles: ['member'] },
       { href: '/member/checkin',   label: 'Check-in',  icon: 'ClipboardCheck',  roles: ['member'] },
+      { href: '/member/book',      label: 'Book',      icon: 'CalendarPlus',    roles: ['member'] },
       { href: '/member/payments',  label: 'Payments',  icon: 'Receipt',         roles: ['member'] },
       { href: '/member/more',      label: 'Profile',   icon: 'UserRound',       roles: ['member'] },
     ],
