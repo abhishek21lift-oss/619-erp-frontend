@@ -118,9 +118,9 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
 
         <div className="grid grid-cols-7 gap-2">
           {schedule.calendar.map((d) => (
-            <div key={d.dayIndex} className="rounded-[12px] p-2 text-center" style={{ background: d.type === 'training' ? 'rgba(0,103,224,0.10)' : 'var(--bg-subtle)', border: d.type === 'training' ? '1px solid rgba(0,103,224,0.3)' : '1px solid var(--border)' }}>
+            <div key={d.dayIndex} className="rounded-[12px] p-2 text-center" style={{ background: d.type === 'training' ? 'rgba(91,99,246,0.10)' : 'var(--bg-subtle)', border: d.type === 'training' ? '1px solid rgba(91,99,246,0.3)' : '1px solid var(--border)' }}>
               <p className="text-[10px] font-[700] uppercase" style={{ color: 'var(--text-muted)' }}>{d.dayName.slice(0,3)}</p>
-              <p className="text-[11px] font-[600] mt-1" style={{ color: d.type === 'training' ? '#0059CE' : 'var(--text-muted)' }}>{d.type === 'training' ? (d.session || 'Train') : 'Rest'}</p>
+              <p className="text-[11px] font-[600] mt-1" style={{ color: d.type === 'training' ? '#3F46D6' : 'var(--text-muted)' }}>{d.type === 'training' ? (d.session || 'Train') : 'Rest'}</p>
             </div>
           ))}
         </div>
@@ -145,7 +145,7 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
 
         <div className="rounded-[16px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <div className="flex items-center gap-2 mb-3">
-            <Dumbbell size={16} color="#0059CE" />
+            <Dumbbell size={16} color="#3F46D6" />
             <p className="text-[13px] font-[760] text-[color:var(--text-primary)]">Routine Blueprint Preview</p>
           </div>
           <ul className="text-[12px] text-[color:var(--text-secondary)] space-y-1">

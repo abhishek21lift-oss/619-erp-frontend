@@ -59,9 +59,9 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
               <button
                 key={c.key} type="button" onClick={() => toggleBool(c.key)}
                 className="flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-all"
-                style={{ background: checked ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
+                style={{ background: checked ? 'rgba(91,99,246,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #5B63F6' : '1.5px solid var(--border)' }}
               >
-                <span className="flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#0067E0' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)', width: 18, height: 18 }}>
+                <span className="flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#5B63F6' : 'var(--bg-card)', border: checked ? 'none' : '1.5px solid var(--border-2)', width: 18, height: 18 }}>
                   {checked && <Check size={11} color="#fff" strokeWidth={3} />}
                 </span>
                 <span className="text-[12px] font-[650]" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{c.label}</span>
@@ -78,9 +78,9 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
         <button
           type="button" onClick={() => toggleBool('previous_physiotherapy')}
           className="flex w-full items-center gap-2.5 rounded-[12px] px-3.5 py-3 text-left transition-all sm:w-auto"
-          style={{ background: ph.previous_physiotherapy ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #0067E0' : '1.5px solid var(--border)' }}
+          style={{ background: ph.previous_physiotherapy ? 'rgba(91,99,246,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #5B63F6' : '1.5px solid var(--border)' }}
         >
-          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#0067E0' : 'var(--bg-card)', border: ph.previous_physiotherapy ? 'none' : '1.5px solid var(--border-2)' }}>
+          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#5B63F6' : 'var(--bg-card)', border: ph.previous_physiotherapy ? 'none' : '1.5px solid var(--border-2)' }}>
             {ph.previous_physiotherapy && <Check size={11} color="#fff" strokeWidth={3} />}
           </span>
           <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Previous Physiotherapy</span>

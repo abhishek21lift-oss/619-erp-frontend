@@ -113,8 +113,8 @@ export const ExerciseCard = React.memo(function ExerciseCard({
         'sm:transition-all sm:duration-300 sm:ease-[cubic-bezier(0.16,1,0.3,1)]',
         'sm:hover:-translate-y-1 sm:hover:shadow-[0_2px_4px_rgba(15,23,42,0.04),0_22px_44px_-18px_rgba(15,23,42,0.22)]',
         'sm:dark:hover:shadow-[0_22px_44px_-18px_rgba(0,0,0,0.6)]',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,103,224,0.4)]',
-        selected && 'ring-2 ring-[rgba(0,103,224,0.5)] sm:border-[rgba(0,103,224,0.4)]',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,99,246,0.4)]',
+        selected && 'ring-2 ring-[rgba(91,99,246,0.5)] sm:border-[rgba(91,99,246,0.4)]',
         archived && 'opacity-60',
         dense ? 'p-3 gap-2' : 'gap-2.5 px-1 py-3.5 sm:gap-3 sm:p-4',
         // The row menu hangs below this row and over the next one, and a

@@ -159,13 +159,13 @@ export function StepMeasureTarget({
                 <p className="text-[10px] font-[600] uppercase tracking-wider text-white/40">Current</p>
                 <p className="text-[20px] font-[800] text-white">{current} {unit}</p>
               </div>
-              {gap < 0 ? <ArrowDown size={18} color="#0067E0" /> : gap > 0 ? <ArrowUp size={18} color="#0067E0" /> : null}
+              {gap < 0 ? <ArrowDown size={18} color="#3F46D6" /> : gap > 0 ? <ArrowUp size={18} color="#3F46D6" /> : null}
               <div>
                 <p className="text-[10px] font-[600] uppercase tracking-wider text-white/40">Target</p>
                 <p className="text-[20px] font-[800] text-white">{target} {unit}</p>
               </div>
-              <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(0,103,224,0.15)' }}>
-                <p className="text-[13px] font-[800]" style={{ color: '#0067E0' }}>
+              <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(91,99,246,0.15)' }}>
+                <p className="text-[13px] font-[800]" style={{ color: '#3F46D6' }}>
                   {gap === 0 ? 'Maintain' : `Need to change by ${Math.abs(gap)} ${unit}`}
                 </p>
               </div>

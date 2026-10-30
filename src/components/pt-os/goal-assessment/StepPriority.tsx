@@ -28,13 +28,13 @@ export function StepPriority({ form, set, step, error }: StepPriorityProps) {
                 aria-pressed={selected}
                 className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                 style={{
-                  background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                  border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
-                  boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.12)' : 'none',
+                  background: selected ? 'rgba(91,99,246,0.06)' : 'var(--bg-subtle)',
+                  border: selected ? '2px solid #5B63F6' : '2px solid var(--border)',
+                  boxShadow: selected ? '0 4px 16px rgba(91,99,246,0.12)' : 'none',
                 }}
               >
-                <p.icon size={20} style={{ color: selected ? '#0059CE' : 'var(--text-muted)' }} />
-                <span className="text-[12px] font-[700]" style={{ color: selected ? '#0059CE' : 'var(--text-secondary)' }}>{p.label}</span>
+                <p.icon size={20} style={{ color: selected ? '#3F46D6' : 'var(--text-muted)' }} />
+                <span className="text-[12px] font-[700]" style={{ color: selected ? '#3F46D6' : 'var(--text-secondary)' }}>{p.label}</span>
               </button>
             );
           })}

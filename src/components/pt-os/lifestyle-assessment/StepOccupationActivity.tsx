@@ -64,9 +64,9 @@ export function StepOccupationActivity({ form, set, error }: StepOccupationActiv
                   onClick={() => set('occupationType', o.value)}
                   className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                   style={{
-                    background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
-                    border: selected ? '2px solid #0067E0' : '2px solid var(--border)',
-                    boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
+                    background: selected ? 'rgba(91,99,246,0.06)' : 'var(--bg-subtle)',
+                    border: selected ? '2px solid #5B63F6' : '2px solid var(--border)',
+                    boxShadow: selected ? '0 4px 16px rgba(91,99,246,0.18)' : 'none',
                   }}
                 >
                   <span className="text-[20px]">{o.icon}</span>

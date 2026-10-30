@@ -155,7 +155,7 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
                     onClick={() => { onSelect(ex); onClose(); }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors',
-                      i === active ? 'bg-[rgba(0,103,224,0.1)]' : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]',
+                      i === active ? 'bg-[rgba(91,99,246,0.1)]' : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]',
                     )}
                   >
                     <PaletteIcon exercise={ex} />
