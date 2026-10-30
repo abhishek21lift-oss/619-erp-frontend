@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, Dumbbell } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Plus } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { ExercisePickerPanel } from '@/components/pt-os/workout-log/ExercisePicker';
@@ -135,6 +135,12 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
     );
   }, [router, pathname, day]);
 
+  /** The same destination without a typed name, for the visible action. */
+  const openNewExercise = useCallback(() => {
+    const returnTo = `${pathname}?day=${day}`;
+    router.push(`/pt-os/exercise-library/new?returnTo=${encodeURIComponent(returnTo)}`);
+  }, [router, pathname, day]);
+
   const addAll = useCallback(async (picked: { id: string; name: string }[]) => {
     if (picked.length === 0 || saving) return;
     setSaving(true);
@@ -181,14 +187,24 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
           title="Add exercises"
           subtitle={`${DAY_NAMES[day]} · pick as many as you like`}
           actions={
-            <button
-              type="button"
-              onClick={goBack}
-              className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-              style={{ background: '#fff', color: '#0F172A' }}
-            >
-              <ArrowLeft size={16} /> Back to builder
-            </button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <button
+                type="button"
+                onClick={openNewExercise}
+                className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] text-white transition-transform active:scale-95 sm:w-auto"
+                style={{ background: 'var(--brand)' }}
+              >
+                <Plus size={16} /> New exercise
+              </button>
+              <button
+                type="button"
+                onClick={goBack}
+                className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
+                style={{ background: '#fff', color: '#0F172A' }}
+              >
+                <ArrowLeft size={16} /> Back to builder
+              </button>
+            </div>
           }
         />
 

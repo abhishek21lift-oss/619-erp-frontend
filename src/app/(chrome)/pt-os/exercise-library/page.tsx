@@ -138,9 +138,22 @@ function ExerciseLibrary() {
   // Authoring lives at its own URL, so a half-written exercise survives a
   // reload and Back does the obvious thing.
   const openCreate = useCallback(() => { router.push('/pt-os/exercise-library/new'); }, [router]);
-  const openEdit = useCallback((ex: LibraryExercise) => {
-    router.push(`/pt-os/exercise-library/${ex.id}/edit`);
-  }, [router]);
+  const openEdit = useCallback(async (ex: LibraryExercise) => {
+    // A built-in belongs to every studio, so editing it in place would change
+    // it for all of them. The copy is the trainer's own row, and the editor
+    // opens on that instead.
+    if (ex.can_edit !== false) {
+      router.push(`/pt-os/exercise-library/${ex.id}/edit`);
+      return;
+    }
+    try {
+      const res = await api.exercises.duplicate(ex.id);
+      toast.success(`Created "${res.exercise.name}" — editing the copy`);
+      router.push(`/pt-os/exercise-library/${res.exercise.id}/edit`);
+    } catch (err) {
+      toast.error(errorMessage(err, 'Could not duplicate exercise'));
+    }
+  }, [router, toast]);
 
   const showingFrom = total === 0 ? 0 : lib.page * PAGE_SIZE + 1;
   const showingTo   = Math.min((lib.page + 1) * PAGE_SIZE, total);
@@ -508,6 +521,8 @@ function ExerciseLibrary() {
         onClose={() => setDetailId(null)}
         onEdit={(ex) => { setDetailId(null); openEdit(ex); }}
         onDuplicate={handleDuplicate}
+        onArchive={async (ex) => { await handleArchive(ex); setDetailId(null); }}
+        onDelete={handleDelete}
         onToggleFavorite={handleToggleFavorite}
         onSelectRelated={(id) => setDetailId(id)}
       />

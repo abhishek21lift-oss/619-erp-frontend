@@ -6,6 +6,7 @@ import {
   X, Star, Pencil, Copy, History, AlertTriangle, Lightbulb, ShieldAlert,
   Wind, Timer, TrendingUp, TrendingDown, Repeat, Loader2, ChevronRight,
   BookOpen, ListOrdered, Layers, StickyNote, Tag, GraduationCap, Ban,
+  Archive, ArchiveRestore, Trash2,
 } from 'lucide-react';
 import { Badge, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -36,12 +37,14 @@ export interface ExerciseDetailDrawerProps {
   onClose: () => void;
   onEdit: (ex: LibraryExercise) => void;
   onDuplicate: (ex: LibraryExercise) => void;
+  onArchive: (ex: LibraryExercise) => void;
+  onDelete: (ex: LibraryExercise) => void;
   onToggleFavorite: (ex: LibraryExercise) => void;
   onSelectRelated: (id: string) => void;
 }
 
 export function ExerciseDetailDrawer({
-  exerciseId, onClose, onEdit, onDuplicate, onToggleFavorite, onSelectRelated,
+  exerciseId, onClose, onEdit, onDuplicate, onArchive, onDelete, onToggleFavorite, onSelectRelated,
 }: ExerciseDetailDrawerProps) {
   const [ex, setEx] = React.useState<LibraryExercise | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -163,10 +166,24 @@ export function ExerciseDetailDrawer({
                 <IconButton label="Duplicate" onClick={() => onDuplicate(ex)}>
                   <Copy size={15} />
                 </IconButton>
+                <IconButton
+                  label={ex.can_edit !== false ? 'Edit' : 'Duplicate & edit'}
+                  onClick={() => onEdit(ex)}
+                >
+                  <Pencil size={15} />
+                </IconButton>
                 {ex.can_edit !== false && (
-                  <IconButton label="Edit" onClick={() => onEdit(ex)}>
-                    <Pencil size={15} />
-                  </IconButton>
+                  <>
+                    <IconButton
+                      label={ex.archived_at ? 'Restore' : 'Archive'}
+                      onClick={() => onArchive(ex)}
+                    >
+                      {ex.archived_at ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+                    </IconButton>
+                    <IconButton label="Delete" onClick={() => onDelete(ex)}>
+                      <Trash2 size={15} />
+                    </IconButton>
+                  </>
                 )}
                 <IconButton label="Version history" onClick={loadVersions} className={showVersions ? 'bg-[rgba(163,55,87,0.1)] text-[var(--brand)]' : undefined}>
                   <History size={15} />

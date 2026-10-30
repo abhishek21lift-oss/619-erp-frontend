@@ -192,7 +192,7 @@ export const ExerciseCard = React.memo(function ExerciseCard({
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-                className="rounded-full p-1.5 text-[var(--text-muted)] opacity-0 transition-colors group-hover:opacity-100 focus:opacity-100 hover:bg-slate-100 dark:hover:bg-white/10"
+                className="rounded-full p-1.5 text-[var(--text-muted)] opacity-100 transition-colors hover:bg-slate-100 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-white/10"
               >
                 <MoreHorizontal size={14} />
               </button>
@@ -215,8 +215,8 @@ export const ExerciseCard = React.memo(function ExerciseCard({
                   <MenuItem icon={Eye} label="View details" onClick={() => { setMenuOpen(false); onOpen(ex); }} />
                   {onEdit && (
                     <MenuItem
-                      icon={Pencil} label="Edit" disabled={!canEdit}
-                      hint={canEdit ? undefined : 'Built-in exercise'}
+                      icon={Pencil}
+                      label={canEdit ? 'Edit' : 'Duplicate & edit'}
                       onClick={() => { setMenuOpen(false); onEdit(ex); }}
                     />
                   )}
@@ -228,12 +228,14 @@ export const ExerciseCard = React.memo(function ExerciseCard({
                       icon={archived ? ArchiveRestore : Archive}
                       label={archived ? 'Restore' : 'Archive'}
                       disabled={!canEdit}
+                      hint={canEdit ? undefined : 'Built-in exercise'}
                       onClick={() => { setMenuOpen(false); onArchive(ex); }}
                     />
                   )}
                   {onDelete && (
                     <MenuItem
                       icon={Trash2} label="Delete" destructive disabled={!canEdit}
+                      hint={canEdit ? undefined : 'Built-in exercise'}
                       onClick={() => { setMenuOpen(false); onDelete(ex); }}
                     />
                   )}

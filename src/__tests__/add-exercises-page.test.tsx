@@ -237,6 +237,16 @@ describe('the panel is mounted as a page, not a dialog', () => {
 });
 
 describe('a custom exercise authored from the picker', () => {
+  it('offers a visible New exercise action on the page itself', async () => {
+    await renderPage();
+    // PageHero renders its actions twice; either copy is the same control.
+    fireEvent.click(screen.getAllByRole('button', { name: /new exercise/i })[0]);
+
+    expect(push).toHaveBeenCalledWith(
+      '/pt-os/exercise-library/new?returnTo=%2Fpt-os%2Fworkout-plans%2Fp1%2Fbuilder%2Fadd-exercises%3Fday%3D4',
+    );
+  });
+
   it('hands the typed name and a return path to the editor', async () => {
     await renderPage();
     await act(async () => { panelProps.onCreateExercise?.('Copenhagen plank'); });
