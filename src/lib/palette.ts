@@ -3,8 +3,8 @@
  *
  * Eight families, each with a meaning. Nothing else is a colour in this app:
  *
- *   blue     Logo blue — the mark, and the few surfaces that must match it
- *   indigo   Actions, links, highlights, selected state (the UI accent)
+ *   blue     Legacy logo blue — sidebar, chat, cockpit and platform accents
+ *   indigo   The brand ramp — actions, links, highlights, selected state, mark
  *   emerald  Success, completed, active, healthy
  *   mint     Positive accent — deltas, healthy charts, "on track"
  *   amber    Warning, pending, due soon, partial
@@ -20,8 +20,9 @@
  * information at all.
  *
  * Aurora added indigo, mint and orange back deliberately: indigo is the one
- * action colour (the logo blue stays on the mark), mint is the positive
- * accent, and orange is a warm highlight that never means "warning".
+ * action colour, mint is the positive accent, and orange is a warm highlight
+ * that never means "warning". The Rosé pass later moved indigo — and the mark
+ * — onto the warm ramp; `blue` is what the remaining cool surfaces still use.
  *
  * ── Choosing a tone ────────────────────────────────────────────────────────
  *   50/100    page and chip backgrounds — a wash, not a fill
@@ -36,16 +37,16 @@
  */
 
 /**
- * Logo blue — the mark's own blue.
+ * Legacy logo blue — no longer the mark's colour.
  *
- * Anchored on the blue measured out of the logo artwork rather than a generic
- * Tailwind blue; see src/lib/brand.ts for how the three brand stops (450, 500,
- * 600) were sampled. 950 is not "darker than 900" — it is a deliberately
- * brighter blue for icons sitting on the near-black gray[900] tiles, where the
- * deep 500 only reaches 3.4:1.
+ * The artwork was recoloured to the `indigo` ramp in the Rosé pass, and
+ * `brand.ts` moved with it. This ramp survives for the surfaces that have not
+ * had their own pass yet: the sidebar, chat, cockpit, revenue hero and the
+ * platform console. Treat it as a to-do, not as brand identity.
  *
- * UI actions moved to `indigo` in Aurora; this ramp remains for the wordmark,
- * the logo-blue tokens and the surfaces that must visibly match the artwork.
+ * 950 is not "darker than 900" — it is a deliberately brighter blue for icons
+ * sitting on the near-black gray[900] tiles, where the deep 500 only reaches
+ * 3.4:1.
  */
 export const blue = {
   50:  '#F2F8FF',
