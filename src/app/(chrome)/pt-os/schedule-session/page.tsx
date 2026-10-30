@@ -78,7 +78,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => `${String(6 + i).padStart(2, '0')}:00`);
 
 const TYPE_COLORS: Record<SessionType, string> = {
-  '1-on-1': '#0067e0',
+  '1-on-1': '#5B63F6',
   'Group': '#f59e0b',
   'Assessment': '#10b981',
 };
@@ -941,9 +941,9 @@ function CreateSessionModal({
                     <button key={c.id} type="button" onClick={() => { form.setFieldValue('client', c.name); form.setFieldValue('client_id', c.id); }}
                       className="flex flex-col items-start gap-1 rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
                       style={{
-                        background: selected ? 'rgba(2,113,235,0.08)' : '#f8fafc',
-                        border: selected ? '1.5px solid rgba(2,113,235,0.45)' : '1.5px solid rgba(15,23,42,0.09)',
-                        color: selected ? '#0059CE' : 'var(--text-muted)',
+                        background: selected ? 'rgba(91,99,246,0.08)' : '#f8fafc',
+                        border: selected ? '1.5px solid rgba(91,99,246,0.45)' : '1.5px solid rgba(15,23,42,0.09)',
+                        color: selected ? '#3F46D6' : 'var(--text-muted)',
                       }}
                     >
                       <span className="w-full truncate">{c.name}</span>
@@ -1134,11 +1134,11 @@ function SessionDetailPanel({
                   session.status === status && 'ring-2',
                 )}
                 style={{
-                  background: status === 'completed' ? 'rgba(16,185,129,0.10)' : status === 'cancelled' ? 'rgba(239,68,68,0.10)' : 'rgba(0,103,224,0.10)',
-                  color: status === 'completed' ? '#059669' : status === 'cancelled' ? '#ef4444' : '#0067e0',
-                  borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#0067e0',
+                  background: status === 'completed' ? 'rgba(16,185,129,0.10)' : status === 'cancelled' ? 'rgba(239,68,68,0.10)' : 'rgba(91,99,246,0.10)',
+                  color: status === 'completed' ? '#059669' : status === 'cancelled' ? '#ef4444' : '#3F46D6',
+                  borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3F46D6',
                   border: '1.5px solid transparent',
-                  ...(session.status === status ? { borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#0067e0' } : {}),
+                  ...(session.status === status ? { borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#5B63F6' } : {}),
                 }}
               >
                 {status === 'completed' ? 'Complete' : status === 'cancelled' ? 'Cancel' : 'Schedule'}
