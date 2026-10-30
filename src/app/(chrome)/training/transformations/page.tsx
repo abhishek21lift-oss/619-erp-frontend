@@ -179,9 +179,9 @@ function Inner() {
             style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', background: 'var(--bg-card)' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: 'var(--bg-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 4, height: 18, borderRadius: 3, background: 'linear-gradient(180deg, #0067e0, #0059ce)', display: 'inline-block' }} />
+                <div style={{ width: 4, height: 18, borderRadius: 3, background: 'linear-gradient(180deg, #A33757, #852E4E)', display: 'inline-block' }} />
                 <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Active Members</span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'rgba(0,103,224,0.1)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.2)' }}>{filtered.length}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'rgba(163,55,87,0.1)', color: '#A33757', border: '1px solid rgba(163,55,87,0.2)' }}>{filtered.length}</span>
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid #cbd5e1' }}>
@@ -212,8 +212,8 @@ function Inner() {
                     <tr><td colSpan={7} style={{ padding: 50, textAlign: 'center' }}>
                       <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.06))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,103,224,0.15)' }}>
-                          <Sparkles size={28} color="#0067e0" />
+                        <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(163,55,87,0.12), rgba(163,55,87,0.06))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(163,55,87,0.15)' }}>
+                          <Sparkles size={28} color="#A33757" />
                         </div>
                         <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-secondary)' }}>Ready to start tracking?</div>
                         <div style={{ fontSize: 13, color: 'var(--text-disabled)', maxWidth: 360, lineHeight: 1.5 }}>Add members to start tracking.</div>
@@ -223,15 +223,15 @@ function Inner() {
                     filtered.map((c, i) => (
                       <m.tr key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                         style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f8fafc' : '#fff' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.04)'; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.04)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f8fafc' : '#fff'; }}>
                         <td style={td}>
-                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: 'rgba(0,103,224,0.08)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.15)' }}>{c.client_id || '—'}</span>
+                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: 'rgba(163,55,87,0.08)', color: '#A33757', border: '1px solid rgba(163,55,87,0.15)' }}>{c.client_id || '—'}</span>
                         </td>
                         <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <ClientAvatar name={c.name ?? ''} photoUrl={c.photo_url}
-                              style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#0067e0','#10b981','#f59e0b','#0067e0','#0067e0','#0067e0'][Math.abs((c.name ?? '').split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #7fb4ff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }} />
+                              style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#A33757','#10b981','#f59e0b','#A33757','#A33757','#A33757'][Math.abs((c.name ?? '').split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #A33757)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }} />
                             {c.name ?? '—'}
                           </span>
                         </td>
@@ -245,9 +245,9 @@ function Inner() {
                         <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.created_at ?? undefined)}</td>
                         <td style={td}>
                           <Link href={`/pt-os/clients/${c.id}`}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(0,103,224,0.08)', color: '#0067e0', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(0,103,224,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.15)'; e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,103,224,0.15)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,103,224,0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(163,55,87,0.08)', color: '#A33757', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(163,55,87,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.15)'; e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(163,55,87,0.15)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
                             Log Progress <ArrowUpRight size={12} />
                           </Link>
                         </td>

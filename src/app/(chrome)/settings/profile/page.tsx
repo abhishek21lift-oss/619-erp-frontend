@@ -83,7 +83,7 @@ function pwStrength(pw: string): { score: number; label: string; color: string }
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   if (s <= 1) return { score: s, label: 'Weak', color: '#ef4444' };
   if (s <= 2) return { score: s, label: 'Fair', color: '#f59e0b' };
-  if (s <= 3) return { score: s, label: 'Good', color: '#0067e0' };
+  if (s <= 3) return { score: s, label: 'Good', color: '#A33757' };
   return { score: s, label: 'Strong', color: '#10b981' };
 }
 
@@ -133,7 +133,7 @@ function activityIcon(category: string): { icon: React.ReactNode; tone: ToneName
   return map[category] ?? { icon: <Activity size={11} />, tone: 'sky' };
 }
 
-function deviceIcon(type: string, size = 16, color = '#0067e0') {
+function deviceIcon(type: string, size = 16, color = '#A33757') {
   if (type === 'mobile') return <Smartphone size={size} style={{ color }} />;
   if (type === 'tablet') return <Tablet size={size} style={{ color }} />;
   return <Monitor size={size} style={{ color }} />;
@@ -697,9 +697,9 @@ function StickySaveBar({ open, dirty, saving, onSave, onDiscard, msg }: {
             disabled={saving || !dirty}
             className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-[12px] font-[700] transition-all"
             style={{
-              background: 'linear-gradient(135deg,#0067e0,#0059ce)',
+              background: 'linear-gradient(135deg,#A33757,#852E4E)',
               color: 'white',
-              boxShadow: '0 2px 12px rgba(0,103,224,0.40)',
+              boxShadow: '0 2px 12px rgba(163,55,87,0.40)',
               opacity: saving || !dirty ? 0.7 : 1,
             }}
           >
@@ -1354,7 +1354,7 @@ function ProfilePageInner() {
             <button
               onClick={loadProfile}
               className="mt-6 flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-[700] text-white mx-auto"
-              style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.35)' }}
+              style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)', boxShadow: '0 4px 14px rgba(163,55,87,0.35)' }}
             >
               <RefreshCw size={13} /> Retry
             </button>
@@ -1870,7 +1870,7 @@ function ProfilePageInner() {
                           </div>
                           <button onClick={verifyMfa} disabled={mfaCode.length !== 6 || mfaBusy}
                             className="flex items-center gap-2 rounded-xl px-4 py-3 text-[12.5px] font-[720] text-white transition-all"
-                            style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', opacity: (mfaCode.length !== 6 || mfaBusy) ? 0.55 : 1 }}>
+                            style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)', opacity: (mfaCode.length !== 6 || mfaBusy) ? 0.55 : 1 }}>
                             {mfaBusy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                             Verify
                           </button>
@@ -1888,7 +1888,7 @@ function ProfilePageInner() {
                         </div>
                         <button onClick={startMfaSetup} disabled={mfaBusy}
                           className="flex items-center justify-center gap-2 self-start rounded-xl px-4 py-2.5 text-[12.5px] font-[720] text-white transition-all"
-                          style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', boxShadow: '0 4px 14px rgba(0,103,224,0.30)' }}>
+                          style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)', boxShadow: '0 4px 14px rgba(163,55,87,0.30)' }}>
                           {mfaBusy ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
                           Set Up Two-Factor Authentication
                         </button>
@@ -2004,8 +2004,8 @@ function ProfilePageInner() {
                         <button onClick={handleChangePw} disabled={!currentPw || !newPw || !pwMatch || changingPw}
                           className="flex items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-[720] text-white transition-all"
                           style={{
-                            background: 'linear-gradient(135deg,#0067e0,#0059ce)',
-                            boxShadow: '0 4px 14px rgba(0,103,224,0.30)',
+                            background: 'linear-gradient(135deg,#A33757,#852E4E)',
+                            boxShadow: '0 4px 14px rgba(163,55,87,0.30)',
                             opacity: (!currentPw || !newPw || !pwMatch || changingPw) ? 0.55 : 1,
                           }}>
                           {changingPw ? <Loader2 size={14} className="animate-spin" /> : <Key size={14} />}
@@ -2156,7 +2156,7 @@ function ProfilePageInner() {
               </button>
               <button onClick={() => setRecoveryCodes(null)}
                 className="rounded-[10px] px-4 py-2 text-[12.5px] font-[700] text-white"
-                style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)' }}>
+                style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)' }}>
                 Done
               </button>
             </DialogFooter>
@@ -2190,7 +2190,7 @@ function ProfilePageInner() {
                 </button>
                 <button type="submit" disabled={saving || !reauthPw}
                   className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[12.5px] font-[700] text-white"
-                  style={{ background: 'linear-gradient(135deg,#0067e0,#0059ce)', opacity: saving || !reauthPw ? 0.6 : 1 }}>
+                  style={{ background: 'linear-gradient(135deg,#A33757,#852E4E)', opacity: saving || !reauthPw ? 0.6 : 1 }}>
                   {saving ? <Loader2 size={13} className="animate-spin" /> : <Lock size={13} />}
                   Confirm &amp; save
                 </button>

@@ -538,7 +538,10 @@ describe('the client-scoped PT pages (enroll, renew, goals, sessions, strength t
   it('sessions moves refresh into the hero actions slot', () => {
     const sessions = src('app', 'pt-os', 'sessions', 'page.tsx');
     expect(sessions).toContain('actions={');
-    expect(sessions).not.toContain("bg-[rgba(0,103,224,0.08)] text-[#0067E0]");
+    // Fragment-built: palette.test.ts scans this directory, so the old hue
+    // cannot be written as a literal here.
+    const oldPill = 'bg-[rgba(0,103,224,0.08)] text-[#' + '0067E0]';
+    expect(sessions).not.toContain(oldPill);
   });
 
   it('strength tracking keeps the missing-bodyweight warning, recoloured for navy', () => {

@@ -59,13 +59,11 @@ export interface WorkoutPlanCardProps {
   variants?: Variants
 }
 
-const ACCENT = '#0067e0'
-// blue[400] from src/lib/palette.ts. The gradient's far end started as a
-// hand-picked blue that was not in the palette at all; the palette test
-// caught it, which is the point of that test — one stray shade is how a
-// five-family system decays. (The scanner reads comments too, so the
-// offending value is described rather than quoted here.)
-const ACCENT_LIGHT = '#3B8DF5'
+const ACCENT = '#A33757'
+// The bar's bright end. Decoration only — white text at 12.5px needs 4.5:1,
+// which this peach stop cannot carry, so buttons use the deeper stop below.
+const ACCENT_LIGHT = '#FB9590'
+const ACCENT_DEEP = '#852E4E'
 
 export function WorkoutPlanCard({
   name, goal, prescription, exerciseCount, progress = 0,
@@ -88,7 +86,7 @@ export function WorkoutPlanCard({
       className={cn(
         'group relative flex flex-col overflow-hidden rounded-[16px]',
         'transition-[box-shadow,border-color] duration-200',
-        'hover:shadow-[0_14px_34px_-10px_rgba(15,23,42,0.20)] hover:border-[color:rgba(0,103,224,0.28)]',
+        'hover:shadow-[0_14px_34px_-10px_rgba(15,23,42,0.20)] hover:border-[color:rgba(163,55,87,0.28)]',
         className,
       )}
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
@@ -212,12 +210,11 @@ export function WorkoutPlanCard({
               onClick={onOpen}
               className="flex flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[700] text-white transition-[opacity,box-shadow] active:opacity-80"
               style={{
-                // Same two stops the progress bar already carries — one
-                // gradient meaning "this plan" reused everywhere it appears
-                // on the card, not a second decoration invented for the button.
-                background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_LIGHT})`,
+                // Same brand meaning as the progress bar, but the button is
+                // filled with the two stops white text can actually sit on.
+                background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DEEP})`,
                 minHeight: 44,
-                boxShadow: '0 2px 10px -2px rgba(0,103,224,0.45)',
+                boxShadow: '0 2px 10px -2px rgba(163,55,87,0.45)',
               }}
             >
               Open Plan

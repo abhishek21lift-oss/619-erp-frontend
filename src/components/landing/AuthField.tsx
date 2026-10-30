@@ -64,7 +64,7 @@ export function RevealButton({ shown, onToggle }: { shown: boolean; onToggle: ()
       onClick={onToggle}
       aria-label={shown ? 'Hide password' : 'Show password'}
       aria-pressed={shown}
-      className="grid h-10 w-10 place-items-center rounded-[10px] transition-colors hover:bg-[rgba(31,42,61,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,103,224,0.35)]"
+      className="grid h-10 w-10 place-items-center rounded-[10px] transition-colors hover:bg-[rgba(31,42,61,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(163,55,87,0.35)]"
       style={{ color: C.muted }}
     >
       {shown ? <EyeOff size={18} /> : <Eye size={18} />}

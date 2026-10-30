@@ -49,13 +49,13 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 // ── Design constants ──────────────────────────────────────────────────────────
-const BRAND = '#7fb4ff';
+const BRAND = '#FFBB94';
 
 export const SIDEBAR_GROUNDS = {
   /** Top of the gradient. */
   dark: '#0F172A',
   /** Bottom — the worst case for a light foreground, and where sub-items sit. */
-  blue: '#002D61',
+  plum: '#2B1220',
 } as const;
 
 /**
@@ -75,11 +75,11 @@ export const FOOTER_COLORS = {
    * left the footer's tests measuring against a background that no longer
    * exists, and passing for the wrong reason.
    */
-  drawerGround: SIDEBAR_GROUNDS.blue,
+  drawerGround: SIDEBAR_GROUNDS.plum,
   /** Translucent white fills the Profile and Settings buttons sit on. */
   neutralFill: 'rgba(255,255,255,0.10)',
   neutralFore: 'rgba(255,255,255,0.92)',
-  /** Red fails on blue: #EF4444 is 2.03:1 here, #FCA5A5 only 4.02:1. */
+  /** Red fails on the dark plum ground: #EF4444 is 2.03:1 here. */
   dangerFill: 'rgba(239,68,68,0.22)',
   dangerFore: '#FECACA',
   /** Sits directly on the drawer, not on a fill. */
@@ -90,7 +90,7 @@ export const FOOTER_COLORS = {
  *
  * ── Why these numbers are what they are ────────────────────────────────────
  *
- * The background is a gradient: near-black at the top, brand blue from 65%
+ * The background is a gradient: near-black at the top, deep plum from 65%
  * down. Every value here was originally chosen against the dark end, and the
  * lower half of the drawer — where the expanded sub-items and the chevrons
  * live — is the light end. Measured against it, the whole navigation failed:
@@ -99,39 +99,38 @@ export const FOOTER_COLORS = {
  *   chevron         1.89:1      nav label   3.20:1
  *
  * AA wants 4.5:1. Four of those failed against the DARK end too, so they were
- * never adequate; the blue only made it obvious.
+ * never adequate; the old blue only made it obvious.
  *
- * The fix is in two parts, and the first matters more. The blue end moved from
- * blue[700] to blue[900].
+ * The fix is in two parts, and the first matters more. The deep end was
+ * darkened one full step, from the 700 tone to the 900 tone. Those now resolve
+ * through the Rosé ramp, so the ground is a near-black plum; the step is what
+ * matters, not the hue.
  *
- * blue[700] was bright enough that white at 52% — an unremarkable value on a
- * dark navigation — measured 3.20:1 on it. blue[900] takes that to 4.70:1, so
- * an ordinary value works without being derived. That is the difference
- * between fixing today's numbers and fixing the surface: whatever is added to
- * this file next inherits a ground that already behaves.
+ * The old 700 was bright enough that white at 52% — an unremarkable value on
+ * a dark navigation — measured 3.20:1 on it. The 900 tone takes that to
+ * 4.70:1, so an ordinary value works without being derived. That is the
+ * difference between fixing today's numbers and fixing the surface: whatever
+ * is added to this file next inherits a ground that already behaves.
  *
  * It is a palette value, not a hand-mixed one. The first pass solved for the
- * darkness numerically and produced a blue that was not in the five families;
- * the palette guard rejected it, correctly, because a sixth blue is exactly
- * what that rule exists to prevent. blue[900] sits within a couple of points
- * of the computed answer and was already in the system.
- *
- * Still unmistakably blue: a 52-point margin between its blue channel and its
- * next highest.
+ * darkness numerically and produced a tone that was not in the families; the
+ * palette guard rejected it, correctly, because a sixth near-black is exactly
+ * what that rule exists to prevent. The 900 tone sits within a couple of
+ * points of the computed answer and was already in the system.
  *
  * sidebar-contrast.test.ts recomputes all of it against BOTH ends.
  */
 const THEME = {
   brand:        BRAND,
-  iconBg:       'linear-gradient(135deg, #7fb4ff 0%, #3b8df5 100%)',
-  activeBg:     'rgba(127,180,255,0.15)',
-  subBorder:    'rgba(127,180,255,0.12)',
-  subActiveBg:  'rgba(127,180,255,0.08)',
+  iconBg:       'linear-gradient(135deg, #A33757 0%, #852E4E 100%)',
+  activeBg:     'rgba(255,187,148,0.15)',
+  subBorder:    'rgba(255,187,148,0.12)',
+  subActiveBg:  'rgba(255,187,148,0.08)',
   inactiveText: 'rgba(255,255,255,0.82)',
   inactiveIcon: 'rgba(255,255,255,0.70)',
-  hoverBg:      'rgba(127,180,255,0.08)',
+  hoverBg:      'rgba(255,187,148,0.08)',
   iconBgIdle:   'rgba(255,255,255,0.06)',
-  /** Group headings. Were 0.22 — 1.65:1 on the blue, effectively absent. */
+  /** Group headings. Were 0.22 — 1.65:1 on the old light end, effectively absent. */
   sectionLabel: 'rgba(255,255,255,0.62)',
   /** The expand/collapse arrows. Were 0.28 — 1.89:1. */
   chevron:      'rgba(255,255,255,0.65)',
@@ -255,7 +254,7 @@ function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
       aria-current={active && !isDisabled ? 'page' : undefined}
       className={cn(
         'relative flex items-center gap-2 rounded-lg px-3 py-3 transition-colors duration-150 overflow-hidden',
-        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(127,180,255,0.55)]',
+        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(255,187,148,0.55)]',
         active && 'font-semibold',
       )}
       style={{ background: active ? THEME.subActiveBg : 'transparent' }}
@@ -454,7 +453,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                 {groupIndex > 0 && (
                   <div
                     className="mb-3 h-px"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(127,180,255,0.18), transparent)' }}
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(255,187,148,0.18), transparent)' }}
                   />
                 )}
                 <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: THEME.sectionLabel }}>
@@ -465,7 +464,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
 
             {/* Section divider — collapsed icon-rail */}
             {sectionLabel && collapsed && groupIndex > 0 && (
-              <div className="my-2.5 mx-auto w-5 h-px" style={{ background: 'rgba(127,180,255,0.14)' }} />
+              <div className="my-2.5 mx-auto w-5 h-px" style={{ background: 'rgba(255,187,148,0.14)' }} />
             )}
 
             <div className="relative mb-px">
@@ -480,7 +479,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                 title={collapsed ? group.label : undefined}
                 className={cn(
                   'relative w-full rounded-xl transition-colors duration-200 overflow-hidden',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(127,180,255,0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,187,148,0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
                   collapsed ? 'flex justify-center px-0 py-2' : '',
                 )}
                 style={{ background: hasActiveChild ? THEME.activeBg : 'transparent' }}
@@ -643,8 +642,8 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
       <div
         className="rounded-xl p-3"
         style={{
-          background: 'linear-gradient(135deg, rgba(127,180,255,0.08) 0%, rgba(0,103,224,0.05) 100%)',
-          border: '1px solid rgba(127,180,255,0.12)',
+          background: 'linear-gradient(135deg, rgba(255,187,148,0.08) 0%, rgba(163,55,87,0.05) 100%)',
+          border: '1px solid rgba(255,187,148,0.12)',
         }}
       >
         {/* Avatar + name + email */}
@@ -680,7 +679,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         <div className="mb-2.5">
           <span
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-            style={{ background: 'rgba(127,180,255,0.15)', color: BRAND, border: '1px solid rgba(127,180,255,0.2)' }}
+            style={{ background: 'rgba(255,187,148,0.15)', color: BRAND, border: '1px solid rgba(255,187,148,0.2)' }}
           >
             {roleLabel(user?.role) || 'Trainer'}
           </span>
@@ -690,7 +689,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           Profile | Settings | Logout.
 
           These were unreadable, and measurably so. The drawer's background is
-          a gradient ending at #0050AD, and these three sat on the blue end at
+          a gradient ending at #2B1220, and these three sat on the plum end at
           rgba(255,255,255,0.42) and rgba(239,68,68,0.48) — 2.59:1 and 1.09:1
           against it, where AA wants 4.5:1. The logout icon was a ghost.
 
@@ -700,10 +699,9 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           value permanently. Hover is now a CSS enhancement over a base that is
           already legible, rather than the only way to read the control.
 
-          Red is the other lesson: it does not survive a saturated blue ground.
-          #EF4444 manages 2.03:1 here and even #FCA5A5 only 4.02:1. red[200] is
-          the first step that clears AA at 5.28:1, so the icon is pale and the
-          destructive signal comes from the red-tinted fill and border instead.
+          Red is the other lesson: it does not survive a saturated ground. The
+          old blue left #EF4444 at 2.03:1; the pale icon and the red-tinted
+          fill keep the destructive signal legible without relying on hue.
 
           44px targets, set in pixels — a 14px root makes every rem-based size
           land at 87.5% of its name. These were about 24px tall.
@@ -818,7 +816,7 @@ export default function Sidebar({
         ],
       )}
       style={{
-        background: 'linear-gradient(180deg, rgba(245,158,11,0.07) 0%, rgba(245,158,11,0.02) 18%, transparent 38%), linear-gradient(160deg, #0F172A 0%, #0F172A 30%, #002D61 65%, #002D61 100%)',
+        background: 'linear-gradient(180deg, rgba(245,158,11,0.07) 0%, rgba(245,158,11,0.02) 18%, transparent 38%), linear-gradient(160deg, #0F172A 0%, #0F172A 30%, #2B1220 65%, #2B1220 100%)',
         paddingTop: isMobile ? 'calc(12px + env(safe-area-inset-top, 0px))' : 'env(safe-area-inset-top, 0px)',
         paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : undefined,
         willChange: isMobile ? 'transform' : undefined,
@@ -827,7 +825,7 @@ export default function Sidebar({
         borderRadius: isMobile ? '0 16px 16px 0' : undefined,
         boxShadow: isMobile
           ? '6px 0 24px rgba(0,0,0,0.30), 2px 0 8px rgba(0,0,0,0.20)'
-          : 'inset 0 0 0 1px rgba(127,180,255,0.05), 4px 0 24px rgba(0,0,0,0.35)',
+          : 'inset 0 0 0 1px rgba(255,187,148,0.05), 4px 0 24px rgba(0,0,0,0.35)',
       }}
     >
       {/* Brand header */}
@@ -900,7 +898,7 @@ export default function Sidebar({
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150"
               style={{ color: 'rgba(255,255,255,0.40)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(127,180,255,0.12)'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,187,148,0.12)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
               {collapsed
@@ -929,7 +927,7 @@ export default function Sidebar({
       {/* Nav */}
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain py-1"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(127,180,255,0.15) transparent' }}
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,187,148,0.15) transparent' }}
       >
         <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} onExpand={onExpand} />
       </div>

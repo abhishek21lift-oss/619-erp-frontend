@@ -3,8 +3,8 @@
 
 /** MY PT STUDIO brand palette used by the indicator. */
 export const BRAND = {
-  maroon: '#0059CE',
-  maroonDeep: '#0050AD',
+  maroon: '#852E4E',
+  maroonDeep: '#6B2440',
   gold: '#FBBF24',
   ink: '#0F172A',
   mute: '#94a3b8',

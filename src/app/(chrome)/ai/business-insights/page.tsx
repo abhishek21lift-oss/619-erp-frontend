@@ -125,7 +125,7 @@ export default function BusinessInsightsPage() {
                   onClick={() => setPeriod(p.value)}
                   disabled={loading}
                   aria-pressed={period === p.value}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${period === p.value ? 'bg-blue-600 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${period === p.value ? 'bg-brand-500 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                 >
                   {p.label}
                 </button>
@@ -149,7 +149,7 @@ export default function BusinessInsightsPage() {
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {loading ? 'Analysing…' : insights ? 'Regenerate Insights' : 'Generate Insights'}
@@ -158,7 +158,7 @@ export default function BusinessInsightsPage() {
 
         {/* First-run hint */}
         {!insights && !loading && !error && (
-          <div className="flex items-start gap-2 rounded-[20px] border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
+          <div className="flex items-start gap-2 rounded-[20px] border border-brand-100 bg-brand-50 p-5 text-sm text-brand-800">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             Pick a period above and generate. Every verified number is shown beside the AI&apos;s reading of it.
           </div>
@@ -195,7 +195,7 @@ export default function BusinessInsightsPage() {
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="flex items-center gap-1 rounded-lg px-2 py-0.5 font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                className="flex items-center gap-1 rounded-lg px-2 py-0.5 font-semibold text-brand-700 hover:bg-brand-50 disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
@@ -203,11 +203,11 @@ export default function BusinessInsightsPage() {
 
             {/* Empty period: the backend answered deterministically, no model ran */}
             {isEmpty && (
-              <div role="status" className="flex items-start gap-2 rounded-[20px] border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+              <div role="status" className="flex items-start gap-2 rounded-[20px] border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
                 <Info className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-semibold">No activity in this period</p>
-                  <p className="mt-1 text-blue-700">
+                  <p className="mt-1 text-brand-700">
                     {insights.executive_summary || 'Record clients, sessions or payments, then generate again.'}
                   </p>
                 </div>
@@ -245,10 +245,10 @@ export default function BusinessInsightsPage() {
             {!isEmpty && kpis && (
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {[
-                  { label: 'Collections', sub: periodLabel, value: fmt(kpis.mrr), from: '#0271EB', to: '#0067E0' },
+                  { label: 'Collections', sub: periodLabel, value: fmt(kpis.mrr), from: '#DC586D', to: '#A33757' },
                   { label: 'Renewal rate', sub: 'expired cohort', value: pct(kpis.renewal_rate_pct), from: '#10B981', to: '#059669' },
                   { label: 'Utilisation', sub: 'this month', value: pct(kpis.avg_session_utilisation_pct), from: '#F59E0B', to: '#D97706' },
-                  { label: 'Revenue / trainer', sub: 'period', value: fmt(kpis.revenue_per_trainer), from: '#3B8DF5', to: '#0271EB' },
+                  { label: 'Revenue / trainer', sub: 'period', value: fmt(kpis.revenue_per_trainer), from: '#FB9590', to: '#DC586D' },
                 ].map((k) => (
                   <div
                     key={k.label}
@@ -297,7 +297,7 @@ export default function BusinessInsightsPage() {
               <PremiumBarChart
                 data={raw.monthly_revenue.map((m) => ({ month: m.month_name || `M${m.month_num}`, revenue: m.revenue }))}
                 xKey="month"
-                bars={[{ key: 'revenue', label: 'Collections', color: '#0067E0' }]}
+                bars={[{ key: 'revenue', label: 'Collections', color: '#A33757' }]}
                 title="Collections by month"
                 subtitle="Verified payment totals for the current year"
                 formatValue={(v) => fmt(v)}
@@ -378,7 +378,7 @@ export default function BusinessInsightsPage() {
                   .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
                   .map((r, i) => (
                   <div key={i} className="flex items-start gap-3 border-b border-gray-100 py-2 last:border-0">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600/10 text-xs font-bold text-blue-700">{r.priority ?? '–'}</div>
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-xs font-bold text-brand-700">{r.priority ?? '–'}</div>
                     <div className="flex-1">
                       <div className="text-sm font-medium text-gray-800">{r.action}</div>
                       {r.rationale && <div className="mt-0.5 text-xs text-gray-500">{r.rationale}</div>}

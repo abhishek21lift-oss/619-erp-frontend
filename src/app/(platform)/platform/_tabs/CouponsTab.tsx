@@ -94,7 +94,7 @@ export function CouponsTab() {
     } catch { /* the row still renders without its history */ }
   };
 
-  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#0067e0' }} /></Center>;
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#A33757' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
 
   // Coupon analytics — aggregated from the same rows already loaded for the
@@ -442,7 +442,7 @@ export function CouponForm({ plans, initial, onCreated }: {
                     )}
                     className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] transition"
                     style={on
-                      ? { background: 'rgba(0,103,224,0.15)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.4)' }
+                      ? { background: 'rgba(163,55,87,0.15)', color: '#A33757', border: '1px solid rgba(163,55,87,0.4)' }
                       : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                     {p.name}
                   </button>

@@ -107,8 +107,8 @@ const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
-const ACCENT = 'linear-gradient(135deg, #0067e0 0%, #0059ce 100%)';
-const VIOLET = '#7fb4ff';
+const ACCENT = 'linear-gradient(135deg, #A33757 0%, #852E4E 100%)';
+const VIOLET = '#FFBB94';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -474,7 +474,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
           zIndex: 9000,
           background: 'rgba(15,23,42,0.98)',
           backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-          borderLeft: '1px solid rgba(127,180,255,0.20)',
+          borderLeft: '1px solid rgba(255,187,148,0.20)',
           boxShadow: '-24px 0 60px rgba(0,0,0,0.45)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
@@ -484,7 +484,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
           style={{
             padding: 'calc(16px + env(safe-area-inset-top)) 18px 14px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background: 'linear-gradient(180deg, rgba(0,103,224,0.10) 0%, rgba(0,103,224,0) 100%)',
+            background: 'linear-gradient(180deg, rgba(163,55,87,0.10) 0%, rgba(163,55,87,0) 100%)',
             flexShrink: 0,
           }}
         >
@@ -492,8 +492,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
             <div
               style={{
                 width: 38, height: 38, borderRadius: 11,
-                background: 'linear-gradient(135deg, rgba(0,103,224,0.35) 0%, rgba(0,103,224,0.35) 100%)',
-                border: '1px solid rgba(127,180,255,0.30)',
+                background: 'linear-gradient(135deg, rgba(163,55,87,0.35) 0%, rgba(163,55,87,0.35) 100%)',
+                border: '1px solid rgba(255,187,148,0.30)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
             >
@@ -545,7 +545,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                   fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
                   background: mode === m_ ? ACCENT : 'transparent',
                   color: mode === m_ ? '#fff' : 'rgba(255,255,255,0.52)',
-                  boxShadow: mode === m_ ? '0 4px 14px rgba(0,103,224,0.35)' : 'none',
+                  boxShadow: mode === m_ ? '0 4px 14px rgba(163,55,87,0.35)' : 'none',
                   transition: 'all 0.18s',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
@@ -642,11 +642,11 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                   whileTap={canGenerate ? { scale: 0.98 } : {}}
                   style={{
                     marginTop: 2, padding: '13px 0', borderRadius: 11, border: 'none',
-                    background: canGenerate ? ACCENT : 'rgba(0,103,224,0.22)',
+                    background: canGenerate ? ACCENT : 'rgba(163,55,87,0.22)',
                     color: canGenerate ? '#fff' : 'rgba(255,255,255,0.35)',
                     fontSize: 13.5, fontWeight: 700,
                     cursor: canGenerate ? 'pointer' : 'not-allowed',
-                    boxShadow: canGenerate ? '0 8px 22px rgba(0,103,224,0.35)' : 'none',
+                    boxShadow: canGenerate ? '0 8px 22px rgba(163,55,87,0.35)' : 'none',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                     transition: 'all 0.18s',
                   }}
@@ -660,7 +660,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                   {isGenerating && (
                     <m.p
                       initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                      style={{ fontSize: 12, color: 'rgba(127,180,255,0.80)', textAlign: 'center', margin: 0 }}
+                      style={{ fontSize: 12, color: 'rgba(255,187,148,0.80)', textAlign: 'center', margin: 0 }}
                     >
                       Your AI coach is crafting a personalised plan…
                     </m.p>
@@ -685,8 +685,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                       transition={{ duration: 0.25, ease: 'easeOut' }}
                       style={{
                         padding: '14px 16px', borderRadius: 13,
-                        background: 'linear-gradient(135deg, rgba(0,103,224,0.14) 0%, rgba(0,103,224,0.14) 100%)',
-                        border: '1px solid rgba(127,180,255,0.25)',
+                        background: 'linear-gradient(135deg, rgba(163,55,87,0.14) 0%, rgba(163,55,87,0.14) 100%)',
+                        border: '1px solid rgba(255,187,148,0.25)',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 8 }}>
@@ -713,7 +713,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                           disabled={savingPlan}
                           style={{
                             marginTop: 10, width: '100%', padding: '10px 0', borderRadius: 9, border: 'none',
-                            background: savingPlan ? 'rgba(0,103,224,0.35)' : ACCENT,
+                            background: savingPlan ? 'rgba(163,55,87,0.35)' : ACCENT,
                             color: '#fff', fontSize: 12.5, fontWeight: 700,
                             cursor: savingPlan ? 'wait' : 'pointer',
                           }}
@@ -740,7 +740,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     is exactly the "I don't have access" reply this fixes. */}
                 {selectedClient ? (
                   <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: VIOLET, background: 'rgba(127,180,255,0.12)', border: '1px solid rgba(127,180,255,0.22)', borderRadius: 999, padding: '4px 10px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: VIOLET, background: 'rgba(255,187,148,0.12)', border: '1px solid rgba(255,187,148,0.22)', borderRadius: 999, padding: '4px 10px' }}>
                       <User size={11} /> Coaching about {selectedClient.name}
                     </span>
                     {!clientLocked && (
@@ -790,8 +790,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '8px 11px', borderRadius: 9, textDecoration: 'none',
                         fontSize: 11.5, fontWeight: 650, color: VIOLET,
-                        background: 'rgba(127,180,255,0.10)',
-                        border: '1px solid rgba(127,180,255,0.22)',
+                        background: 'rgba(255,187,148,0.10)',
+                        border: '1px solid rgba(255,187,148,0.22)',
                       }}
                     >
                       <Sparkles size={12} /> Generate &amp; save a full diet plan
@@ -837,7 +837,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                               </span>
                               {msg.sources.map((title) => (
                                 <span key={title}
-                                  style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(127,180,255,0.15)', color: VIOLET }}>
+                                  style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,187,148,0.15)', color: VIOLET }}>
                                   {title}
                                 </span>
                               ))}
@@ -850,7 +850,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                               </span>
                               {msg.tools.map((name) => (
                                 <span key={name}
-                                  style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(0,103,224,0.15)', color: '#0067e0' }}>
+                                  style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,187,148,0.15)', color: '#FFBB94' }}>
                                   {name}
                                 </span>
                               ))}
@@ -887,7 +887,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                               key={i}
                               animate={{ y: [0, -4, 0] }}
                               transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15, ease: 'easeInOut' }}
-                              style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(127,180,255,0.70)' }}
+                              style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,187,148,0.70)' }}
                             />
                           ))}
                         </div>

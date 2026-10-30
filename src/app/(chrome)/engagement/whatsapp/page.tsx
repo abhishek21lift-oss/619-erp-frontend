@@ -193,15 +193,15 @@ function WAContent() {
           </div>
 
           <div className={`flex items-start gap-3 rounded-[20px] border p-4 ${
-            connected ? 'border-blue-200 bg-blue-50'
+            connected ? 'border-brand-200 bg-brand-50'
               : integrationKnown && integration?.configured ? 'border-amber-200 bg-amber-50'
                 : 'border-gray-200 bg-gray-50'
           }`}>
             {connected
-              ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+              ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" />
               : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />}
             <div className="min-w-0 flex-1">
-              <p className={`text-sm font-bold ${connected ? 'text-blue-900' : 'text-gray-900'}`}>
+              <p className={`text-sm font-bold ${connected ? 'text-brand-900' : 'text-gray-900'}`}>
                 Automated reminders — {connected
                   ? 'connected'
                   : !integrationKnown ? 'status unavailable'
@@ -212,7 +212,7 @@ function WAContent() {
                   ? <>Sending from {integration.phone_e164 || 'your studio number'}. </>
                   : 'Automated rules are paused until this studio pairs its own WhatsApp. Manual chats below still work.'}
               </p>
-              <Link href="/settings/integrations" className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline">
+              <Link href="/settings/integrations" className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline">
                 <Settings2 className="h-3 w-3" /> {connected ? 'Manage connection' : 'Connect in Settings'}
               </Link>
             </div>
@@ -222,8 +222,8 @@ function WAContent() {
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Active members', value: members.length, icon: <Users size={18} />, color: '#0067e0' },
-            { label: 'Selected', value: selected.length, icon: <CheckCircle2 size={18} />, color: '#0067e0' },
+            { label: 'Active members', value: members.length, icon: <Users size={18} />, color: '#A33757' },
+            { label: 'Selected', value: selected.length, icon: <CheckCircle2 size={18} />, color: '#A33757' },
             { label: 'Chats opened', value: opened, icon: <MessageCircle size={18} />, color: '#10b981', hint: 'this session' },
           ].map((k) => (
             <m.div key={k.label} variants={itemVariants}
@@ -265,7 +265,7 @@ function WAContent() {
                   </button>
                 )}
               </div>
-              <button onClick={selectAll} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+              <button onClick={selectAll} className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100">
                 All
               </button>
               <button onClick={clearAll} className="rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-200">
@@ -305,7 +305,7 @@ function WAContent() {
                       tabIndex={0}
                       aria-pressed={isSelected}
                       aria-label={`Select ${member.name || 'member'}`}
-                      className={`flex items-center gap-3 border-b border-gray-100 px-4 py-3 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                      className={`flex items-center gap-3 border-b border-gray-100 px-4 py-3 transition-colors ${isSelected ? 'bg-brand-50' : 'hover:bg-gray-50'}`}
                     >
                       <input
                         aria-label={`Select ${member.name || 'member'}`}
@@ -313,9 +313,9 @@ function WAContent() {
                         checked={isSelected}
                         onChange={() => toggleSelect(member.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 accent-blue-600"
+                        className="h-4 w-4 accent-brand-500"
                       />
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-blue-100 bg-blue-50 text-xs font-bold text-blue-700">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-brand-100 bg-brand-50 text-xs font-bold text-brand-700">
                         {member.photo_url
                           ? <Image src={member.photo_url} alt={member.name || ''} width={36} height={36} className="h-full w-full object-cover" />
                           : (member.name || '?').slice(0, 2).toUpperCase()}
@@ -335,7 +335,7 @@ function WAContent() {
                         title={reachable ? 'Open a pre-filled WhatsApp chat' : 'Add a valid mobile number first'}
                         className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-bold transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
                         style={reachable
-                          ? { background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', boxShadow: '0 4px 12px rgba(0,103,224,0.3)' }
+                          ? { background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff', boxShadow: '0 4px 12px rgba(163,55,87,0.3)' }
                           : { background: '#f1f5f9', color: '#94a3b8' }}
                       >
                         <MessageCircle size={12} /> Open
@@ -348,13 +348,13 @@ function WAContent() {
 
             {selected.length > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-4 py-3">
-                <span className="text-[13px] font-semibold text-blue-700">
+                <span className="text-[13px] font-semibold text-brand-700">
                   {selected.length} member{selected.length > 1 ? 's' : ''} selected
                 </span>
                 <button
                   onClick={sendBulk}
                   className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #0067e0, #0059ce)', boxShadow: '0 4px 16px rgba(0,103,224,0.35)' }}
+                  style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 4px 16px rgba(163,55,87,0.35)' }}
                 >
                   <Send size={13} /> Open selected chats
                 </button>
@@ -367,7 +367,7 @@ function WAContent() {
             <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="rounded-[20px] border border-gray-200 bg-white p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
               <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
-                <MessageCircle size={15} className="text-blue-600" /> Message template
+                <MessageCircle size={15} className="text-brand-600" /> Message template
               </h3>
               <div className="mb-4 flex flex-col gap-1.5">
                 {templates.map((t) => (
@@ -377,7 +377,7 @@ function WAContent() {
                     aria-pressed={template.id === t.id}
                     className={`rounded-[10px] border px-4 py-2.5 text-left text-[13px] transition-colors ${
                       template.id === t.id
-                        ? 'border-blue-600 bg-blue-50 font-bold text-blue-700'
+                        ? 'border-brand-500 bg-brand-50 font-bold text-brand-700'
                         : 'border-gray-200 bg-gray-50 font-medium text-gray-700 hover:bg-gray-100'
                     }`}
                   >
@@ -403,11 +403,11 @@ function WAContent() {
             </m.div>
 
             <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-              className="rounded-[20px] border border-blue-200 bg-blue-50 p-5">
-              <div className="mb-2 flex items-center gap-2 text-[13px] font-bold text-blue-800">
+              className="rounded-[20px] border border-brand-200 bg-brand-50 p-5">
+              <div className="mb-2 flex items-center gap-2 text-[13px] font-bold text-brand-800">
                 <ExternalLink size={14} /> Opens WhatsApp — does not send
               </div>
-              <p className="m-0 text-xs leading-relaxed text-blue-800">
+              <p className="m-0 text-xs leading-relaxed text-brand-800">
                 Each button opens WhatsApp Web or the app with the message pre-filled. You press
                 Send there, in your own number. Opening a tab is not proof of delivery.
               </p>

@@ -182,14 +182,14 @@ function Highlight({ text, query }: { text: string; query: string }) {
  * so a new backend provider renders sensibly before anyone touches this file.
  */
 const TYPE_ICON: Record<string, { icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; colour: string }> = {
-  exercise: { icon: Dumbbell, colour: '#0067E0' },
-  workout_plan: { icon: ClipboardList, colour: '#0067E0' },
+  exercise: { icon: Dumbbell, colour: '#A33757' },
+  workout_plan: { icon: ClipboardList, colour: '#A33757' },
   diet_plan: { icon: Salad, colour: '#10B981' },
-  assessment: { icon: Activity, colour: '#0067E0' },
+  assessment: { icon: Activity, colour: '#A33757' },
   invoice: { icon: FileText, colour: '#F59E0B' },
   payment: { icon: IndianRupee, colour: '#10B981' },
-  message: { icon: MessageSquare, colour: '#0067E0' },
-  ai_conversation: { icon: Sparkles, colour: '#0067E0' },
+  message: { icon: MessageSquare, colour: '#A33757' },
+  ai_conversation: { icon: Sparkles, colour: '#A33757' },
 };
 
 function ResultAvatar({ item }: { item: { title: string; avatar_url?: string | null; type: string } }) {

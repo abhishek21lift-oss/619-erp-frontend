@@ -7,10 +7,11 @@
 // and the check-in kiosk. It catches the three ways the old blue comes back —
 // the palette module, the destructured ramp, and a hex pasted straight into a
 // style. Status colours (red/amber/green) and slate neutrals are not part of
-// this rule and are used freely.
+// this rule and are used freely. The whole app has now had its pass, so the
+// ratchet also documents the values the Rosé ramp replaced.
 //
-// Other areas of the app (platform console, member-side components) still
-// carry the old blue inline and get their own pass.
+// The hexes are assembled from fragments because palette.test.ts scans this
+// directory too; a literal guard value would itself be a palette offender.
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -24,11 +25,13 @@ const TREES = [
 
 // The blue ramp's hexes and rgb() forms (300..800), plus the wordmark blue it
 // was named after. `blue[` is the destructured palette import; the leading
-// guard keeps Tailwind's `text-blue-500` out of the match.
+// guard keeps Tailwind's `text-blue-500` out of the match. The hex list is
+// split at the `#` so the palette scan does not flag the guard.
+const OLD_HEX = ['0067e0', '0059ce', '0271eb', '3b8df5', '7fb4ff', '0050ad', '003f87'];
 const OLD_BLUE = new RegExp([
   'palette\\.blue',
   '(^|[^a-zA-Z0-9_.])blue\\[',
-  '#0067e0', '#0059ce', '#0271eb', '#3b8df5', '#7fb4ff', '#0050ad', '#003f87',
+  '#' + OLD_HEX.join('|#'),
   'rgba\\(0,\\s*103,\\s*224', 'rgba\\(0,\\s*89,\\s*206', 'rgba\\(2,\\s*113,\\s*235',
   'rgba\\(127,\\s*180,\\s*255', 'rgb\\(0,\\s*103,\\s*224', 'rgb\\(2,\\s*113,\\s*235',
 ].join('|'), 'im');

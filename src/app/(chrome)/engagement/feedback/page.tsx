@@ -14,10 +14,10 @@ const CATS = ['All', 'Trainer', 'Facility', 'Equipment', 'Overall', 'Timing', 'B
 
 const KPIS = [
   { label: 'Avg Rating', key: 'rating', color: '#d97706', bg: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05))' },
-  { label: 'Total', key: 'total', color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label: 'Total', key: 'total', color: '#A33757', bg: 'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
   { label: 'Positive', key: 'positive', color: '#10b981', bg: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
   { label: 'Open', key: 'open', color: '#F59E0B', bg: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05))' },
-  { label: 'NPS Score', key: 'nps', color: '#0067e0', bg: 'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
+  { label: 'NPS Score', key: 'nps', color: '#A33757', bg: 'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(133,46,78,0.05))' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
@@ -110,8 +110,8 @@ function FeedbackContent() {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {CATS.map(c => (
             <button key={c} onClick={() => setCat(c)}
-              style={{ padding: '7px 16px', borderRadius: 8, border: `1px solid ${cat === c ? '#0067e0' : '#e2e8f0'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: cat === c ? 'linear-gradient(135deg, #0067e0, #0059ce)' : '#ffffff', color: cat === c ? '#fff' : '#334155' }}>{c}</button>
+              style={{ padding: '7px 16px', borderRadius: 8, border: `1px solid ${cat === c ? '#A33757' : '#e2e8f0'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: cat === c ? 'linear-gradient(135deg, #A33757, #852E4E)' : '#ffffff', color: cat === c ? '#fff' : '#334155' }}>{c}</button>
           ))}
         </div>
         <FormField label="Filter by status" labelHidden className="w-full max-w-[160px]">
@@ -132,7 +132,7 @@ function FeedbackContent() {
               style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', overflow: 'hidden' }}>
               <div style={{ padding: '18px 22px' }}>
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.06))', color: '#0067e0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(0,103,224,0.15)' }}>
+                  <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(163,55,87,0.12), rgba(163,55,87,0.06))', color: '#A33757', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(163,55,87,0.15)' }}>
                     <User size={22} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -166,7 +166,7 @@ function FeedbackContent() {
                             style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', fontFamily: 'inherit' }} />
                         </FormField>
                         <button onClick={() => handleReply(f.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg, #0067e0, #0059ce)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,103,224,0.3)' }}>
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(163,55,87,0.3)' }}>
                           Send &amp; Resolve
                         </button>
                       </div>

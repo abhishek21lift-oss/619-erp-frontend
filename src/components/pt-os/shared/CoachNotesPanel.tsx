@@ -45,7 +45,7 @@ export function CoachNotesPanel<T>({ fields, notes, onChange, title = 'Coach Not
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-6">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <NotebookPen size={20} color="#1CA3F9" />
+            <NotebookPen size={20} color="#FFBB94" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">{title}</h2>

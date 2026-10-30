@@ -148,7 +148,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 // maroon/crimson/purple/rose/cyan, which stopped being useful the moment five
 // of them resolved to the same blue.
 const C = {
-  // Indigo, not the logo blue: the mark keeps #0067E0, the app's action colour
+  // Indigo, not the logo blue: the mark keeps #A33757, the app's action colour
   // is the indigo ramp. Every accent on this page reads this one value.
   primary:    palette.indigo[500],
   success:    palette.emerald[500],
@@ -278,7 +278,7 @@ function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: Re
 }
 
 function Skel({ w = 'w-full', h = 'h-4', r = 'rounded-xl' }: { w?: string; h?: string; r?: string }) {
-  return <div className={`${w} ${h} ${r} animate-pulse`} style={{ background: 'rgba(0,103,224,0.08)' }} />;
+  return <div className={`${w} ${h} ${r} animate-pulse`} style={{ background: 'rgba(163,55,87,0.08)' }} />;
 }
 
 // ─── Section 1 — Hero Welcome Header ───────────────────────────────────────────
@@ -381,7 +381,7 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
         {/* Crest */}
         <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full"
           style={{
-            background: 'radial-gradient(circle at 30% 25%, #0050AD, #0F172A)',
+            background: 'radial-gradient(circle at 30% 25%, #6B2440, #0F172A)',
             border: '1px solid rgba(251,191,36,0.45)',
             boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
           }}>
@@ -425,7 +425,7 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
       <div className="absolute top-0 inset-x-0 h-px"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }} />
       <div className="absolute bottom-0 inset-x-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(127,180,255,0.5), transparent)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(255,187,148,0.5), transparent)' }} />
     </m.div>
   );
 }
@@ -1006,7 +1006,7 @@ function MonthlyTarget() {
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-40"
           style={{ background: `radial-gradient(circle, ${tone.ring} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
         <div className="absolute -bottom-24 -left-10 h-52 w-52 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #7fb4ff 0%, transparent 70%)', filter: 'blur(52px)' }} />
+          style={{ background: 'radial-gradient(circle, #FFBB94 0%, transparent 70%)', filter: 'blur(52px)' }} />
         <svg className="absolute inset-0 h-full w-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="mt-grid" width="30" height="30" patternUnits="userSpaceOnUse">
@@ -2273,7 +2273,7 @@ export default function PtOsDashboard() {
       {/* Ambient color wash — fixed so it doesn't scroll */}
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }}>
         <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 65% 45% at 10% 0%, rgba(185,28,28,0.05) 0%, transparent 55%), radial-gradient(ellipse 55% 40% at 90% 90%, rgba(0,103,224,0.05) 0%, transparent 55%)' }} />
+          style={{ background: 'radial-gradient(ellipse 65% 45% at 10% 0%, rgba(185,28,28,0.05) 0%, transparent 55%), radial-gradient(ellipse 55% 40% at 90% 90%, rgba(163,55,87,0.05) 0%, transparent 55%)' }} />
       </div>
 
       {/* Scroll container — pb accounts for mobile bottom nav (h-16=64px) + safe area.

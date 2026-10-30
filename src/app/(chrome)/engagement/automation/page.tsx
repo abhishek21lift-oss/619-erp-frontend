@@ -58,10 +58,10 @@ const TRIGGER_EVENTS = [
 ];
 
 const KPIS = [
-  { label:'Total (30d)', key:'total', color:'#0067e0', bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
-  { label:'Sent', key:'sent', color:'#0067e0', bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,103,224,0.05))' },
+  { label:'Total (30d)', key:'total', color:'#A33757', bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
+  { label:'Sent', key:'sent', color:'#A33757', bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(163,55,87,0.05))' },
   { label:'Delivered', key:'delivered', color:'#10b981', bg:'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
-  { label:'Read', key:'read', color:'#0067e0', bg:'linear-gradient(135deg, rgba(0,103,224,0.1), rgba(0,89,206,0.05))' },
+  { label:'Read', key:'read', color:'#A33757', bg:'linear-gradient(135deg, rgba(163,55,87,0.1), rgba(133,46,78,0.05))' },
   { label:'Failed', key:'failed', color:'#dc2626', bg:'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05))' },
 ];
 
@@ -247,7 +247,7 @@ function AutoContent() {
         <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
           style={{ ...CARD, boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
           <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'var(--text-primary)', display:'flex', gap:8, alignItems:'center' }}>
-            <Bot size={16} color="#0067e0"/> {editing?'Edit Rule':'Create Rule'}
+            <Bot size={16} color="#A33757"/> {editing?'Edit Rule':'Create Rule'}
           </h3>
           <form noValidate onSubmit={(e) => { e.preventDefault(); f.submit(); }} style={{ display:'grid', gap:14 }}>
             <FormErrorBanner errors={f.errors} />
@@ -347,7 +347,7 @@ function AutoContent() {
               <button type="button" onClick={cancelForm}
                 style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid var(--border-2)', background:'transparent', color:'var(--text-muted)', cursor:'pointer' }}>Cancel</button>
               <button type="submit" disabled={!f.canSubmit}
-                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #0067e0, #0059ce)', color:'#fff', border:'none', cursor:f.isSubmitting?'not-allowed':'pointer', opacity:f.isSubmitting?0.7:1, boxShadow:'0 4px 16px rgba(0,103,224,0.35)' }}>
+                style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #A33757, #852E4E)', color:'#fff', border:'none', cursor:f.isSubmitting?'not-allowed':'pointer', opacity:f.isSubmitting?0.7:1, boxShadow:'0 4px 16px rgba(163,55,87,0.35)' }}>
                 {f.isSubmitting ? <><Loader2 size={13} className="animate-spin"/> Saving…</> : <><Plus size={13}/> {editing?'Update Rule':'Create Rule'}</>}
               </button>
             </div>
@@ -361,17 +361,17 @@ function AutoContent() {
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           style={{ ...CARD, boxShadow:'var(--shadow-xs)', padding:20 }}>
           <h2 style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
-            <Zap size={16} color="#0067e0"/> Active Rules
+            <Zap size={16} color="#A33757"/> Active Rules
           </h2>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {((rules.data as AutomationRule[]) || []).map((r) => (
               <m.div key={r.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                style={{ borderRadius:12, padding:'14px 16px', background:r.is_active?'rgba(0,103,224,0.05)':'var(--bg-subtle)', border:`1px solid ${r.is_active?'rgba(0,103,224,0.2)':'var(--border)'}`, opacity:r.is_active?1:0.65, transition:'all 0.2s' }}>
+                style={{ borderRadius:12, padding:'14px 16px', background:r.is_active?'rgba(163,55,87,0.05)':'var(--bg-subtle)', border:`1px solid ${r.is_active?'rgba(163,55,87,0.2)':'var(--border)'}`, opacity:r.is_active?1:0.65, transition:'all 0.2s' }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
                   <div style={{ flex:1, minWidth:0 }}>
                     <p style={{ margin:0, fontSize:14, fontWeight:700, color:'var(--text-primary)' }}>{r.name}</p>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:5, flexWrap:'wrap' }}>
-                      <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:5, background:'rgba(0,103,224,0.1)', color:'#0067e0', textTransform:'capitalize' }}>
+                      <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:5, background:'rgba(163,55,87,0.1)', color:'#A33757', textTransform:'capitalize' }}>
                         {r.trigger_event?.replace(/_/g, ' ')}
                       </span>
                       <span style={{ fontSize:10, color:'var(--text-muted)' }}>via {r.channel}</span>
@@ -418,7 +418,7 @@ function AutoContent() {
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
           style={{ ...CARD, boxShadow:'var(--shadow-xs)', padding:20 }}>
           <h2 style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
-            <MessageSquare size={16} color="#0067e0"/> Recent Logs
+            <MessageSquare size={16} color="#A33757"/> Recent Logs
           </h2>
           <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:480, overflowY:'auto' }}>
             {(logs.data ?? []).map((l) => {

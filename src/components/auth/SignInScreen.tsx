@@ -555,7 +555,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="peer sr-only" />
                 <span
                   aria-hidden
-                  className="grid h-[18px] w-[18px] place-items-center rounded-[5px] border transition-colors peer-focus-visible:ring-4 peer-focus-visible:ring-[rgba(0,103,224,0.22)]"
+                  className="grid h-[18px] w-[18px] place-items-center rounded-[5px] border transition-colors peer-focus-visible:ring-4 peer-focus-visible:ring-[rgba(163,55,87,0.22)]"
                   style={{
                     borderColor: remember ? C.blue : C.line,
                     background: remember ? C.blue : C.canvas,

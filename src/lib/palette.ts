@@ -3,7 +3,7 @@
  *
  * Eight families, each with a meaning. Nothing else is a colour in this app:
  *
- *   blue     Legacy logo blue — sidebar, chat, cockpit and platform accents
+ *   blue     Compatibility alias for indigo — existing imports only
  *   indigo   The brand ramp — actions, links, highlights, selected state, mark
  *   emerald  Success, completed, active, healthy
  *   mint     Positive accent — deltas, healthy charts, "on track"
@@ -21,8 +21,10 @@
  *
  * Aurora added indigo, mint and orange back deliberately: indigo is the one
  * action colour, mint is the positive accent, and orange is a warm highlight
- * that never means "warning". The Rosé pass later moved indigo — and the mark
- * — onto the warm ramp; `blue` is what the remaining cool surfaces still use.
+ * that never means "warning". The Rosé pass moved indigo — and the mark — onto
+ * the warm ramp, then replaced the old cool values everywhere they still
+ * painted; `blue` now carries the same warm values so existing imports did not
+ * have to be renamed in the same change.
  *
  * ── Choosing a tone ────────────────────────────────────────────────────────
  *   50/100    page and chip backgrounds — a wash, not a fill
@@ -37,30 +39,27 @@
  */
 
 /**
- * Legacy logo blue — no longer the mark's colour.
+ * Compatibility alias for the action ramp.
  *
- * The artwork was recoloured to the `indigo` ramp in the Rosé pass, and
- * `brand.ts` moved with it. This ramp survives for the surfaces that have not
- * had their own pass yet: the sidebar, chat, cockpit, revenue hero and the
- * platform console. Treat it as a to-do, not as brand identity.
- *
- * 950 is not "darker than 900" — it is a deliberately brighter blue for icons
- * sitting on the near-black gray[900] tiles, where the deep 500 only reaches
- * 3.4:1.
+ * `blue` was the wordmark's cool ramp. The Rosé pass first moved the mark and
+ * the `indigo` values, then swept the cool literals out of every surface. The
+ * ramp kept its name and its indices so the imports that already destructure
+ * `blue` did not have to move in the same change; the values are now the warm
+ * ones. New work should reach for `indigo` or `semantic.primary` — this family
+ * exists for the older call sites and should disappear in the rename PR.
  */
 export const blue = {
-  50:  '#F2F8FF',
-  100: '#E1EFFF',
-  200: '#B8D7FF',
-  300: '#7FB4FF',
-  400: '#3B8DF5',
-  450: '#0271EB',
-  500: '#0067E0',
-  600: '#0059CE',
-  700: '#0050AD',
-  800: '#003F87',
-  900: '#002D61',
-  950: '#1CA3F9',
+  50:  '#FFF7F3',
+  100: '#FFE9E0',
+  200: '#FFD0C6',
+  300: '#FFBB94',
+  400: '#FB9590',
+  450: '#DC586D',
+  500: '#A33757',
+  600: '#852E4E',
+  700: '#6B2440',
+  800: '#4C1D3D',
+  900: '#2B1220',
 } as const;
 
 /**

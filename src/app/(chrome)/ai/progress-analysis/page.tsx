@@ -255,7 +255,7 @@ function ProgressAnalysisInner() {
               <button
                 onClick={handleAnalyze}
                 disabled={loading}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-brand-700 hover:bg-brand-50 disabled:opacity-50"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>

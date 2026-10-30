@@ -79,7 +79,7 @@ function Badge({ children, tone }: { children: React.ReactNode; tone: 'ok' | 'wa
     ok:    { bg: 'rgba(16,185,129,0.10)',  fg: '#047857', bd: 'rgba(16,185,129,0.24)' },
     warn:  { bg: 'rgba(245,158,11,0.10)',  fg: '#B45309', bd: 'rgba(245,158,11,0.24)' },
     bad:   { bg: 'rgba(220,38,38,0.08)',   fg: '#B91C1C', bd: 'rgba(220,38,38,0.22)' },
-    brand: { bg: 'rgba(0,103,224,0.10)',   fg: '#0067E0', bd: 'rgba(0,103,224,0.24)' },
+    brand: { bg: 'rgba(163,55,87,0.10)',   fg: '#A33757', bd: 'rgba(163,55,87,0.24)' },
     mute:  { bg: 'var(--bg-subtle)',       fg: 'var(--text-muted)', bd: 'var(--border)' },
   }[tone];
   return (
@@ -217,7 +217,7 @@ export function UsersTab() {
       </div>
 
       {loading && !rows.length ? (
-        <Center><Loader2 size={22} className="animate-spin" style={{ color: '#0067e0' }} /></Center>
+        <Center><Loader2 size={22} className="animate-spin" style={{ color: '#A33757' }} /></Center>
       ) : !rows.length ? (
         <EmptyState
           icon={<Users2 size={22} />}

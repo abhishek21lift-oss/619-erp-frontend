@@ -30,17 +30,17 @@ interface MealCardProps {
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
   'Breakfast': '#f59e0b',
-  'Lunch': '#0067e0',
-  'Dinner': '#0067e0',
-  'Snack': '#0067e0',
+  'Lunch': '#A33757',
+  'Dinner': '#A33757',
+  'Snack': '#A33757',
   'Pre Workout': '#f59e0b',
   'Post Workout': '#10b981',
-  'Before Bed': '#0067e0',
+  'Before Bed': '#A33757',
 };
 
 function getMealColor(mealType?: string): string {
-  if (!mealType) return '#0067e0';
-  return MEAL_TYPE_COLORS[mealType] ?? '#0067e0';
+  if (!mealType) return '#A33757';
+  return MEAL_TYPE_COLORS[mealType] ?? '#A33757';
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -170,13 +170,13 @@ export function MealCard({
               <MacroChip icon="🔥" value={`${calories}`} unit="kcal" color="#f59e0b" />
             )}
             {protein > 0 && (
-              <MacroChip icon="💪" value={`${protein}g`} label="protein" color="#0067e0" />
+              <MacroChip icon="💪" value={`${protein}g`} label="protein" color="#A33757" />
             )}
             {carbs > 0 && (
               <MacroChip icon="🍚" value={`${carbs}g`} label="carbs" color="#f59e0b" />
             )}
             {fat > 0 && (
-              <MacroChip icon="🧈" value={`${fat}g`} label="fat" color="#0067e0" />
+              <MacroChip icon="🧈" value={`${fat}g`} label="fat" color="#A33757" />
             )}
           </div>
         )}
@@ -187,7 +187,7 @@ export function MealCard({
             <div
               style={{
                 width: `${proteinPct}%`,
-                background: '#0067e0',
+                background: '#A33757',
                 borderRadius: '4px 0 0 4px',
                 transition: 'width 0.4s ease',
               }}
@@ -202,7 +202,7 @@ export function MealCard({
             <div
               style={{
                 width: `${fatPct}%`,
-                background: '#0067e0',
+                background: '#A33757',
                 borderRadius: '0 4px 4px 0',
                 transition: 'width 0.4s ease',
               }}

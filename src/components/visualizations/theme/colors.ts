@@ -75,7 +75,7 @@ export const navy = {
  */
 export const series = [
   saffron[500], // primary — the brand accent
-  '#0067E0', // royal blue — the app's own primary
+  '#A33757', // brand plum — the app's own primary
   '#10B981', // emerald — success / revenue
   '#8B5CF6', // violet — new, for a 4th+ category
   '#F43F5E', // rose — distinct from semantic danger red
@@ -89,7 +89,7 @@ export const semantic = {
   success: '#10B981',
   warning: saffron[500],
   danger: '#EF4444',
-  info: '#0067E0',
+  info: '#A33757',
 } as const;
 
 /** A five-step good→bad ramp for scored bands, matching the app's own. */

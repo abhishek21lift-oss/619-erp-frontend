@@ -20,9 +20,9 @@ import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPic
 import { applyFacts, hasAnyFact, useAiClientPrefill } from '@/lib/ai-client-prefill';
 import { GroundingLine } from '@/components/pt-os/GenerationEvidence';
 
-const ACCENT = '#0067E0';
-const ACCENT_SOFT = '#0067E0';
-const ACCENT_DIM = 'rgba(0,103,224,0.10)';
+const ACCENT = '#A33757';
+const ACCENT_SOFT = '#A33757';
+const ACCENT_DIM = 'rgba(163,55,87,0.10)';
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
 
 /**
@@ -559,7 +559,7 @@ export default function WorkoutGeneratorPage() {
                 background: ACCENT_GRADIENT,
                 opacity: loading ? 0.6 : 1,
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 8px 24px rgba(0,103,224,0.35)',
+                boxShadow: loading ? 'none' : '0 8px 24px rgba(163,55,87,0.35)',
               }}>
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
               {loading ? 'Generating Plan…' : 'Generate Workout Plan'}
@@ -582,7 +582,7 @@ export default function WorkoutGeneratorPage() {
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex flex-col items-center gap-5 py-14">
             <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px]"
-              style={{ background: ACCENT_DIM, border: '1px solid rgba(0,103,224,0.2)' }}>
+              style={{ background: ACCENT_DIM, border: '1px solid rgba(163,55,87,0.2)' }}>
               <span className="absolute inset-0 animate-ping rounded-[24px] opacity-20" style={{ background: ACCENT }} />
               <Dumbbell size={30} color={ACCENT} />
             </div>

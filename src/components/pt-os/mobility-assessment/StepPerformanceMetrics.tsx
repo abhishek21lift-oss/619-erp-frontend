@@ -14,7 +14,7 @@ export function StepPerformanceMetrics({ form, set }: StepPerformanceMetricsProp
     <div className="space-y-6">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Gauge size={20} color="#1CA3F9" />
+          <Gauge size={20} color="#FFBB94" />
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Performance Metrics</h2>

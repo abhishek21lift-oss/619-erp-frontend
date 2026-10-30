@@ -58,7 +58,7 @@ export default function WhatsAppAutomationPermission() {
   return (
     <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={card}>
       <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#0F172A', display: 'flex', gap: 8, alignItems: 'center' }}>
-        <ShieldCheck size={16} color="#0067e0" /> Automated WhatsApp permission
+        <ShieldCheck size={16} color="#A33757" /> Automated WhatsApp permission
       </h3>
       <p style={{ margin: '0 0 18px', fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
         Messages are sent from your own connected WhatsApp number, never a shared one.
@@ -97,8 +97,8 @@ export default function WhatsAppAutomationPermission() {
               display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px',
               borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
               border: '1px solid', flexShrink: 0,
-              borderColor: enabled ? '#dc2626' : '#0067e0',
-              color: enabled ? '#dc2626' : '#0067e0',
+              borderColor: enabled ? '#dc2626' : '#A33757',
+              color: enabled ? '#dc2626' : '#A33757',
               background: '#fff',
             }}
           >

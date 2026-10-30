@@ -120,7 +120,7 @@ function FeatureRow({ feature, plans, planRow, onChanged }: {
               )}
               {feature.is_plan_gated && (
                 <span className="rounded-[6px] px-1.5 py-0.5 text-[10px] font-[700]"
-                  style={{ background: 'rgba(0,103,224,0.12)', color: '#0067e0' }}>
+                  style={{ background: 'rgba(163,55,87,0.12)', color: '#A33757' }}>
                   Plan-gated
                 </span>
               )}

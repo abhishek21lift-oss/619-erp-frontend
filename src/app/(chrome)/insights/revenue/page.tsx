@@ -17,7 +17,7 @@
  * Series colours are not hand-picked: they were run through the dataviz
  * palette validator for BOTH themes (light surface #F8FAFC, dark #0F172A).
  *
- *   Bars  #0067E0 / #D97706 — PASS on every check in light and dark.
+ *   Bars  #A33757 / #D97706 — PASS on every check in light and dark.
  *
  * (The per-trainer revenue donut and ranking went with the multi-coach model.)
  */
@@ -46,7 +46,7 @@ type DuesRow = { id: string; name: string; balance_amount: Numeric };
 type RangeTotals = { count: Numeric; total: Numeric; total_incentives: Numeric };
 
 // ─── Validated series colours (see file header) ───────────────────────────────
-const REVENUE_COLOR = '#0067E0';
+const REVENUE_COLOR = '#A33757';
 const INCENTIVE_COLOR = '#D97706';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

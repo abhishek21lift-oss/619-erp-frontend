@@ -27,7 +27,7 @@ const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--borde
    means something different depending on which side of the desk you sit: to us
    it is "waiting on them", to them it is "they have replied". */
 const STATUS: Record<TicketStatus, { label: string; bg: string; fg: string }> = {
-  open:     { label: 'With support', bg: 'rgba(0,103,224,0.12)', fg: '#0067e0' },
+  open:     { label: 'With support', bg: 'rgba(163,55,87,0.12)', fg: '#A33757' },
   pending:  { label: 'Replied',      bg: 'rgba(16,185,129,0.12)', fg: '#059669' },
   resolved: { label: 'Resolved',     bg: 'rgba(16,185,129,0.12)', fg: '#059669' },
   closed:   { label: 'Closed',       bg: 'var(--bg-subtle)',      fg: 'var(--text-muted)' },
@@ -172,7 +172,7 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: () 
   };
 
   const chip = (on: boolean) => (on
-    ? { background: 'rgba(0,103,224,0.12)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.25)' }
+    ? { background: 'rgba(163,55,87,0.12)', color: '#A33757', border: '1px solid rgba(163,55,87,0.25)' }
     : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' });
 
   return (

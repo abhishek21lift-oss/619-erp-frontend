@@ -116,9 +116,9 @@ function Inner() {
             <button key={tab.href} onClick={() => router.push(tab.href)}
               aria-current={active ? 'page' : undefined}
               style={{ minHeight: 44, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: active ? 700 : 500, fontSize: 13, whiteSpace: 'nowrap', transition: 'all 180ms ease',
-                background: active ? 'linear-gradient(135deg,var(--blue-500),var(--blue-600))' : 'transparent',
+                background: active ? 'linear-gradient(135deg,var(--indigo-500),var(--indigo-600))' : 'transparent',
                 color: active ? 'white' : 'var(--text-secondary)',
-                boxShadow: active ? '0 2px 8px rgba(0,103,224,0.35)' : 'none',
+                boxShadow: active ? '0 2px 8px rgba(163,55,87,0.35)' : 'none',
               }}>
               {tab.label}
             </button>
@@ -230,10 +230,10 @@ function Inner() {
                           ) : m.actual ? (
                             <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: 'var(--emerald-50)', color: 'var(--emerald-500)', border: '1px solid var(--emerald-300)' }}>Actual</span>
                           ) : (
-                            <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: 'var(--bg-canvas)', color: 'var(--blue-500)', border: '1px solid var(--blue-200)' }}>Forecast</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: 'var(--bg-canvas)', color: 'var(--indigo-500)', border: '1px solid var(--indigo-200)' }}>Forecast</span>
                           )}
                         </td>
-                        <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: 800, fontSize: 15, color: m.actual ? 'var(--emerald-500)' : 'var(--blue-500)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                        <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: 800, fontSize: 15, color: m.actual ? 'var(--emerald-500)' : 'var(--indigo-500)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(amount)}
                         </td>
                         <td style={{ padding: '14px 20px' }}>
@@ -250,7 +250,7 @@ function Inner() {
                 <tfoot>
                   <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-subtle)' }}>
                     <td style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--text-primary)' }} colSpan={2}>Projected Full Year</td>
-                    <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: 900, fontSize: 16, color: 'var(--blue-500)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(projectedYearTotal)}</td>
+                    <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: 900, fontSize: 16, color: 'var(--indigo-500)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(projectedYearTotal)}</td>
                     <td />
                   </tr>
                 </tfoot>
@@ -269,7 +269,7 @@ function Inner() {
                   <div key={i} className="border-b px-4 py-3 last:border-b-0" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{m.month} {year}</span>
-                      <span className="text-[15px] font-[800] tabular-nums" style={{ color: m.actual ? 'var(--emerald-500)' : 'var(--blue-500)' }}>{fmt(amount)}</span>
+                      <span className="text-[15px] font-[800] tabular-nums" style={{ color: m.actual ? 'var(--emerald-500)' : 'var(--indigo-500)' }}>{fmt(amount)}</span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                       {isMtd ? (
@@ -277,7 +277,7 @@ function Inner() {
                       ) : m.actual ? (
                         <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 8px', background: 'var(--emerald-50)', color: 'var(--emerald-500)', border: '1px solid var(--emerald-300)' }}>Actual</span>
                       ) : (
-                        <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 8px', background: 'var(--bg-canvas)', color: 'var(--blue-500)', border: '1px solid var(--blue-200)' }}>Forecast</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 8px', background: 'var(--bg-canvas)', color: 'var(--indigo-500)', border: '1px solid var(--indigo-200)' }}>Forecast</span>
                       )}
                       {diffPct && amount > 0 && (
                         <span style={{ fontSize: 11, fontWeight: 600, color: diff >= 0 ? 'var(--emerald-500)' : 'var(--red-500)' }}>
@@ -290,7 +290,7 @@ function Inner() {
               })}
               <div className="flex items-baseline justify-between gap-3 px-4 py-3" style={{ background: 'var(--bg-subtle)', borderTop: '2px solid var(--border)' }}>
                 <span className="text-[12px] font-[800] uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Projected full year</span>
-                <span className="text-[15px] font-[900] tabular-nums" style={{ color: 'var(--blue-500)' }}>{fmt(projectedYearTotal)}</span>
+                <span className="text-[15px] font-[900] tabular-nums" style={{ color: 'var(--indigo-500)' }}>{fmt(projectedYearTotal)}</span>
               </div>
             </div>
           </>
@@ -300,7 +300,7 @@ function Inner() {
       {/* Disclaimer */}
       <div style={{ marginTop: 12, padding: '10px 16px', background: 'var(--bg-subtle)', borderRadius: 10, border: '1px solid var(--border)' }}>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          <strong style={{ color: 'var(--blue-500)' }}>Note:</strong> Only completed payments are counted.
+          <strong style={{ color: 'var(--indigo-500)' }}>Note:</strong> Only completed payments are counted.
           Past months are actual; the current month is month to date and still
           incomplete. Remaining months use the average of the last three actual
           months plus 5%. Figures are estimates only and do not model seasonal

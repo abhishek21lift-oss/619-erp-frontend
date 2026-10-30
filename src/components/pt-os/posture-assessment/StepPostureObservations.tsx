@@ -35,7 +35,7 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
       <div className="p-7 sm:p-10 space-y-6">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <PersonStanding size={20} color="#1CA3F9" />
+            <PersonStanding size={20} color="#FFBB94" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Posture Observations</h2>

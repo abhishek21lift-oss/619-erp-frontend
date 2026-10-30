@@ -155,7 +155,7 @@ export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor 
             <button
               key={c.id}
               onClick={() => router.push(hrefFor ? hrefFor(c.id) : `${basePath}?client_id=${encodeURIComponent(c.id)}`)}
-              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#FFBB94] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
               <ClientAvatar name={c.name} photoUrl={c.photoUrl} />

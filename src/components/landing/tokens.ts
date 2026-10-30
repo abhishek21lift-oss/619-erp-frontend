@@ -6,7 +6,7 @@
  *
  * Clean, light and product-led, in the spirit of apple.com: a white page, one
  * near-black ink, a grey band for rhythm, and colour spent only where it
- * carries meaning — the action blue, and small accents on product surfaces.
+ * carries meaning — the action plum, and small accents on product surfaces.
  * Elevation is a real drop shadow, not an inset/outset light pair; cards are
  * white on grey, not the page pushed out.
  *
@@ -14,7 +14,7 @@
  * src/lib/palette.ts; these values never leak into it.
  *
  * Contrast: body and caption tokens are 4.5:1 or better on `canvas` and
- * `canvasAlt`. The action blue carries white at 4.7:1. Orange is a fill and
+ * `canvasAlt`. The action plum carries white at 6.5:1. Orange is a fill and
  * icon colour, never body text on white.
  */
 
@@ -28,7 +28,7 @@ export const C = {
   darkSrc: 'rgba(0,0,0,0.08)',
   line: '#D2D2D7',
   lineSoft: 'rgba(0,0,0,0.08)',
-  lineBlue: 'rgba(0,113,227,0.35)',
+  lineBlue: 'rgba(163,55,87,0.35)',
 
   // ── Text ────────────────────────────────────────────────────────────────
   ink: '#1D1D1F', // 16.1:1 on white
@@ -37,15 +37,15 @@ export const C = {
   faint: '#6F6F74', // 5.0:1 on white, 4.6:1 on the grey band — captions, not body copy
 
   // ── Brand ───────────────────────────────────────────────────────────────
-  blue: '#0071E3', // action fill; white on it 4.7:1
-  blueHi: '#0066CC', // links and icons on white — 5.6:1
-  blueLo: '#0068D9', // hover fill; white on it 5.3:1
-  blue450: '#0071E3',
-  blueHover: '#0055B3',
+  blue: '#A33757', // action fill; white on it 6.5:1
+  blueHi: '#A33757', // links and icons on white — 6.5:1
+  blueLo: '#852E4E', // hover fill; white on it 8.4:1
+  blue450: '#A33757',
+  blueHover: '#6B2440',
   trackDot: '#D2D2D7',
-  blueWash: 'rgba(0,113,227,0.08)',
-  blueWashStrong: 'rgba(0,113,227,0.14)',
-  blueGlow: 'rgba(0,113,227,0.22)',
+  blueWash: 'rgba(163,55,87,0.08)',
+  blueWashStrong: 'rgba(163,55,87,0.14)',
+  blueGlow: 'rgba(163,55,87,0.22)',
 
   // ── Accents ─────────────────────────────────────────────────────────────
   // Decorative product colour, used on small surfaces and gradients. Text
@@ -73,7 +73,7 @@ export const C = {
   redSoft: 'rgba(215,0,21,0.08)',
 
   // ── Marketing surfaces ──────────────────────────────────────────────────
-  skyHi: '#0066CC',
+  skyHi: '#A33757',
   ctaFrom: '#F5F5F7',
   ctaTo: '#FFFFFF',
   highlightFrom: '#F5F5F7',
@@ -112,7 +112,7 @@ export const SHADOW = {
   float: '0 14px 40px -16px rgba(0,0,0,0.18)',
   raised: '0 1px 3px rgba(0,0,0,0.06)',
   inset: 'inset 0 1px 2px rgba(0,0,0,0.04)',
-  blueGlow: '0 10px 30px -12px rgba(0,113,227,0.45)',
+  blueGlow: '0 10px 30px -12px rgba(163,55,87,0.45)',
 } as const;
 
 /**
@@ -142,7 +142,7 @@ export function inkOn(fill: string): string {
 // ── The studio mark ────────────────────────────────────────────────────────
 export const MARK = {
   shadow: 'drop-shadow(0 24px 30px rgba(15,23,42,0.14)) drop-shadow(0 4px 6px rgba(15,23,42,0.08))',
-  bloom: 'radial-gradient(closest-side, rgba(0,113,227,0.16), rgba(110,90,230,0.08) 55%, transparent)',
+  bloom: 'radial-gradient(closest-side, rgba(163,55,87,0.16), rgba(110,90,230,0.08) 55%, transparent)',
   contact: 'radial-gradient(closest-side, rgba(15,23,42,0.16), rgba(15,23,42,0.05) 60%, transparent)',
   contactWide: 'radial-gradient(closest-side, rgba(15,23,42,0.06), transparent)',
 } as const;
@@ -153,17 +153,17 @@ export const FIELD = {
     'w-full rounded-[12px] border bg-white text-[16px] leading-none text-[#1D1D1F] ' +
     'outline-none transition-[border-color,box-shadow,background-color] duration-200 ' +
     'placeholder:text-[#86868B]',
-  ok: 'border-[#D2D2D7] hover:border-[#B8B8BD] focus:border-[#0071E3] focus:shadow-[0_0_0_3px_rgba(0,113,227,0.18)]',
+  ok: 'border-[#D2D2D7] hover:border-[#B8B8BD] focus:border-[#A33757] focus:shadow-[0_0_0_3px_rgba(163,55,87,0.18)]',
   invalid: 'border-[#D70015] focus:border-[#D70015] focus:shadow-[0_0_0_3px_rgba(215,0,21,0.12)]',
-  icon: 'text-[#6E6E73] transition-colors group-focus-within:text-[#0066CC]',
+  icon: 'text-[#6E6E73] transition-colors group-focus-within:text-[#A33757]',
 } as const;
 
 /** The primary action: one flat blue pill, the way apple.com sells a product. */
 export const PRIMARY_BUTTON =
-  'relative inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] font-[500] text-white ' +
-  'transition-colors duration-200 hover:bg-[#0068D9] active:bg-[#0066CC] ' +
-  'disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#0071E3] ' +
-  'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,113,227,0.25)]';
+  'relative inline-flex items-center justify-center gap-2 rounded-full bg-[#A33757] font-[500] text-white ' +
+  'transition-colors duration-200 hover:bg-[#852E4E] active:bg-[#6B2440] ' +
+  'disabled:cursor-default disabled:opacity-50 disabled:hover:bg-[#A33757] ' +
+  'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(163,55,87,0.25)]';
 
 /** A quiet secondary action: white pill, hairline border. */
 export const SECONDARY_BUTTON =

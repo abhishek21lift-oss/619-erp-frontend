@@ -56,11 +56,11 @@ interface InvoiceStats {
 }
 
 const PAYMENT_ICONS: Record<PaymentMethod, { label: string; color: string }> = {
-  'upi': { label: 'UPI', color: '#0067e0' },
-  'credit-card': { label: 'Card', color: '#0067e0' },
+  'upi': { label: 'UPI', color: '#A33757' },
+  'credit-card': { label: 'Card', color: '#A33757' },
   'cash': { label: 'Cash', color: '#10b981' },
-  'razorpay': { label: 'Razorpay', color: '#0067e0' },
-  'stripe': { label: 'Stripe', color: '#0067e0' },
+  'razorpay': { label: 'Razorpay', color: '#A33757' },
+  'stripe': { label: 'Stripe', color: '#A33757' },
   'bank-transfer': { label: 'Bank Transfer', color: '#f59e0b' },
 };
 
@@ -356,8 +356,8 @@ export default function InvoicesPage() {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    background: statusTab === tab.id ? 'linear-gradient(135deg, rgba(0,103,224,0.12), rgba(0,103,224,0.08))' : 'transparent',
-                    color: statusTab === tab.id ? '#0067e0' : 'rgba(100,116,139,0.8)',
+                    background: statusTab === tab.id ? 'linear-gradient(135deg, rgba(163,55,87,0.12), rgba(163,55,87,0.08))' : 'transparent',
+                    color: statusTab === tab.id ? '#A33757' : 'rgba(100,116,139,0.8)',
                   }}
                 >
                   {tab.label}
@@ -484,10 +484,10 @@ export default function InvoicesPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '24px',
-                    background: 'rgba(0,103,224,0.08)',
+                    background: 'rgba(163,55,87,0.08)',
                     marginBottom: '20px',
                   }}>
-                    <FileText size={36} style={{ color: '#0067e0' }} />
+                    <FileText size={36} style={{ color: '#A33757' }} />
                   </div>
                   <p style={{
                     fontSize: '20px',
@@ -716,7 +716,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onMarkPaid }: {
   // crashed the card.
   const statusCfg: Record<InvoiceStatus, { color: string; bg: string; dot: string }> = {
     draft: { color: 'var(--text-muted)', bg: 'rgba(100,116,139,0.08)', dot: '#94a3b8' },
-    sent: { color: '#0050AD', bg: 'rgba(0,103,224,0.08)', dot: '#0067E0' },
+    sent: { color: '#6B2440', bg: 'rgba(163,55,87,0.08)', dot: '#A33757' },
     partial: { color: '#d97706', bg: 'rgba(217,119,6,0.08)', dot: '#f59e0b' },
     paid: { color: '#059669', bg: 'rgba(5,150,105,0.08)', dot: '#10b981' },
     overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', dot: '#ef4444' },
@@ -796,8 +796,8 @@ function InvoiceCard({ invoice, index, onView, onDownload, onMarkPaid }: {
                 borderRadius: '9999px',
                 fontSize: '10px',
                 fontWeight: 660,
-                background: 'rgba(0,103,224,0.08)',
-                color: '#0067e0',
+                background: 'rgba(163,55,87,0.08)',
+                color: '#A33757',
               }}>
                 <CreditCard size={9} /> {PAYMENT_ICONS[invoice.paymentMethod].label}
               </span>
