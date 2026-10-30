@@ -35,6 +35,7 @@
 import type { Metadata } from 'next';
 import StudioHome from '@/components/StudioHome';
 import { isAnonymousRequest } from '@/lib/session-hint';
+import { HOME_STRUCTURED_DATA_JSON } from '@/lib/home-structured-data';
 
 export const metadata: Metadata = {
   // The opt-in. Explicit on both keys rather than relying on a partial merge
@@ -51,5 +52,15 @@ export const metadata: Metadata = {
 // for a request with no session cookie, rather than a loading splash — see
 // lib/session-hint.ts. A signed-in user's page is unchanged.
 export default async function Page() {
-  return <StudioHome anonymousHint={await isAnonymousRequest()} />;
+  return (
+    <>
+      {/* In the page rather than a component: it must be in the HTML a crawler
+          receives, including the anonymous server render. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: HOME_STRUCTURED_DATA_JSON }}
+      />
+      <StudioHome anonymousHint={await isAnonymousRequest()} />
+    </>
+  );
 }
