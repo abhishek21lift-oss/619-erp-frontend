@@ -16,6 +16,8 @@ import { isPublicProxyPath } from '@/proxy';
 import nextConfig from '../../next.config.js';
 import { metadata as rootMetadata } from '@/app/layout';
 import { metadata as homeMetadata } from '@/app/(chrome)/page';
+import { HOME_STRUCTURED_DATA } from '@/lib/home-structured-data';
+import { HOME_FAQ } from '@/components/landing/faq-content';
 import { metadata as ptOsMetadata } from '@/app/(bare)/pt-os/page';
 import { metadata as startFreeMetadata } from '@/app/(bare)/start-free/layout';
 
@@ -284,5 +286,40 @@ describe('redirects do not contradict the SEO contract', () => {
       .filter((r) => pageFor(r.source.replace(/^\//, '')))
       .map((r) => r.source);
     expect(shadowing).toEqual([]);
+  });
+});
+
+// ── Structured data ────────────────────────────────────────────────────────
+//
+// The homepage is the only page with a FAQ; the schema is checked against the
+// array the accordion actually renders so the two cannot drift.
+
+describe('homepage structured data', () => {
+  type SchemaNode = Record<string, unknown> & { '@type': string };
+  const graph = HOME_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+  const node = (type: string) => graph.find((n) => n['@type'] === type);
+
+  it('describes the organization, site, product, page and FAQ', () => {
+    expect(graph.map((n) => n['@type'])).toEqual([
+      'Organization',
+      'WebSite',
+      'SoftwareApplication',
+      'WebPage',
+      'FAQPage',
+    ]);
+  });
+
+  it('marks up every FAQ the accordion renders, verbatim', () => {
+    const faq = node('FAQPage') as {
+      mainEntity: { name: string; acceptedAnswer: { text: string } }[];
+    };
+    expect(faq.mainEntity.map((q) => q.name)).toEqual(HOME_FAQ.map((f) => f.q));
+    expect(faq.mainEntity.map((q) => q.acceptedAnswer.text)).toEqual(HOME_FAQ.map((f) => f.a));
+  });
+
+  it('uses the canonical origin for every URL', () => {
+    const urls = JSON.stringify(graph).match(/https?:\/\/[^"\\]+/g) ?? [];
+    expect(urls.length).toBeGreaterThan(0);
+    for (const url of urls) expect(url.startsWith(SITE_URL)).toBe(true);
   });
 });
