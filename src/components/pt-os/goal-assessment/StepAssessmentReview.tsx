@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { CalendarCheck, ExternalLink, RotateCcw } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
-import { gray, tint, blue, emerald, amber } from '@/lib/palette';
+import { gray, tint, indigo, emerald, amber } from '@/lib/palette';
 import BaselineScreeningCard from './BaselineScreeningCard';
 import type { BaselineMetric, BaselineSource } from './BaselineScreeningCard';
 import type { GoalFormData, RetestInfo } from './types';
@@ -36,8 +36,8 @@ export function StepAssessmentReview({
       <div className="mt-6 rounded-[16px] p-5" style={{ background: gray[50], border: `1px solid ${gray[200]}` }}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: tint(blue[500], 0.1) }}>
-              <RotateCcw size={16} style={{ color: blue[700] }} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: tint(indigo[500], 0.1) }}>
+              <RotateCcw size={16} style={{ color: indigo[700] }} />
             </div>
             <div>
               <p className="text-[13px] font-[760]" style={{ color: gray[800] }}>Next re-test / check-in</p>
@@ -55,7 +55,7 @@ export function StepAssessmentReview({
             <Link
               href={`/pt-os/progress?client_id=${encodeURIComponent(clientId)}`}
               className="inline-flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[11.5px] font-[700]"
-              style={{ background: tint(blue[500], 0.1), color: blue[700] }}
+              style={{ background: tint(indigo[500], 0.1), color: indigo[700] }}
             >
               Progress <ExternalLink size={11} />
             </Link>
@@ -74,8 +74,8 @@ export function StepAssessmentReview({
         </p>
       </div>
 
-      <div className="mt-4 flex items-start gap-2 rounded-[12px] px-3.5 py-2.5 text-[11.5px]" style={{ background: tint(blue[500], 0.06), color: gray[600] }}>
-        <CalendarCheck size={14} style={{ color: blue[600], flexShrink: 0, marginTop: 1 }} />
+      <div className="mt-4 flex items-start gap-2 rounded-[12px] px-3.5 py-2.5 text-[11.5px]" style={{ background: tint(indigo[500], 0.06), color: gray[600] }}>
+        <CalendarCheck size={14} style={{ color: indigo[600], flexShrink: 0, marginTop: 1 }} />
         Initial assessment date is the date on the fitness assessment row above; the re-test date comes from the Progress scheduler.
       </div>
     </BaselineScreeningCard>

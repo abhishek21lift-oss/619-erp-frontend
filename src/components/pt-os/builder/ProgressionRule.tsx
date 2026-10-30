@@ -120,10 +120,10 @@ export default function ProgressionRule({ plan, onChange }: ProgressionRuleProps
               onClick={() => pickType(t)}
               className="flex h-[44px] items-center rounded-[14px] px-3.5 text-[12.5px] font-[700] transition-[background,box-shadow]"
               style={{
-                background: active ? 'linear-gradient(135deg, #0067e0, #0059ce)' : 'var(--bg-subtle)',
+                background: active ? 'linear-gradient(135deg, #5B63F6, #3F46D6)' : 'var(--bg-subtle)',
                 color: active ? '#fff' : 'var(--text-muted)',
                 border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
-                boxShadow: active ? '0 4px 14px -4px rgba(0,103,224,0.5)' : 'none',
+                boxShadow: active ? '0 4px 14px -4px rgba(91,99,246,0.5)' : 'none',
               }}
             >
               {RULES[t].label}

@@ -7,7 +7,7 @@ import {
 import FloatInput from '@/components/ui/FloatInput';
 import GoalStepCard from './GoalStepCard';
 import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
-import { blue, gray } from '@/lib/palette';
+import { indigo, gray } from '@/lib/palette';
 import type { BarrierPlan } from '@/lib/goal-plan';
 import type { GoalFormData } from './types';
 
@@ -84,7 +84,7 @@ export function StepChallenges({ form, set, step, error }: StepChallengesProps) 
                   {/* The challenge name is a heading, not a <label>: the field
                       below already has its own accessible name, and a label
                       pointing at an id that does not exist names nothing. */}
-                  <p className="mb-1.5 text-[12px] font-[700]" style={{ color: blue[700] }}>{c}</p>
+                  <p className="mb-1.5 text-[12px] font-[700]" style={{ color: indigo[700] }}>{c}</p>
                   <FloatInput
                     label="" ariaLabel={`Plan for ${c}`} maxLength={300}
                     value={planFor(c)} onChange={(v) => setPlan(c, v)}

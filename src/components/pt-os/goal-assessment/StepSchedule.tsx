@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Calendar, Clock, Dumbbell } from 'lucide-react';
 import { FormField, SelectInput } from '@/components/ui';
 import GoalStepCard from './GoalStepCard';
-import { blue, gray, tint } from '@/lib/palette';
+import { indigo, gray, tint } from '@/lib/palette';
 import { recommendTrainingSplit, buildRoutineBlueprint } from '@/lib/goal-scheduling';
 import { SESSION_MINUTES, TIME_OF_DAY_OPTIONS, WEEKDAY_NAMES, formatWeeklyCommitment, trainingDaysFrom, weeklyCommitmentMinutes } from '@/lib/goal-plan';
 import type { TimeOfDay } from '@/lib/goal-plan';
@@ -64,9 +64,9 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
                   key={day} type="button" onClick={() => toggleDay(day)} aria-pressed={selected}
                   className="rounded-[12px] py-2.5 text-[11.5px] font-[700] transition-all"
                   style={{
-                    background: selected ? tint(blue[500], 0.1) : gray[50],
-                    border: selected ? `1.5px solid ${blue[500]}` : `1.5px solid ${gray[200]}`,
-                    color: selected ? blue[700] : gray[500],
+                    background: selected ? tint(indigo[500], 0.1) : gray[50],
+                    border: selected ? `1.5px solid ${indigo[500]}` : `1.5px solid ${gray[200]}`,
+                    color: selected ? indigo[700] : gray[500],
                   }}
                 >
                   {day.slice(0, 3)}
@@ -90,9 +90,9 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
                   aria-pressed={selected}
                   className="rounded-[12px] px-4 py-2 text-[12.5px] font-[700]"
                   style={{
-                    background: selected ? tint(blue[500], 0.1) : gray[50],
-                    border: selected ? `1.5px solid ${blue[500]}` : `1.5px solid ${gray[200]}`,
-                    color: selected ? blue[700] : gray[600],
+                    background: selected ? tint(indigo[500], 0.1) : gray[50],
+                    border: selected ? `1.5px solid ${indigo[500]}` : `1.5px solid ${gray[200]}`,
+                    color: selected ? indigo[700] : gray[600],
                   }}
                 >
                   {o.label}
@@ -103,7 +103,7 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
         </div>
 
         <div className="flex items-center gap-3 rounded-[16px] px-5 py-4" style={{ background: gray[50] }}>
-          <Clock size={18} style={{ color: blue[600] }} />
+          <Clock size={18} style={{ color: indigo[600] }} />
           <div>
             <p className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Weekly time commitment</p>
             <p className="text-[16px] font-[840]" style={{ color: gray[800] }}>{commitment}</p>

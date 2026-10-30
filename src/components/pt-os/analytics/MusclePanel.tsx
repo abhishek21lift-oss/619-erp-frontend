@@ -50,7 +50,7 @@ export default function MusclePanel({ muscles, unattributedSets, weeks, onEditRa
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-            style={{ background: 'rgba(0,103,224,0.14)', color: '#0067e0' }}>
+            style={{ background: 'rgba(91,99,246,0.14)', color: '#3F46D6' }}>
             <Activity size={14} />
           </div>
           <span className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>

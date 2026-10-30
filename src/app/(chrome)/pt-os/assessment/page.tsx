@@ -43,7 +43,7 @@ import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
 import { bandInk, fitnessMesh, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
-import { blue, emerald, gray, tint } from '@/lib/palette';
+import { indigo, emerald, gray, tint } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
@@ -684,7 +684,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         <div
           className="mx-auto mb-5 max-w-6xl rounded-[20px] px-4 py-4 sm:px-6"
           style={{
-            background: `linear-gradient(150deg, ${gray[900]} 0%, ${blue[900]} 55%, ${gray[900]} 100%)`,
+            background: `linear-gradient(150deg, ${gray[900]} 0%, ${indigo[900]} 55%, ${gray[900]} 100%)`,
             boxShadow: '0 18px 40px -20px rgba(15,23,42,0.45)',
           }}
         >

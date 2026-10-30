@@ -489,10 +489,10 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
               // is the only thing that needs a background to read.
               className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-[background,box-shadow]"
               style={{
-                background: active ? 'linear-gradient(135deg, #0067e0, #0059ce)' : 'transparent',
+                background: active ? 'linear-gradient(135deg, #5B63F6, #3F46D6)' : 'transparent',
                 color: active ? '#fff' : 'var(--text-muted)',
                 border: '1px solid transparent',
-                boxShadow: active ? '0 4px 14px -4px rgba(0,103,224,0.5)' : 'none',
+                boxShadow: active ? '0 4px 14px -4px rgba(91,99,246,0.5)' : 'none',
               }}
             >
               {d.short}
@@ -543,8 +543,8 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
               onClick={() => router.push(addExercisesHref)}
               className="inline-flex h-[44px] items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
               style={{
-                background: 'linear-gradient(135deg, #0067e0, #0059ce)',
-                boxShadow: '0 4px 14px -4px rgba(0,103,224,0.5)',
+                background: 'linear-gradient(135deg, #5B63F6, #3F46D6)',
+                boxShadow: '0 4px 14px -4px rgba(91,99,246,0.5)',
               }}
             >
               <Plus size={16} /> Add exercise
@@ -592,8 +592,8 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
         className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white transition-transform active:scale-95"
         style={{
           bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
-          background: 'linear-gradient(135deg, #0067e0, #3B8DF5)',
-          boxShadow: '0 8px 24px -4px rgba(0,103,224,0.55)',
+          background: 'linear-gradient(135deg, #5B63F6, #7F86F8)',
+          boxShadow: '0 8px 24px -4px rgba(91,99,246,0.55)',
         }}
       >
         <Plus size={24} />

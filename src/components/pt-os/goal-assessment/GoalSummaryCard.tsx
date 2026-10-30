@@ -2,7 +2,7 @@
 
 import { ClipboardList } from 'lucide-react';
 import GoalStepCard from './GoalStepCard';
-import { blue, gray, tint } from '@/lib/palette';
+import { indigo, gray, tint } from '@/lib/palette';
 import { formatGoalMeasure } from '@/lib/goal-plan';
 import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
 
@@ -83,8 +83,8 @@ export function GoalSummaryCard({
       </div>
 
       {(statement || successMetric) && (
-        <div className="mt-6 rounded-[16px] p-5" style={{ background: tint(blue[500], 0.06), border: `1px solid ${tint(blue[500], 0.18)}` }}>
-          <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: blue[700] }}>SMART Statement</p>
+        <div className="mt-6 rounded-[16px] p-5" style={{ background: tint(indigo[500], 0.06), border: `1px solid ${tint(indigo[500], 0.18)}` }}>
+          <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: indigo[700] }}>SMART Statement</p>
           <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: gray[800] }}>{statement || '—'}</p>
           {successMetric && (
             <p className="mt-2 text-[12px]" style={{ color: gray[600] }}>

@@ -33,7 +33,7 @@ import {
 import { api } from '@/lib/api';
 import { cardSurface } from '@/components/ui/Card';
 import { fmtDateMedium } from '@/lib/format';
-import { amber, blue, emerald, rgba } from '@/lib/palette';
+import { amber, indigo, emerald, rgba } from '@/lib/palette';
 import { stateTone, type StateToneStyle } from '@/lib/state-tone';
 import type {
   ClientSnapshot as Snapshot, ClientAlert, ClientGoalProgress, ClientPr, CoachInsight,
@@ -286,7 +286,7 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
   };
 
   return (
-    <Card title="AI Coach" icon={<Sparkles size={16} />} from={blue[500]} to={blue[500]}
+    <Card title="AI Coach" icon={<Sparkles size={16} />} from={indigo[500]} to={indigo[500]}
       right={source === 'ai'
         ? (
           <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-[800] uppercase tracking-wider"

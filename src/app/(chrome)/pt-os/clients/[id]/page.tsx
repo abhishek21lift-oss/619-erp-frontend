@@ -40,7 +40,7 @@ import { escapeHtml, escapeImageDataUrl } from '@/lib/escapeHtml';
 import { errorMessage } from '@/lib/forms/errors';
 import { fmtDateMedium, fmtDayMonth, fmtMoney } from '@/lib/format';
 import { whatsAppHref } from '@/lib/phone';
-import { amber, blue, emerald, gray, red, rgba } from '@/lib/palette';
+import { amber, indigo, emerald, gray, red, rgba } from '@/lib/palette';
 import { tones, gradient, auroraHero, type Tone } from '@/components/profile/profileTheme';
 import { hasPtTerm } from '@/lib/pt-term';
 import type { ScreeningSummary } from '@/lib/screening';
@@ -113,7 +113,7 @@ function getStatusConfig(status: string, days_left: number | null, pt_end_date?:
   // The last day of the term is a valid day (lib/term-dates.ts).
   const endPassed = termEnded(days_left, pt_end_date);
   if (endPassed) return { label: 'Inactive', dot: gray[400] };
-  if (status === 'frozen') return { label: 'Frozen', dot: blue[300] };
+  if (status === 'frozen') return { label: 'Frozen', dot: indigo[300] };
   // A provisional enrolment has a term but is not active until screening.
   if (status === 'pending' && has_pt_term) return { label: 'Activation Pending', dot: amber[400] };
   if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', dot: amber[400] };

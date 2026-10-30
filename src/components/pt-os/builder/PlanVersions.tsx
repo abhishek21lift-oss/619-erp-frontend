@@ -102,8 +102,8 @@ export default function PlanVersions({ planId, version, onSaved }: PlanVersionsP
           disabled={saving}
           className="flex h-[44px] items-center gap-1.5 rounded-[14px] px-3.5 text-[12.5px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
           style={{
-            background: 'linear-gradient(135deg, #0067e0, #3B8DF5)',
-            boxShadow: '0 4px 14px -4px rgba(0,103,224,0.5)',
+            background: 'linear-gradient(135deg, #5B63F6, #7F86F8)',
+            boxShadow: '0 4px 14px -4px rgba(91,99,246,0.5)',
           }}
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}

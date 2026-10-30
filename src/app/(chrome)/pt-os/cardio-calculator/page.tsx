@@ -151,7 +151,7 @@ function SectionHeading({
       <div className="flex items-center gap-2">
         <span
           className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-[800]"
-          style={{ background: 'rgba(0,103,224,0.10)', color: 'var(--brand)' }}
+          style={{ background: 'rgba(91,99,246,0.10)', color: 'var(--brand)' }}
         >
           {step}
         </span>

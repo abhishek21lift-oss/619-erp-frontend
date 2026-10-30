@@ -82,7 +82,7 @@ export default function LeadFollowupAction() {
         type="button"
         onClick={() => void propose()}
         className="inline-flex h-[44px] items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95"
-        style={{ background: 'rgba(0,103,224,0.10)', color: '#0067e0', border: '1px solid rgba(0,103,224,0.22)' }}
+        style={{ background: 'rgba(91,99,246,0.10)', color: '#3F46D6', border: '1px solid rgba(91,99,246,0.22)' }}
       >
         <Sparkles size={15} /> Draft follow-ups
       </button>
@@ -95,7 +95,7 @@ export default function LeadFollowupAction() {
           >
             <div
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
-              style={{ background: 'linear-gradient(135deg, #0067e0, #003f87)', boxShadow: '0 6px 20px rgba(0,103,224,0.32)' }}
+              style={{ background: 'linear-gradient(135deg, #5B63F6, #2F35A8)', boxShadow: '0 6px 20px rgba(91,99,246,0.32)' }}
             >
               <Sparkles size={19} className="text-white" />
             </div>

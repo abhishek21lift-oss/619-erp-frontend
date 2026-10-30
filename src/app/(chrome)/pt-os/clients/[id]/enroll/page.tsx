@@ -695,9 +695,9 @@ function EnrollForm({ clientId }: { clientId: string }) {
             <m.div
               key="today" initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               className="flex items-center gap-2 rounded-[14px] px-4 py-3"
-              style={{ background: 'rgba(0,89,206,0.08)', border: '1px solid rgba(0,89,206,0.2)' }}
+              style={{ background: 'rgba(63,70,214,0.08)', border: '1px solid rgba(63,70,214,0.2)' }}
             >
-              <Sparkles size={14} style={{ color: '#0059CE', flexShrink: 0 }} />
+              <Sparkles size={14} style={{ color: '#3F46D6', flexShrink: 0 }} />
               <span className="text-[12.5px] font-[640]" style={{ color: '#065f46' }}>Client starts today.</span>
             </m.div>
           )}
@@ -829,9 +829,9 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       <m.div
                         initial={{ opacity: 0, y: -6, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                         className="mt-2 flex items-center gap-1.5 rounded-[10px] px-3 py-2"
-                        style={{ background: 'rgba(0,89,206,0.08)', border: '1px solid rgba(0,89,206,0.2)' }}
+                        style={{ background: 'rgba(63,70,214,0.08)', border: '1px solid rgba(63,70,214,0.2)' }}
                       >
-                        <Check size={13} style={{ color: '#0059CE', flexShrink: 0 }} />
+                        <Check size={13} style={{ color: '#3F46D6', flexShrink: 0 }} />
                         <span className="text-[12px] font-[700]" style={{ color: '#065f46' }}>Paid in Full</span>
                       </m.div>
                     )}
@@ -1021,7 +1021,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                         key={String(r.val)}
                         initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.15 }}
                         className="text-[13px] font-[720]"
-                        style={{ color: r.success ? '#0067e0' : '#fff' }}
+                        style={{ color: r.success ? '#3F46D6' : '#fff' }}
                       >
                         {r.val}
                       </m.p>

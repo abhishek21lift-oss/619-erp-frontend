@@ -20,7 +20,7 @@ import { m, useReducedMotion } from 'framer-motion';
 import { ClipboardCheck, TrendingDown, TrendingUp, Minus, ChevronRight, RefreshCw } from 'lucide-react';
 import type { ClientRecovery } from '@/lib/api';
 import { cardSurface } from '@/components/ui/Card';
-import { blue, rgba } from '@/lib/palette';
+import { indigo, rgba } from '@/lib/palette';
 import { stateTone, type StateToneStyle } from '@/lib/state-tone';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -239,7 +239,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       style={{ ...cardSurface }}>
       <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-          style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})`, boxShadow: `0 3px 12px ${rgba(blue[500], 0.27)}` }}>
+          style={{ background: `linear-gradient(135deg, ${indigo[500]}, ${indigo[600]})`, boxShadow: `0 3px 12px ${rgba(indigo[500], 0.27)}` }}>
           <ClipboardCheck size={16} className="text-white" />
         </div>
         <h2 className="text-[13.5px] font-[740]" style={{ color: 'var(--text-primary)' }}>Recovery &amp; readiness</h2>
@@ -256,7 +256,7 @@ function Empty({ title, body, href }: { title: string; body: string; href: strin
       <p className="max-w-[52ch] text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
       <a href={href}
         className="mt-1 flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] text-white"
-        style={{ background: 'var(--brand)', boxShadow: `0 4px 14px ${rgba(blue[500], 0.35)}` }}>
+        style={{ background: 'var(--brand)', boxShadow: `0 4px 14px ${rgba(indigo[500], 0.35)}` }}>
         Record a check-in <ChevronRight size={13} />
       </a>
     </div>

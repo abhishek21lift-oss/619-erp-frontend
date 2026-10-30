@@ -4,7 +4,7 @@ import { Check, ListChecks } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import GoalStepCard from './GoalStepCard';
 import { PRIORITY_META } from './types';
-import { blue, emerald, gray, tint } from '@/lib/palette';
+import { indigo, emerald, gray, tint } from '@/lib/palette';
 import type { GoalFormData } from './types';
 
 interface StepPriorityProps {
@@ -78,7 +78,7 @@ export function StepPriority({ form, set, step, error }: StepPriorityProps) {
 
         {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
-        <p className="text-[11.5px]" style={{ color: blue[700] }}>
+        <p className="text-[11.5px]" style={{ color: indigo[700] }}>
           SMART&apos;s R stays unticked until both the priority and the client&apos;s agreement are recorded.
         </p>
       </div>

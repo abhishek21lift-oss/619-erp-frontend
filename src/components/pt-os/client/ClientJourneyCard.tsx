@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { STEP_LABEL, stepHref, type ClientJourney, type JourneyStep, type JourneyStepKey } from '@/lib/journey';
-import { blue, emerald, gray, rgba } from '@/lib/palette';
+import { indigo, emerald, gray, rgba } from '@/lib/palette';
 import { stateTone, type StateToneStyle } from '@/lib/state-tone';
 
 const STEP_ICON: Record<JourneyStepKey, React.ReactNode> = {
@@ -32,8 +32,8 @@ const STEP_ICON: Record<JourneyStepKey, React.ReactNode> = {
 };
 
 const STEP_COLOR: Record<JourneyStepKey, string> = {
-  welcome_tour: emerald[500], enrolment: blue[900], consent: blue[300], parq: blue[700],
-  interview: gray[500], goals: gray[400], assessment: blue[400], program_design: blue[600],
+  welcome_tour: emerald[500], enrolment: indigo[900], consent: indigo[300], parq: indigo[700],
+  interview: gray[500], goals: gray[400], assessment: indigo[400], program_design: indigo[600],
 };
 
 const STATE_CHIP: Record<JourneyStep['state'], { label: string; icon: React.ReactNode } & StateToneStyle> = {
@@ -80,7 +80,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
           role="progressbar" aria-valuemin={0} aria-valuemax={journey.steps.length} aria-valuenow={done}
           aria-label="Client journey progress">
           <div className="h-full rounded-full transition-all"
-            style={{ width: `${(done / journey.steps.length) * 100}%`, background: `linear-gradient(90deg, ${blue[500]}, ${emerald[500]})` }} />
+            style={{ width: `${(done / journey.steps.length) * 100}%`, background: `linear-gradient(90deg, ${indigo[500]}, ${emerald[500]})` }} />
         </div>
         <span className="shrink-0 text-[12px] font-[700] tabular-nums" style={{ color: 'var(--text-muted)' }}>
           {done}/{journey.steps.length}
@@ -96,7 +96,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
               <Link href={stepHref(step.key, clientId, step.state)}
                 aria-current={isNext ? 'step' : undefined}
                 className="flex min-h-[48px] w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-left transition active:scale-[0.99]"
-                style={{ background: isNext ? rgba(blue[500], 0.08) : 'var(--bg-subtle)', outline: isNext ? `1.5px solid ${rgba(blue[500], 0.35)}` : 'none' }}>
+                style={{ background: isNext ? rgba(indigo[500], 0.08) : 'var(--bg-subtle)', outline: isNext ? `1.5px solid ${rgba(indigo[500], 0.35)}` : 'none' }}>
                 <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[8px] text-white"
                   style={{ background: STEP_COLOR[step.key] }}>
                   {STEP_ICON[step.key]}
@@ -127,7 +127,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
           <div className="grid grid-cols-2 gap-2">
             <Link href={`/pt-os/clients/${clientId}/workout-log`}
               className="flex min-h-[44px] items-center justify-center rounded-[12px] text-[12.5px] font-[700] text-white transition active:scale-[0.99]"
-              style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}>
+              style={{ background: `linear-gradient(135deg, ${indigo[500]}, ${indigo[600]})` }}>
               Workout Log
             </Link>
             <Link href={`/pt-os/progress?client_id=${encodeURIComponent(clientId)}`}
@@ -141,7 +141,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
         nextAllowed ? (
           <Link href={stepHref(next.key, clientId, next.state)}
             className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition active:scale-[0.99]"
-            style={{ background: `linear-gradient(135deg, ${blue[500]}, ${blue[600]})` }}>
+            style={{ background: `linear-gradient(135deg, ${indigo[500]}, ${indigo[600]})` }}>
             {next.state === 'renew' ? 'Renew PT' : `Next: ${STEP_LABEL[next.key]}`}
             <ArrowRight size={16} />
           </Link>

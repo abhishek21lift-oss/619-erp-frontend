@@ -157,14 +157,14 @@ export function ScreeningStatusCard({ screening, clientId }: { screening: unknow
           <a
             href={`/pt-os/parq?client_id=${encodeURIComponent(clientId)}`}
             className="text-[13px] font-[700]"
-            style={{ color: 'var(--brand, #0067E0)' }}
+            style={{ color: 'var(--action-text, #3F46D6)' }}
           >
             Review PAR-Q
           </a>
           <a
             href={`/pt-os/informed-consent?client_id=${encodeURIComponent(clientId)}`}
             className="text-[13px] font-[700]"
-            style={{ color: 'var(--brand, #0067E0)' }}
+            style={{ color: 'var(--action-text, #3F46D6)' }}
           >
             Open consent
           </a>
@@ -195,14 +195,14 @@ export function ScreeningWarningsNotice({ warnings, clientId }: { warnings: stri
         <a
           href={`/pt-os/parq?client_id=${encodeURIComponent(clientId)}`}
           className="text-[13px] font-[700]"
-          style={{ color: 'var(--brand, #0067E0)' }}
+          style={{ color: 'var(--action-text, #3F46D6)' }}
         >
           Review PAR-Q
         </a>
         <a
           href={`/pt-os/informed-consent?client_id=${encodeURIComponent(clientId)}`}
           className="text-[13px] font-[700]"
-          style={{ color: 'var(--brand, #0067E0)' }}
+          style={{ color: 'var(--action-text, #3F46D6)' }}
         >
           Open consent
         </a>

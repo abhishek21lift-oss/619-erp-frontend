@@ -208,7 +208,7 @@ export default function EditProgrammeDialog({ plan, onClose, onSaved }: EditProg
               disabled={isSubmitting}
               aria-busy={isSubmitting}
               className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
-              style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(2,113,235,0.24)' }}
+              style={{ background: 'var(--brand)', boxShadow: '0 8px 24px rgba(91,99,246,0.24)' }}
             >
               {isSubmitting && <Loader2 size={16} className="animate-spin" />}
               {isSubmitting ? 'Saving…' : 'Save changes'}

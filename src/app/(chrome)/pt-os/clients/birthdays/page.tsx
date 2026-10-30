@@ -114,7 +114,7 @@ export default function ClientBirthdaysPage() {
                 const active = filter === f.key;
                 return (
                   <button key={f.key} onClick={() => setFilter(f.key)}
-                    style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, border: `1.5px solid ${active ? 'rgba(0,103,224,0.3)' : 'var(--border)'}`, background: active ? 'rgba(0,103,224,0.1)' : 'transparent', color: active ? '#0067e0' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                    style={{ fontSize: 11, fontWeight: 700, padding: '7px 14px', borderRadius: 10, border: `1.5px solid ${active ? 'rgba(91,99,246,0.3)' : 'var(--border)'}`, background: active ? 'rgba(91,99,246,0.1)' : 'transparent', color: active ? '#3F46D6' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s' }}>
                     {f.label}
                   </button>
                 );
@@ -149,11 +149,11 @@ export default function ClientBirthdaysPage() {
                   <m.div key={c.id}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}
                     onClick={() => router.push(`/pt-os/clients/${c.id}`)}
-                    style={{ cursor: 'pointer', borderRadius: 16, padding: 16, background: 'var(--bg-card)', border: c.is_today ? '1.5px solid rgba(0,103,224,0.35)' : '1px solid var(--border)', boxShadow: c.is_today ? '0 4px 20px rgba(0,103,224,0.12)' : '0 1px 4px rgba(0,0,0,0.04)', transition: 'transform 0.15s' }}
+                    style={{ cursor: 'pointer', borderRadius: 16, padding: 16, background: 'var(--bg-card)', border: c.is_today ? '1.5px solid rgba(91,99,246,0.35)' : '1px solid var(--border)', boxShadow: c.is_today ? '0 4px 20px rgba(91,99,246,0.12)' : '0 1px 4px rgba(0,0,0,0.04)', transition: 'transform 0.15s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 12, flexShrink: 0, fontSize: 15, fontWeight: 800, color: '#0067e0', background: 'rgba(0,103,224,0.12)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 12, flexShrink: 0, fontSize: 15, fontWeight: 800, color: '#3F46D6', background: 'rgba(91,99,246,0.12)' }}>
                         {c.is_today ? <PartyPopper size={18} /> : initials(c.name)}
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
@@ -165,7 +165,7 @@ export default function ClientBirthdaysPage() {
                           <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'var(--text-disabled)' }}>{c.trainer_name}</p>
                         )}
                       </div>
-                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', padding: '4px 9px', borderRadius: 20, color: c.is_today ? '#fff' : '#0067e0', background: c.is_today ? 'linear-gradient(135deg, #0067e0, #f59e0b)' : 'rgba(0,103,224,0.1)' }}>
+                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', padding: '4px 9px', borderRadius: 20, color: c.is_today ? '#fff' : '#3F46D6', background: c.is_today ? 'linear-gradient(135deg, #5B63F6, #f59e0b)' : 'rgba(91,99,246,0.1)' }}>
                         {daysLabel(c.days_until_birthday)}
                       </span>
                     </div>
@@ -173,7 +173,7 @@ export default function ClientBirthdaysPage() {
                       <div style={{ display: 'flex', gap: 6, marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
                         {c.mobile && (
                           <a href={`tel:${c.mobile}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 9, background: 'rgba(0,103,224,0.1)', color: '#0067e0', textDecoration: 'none' }}>
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 9, background: 'rgba(91,99,246,0.1)', color: '#3F46D6', textDecoration: 'none' }}>
                             <Phone size={11} /> Call
                           </a>
                         )}
