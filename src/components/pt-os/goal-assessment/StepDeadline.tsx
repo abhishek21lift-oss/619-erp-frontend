@@ -27,7 +27,7 @@ export function StepDeadline({ form, set, step, error }: StepDeadlineProps) {
 
       {days != null && (
         <div className="mt-6 rounded-[16px] p-6 text-center" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
-          <p className="text-[40px] font-[900] leading-none" style={{ color: days < 0 ? '#ef4444' : '#0067E0' }}>
+          <p className="text-[40px] font-[900] leading-none" style={{ color: days < 0 ? '#ef4444' : '#3F46D6' }}>
             {days < 0 ? `${Math.abs(days)} Days Overdue` : `${days} Days Remaining`}
           </p>
           {days >= 0 && (

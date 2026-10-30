@@ -52,7 +52,7 @@ function formFromRow(row: Record<string, unknown>): PostureFormData {
 export default function PtPostureAssessmentPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
         <PostureContent />
       </Suspense>
     </Guard>
@@ -310,7 +310,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
               <Button
                 iconLeft={<ArrowRight size={14} />}
                 onClick={handleNext}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
               >
                 {step === 2 ? 'Review' : 'Next'}
               </Button>
@@ -319,7 +319,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
                 iconLeft={!saving ? <Check size={14} /> : undefined}
                 loading={saving} disabled={saving}
                 onClick={handleSubmit}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
               >
                 {saving ? 'Saving...' : assessmentId ? 'Update Assessment' : 'Save Assessment'}
               </Button>

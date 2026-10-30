@@ -57,7 +57,7 @@ async function downloadPdf(url: string, filename: string) {
 export default function InformedConsentPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
         <InformedConsentContent />
       </Suspense>
     </Guard>
@@ -121,7 +121,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
   const closeWizard = (refresh: boolean) => { setView('summary'); if (refresh) loadData(); };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
   }
   if (loadError) {
     return (
@@ -424,7 +424,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   };
 
   if (detailLoading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>;
   }
 
   if (submitResult) {
@@ -460,7 +460,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
               iconLeft={!(saving || creatingDraft) ? (isLastStep ? <Check size={14} /> : <ArrowRight size={14} />) : undefined}
               loading={saving || creatingDraft} disabled={saving || creatingDraft}
               onClick={handleNext}
-              style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
             >
               {saving ? 'Finishing...' : creatingDraft ? 'Saving...' : isLastStep ? 'Finish' : 'Next'}
             </Button>

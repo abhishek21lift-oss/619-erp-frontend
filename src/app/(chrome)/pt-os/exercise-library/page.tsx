@@ -235,7 +235,7 @@ function ExerciseLibrary() {
             onChange={(e) => { setFilter('q', e.target.value); setSeededQ(e.target.value); }}
             placeholder="Search by name, muscle, equipment…"
             aria-label="Search exercises"
-            className="h-12 w-full rounded-2xl border border-slate-200/70 bg-white py-2.5 pl-11 pr-24 text-[14px] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-slate-400 focus:border-[rgba(0,103,224,0.5)] focus:shadow-[0_0_0_4px_rgba(0,103,224,0.12)] dark:border-white/10 dark:bg-white/[0.05] dark:placeholder:text-white/30"
+            className="h-12 w-full rounded-2xl border border-slate-200/70 bg-white py-2.5 pl-11 pr-24 text-[14px] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-slate-400 focus:border-[rgba(91,99,246,0.5)] focus:shadow-[0_0_0_4px_rgba(91,99,246,0.12)] dark:border-white/10 dark:bg-white/[0.05] dark:placeholder:text-white/30"
           />
           <button
             type="button"
@@ -267,7 +267,7 @@ function ExerciseLibrary() {
               className={cn(
                 'flex h-11 sm:h-12 items-center gap-1.5 rounded-2xl border px-4 text-[13px] font-[650] transition-all active:scale-[0.97]',
                 filters[key]
-                  ? 'border-transparent bg-[var(--brand)] text-white shadow-[0_8px_20px_-8px_rgba(0,103,224,0.7)]'
+                  ? 'border-transparent bg-[var(--brand)] text-white shadow-[0_8px_20px_-8px_rgba(91,99,246,0.7)]'
                   : 'border-slate-200/70 bg-white text-[var(--text-muted)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:text-[var(--text-primary)] dark:border-white/10 dark:bg-white/[0.05]',
               )}
             >
@@ -360,7 +360,7 @@ function ExerciseLibrary() {
                     'inline-flex items-center gap-1.5 rounded-full py-1 pl-3 pr-2 text-[12px] font-[650] transition-colors',
                     c.region
                       ? 'bg-[var(--rg-wash)] text-[var(--rg-ink)] hover:bg-[var(--rg-wash-hi)] dark:text-[var(--rg-ink-d)]'
-                      : 'bg-[rgba(0,103,224,0.1)] text-[var(--brand)] hover:bg-[rgba(0,103,224,0.15)]',
+                      : 'bg-[rgba(91,99,246,0.1)] text-[var(--brand)] hover:bg-[rgba(91,99,246,0.15)]',
                   )}
                 >
                   {c.label}
@@ -477,7 +477,7 @@ function ExerciseLibrary() {
                         className={cn(
                           'h-9 min-w-[36px] rounded-full px-2.5 text-[13px] font-[650] tabular-nums transition-all',
                           p === lib.page
-                            ? 'bg-[var(--brand)] text-white shadow-[0_6px_16px_-6px_rgba(0,103,224,0.7)]'
+                            ? 'bg-[var(--brand)] text-white shadow-[0_6px_16px_-6px_rgba(91,99,246,0.7)]'
                             : 'text-[var(--text-muted)] hover:bg-slate-100 hover:text-[var(--text-primary)] dark:hover:bg-white/10',
                         )}
                       >

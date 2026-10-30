@@ -116,7 +116,7 @@ function formFromRow(row: Record<string, unknown>): NutritionFormData {
 export default function PtNutritionAssessmentPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#3F46D6' }} /></div>}>
         <NutritionContent />
       </Suspense>
     </Guard>
@@ -434,7 +434,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
               <Button
                 iconLeft={<ArrowRight size={14} />}
                 onClick={handleNext}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
               >
                 {step === 8 ? 'Review' : 'Next'}
               </Button>
@@ -443,7 +443,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
                 iconLeft={!saving ? <Check size={14} /> : undefined}
                 loading={saving} disabled={saving}
                 onClick={handleSubmit}
-                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #5B63F6, #3F46D6)', color: '#fff' }}
               >
                 {saving ? 'Saving...' : assessmentId ? 'Update Assessment' : 'Save Assessment'}
               </Button>
