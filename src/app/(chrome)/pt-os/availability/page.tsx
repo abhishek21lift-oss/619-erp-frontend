@@ -30,6 +30,20 @@ import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 import { WEEKDAYS, validateWindows } from '@/lib/booking/availability';
 
+type SettingKey =
+  | 'slot_minutes' | 'buffer_minutes' | 'min_notice_hours'
+  | 'horizon_days' | 'cancel_cutoff_hours';
+
+const SETTING_KEYS: SettingKey[] = [
+  'slot_minutes', 'buffer_minutes', 'min_notice_hours',
+  'horizon_days', 'cancel_cutoff_hours',
+];
+
+// Kept as typed strings, like NumberField: a cleared box must stay empty, not
+// become 0. The one conversion happens in saveSettings after validation.
+const settingsText = (s: BookingSettings): Record<SettingKey, string> =>
+  Object.fromEntries(SETTING_KEYS.map((k) => [k, String(s[k])])) as Record<SettingKey, string>;
+
 export default function AvailabilityPage() {
   return (
     <Guard role="trainer">
@@ -70,7 +84,9 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
   const { toast } = useToast();
   const [windows, setWindows] = useState<AvailabilityWindow[]>(data.windows);
   const [timeOff, setTimeOff] = useState<TimeOff[]>(data.timeOff);
-  const [settings, setSettings] = useState<BookingSettings>(data.settings);
+  const [settings, setSettings] = useState<Record<SettingKey, string>>(
+    () => settingsText(data.settings),
+  );
   const [token, setToken] = useState<string | null>(data.settings.ics_token);
   const [busy, setBusy] = useState<null | 'week' | 'timeoff' | 'settings'>(null);
 
@@ -161,16 +177,17 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
   }
 
   async function saveSettings() {
+    if (SETTING_KEYS.some((k) => !/^\d+$/.test(settings[k]))) {
+      toast.error('Booking settings must be whole numbers.');
+      return;
+    }
+    const values = Object.fromEntries(
+      SETTING_KEYS.map((k) => [k, Number(settings[k])]),
+    ) as Record<SettingKey, number>;
     setBusy('settings');
     try {
-      const res = await api.pt.saveBookingSettings({
-        slot_minutes: settings.slot_minutes,
-        buffer_minutes: settings.buffer_minutes,
-        min_notice_hours: settings.min_notice_hours,
-        horizon_days: settings.horizon_days,
-        cancel_cutoff_hours: settings.cancel_cutoff_hours,
-      });
-      setSettings(res.data);
+      const res = await api.pt.saveBookingSettings(values);
+      setSettings(settingsText(res.data));
       setToken(res.data.ics_token);
       toast.success('Booking settings saved');
       await onSaved();
@@ -181,11 +198,11 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
     }
   }
 
-  const number = (key: keyof BookingSettings) => ({
+  const number = (key: SettingKey) => ({
     inputMode: 'numeric' as const,
-    value: String(settings[key] ?? ''),
+    value: settings[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-      setSettings((prev) => ({ ...prev, [key]: Number(e.target.value) })),
+      setSettings((prev) => ({ ...prev, [key]: e.target.value })),
   });
 
   return (

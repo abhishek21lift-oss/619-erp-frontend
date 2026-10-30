@@ -77,6 +77,9 @@ export const JOURNEYS = {
   'e2e/progress-policy.ui.spec.ts': [
     'src/app/(chrome)/pt-os/progress/page.tsx',
   ],
+  'e2e/booking-availability.ui.spec.ts': [
+    'src/app/(chrome)/pt-os/availability/page.tsx',
+  ],
   'e2e/renewal-offer.ui.spec.ts': [
     'src/components/pt-os/RenewalOfferSheet.tsx',
   ],
