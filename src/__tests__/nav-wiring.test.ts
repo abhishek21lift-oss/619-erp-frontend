@@ -60,17 +60,18 @@ describe('support is reachable from the avatar menu', () => {
 describe('the member bottom bar is built from nav-config', () => {
   const account = NAV_GROUPS.find((g) => g.id === 'my-account')!;
 
-  it('keeps the six real destinations in the config', () => {
+  it('keeps the seven real destinations in the config', () => {
     expect(account.items.map((i) => i.href)).toEqual([
       '/member/dashboard',
       '/member/workout',
       '/member/diet',
       '/member/checkin',
+      '/member/book',
       '/member/payments',
       '/member/more',
     ]);
     expect(account.items.map((i) => i.label)).toEqual([
-      'Home', 'Workout', 'Diet', 'Check-in', 'Payments', 'Profile',
+      'Home', 'Workout', 'Diet', 'Check-in', 'Book', 'Payments', 'Profile',
     ]);
   });
 
