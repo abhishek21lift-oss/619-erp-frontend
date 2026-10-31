@@ -176,8 +176,7 @@ describe('<InterviewPage />', () => {
     expect(mockPush).toHaveBeenCalledWith('/pt-os/assessment?client_id=c1');
   });
 
-  it('leaves an answer this form cannot show exactly as the record holds it', async () => {
-    // An interview written before these selects existed: the occupation as
+  it('leaves an answer this form cannot show exactly as the record holds it', async () => {    // An interview written before these selects existed: the occupation as
     // free text, and numbers that are not one of the bands.
     mockDrafts = [{
       id: 'iv-legacy', status: 'draft', updated_at: '2026-09-01T10:00:00Z',
@@ -193,5 +192,11 @@ describe('<InterviewPage />', () => {
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
     expect(mockUpdate.mock.calls[0][1]).toEqual({ lifestyle_smoking: 'daily', status: 'draft' });
+  });
+
+  it('offers every whole training day from one to seven', () => {
+    // One session a week is a real plan; the old 3–6 menu had no chip for it.
+    const control = INTERVIEW_QUESTIONS.find((q) => q.id === 'training-days')!.controls[0];
+    expect(control.options.map((o) => o.value)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
   });
 });
