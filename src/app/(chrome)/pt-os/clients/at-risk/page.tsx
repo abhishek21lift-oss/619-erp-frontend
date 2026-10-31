@@ -61,17 +61,21 @@ export default function AtRiskClientsPage() {
         outcome,
         ...(date ? { snooze_until: date } : {}),
       });
-      toast.success(
-        outcome === 'contacted'
-          ? 'Marked contacted — hidden for seven days.'
-          : 'Snoozed — it returns early only if the risk rises.',
-      );
-      await churn.refetch();
     } catch (err) {
       toast.error(errorMessage(err, 'Could not update this client.'));
+      return;
     } finally {
       setBusyId(null);
     }
+    toast.success(
+      outcome === 'contacted'
+        ? 'Marked contacted — hidden for seven days.'
+        : 'Snoozed — it returns early only if the risk rises.',
+    );
+    // The mark is saved; a failed refresh must not claim the save failed.
+    await churn.refetch().catch(() => {
+      toast.error('Marked, but the list did not refresh. Reload the page.');
+    });
   };
 
   const explain = async () => {
