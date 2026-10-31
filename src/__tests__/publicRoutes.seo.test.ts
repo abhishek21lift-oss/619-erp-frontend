@@ -18,6 +18,7 @@ import { metadata as rootMetadata } from '@/app/layout';
 import { metadata as homeMetadata } from '@/app/(chrome)/page';
 import { HOME_STRUCTURED_DATA } from '@/lib/home-structured-data';
 import { PT_OS_STRUCTURED_DATA } from '@/lib/pt-os-structured-data';
+import { ORGANIZATION_NODE, SOFTWARE_FEATURES } from '@/lib/schema-org';
 import { PT_OS_FAQ } from '@/components/landing/pt-os-faq-content';
 import { HOME_FAQ } from '@/components/landing/faq-content';
 import { metadata as ptOsMetadata } from '@/app/(bare)/pt-os/page';
@@ -506,5 +507,52 @@ describe('search-engine ownership proof', () => {
     expect(isPublicProxyPath('/checkout.html')).toBe(false);
     expect(isPublicProxyPath('/google-verify.html')).toBe(false);
     expect(isPublicProxyPath('/wireframes.html')).toBe(false);
+  });
+});
+
+// ── Shared entity details ──────────────────────────────────────────────────
+//
+// Facts an answer engine can quote: how to reach support and what the product
+// actually does. Both are shared constants so the homepage and /pt-os cannot
+// drift into describing different companies or different products.
+
+describe('shared entity details', () => {
+  it('states the real support contact without inventing an address', () => {
+    expect(ORGANIZATION_NODE.email).toBe('support@myptstudio.com');
+    expect(ORGANIZATION_NODE.contactPoint).toEqual({
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      email: 'support@myptstudio.com',
+    });
+    expect(ORGANIZATION_NODE).not.toHaveProperty('address');
+    expect(ORGANIZATION_NODE).not.toHaveProperty('sameAs');
+  });
+
+  it('lists every shipped product area once', () => {
+    expect(SOFTWARE_FEATURES).toEqual([
+      'Command dashboard',
+      'Attendance & check-in',
+      'Billing & collections',
+      'Client lifecycle',
+      'Programmes & templates',
+      'Exercise library',
+      'Progress tracking',
+      'AI Coach',
+      'AI insights',
+      'Knowledge base',
+      'WhatsApp outreach',
+      'Campaigns & offers',
+      'Finance & forecast',
+      'Multi-branch',
+    ]);
+  });
+
+  it('puts the same feature list on both SoftwareApplication nodes', () => {
+    type SchemaNode = Record<string, unknown> & { '@type': string };
+    for (const data of [HOME_STRUCTURED_DATA, PT_OS_STRUCTURED_DATA]) {
+      const graph = data['@graph'] as readonly SchemaNode[];
+      const app = graph.find((n) => n['@type'] === 'SoftwareApplication');
+      expect(app?.featureList).toBe(SOFTWARE_FEATURES);
+    }
   });
 });

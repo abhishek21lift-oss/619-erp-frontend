@@ -5,6 +5,7 @@ import {
   ORGANIZATION_NODE,
   SOFTWARE_ID,
   SITE_DESCRIPTION,
+  SOFTWARE_FEATURES,
   WEBSITE_ID,
   WEBSITE_NODE,
   toJsonLd,
@@ -34,6 +35,7 @@ export const HOME_STRUCTURED_DATA = {
       url: SITE_URL,
       description: SITE_DESCRIPTION,
       publisher: { '@id': ORGANIZATION_ID },
+      featureList: SOFTWARE_FEATURES,
     },
     {
       '@type': 'WebPage',
