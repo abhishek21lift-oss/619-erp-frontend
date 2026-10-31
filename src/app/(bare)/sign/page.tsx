@@ -20,7 +20,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  AlertTriangle, ArrowLeft, ArrowRight, Check, Loader2, ShieldCheck,
+  AlertTriangle, ArrowLeft, ArrowRight, Check, ListChecks, Loader2, Save, ShieldCheck,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { FormSigningPreview } from '@/lib/api';
@@ -63,41 +63,137 @@ const LAST_STEP = STEPS.length;
  *  rather than half-restored into a form that no longer has those fields. */
 const DRAFT_VERSION = 1;
 
-function Shell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+/**
+ * The public signing page sits on the same light stage as the marketing site:
+ * a soft white light falling into the grey band, a slim wordmark bar, and the
+ * content in one centred column. The form itself is the only card.
+ */
+const STAGE_BG = `radial-gradient(110% 130% at 50% 0%, ${C.canvas} 0%, ${C.canvasAlt} 62%, ${C.canvasAlt} 100%)`;
+
+function SiteHeader() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center px-4 py-8 sm:py-10" style={{ background: C.canvasAlt }}>
-      <div className={`w-full ${wide ? 'max-w-[680px]' : 'max-w-[420px]'}`}>
-        <div className="mb-5 flex justify-center">
-          <Wordmark size={26} priority />
-        </div>
-        <m.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: EASE }}
-          className="rounded-[20px] p-5 sm:p-7"
-          style={{ background: CARD.background, border: CARD.border, boxShadow: CARD.boxShadow }}
+    <header className="relative z-10">
+      <div className="mx-auto flex h-12 w-full max-w-[1024px] items-center justify-between gap-3 px-6">
+        <Wordmark size={24} priority />
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[500]"
+          style={{
+            background: 'rgba(255,255,255,0.72)',
+            border: `1px solid ${C.lineSoft}`,
+            color: C.muted,
+          }}
         >
-          {children}
-        </m.div>
-        <p className="mt-5 text-center text-[12px]" style={{ color: C.muted }}>
-          Need help? <a href="mailto:support@myptstudio.com" style={{ color: C.blueHi }}>support@myptstudio.com</a>
-        </p>
+          <ShieldCheck size={12} aria-hidden style={{ color: C.blueHi }} />
+          One-time link
+        </span>
       </div>
+    </header>
+  );
+}
+
+function Frame({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="relative flex min-h-[100dvh] flex-col overflow-x-hidden"
+      style={{ background: C.canvasAlt, color: C.body }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: STAGE_BG }}
+      />
+      <SiteHeader />
+      <main id="main-content" className="relative z-10 flex flex-1 flex-col">
+        {children}
+      </main>
     </div>
   );
 }
 
-function Centered({ children }: { children: React.ReactNode }) {
+function Hero({ preview }: { preview: FormSigningPreview }) {
   return (
-    <Shell>
-      <div className="text-center">{children}</div>
-    </Shell>
+    <section aria-labelledby="sign-title" className="px-6 pb-8 pt-6 text-center sm:pb-10 sm:pt-10">
+      <m.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: EASE }}
+        className="mx-auto max-w-[820px]"
+      >
+        <p className="text-[15px] font-[600] tracking-[-0.01em] sm:text-[16px]" style={{ color: C.blueHi }}>
+          Remote screening
+        </p>
+        <h1
+          id="sign-title"
+          className="mt-2.5 text-balance text-[clamp(2.2rem,5.6vw,3.9rem)] font-[600] leading-[1.03] tracking-[-0.035em]"
+          style={{ color: C.ink }}
+        >
+          {preview.client_name ? `Hello ${preview.client_name}` : 'Your health screening'}
+        </h1>
+        <p
+          className="mx-auto mt-4 max-w-[600px] text-balance text-[16px] leading-[1.55] sm:text-[18px]"
+          style={{ color: C.muted }}
+        >
+          A few minutes now saves the paperwork on your first session. Your answers go straight to
+          your trainer.
+        </p>
+        <ul
+          className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12.5px]"
+          style={{ color: C.faint }}
+        >
+          <li className="inline-flex items-center gap-1.5">
+            <ListChecks size={14} aria-hidden style={{ color: C.blueHi }} />
+            5 short steps
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <Save size={14} aria-hidden style={{ color: C.blueHi }} />
+            Saved as you go
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <ShieldCheck size={14} aria-hidden style={{ color: C.blueHi }} />
+            One-time link
+          </li>
+        </ul>
+      </m.div>
+    </section>
+  );
+}
+
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <m.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: EASE }}
+      className={`rounded-[20px] p-5 sm:p-7 ${className}`}
+      style={{ background: CARD.background, border: CARD.border, boxShadow: CARD.boxShadow }}
+    >
+      {children}
+    </m.div>
+  );
+}
+
+function Support() {
+  return (
+    <p className="mt-5 text-center text-[12px]" style={{ color: C.muted }}>
+      Need help? <a href="mailto:support@myptstudio.com" style={{ color: C.blueHi }}>support@myptstudio.com</a>
+    </p>
+  );
+}
+
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <Frame>
+      <div className="mx-auto w-full max-w-[460px] px-4 pb-10 pt-6 sm:pt-12">
+        <Card className="text-center">{children}</Card>
+        <Support />
+      </div>
+    </Frame>
   );
 }
 
 function DeadLink({ message }: { message: string }) {
   return (
-    <Centered>
+    <Notice>
       <div
         className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[14px]"
         style={{ background: C.redSoft, color: C.red }}
@@ -111,13 +207,13 @@ function DeadLink({ message }: { message: string }) {
       <p className="mt-4 text-[12.5px] leading-[1.5]" style={{ color: C.faint }}>
         Signing links work once and expire. Ask your trainer to send you a new one.
       </p>
-    </Centered>
+    </Notice>
   );
 }
 
 function Submitted({ studio, riskLevel }: { studio: string; riskLevel: string }) {
   return (
-    <Centered>
+    <Notice>
       <m.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -143,7 +239,20 @@ function Submitted({ studio, riskLevel }: { studio: string; riskLevel: string })
           will tell you what to bring.
         </p>
       )}
-    </Centered>
+    </Notice>
+  );
+}
+
+function Loading() {
+  return (
+    <Frame>
+      <div className="flex flex-1 items-center justify-center px-6 py-20">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={24} className="animate-spin" style={{ color: C.blueHi }} />
+          <p className="text-[13px]" style={{ color: C.muted }}>Checking your link…</p>
+        </div>
+      </div>
+    </Frame>
   );
 }
 
@@ -301,16 +410,7 @@ function SigningForm() {
     if (step > 1) setStep((step - 1) as StepId);
   };
 
-  if (loading) {
-    return (
-      <Centered>
-        <div className="flex flex-col items-center gap-3 py-6">
-          <Loader2 size={24} className="animate-spin" style={{ color: C.blueHi }} />
-          <p className="text-[13px]" style={{ color: C.muted }}>Checking your link…</p>
-        </div>
-      </Centered>
-    );
-  }
+  if (loading) return <Loading />;
   if (dead) return <DeadLink message={dead} />;
   if (result) return <Submitted studio={result.studio} riskLevel={result.riskLevel} />;
   if (!preview) return null;
@@ -318,105 +418,104 @@ function SigningForm() {
   const stepLabel = `Step ${step} of ${LAST_STEP}`;
 
   return (
-    <Shell wide>
-      <div className="mb-5">
-        <div className="mb-3 flex items-center gap-2.5">
-          <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-            style={{ background: C.blueWash, color: C.blueHi }}
-          >
-            <ShieldCheck size={17} />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-[600]" style={{ color: C.ink }}>{preview.studio_name}</p>
-            <p className="truncate text-[12px]" style={{ color: C.muted }}>
-              Health screening &amp; informed consent
-            </p>
-          </div>
-        </div>
-        <h1 className="text-[22px] font-[600] tracking-[-0.02em]" style={{ color: C.ink }}>
-          {preview.client_name ? `Hello ${preview.client_name}` : 'Your health screening'}
-        </h1>
-        <p className="mt-1 text-[13.5px] leading-[1.5]" style={{ color: C.muted }}>
-          A few minutes now saves the paperwork on your first session. Your answers go straight to
-          your trainer.
-        </p>
-      </div>
+    <Frame>
+      <Hero preview={preview} />
 
-      <div className="mb-6">
-        <StepperTimeline steps={STEPS} current={step} onStep={(id) => { if (id < step) setStep(id as StepId); }} />
-      </div>
-
-      <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <FloatInput label="Height (cm)" numeric="decimal" value={parq.heightCm} onChange={(v) => setParqField('heightCm', v)} />
-              <FloatInput label="Weight (kg)" numeric="decimal" value={parq.weightKg} onChange={(v) => setParqField('weightKg', v)} />
+      <div className="mx-auto w-full max-w-[720px] px-4 pb-10 sm:px-6">
+        <Card>
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+              style={{ background: C.blueWash, color: C.blueHi }}
+            >
+              <ShieldCheck size={17} />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-[600]" style={{ color: C.ink }}>{preview.studio_name}</p>
+              <p className="truncate text-[12px]" style={{ color: C.muted }}>
+                Health screening &amp; informed consent
+              </p>
             </div>
-            <StepParqQuestionnaire form={parq} set={setParqField} stepLabel={stepLabel} />
           </div>
-        )}
-        {step === 2 && <StepPastHistory form={parq} set={setParqField} stepLabel={stepLabel} />}
-        {step === 3 && <StepCurrentHealth form={parq} set={setParqField} stepLabel={stepLabel} />}
-        {step === 4 && (
-          <div className="space-y-8">
-            <StepExerciseProgrammeConsent form={consent} set={setConsentField} stepLabel={stepLabel} />
-            <StepAgreements form={consent} set={setConsentField} stepLabel={stepLabel} />
-          </div>
-        )}
-        {step === 5 && (
-          <div className="space-y-8">
-            <StepConsent form={parq} set={setParqField} stepLabel={stepLabel} hideSignature />
-            <StepSignatures form={consent} set={setConsentField} clientOnly />
-          </div>
-        )}
-      </m.div>
 
-      {error && (
-        <p role="alert" className="mt-5 text-[12.5px] font-[550]" style={{ color: C.red }}>{error}</p>
-      )}
+          <div className="mt-5">
+            <StepperTimeline
+              tone="light"
+              steps={STEPS}
+              current={step}
+              onStep={(id) => { if (id < step) setStep(id as StepId); }}
+            />
+          </div>
 
-      <div className="mt-7 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={back}
-          disabled={step === 1 || busy}
-          className={`${SECONDARY_BUTTON} h-11 px-5 text-[14px]`}
-        >
-          <ArrowLeft size={15} /> Back
-        </button>
-        <button
-          type="button"
-          onClick={next}
-          disabled={busy}
-          className={`${PRIMARY_BUTTON} h-11 px-6 text-[14px]`}
-        >
-          {busy ? <Loader2 size={15} className="animate-spin" /> : step === LAST_STEP ? <Check size={15} /> : <ArrowRight size={15} />}
-          {busy ? 'Submitting…' : step === LAST_STEP ? 'Submit & sign' : 'Next'}
-        </button>
+          <div className="mt-6">
+            <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
+              {step === 1 && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FloatInput label="Height (cm)" numeric="decimal" value={parq.heightCm} onChange={(v) => setParqField('heightCm', v)} />
+                    <FloatInput label="Weight (kg)" numeric="decimal" value={parq.weightKg} onChange={(v) => setParqField('weightKg', v)} />
+                  </div>
+                  <StepParqQuestionnaire form={parq} set={setParqField} stepLabel={stepLabel} />
+                </div>
+              )}
+              {step === 2 && <StepPastHistory form={parq} set={setParqField} stepLabel={stepLabel} />}
+              {step === 3 && <StepCurrentHealth form={parq} set={setParqField} stepLabel={stepLabel} />}
+              {step === 4 && (
+                <div className="space-y-8">
+                  <StepExerciseProgrammeConsent form={consent} set={setConsentField} stepLabel={stepLabel} />
+                  <StepAgreements form={consent} set={setConsentField} stepLabel={stepLabel} />
+                </div>
+              )}
+              {step === 5 && (
+                <div className="space-y-8">
+                  <StepConsent form={parq} set={setParqField} stepLabel={stepLabel} hideSignature />
+                  <StepSignatures form={consent} set={setConsentField} clientOnly />
+                </div>
+              )}
+            </m.div>
+          </div>
+
+          {error && (
+            <p role="alert" className="mt-5 text-[12.5px] font-[550]" style={{ color: C.red }}>{error}</p>
+          )}
+
+          <div className="mt-7 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={back}
+              disabled={step === 1 || busy}
+              className={`${SECONDARY_BUTTON} h-11 px-5 text-[14px]`}
+            >
+              <ArrowLeft size={15} /> Back
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              disabled={busy}
+              className={`${PRIMARY_BUTTON} h-11 px-6 text-[14px]`}
+            >
+              {busy ? <Loader2 size={15} className="animate-spin" /> : step === LAST_STEP ? <Check size={15} /> : <ArrowRight size={15} />}
+              {busy ? 'Submitting…' : step === LAST_STEP ? 'Submit & sign' : 'Next'}
+            </button>
+          </div>
+
+          <p className="mt-4 text-center text-[11.5px] leading-[1.5]" style={{ color: C.faint }}>
+            This link works once and expires{' '}
+            {new Date(preview.expires_at).toLocaleString('en-IN', {
+              day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+            })}
+            . Your answers are saved on this device as you go.
+          </p>
+        </Card>
+        <Support />
       </div>
-
-      <p className="mt-4 text-center text-[11.5px] leading-[1.5]" style={{ color: C.faint }}>
-        This link works once and expires{' '}
-        {new Date(preview.expires_at).toLocaleString('en-IN', {
-          day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
-        })}
-        . Your answers are saved on this device as you go.
-      </p>
-    </Shell>
+    </Frame>
   );
 }
 
 export default function SignPage() {
   return (
-    <Suspense fallback={
-      <Shell>
-        <div className="flex justify-center py-6">
-          <Loader2 size={24} className="animate-spin" style={{ color: C.blueHi }} />
-        </div>
-      </Shell>
-    }>
+    <Suspense fallback={<Loading />}>
       <SigningForm />
     </Suspense>
   );
