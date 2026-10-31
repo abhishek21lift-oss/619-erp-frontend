@@ -11,6 +11,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   fetchMock.mockReset();
+  vi.restoreAllMocks();
 });
 
 const response = (body: unknown, ok = true) =>
@@ -33,6 +34,7 @@ const statsBody = {
 
 describe('getPublicLandingData', () => {
   it('merges both public endpoints', async () => {
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
     fetchMock
       .mockImplementationOnce(() => response(plansBody))
       .mockImplementationOnce(() => response(statsBody));
@@ -49,6 +51,7 @@ describe('getPublicLandingData', () => {
       'https://api.example.test/api/public/plans',
       expect.objectContaining({ next: { revalidate: 300 }, signal: expect.any(AbortSignal) }),
     );
+    expect(timeout).toHaveBeenCalledWith(2000);
   });
 
   it('keeps the plans when only the stats request fails', async () => {
