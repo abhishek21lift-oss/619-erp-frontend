@@ -24,6 +24,7 @@ import {
 import type { PublicPlan } from '@/components/landing/types';
 import { PT_OS_STRUCTURED_DATA } from '@/lib/pt-os-structured-data';
 import { ORGANIZATION_NODE, SOFTWARE_FEATURES } from '@/lib/schema-org';
+import { START_FREE_STRUCTURED_DATA } from '@/lib/start-free-structured-data';
 import { PT_OS_FAQ } from '@/components/landing/pt-os-faq-content';
 import { HOME_FAQ } from '@/components/landing/faq-content';
 import { metadata as ptOsMetadata } from '@/app/(bare)/pt-os/page';
@@ -611,5 +612,38 @@ describe('homepage offers', () => {
     expect(HOME_STRUCTURED_DATA['@graph'].map((n) => (n as { '@type': string })['@type'])).toEqual([
       'Organization', 'WebSite', 'SoftwareApplication', 'WebPage', 'FAQPage',
     ]);
+  });
+});
+
+// ── /start-free structured data ────────────────────────────────────────────
+
+describe('/start-free structured data', () => {
+  type SchemaNode = Record<string, unknown> & { '@type': string };
+  const graph = START_FREE_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+  const node = (type: string) => graph.find((n) => n['@type'] === type);
+
+  it('describes the organization, site, page and breadcrumb', () => {
+    expect(graph.map((n) => n['@type'])).toEqual([
+      'Organization', 'WebSite', 'WebPage', 'BreadcrumbList',
+    ]);
+  });
+
+  it('crumbs home to /start-free in one step', () => {
+    const crumbs = (node('BreadcrumbList') as { itemListElement: { item: string }[] }).itemListElement;
+    expect(crumbs.map((c) => c.item)).toEqual([SITE_URL, canonicalUrl('/start-free')]);
+  });
+
+  it('shares the homepage entity ids', () => {
+    const home = HOME_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+    for (const type of ['Organization', 'WebSite']) {
+      const own = node(type) as Record<string, unknown>;
+      const shared = home.find((n) => n['@type'] === type) as Record<string, unknown>;
+      expect(own['@id']).toBe(shared['@id']);
+    }
+  });
+
+  it('ships the JSON-LD in the layout a crawler receives', () => {
+    expect(read('(bare)/start-free/layout.tsx')).toMatch(/START_FREE_STRUCTURED_DATA_JSON/);
+    expect(read('(bare)/start-free/layout.tsx')).toMatch(/application\/ld\+json/);
   });
 });

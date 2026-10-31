@@ -11,6 +11,7 @@
 // the comment there. This is the opt-in.
 
 import type { Metadata } from 'next';
+import { START_FREE_STRUCTURED_DATA_JSON } from '@/lib/start-free-structured-data';
 
 export const metadata: Metadata = {
   // "Start free" alone carried no topic. The root template appends the brand.
@@ -29,5 +30,14 @@ export const metadata: Metadata = {
 };
 
 export default function StartFreeLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      {/* In the layout, not a component: it must be in the HTML a crawler gets. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: START_FREE_STRUCTURED_DATA_JSON }}
+      />
+      {children}
+    </>
+  );
 }
