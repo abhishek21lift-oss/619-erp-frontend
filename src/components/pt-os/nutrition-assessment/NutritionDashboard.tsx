@@ -44,7 +44,7 @@ interface NutritionDashboardProps {
 export function NutritionDashboard({ scores }: NutritionDashboardProps) {
   const radarData = CATEGORY_META.map((c) => ({ category: c.label, score: (scores[c.key] as number) ?? 0 }));
   const overall = scores.nutritionScore;
-  const readinessColor = scores.nutritionReadiness ? READINESS_COLOR[scores.nutritionReadiness] : 'var(--text-muted)';
+  const readinessColor = scores.nutritionReadiness ? READINESS_COLOR[scores.nutritionReadiness] ?? 'var(--text-muted)' : 'var(--text-muted)';
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>

@@ -8,7 +8,7 @@ export type SleepCategory = 'Excellent' | 'Good' | 'Fair' | 'Poor';
 export type HydrationCategory = 'Low' | 'Moderate' | 'Optimal' | 'Excellent';
 export type ActivityLevel = 'Sedentary' | 'Lightly Active' | 'Moderately Active' | 'Active' | 'Very Active';
 export type RiskLevel = 'Low' | 'Moderate' | 'High';
-export type LifestyleReadiness = 'Excellent' | 'Good' | 'Average' | 'Needs Improvement' | 'High Risk';
+export type LifestyleReadiness = 'Excellent' | 'Good' | 'Average' | 'Needs Improvement' | 'High Risk' | 'Insufficient data';
 export type OccupationType = 'desk_job' | 'active_job' | 'physical_labor' | 'student' | 'homemaker' | 'driver' | 'healthcare' | 'police' | 'fitness_professional' | 'retired' | 'other';
 export type DailyStepsBracket = '<3000' | '3000_5000' | '5000_8000' | '8000_10000' | '10000_plus';
 export type BreakfastHabit = 'daily' | 'sometimes' | 'never';
@@ -84,7 +84,8 @@ export function calcNutritionScore(mealFrequency: number | null, breakfastHabit:
   if (mealFrequency == null && breakfastHabit == null && lateNightEating == null) return null;
   let score = 100;
   if (mealFrequency != null) {
-    if (mealFrequency === 2 || mealFrequency === 5) score -= 10;
+    if (mealFrequency < 2) score -= 30;
+    else if (mealFrequency === 2 || mealFrequency === 5) score -= 10;
     else if (mealFrequency >= 6) score -= 20;
   }
   if (breakfastHabit === 'sometimes') score -= 15;
@@ -160,14 +161,16 @@ export interface LifestyleSixScores {
 }
 
 export function calcLifestyleScore(sixScores: LifestyleSixScores, habitRiskScore: number | null): number | null {
-  const base = mean(Object.values(sixScores));
+  const vals = Object.values(sixScores);
+  if (vals.filter((v) => v != null).length < 4) return null;
+  const base = mean(vals);
   if (base == null) return null;
   const penalty = (habitRiskScore || 0) * 0.2;
   return clamp(round(base - penalty), 0, 100);
 }
 
 export function classifyLifestyleReadiness(lifestyleScore: number | null): LifestyleReadiness | null {
-  if (lifestyleScore == null) return null;
+  if (lifestyleScore == null) return 'Insufficient data';
   if (lifestyleScore >= 85) return 'Excellent';
   if (lifestyleScore >= 70) return 'Good';
   if (lifestyleScore >= 50) return 'Average';

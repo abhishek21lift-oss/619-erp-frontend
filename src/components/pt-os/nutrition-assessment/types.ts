@@ -38,7 +38,7 @@ export interface NutritionFormData {
   supplements: Supplement[];
 
   // Step 5 — Digestive Health
-  digestiveIssues: DigestiveIssue[];
+  digestiveIssues: DigestiveIssue[] | null;
 
   // Step 6 — Meal Pattern & Eating Behaviour
   mealsPerDay: string;
@@ -58,7 +58,6 @@ export interface NutritionFormData {
   coffeeCupsPerDay: string;
   softDrinksPerDay: string;
   juicesPerDay: string;
-  alcoholicDrinksPerWeek: string;
   cravings: string[];
   cravingFrequency: CravingFrequency | '';
 
@@ -105,12 +104,12 @@ export function initNutritionForm(): NutritionFormData {
     foodsToAvoid: [], foodsToAvoidOther: '', foodsToAvoidReason: '',
     favouriteFoods: [], favouriteFoodOther: '',
     takesSupplements: null, supplements: [],
-    digestiveIssues: [],
+    digestiveIssues: null,
     mealsPerDay: '', breakfastRegularity: '', lunchRegularity: '', dinnerRegularity: '',
     snacksPerDay: '', lateNightEating: null, mealTimingConsistency: '', eatingOutFrequency: '',
     weekendEatingHabits: '', eatingBehaviours: [],
     waterIntakeLiters: '', teaCupsPerDay: '', coffeeCupsPerDay: '', softDrinksPerDay: '', juicesPerDay: '',
-    alcoholicDrinksPerWeek: '', cravings: [], cravingFrequency: '',
+    cravings: [], cravingFrequency: '',
     mealPreparer: '', nutritionBudget: '', medicalConditions: [], medicalNotes: '',
     coachNotes: { dietary_advice: '', meal_planning: '', supplement_advice: '', medical_notes: '', special_instructions: '' },
   };

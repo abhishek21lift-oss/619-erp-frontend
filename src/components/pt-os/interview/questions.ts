@@ -24,7 +24,7 @@
 //                    meal pattern the column calls inconsistent)
 //   smoking         never · occasionally · daily · former
 //   alcohol         never · occasionally · weekly · frequently
-//   training days   3 · 4 · 5 · 6
+//   training days   1 · 2 · 3 · 4 · 5 · 6 · 7   (migration 240 widened 0–7)
 //
 // The seven free-text questions this page used to ask — training history, pain
 // and injuries, lifestyle, motivation, availability, preferences, notes — are
@@ -216,10 +216,13 @@ export const INTERVIEW_QUESTIONS: readonly InterviewQuestion[] = [
       label: 'Days a week',
       hint: 'Realistic sessions, not best-case ones.',
       options: [
+        { value: '1', label: '1 day a week' },
+        { value: '2', label: '2 days a week' },
         { value: '3', label: '3 days a week' },
         { value: '4', label: '4 days a week' },
         { value: '5', label: '5 days a week' },
         { value: '6', label: '6 days a week' },
+        { value: '7', label: '7 days a week' },
       ],
     }],
   },
