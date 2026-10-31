@@ -44,6 +44,16 @@ export function isMetadataImagePath(pathname: string): boolean {
 }
 
 /**
+ * Root-level ownership-proof files written by search engines (`google<hex>.html`,
+ * `BingSiteAuth.xml`). They must be fetchable with no session — the auth proxy
+ * was redirecting them to `/login`, so the crawler that came to verify the
+ * domain got a sign-in form instead.
+ */
+export function isVerificationFile(pathname: string): boolean {
+  return /^\/(?:google[0-9a-f]+\.html|BingSiteAuth\.xml)$/i.test(pathname);
+}
+
+/**
  * Which sign-in page to send somebody back to from `pathname`.
  */
 export function signInPathFor(pathname: string): '/login' | '/member-login' | '/platform-login' {
