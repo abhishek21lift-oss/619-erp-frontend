@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import PtOsLanding from '@/components/landing/PtOsLanding';
+import { PT_OS_STRUCTURED_DATA_JSON } from '@/lib/pt-os-structured-data';
 
 export const metadata: Metadata = {
   title: 'PT OS: Personal Trainer Software for India',
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/pt-os' },
   openGraph: {
     url: 'https://myptstudio.com/pt-os',
+    siteName: 'MY PT STUDIO',
     title: 'PT OS: Personal Trainer Software for India',
     description:
       'Clients, programmes, sessions, payments and renewals for Indian personal trainers — in one professional workspace.',
@@ -17,5 +19,14 @@ export const metadata: Metadata = {
 };
 
 export default function PtOsLandingPage() {
-  return <PtOsLanding />;
+  return (
+    <>
+      {/* In the page, not a component: it must be in the HTML a crawler gets. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: PT_OS_STRUCTURED_DATA_JSON }}
+      />
+      <PtOsLanding />
+    </>
+  );
 }

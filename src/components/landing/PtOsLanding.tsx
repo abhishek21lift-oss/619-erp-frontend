@@ -21,6 +21,7 @@ import LandingNav from './LandingNav';
 import FaqSection from './FaqSection';
 import FinalCta from './FinalCta';
 import Footer from './Footer';
+import { PT_OS_FAQ } from './pt-os-faq-content';
 
 /**
  * The `/pt-os` marketing page.
@@ -110,29 +111,6 @@ const AFTER = [
   'Sessions, attendance and history on one record',
   'Payments and dues reconciled in rupees',
   'Renewals flagged before the client lapses',
-];
-
-const FAQ = [
-  {
-    q: 'Who is PT OS for?',
-    a: 'Independent personal trainers, boutique PT studios, strength coaches and online coaches in India — anyone who trains clients and also runs the business.',
-  },
-  {
-    q: 'How is this different from a diary or Excel sheet?',
-    a: 'A diary cannot remind a client to renew, reconcile a UPI payment, or show attendance trends. PT OS keeps clients, sessions, payments and renewals in one searchable record.',
-  },
-  {
-    q: 'How is this different from generic gym management software?',
-    a: 'Gym software is built for front-desk operations across hundreds of members. PT OS is built around the trainer-client relationship: programmes, assessments, progress reviews and personal follow-ups.',
-  },
-  {
-    q: 'Does it work for online coaching?',
-    a: 'Yes. Programmes, diet plans, progress tracking and payments work the same whether the client trains in person or online.',
-  },
-  {
-    q: 'What does it cost to try?',
-    a: 'Every plan starts with a 7-day free trial. No card is required to start.',
-  },
 ];
 
 export default function PtOsLanding() {
@@ -499,7 +477,7 @@ export default function PtOsLanding() {
           eyebrow="Questions"
           title="Questions trainers ask before starting"
           sub="The things trainers want to know before they move their business into one place."
-          items={FAQ}
+          items={PT_OS_FAQ}
         />
 
         <FinalCta />

@@ -88,15 +88,13 @@ export const metadata: Metadata = {
     type: 'website',
     title: 'MY PT STUDIO — Personal Training Business Management',
     description: 'The business management platform for personal trainers — clients, training, nutrition, progress, payments and analytics, beautifully unified.',
-    images: [
-      {
-        url: '/icon-512.png',
-        width: 512,
-        height: 512,
-        alt: 'MY PT STUDIO',
-      },
-    ],
+    // The image comes from src/app/opengraph-image.tsx. It used to be listed
+    // here as /icon-512.png, a 512×512 app icon cropped into a 1.91:1 card.
   },
+  // Only the card type; title and description fall back to the Open Graph
+  // values above, which every public route overrides for itself. Declaring
+  // them here would leave X showing the homepage copy on /pt-os.
+  twitter: { card: 'summary_large_image' },
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
   // Default-deny, and the default is the whole point.
   //

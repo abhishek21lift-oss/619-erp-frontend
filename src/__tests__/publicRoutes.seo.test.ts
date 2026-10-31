@@ -17,6 +17,8 @@ import nextConfig from '../../next.config.js';
 import { metadata as rootMetadata } from '@/app/layout';
 import { metadata as homeMetadata } from '@/app/(chrome)/page';
 import { HOME_STRUCTURED_DATA } from '@/lib/home-structured-data';
+import { PT_OS_STRUCTURED_DATA } from '@/lib/pt-os-structured-data';
+import { PT_OS_FAQ } from '@/components/landing/pt-os-faq-content';
 import { HOME_FAQ } from '@/components/landing/faq-content';
 import { metadata as ptOsMetadata } from '@/app/(bare)/pt-os/page';
 import { metadata as startFreeMetadata } from '@/app/(bare)/start-free/layout';
@@ -321,5 +323,100 @@ describe('homepage structured data', () => {
     const urls = JSON.stringify(graph).match(/https?:\/\/[^"\\]+/g) ?? [];
     expect(urls.length).toBeGreaterThan(0);
     for (const url of urls) expect(url.startsWith(SITE_URL)).toBe(true);
+  });
+});
+
+// ── /pt-os structured data ─────────────────────────────────────────────────
+//
+// Same rule as the homepage: the FAQPage must be built from the array the
+// accordion renders, not a second copy.
+
+describe('/pt-os structured data', () => {
+  type SchemaNode = Record<string, unknown> & { '@type': string };
+  const graph = PT_OS_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+  const node = (type: string) => graph.find((n) => n['@type'] === type);
+
+  it('describes the organization, site, product, page, breadcrumb and FAQ', () => {
+    expect(graph.map((n) => n['@type'])).toEqual([
+      'Organization',
+      'WebSite',
+      'SoftwareApplication',
+      'WebPage',
+      'BreadcrumbList',
+      'FAQPage',
+    ]);
+  });
+
+  it('marks up every PT OS FAQ the accordion renders, verbatim', () => {
+    const faq = node('FAQPage') as {
+      mainEntity: { name: string; acceptedAnswer: { text: string } }[];
+    };
+    expect(faq.mainEntity.map((q) => q.name)).toEqual(PT_OS_FAQ.map((f) => f.q));
+    expect(faq.mainEntity.map((q) => q.acceptedAnswer.text)).toEqual(PT_OS_FAQ.map((f) => f.a));
+  });
+
+  it('uses the canonical origin for every URL', () => {
+    const urls = JSON.stringify(graph).match(/https?:\/\/[^"\\]+/g) ?? [];
+    expect(urls.length).toBeGreaterThan(0);
+    for (const url of urls) expect(url.startsWith(SITE_URL)).toBe(true);
+  });
+
+  it('breadcrumbs home to /pt-os in one step', () => {
+    const crumbs = (node('BreadcrumbList') as { itemListElement: { item: string }[] }).itemListElement;
+    expect(crumbs.map((c) => c.item)).toEqual([SITE_URL, canonicalUrl('/pt-os')]);
+  });
+
+  it('shares the homepage entity ids rather than inventing new ones', () => {
+    const ids = (type: string) => (node(type) as Record<string, unknown>)['@id'];
+    const home = HOME_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+    const homeNode = (type: string) => home.find((n) => n['@type'] === type);
+    for (const type of ['Organization', 'WebSite', 'SoftwareApplication']) {
+      expect(ids(type)).toBe((homeNode(type) as Record<string, unknown>)['@id']);
+    }
+  });
+
+  it('ships the JSON-LD in the page the crawler receives', () => {
+    expect(read('(bare)/pt-os/page.tsx')).toMatch(/PT_OS_STRUCTURED_DATA_JSON/);
+    expect(read('(bare)/pt-os/page.tsx')).toMatch(/application\/ld\+json/);
+  });
+});
+
+// ── Social previews ────────────────────────────────────────────────────────
+//
+// The app icon is 512×512; as an OG image it was cropped into a 1.91:1 card.
+// Each shareable page now gets a real 1200×630 card.
+
+describe('social preview images', () => {
+  it('no route points Open Graph at the app icon', () => {
+    for (const file of ['layout.tsx', '(chrome)/page.tsx', '(bare)/pt-os/page.tsx', '(bare)/start-free/layout.tsx']) {
+      expect(read(file)).not.toMatch(/openGraph[\s\S]{0,400}icon-512/);
+    }
+  });
+
+  it('every public route has a generated 1200×630 card', () => {
+    for (const file of [
+      'opengraph-image.tsx',
+      '(bare)/pt-os/opengraph-image.tsx',
+      '(bare)/start-free/opengraph-image.tsx',
+    ]) {
+      const src = read(file);
+      expect(src).toMatch(/OG_SIZE/);
+      expect(src).toMatch(/contentType/);
+      expect(src).toMatch(/export const alt/);
+    }
+    expect(fs.existsSync(path.join(APP, '..', 'lib', 'og-card.tsx'))).toBe(true);
+  });
+
+  it('serves the cards without a session (the proxy never sends them to sign-in)', () => {
+    expect(isPublicProxyPath('/opengraph-image')).toBe(true);
+    expect(isPublicProxyPath('/pt-os/opengraph-image-79vnhd')).toBe(true);
+    expect(isPublicProxyPath('/start-free/opengraph-image-abc123')).toBe(true);
+    // Still not a way into the authenticated app.
+    expect(isPublicProxyPath('/pt-os/clients')).toBe(false);
+    expect(isPublicProxyPath('/pt-os/opengraph-image/../../clients')).toBe(false);
+  });
+
+  it('declares a large-image Twitter card', () => {
+    expect(rootMetadata.twitter).toEqual({ card: 'summary_large_image' });
   });
 });
