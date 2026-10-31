@@ -35,7 +35,10 @@
 import type { Metadata } from 'next';
 import StudioHome from '@/components/StudioHome';
 import { isAnonymousRequest } from '@/lib/session-hint';
-import { HOME_STRUCTURED_DATA_JSON } from '@/lib/home-structured-data';
+import { buildHomeStructuredData } from '@/lib/home-structured-data';
+import { toJsonLd } from '@/lib/schema-org';
+
+const HOME_JSON_LD = toJsonLd(buildHomeStructuredData());
 
 export const metadata: Metadata = {
   // The opt-in. Explicit on both keys rather than relying on a partial merge
@@ -58,7 +61,7 @@ export default async function Page() {
           receives, including the anonymous server render. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: HOME_STRUCTURED_DATA_JSON }}
+        dangerouslySetInnerHTML={{ __html: HOME_JSON_LD }}
       />
       <StudioHome anonymousHint={await isAnonymousRequest()} />
     </>

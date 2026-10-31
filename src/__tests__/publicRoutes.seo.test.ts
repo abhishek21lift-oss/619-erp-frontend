@@ -16,7 +16,12 @@ import { isPublicProxyPath } from '@/proxy';
 import nextConfig from '../../next.config.js';
 import { metadata as rootMetadata } from '@/app/layout';
 import { metadata as homeMetadata } from '@/app/(chrome)/page';
-import { HOME_STRUCTURED_DATA } from '@/lib/home-structured-data';
+import {
+  HOME_STRUCTURED_DATA,
+  buildHomeStructuredData,
+  buildPlanOffers,
+} from '@/lib/home-structured-data';
+import type { PublicPlan } from '@/components/landing/types';
 import { PT_OS_STRUCTURED_DATA } from '@/lib/pt-os-structured-data';
 import { ORGANIZATION_NODE, SOFTWARE_FEATURES } from '@/lib/schema-org';
 import { PT_OS_FAQ } from '@/components/landing/pt-os-faq-content';
@@ -554,5 +559,57 @@ describe('shared entity details', () => {
       const app = graph.find((n) => n['@type'] === 'SoftwareApplication');
       expect(app?.featureList).toBe(SOFTWARE_FEATURES);
     }
+  });
+});
+
+// ── Homepage offers ────────────────────────────────────────────────────────
+//
+// Prices come from the same live plan payload the page renders. If the API
+// returns nothing, the markup says nothing: an empty `offers: []` or a made-up
+// price would both be worse than no offer at all.
+
+describe('homepage offers', () => {
+  const plans: PublicPlan[] = [
+    {
+      code: 'starter', name: 'Starter', price_inr: 999, effective_price_inr: 899,
+      is_launch: false, duration_months: 1, client_limit: 30, best_for: 'Solo trainers',
+    },
+    {
+      code: 'growth', name: 'Growth', price_inr: 0, effective_price_inr: 0,
+      is_launch: true, duration_months: 12, client_limit: null, best_for: null,
+    },
+  ];
+  type SchemaNode = Record<string, unknown> & { '@type': string };
+  const softwareNode = (data: ReturnType<typeof buildHomeStructuredData>) =>
+    (data['@graph'] as readonly SchemaNode[])
+      .find((n) => n['@type'] === 'SoftwareApplication') as Record<string, unknown>;
+
+  it('builds one Offer per live plan from the effective price', () => {
+    expect(buildPlanOffers(plans)).toEqual([
+      {
+        '@type': 'Offer', name: 'Starter', price: 899, priceCurrency: 'INR',
+        description: '1-month plan', url: `${SITE_URL}/#pricing`,
+      },
+      {
+        '@type': 'Offer', name: 'Growth', price: 0, priceCurrency: 'INR',
+        description: '12-month plan', url: `${SITE_URL}/#pricing`,
+      },
+    ]);
+  });
+
+  it('adds the offers to the SoftwareApplication node', () => {
+    const node = softwareNode(buildHomeStructuredData(buildPlanOffers(plans)));
+    expect(node.offers).toHaveLength(2);
+  });
+
+  it('omits offers when no plans load, rather than claiming a price', () => {
+    expect(softwareNode(buildHomeStructuredData())).not.toHaveProperty('offers');
+    expect(softwareNode(buildHomeStructuredData([]))).not.toHaveProperty('offers');
+  });
+
+  it('keeps the no-offers base graph for the other contract tests', () => {
+    expect(HOME_STRUCTURED_DATA['@graph'].map((n) => (n as { '@type': string })['@type'])).toEqual([
+      'Organization', 'WebSite', 'SoftwareApplication', 'WebPage', 'FAQPage',
+    ]);
   });
 });
