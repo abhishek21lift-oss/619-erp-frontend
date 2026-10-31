@@ -28,6 +28,22 @@ export function isSessionlessPage(pathname: string): boolean {
 }
 
 /**
+ * Next's generated social-preview images (`opengraph-image`, `twitter-image`).
+ *
+ * They sit at the same origin as the page that declares them, under its path,
+ * and Next serves them from a hashed filename — `/opengraph-image?a1b2` for the
+ * root file and `/pt-os/opengraph-image-79vnhd?c3d4` for a nested one. The auth
+ * proxy has to let them through or the `og:image` URL in every page's `<head>`
+ * redirects to `/login` and every share previews a sign-in form.
+ *
+ * Shortcut: this is a pathname match, not a check that the file exists. A
+ * request to `/anything/opengraph-image` reaches the app router and 404s.
+ */
+export function isMetadataImagePath(pathname: string): boolean {
+  return /^\/(?:.*\/)?(?:opengraph-image|twitter-image)(?:-[a-z0-9]+)?$/.test(pathname);
+}
+
+/**
  * Which sign-in page to send somebody back to from `pathname`.
  */
 export function signInPathFor(pathname: string): '/login' | '/member-login' | '/platform-login' {

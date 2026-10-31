@@ -13,14 +13,16 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Start free',
+  // "Start free" alone carried no topic. The root template appends the brand.
+  title: 'Start Free — Personal Trainer Software',
   description:
     'Start a free MY PT STUDIO trial — clients, training, nutrition, progress, payments and analytics for personal trainers, in one place.',
   robots: { index: true, follow: true },
   alternates: { canonical: '/start-free' },
   openGraph: {
     url: 'https://myptstudio.com/start-free',
-    title: 'Start free — MY PT STUDIO',
+    siteName: 'MY PT STUDIO',
+    title: 'Start Free — Personal Trainer Software',
     description:
       'Start a free MY PT STUDIO trial — clients, training, nutrition, progress, payments and analytics for personal trainers, in one place.',
   },
