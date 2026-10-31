@@ -11,20 +11,21 @@ import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session
  * API (registration is client-create.ui.spec's journey); everything under test
  * is done through the screens, and every outcome is read back from the API.
  *
- * The interview is seven topics of selects since 2026-10-19, and what the
- * selects store is the canonical value, not the label: a band is stored as
- * its midpoint, and the smoking/drinking columns hold their own tokens. The
- * free-text columns the form used to fill are still on the record and must
- * survive a save from this form.
+ * The interview is three topics of selects since 2026-10-31: sitting hours,
+ * meal pattern and training days. Occupation, screen time, sleep, smoking and
+ * alcohol moved to the Lifestyle Assessment, which owns those columns. What
+ * the selects store is the canonical value, not the label: a band is stored as
+ * its midpoint. The free-text columns the form used to fill are still on the
+ * record and must survive a save from this form.
  */
 
 type Interview = {
   id: string;
   status: string;
   training_history: string | null;
-  lifestyle_occupation: string | null;
-  lifestyle_sleep_hours: string | number | null;
-  lifestyle_smoking: string | null;
+  lifestyle_sitting_hours: number | string | null;
+  lifestyle_meal_regularity: string | null;
+  lifestyle_training_days: number | string | null;
   completed_at: string | null;
 };
 type Journey = { steps: { key: string; state: string }[]; next: string | null };
@@ -72,14 +73,14 @@ test.describe('Client interview and journey', () => {
 
   test('the selects store canonical values, and completing continues to the server\'s next step', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const occupation = page.getByLabel('Type of work');
-    await expect(occupation).toBeVisible({ timeout: 25_000 });
+    const sitting = page.getByLabel('Sitting hours');
+    await expect(sitting).toBeVisible({ timeout: 25_000 });
 
-    // A label is never what gets stored: "7 – 8 hours" is 7.5, "Active job"
-    // is active_job.
-    await occupation.selectOption('active_job');
-    await page.getByLabel('Sleep per night').selectOption('7.5');
-    await page.getByLabel('Alcohol').selectOption('weekly');
+    // A label is never what gets stored: "6 – 8 hours" is 7, "Frequently
+    // skipped" is inconsistent.
+    await sitting.selectOption('7');
+    await page.getByLabel('Meal regularity').selectOption('inconsistent');
+    await page.getByLabel('Days a week', { exact: true }).selectOption('4');
     await page.getByRole('button', { name: 'Complete interview' }).click();
 
     // The UI's own success state.
@@ -90,9 +91,9 @@ test.describe('Client interview and journey', () => {
     const [row] = await interviews();
     expect(row.status).toBe('completed');
     expect(row.completed_at).toBeTruthy();
-    expect(row.lifestyle_occupation).toBe('active_job');
-    expect(String(row.lifestyle_sleep_hours)).toBe('7.5');
-    expect(row.lifestyle_smoking).toBeNull();
+    expect(Number(row.lifestyle_sitting_hours)).toBe(7);
+    expect(row.lifestyle_meal_regularity).toBe('inconsistent');
+    expect(Number(row.lifestyle_training_days)).toBe(4);
     // This form never writes the free-text columns.
     expect(row.training_history).toBeNull();
 
@@ -116,11 +117,9 @@ test.describe('Client interview and journey', () => {
     expect(seeded.status, JSON.stringify(seeded.body)).toBe(201);
 
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    // `exact` because the substances section is announced as "Any smoking or
-    // drinking?", which a substring match on "Smoking" also hits.
-    const smoking = page.getByLabel('Smoking', { exact: true });
-    await expect(smoking).toBeVisible({ timeout: 25_000 });
-    await smoking.selectOption('daily');
+    const meal = page.getByLabel('Meal regularity');
+    await expect(meal).toBeVisible({ timeout: 25_000 });
+    await meal.selectOption('irregular');
     await page.getByRole('button', { name: 'Save draft' }).click();
     await expect.poll(async () => (await interviews())[0]?.status, { timeout: 15_000 }).toBe('draft');
 
@@ -128,11 +127,11 @@ test.describe('Client interview and journey', () => {
     // from the new form.
     let rows = await interviews();
     expect(rows).toHaveLength(1);
-    expect(rows[0].lifestyle_smoking).toBe('daily');
+    expect(rows[0].lifestyle_meal_regularity).toBe('irregular');
     expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
 
     await page.reload();
-    await expect(page.getByLabel('Smoking', { exact: true })).toHaveValue('daily', { timeout: 25_000 });
+    await expect(page.getByLabel('Meal regularity')).toHaveValue('irregular', { timeout: 25_000 });
     await page.getByRole('button', { name: 'Complete interview' }).click();
     await expect(page.getByRole('heading', { name: 'Interview complete' })).toBeVisible({ timeout: 20_000 });
 
@@ -144,7 +143,7 @@ test.describe('Client interview and journey', () => {
 
   test('an empty interview cannot be completed', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    await expect(page.getByLabel('Type of work')).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByLabel('Sitting hours')).toBeVisible({ timeout: 25_000 });
     await expect(page.getByRole('button', { name: 'Complete interview' })).toBeDisabled();
     expect(await interviews()).toHaveLength(0);
   });

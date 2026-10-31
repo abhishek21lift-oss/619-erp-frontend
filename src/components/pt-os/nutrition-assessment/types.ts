@@ -120,11 +120,11 @@ export function initNutritionForm(): NutritionFormData {
 export { toMeasurementOrNull as n } from '@/lib/forms/normalize';
 
 /** The Coach Notes areas for this assessment, beside the type they key into.
- *  Passed to the shared CoachNotesPanel — see components/pt-os/shared. */
+ *  Passed to the shared CoachNotesPanel — see components/pt-os/shared.
+ *  Medical notes are not here: the top-level `medical_notes` field owns them. */
 export const COACH_NOTE_FIELDS: { key: keyof CoachNotes & string; label: string }[] = [
   { key: 'dietary_advice', label: 'Dietary Advice' },
   { key: 'meal_planning', label: 'Meal Planning' },
   { key: 'supplement_advice', label: 'Supplement Advice' },
-  { key: 'medical_notes', label: 'Medical Notes' },
   { key: 'special_instructions', label: 'Special Instructions' },
 ];

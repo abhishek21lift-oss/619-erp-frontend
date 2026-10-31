@@ -29,6 +29,7 @@ interface StrengthLog {
   id: string; client_id: string; exercise_name: string;
   weight_kg: number; sets_done: number; reps_done: number;
   one_rm_estimate: number | null; log_date: string; notes?: string | null;
+  assessment_id?: string | null;
 }
 
 // Postgres NUMERIC arrives from node-postgres as a STRING ("102.50"). Read as
@@ -519,10 +520,16 @@ function HistoryRow({ log, onChanged }: { log: StrengthLog; onChanged: () => voi
             <TrendingUp size={11} /> 1RM: {log.one_rm_estimate} kg
           </span>
         )}
-        <button type="button" aria-label={`Edit ${log.exercise_name} lift`} onClick={() => setEditing(true)} disabled={busy}
-          className="rounded-[8px] p-1.5 text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]"><Pencil size={13} /></button>
-        <button type="button" aria-label={`Delete ${log.exercise_name} lift`} onClick={remove} disabled={busy}
-          className="rounded-[8px] p-1.5 text-[color:var(--text-muted)] hover:text-red-600"><Trash2 size={13} /></button>
+        {/* A lift copied from a fitness test is read-only here: the test is
+            the source, and editing the copy let the two disagree. */}
+        {!log.assessment_id && (
+          <>
+            <button type="button" aria-label={`Edit ${log.exercise_name} lift`} onClick={() => setEditing(true)} disabled={busy}
+              className="rounded-[8px] p-1.5 text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]"><Pencil size={13} /></button>
+            <button type="button" aria-label={`Delete ${log.exercise_name} lift`} onClick={remove} disabled={busy}
+              className="rounded-[8px] p-1.5 text-[color:var(--text-muted)] hover:text-red-600"><Trash2 size={13} /></button>
+          </>
+        )}
       </div>
     </div>
   );

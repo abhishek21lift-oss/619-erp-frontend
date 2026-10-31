@@ -1,29 +1,24 @@
 // The Client Interview's questions, in the order a trainer asks them.
 //
-// ── Seven groups, eight answers ─────────────────────────────────────────────
+// ── Three topics, three answers ─────────────────────────────────────────────
 //
-// The trainer picks; nothing is typed free-hand. Six of the seven topics carry
-// one control each, and "Smoking & alcohol" carries two — the two are captured
-// independently because the record stores them in their own columns.
+// The trainer picks; nothing is typed free-hand. Each topic carries one
+// control. Occupation, screen time, sleep, smoking and alcohol are asked in
+// the Lifestyle Assessment, which owns those columns — one answer, one owner.
 //
 // ── Values are canonical, labels are for people ─────────────────────────────
 //
 // Every option's `value` is what the server stores, and the DB's CHECK
-// constraints (backend migration 228) accept exactly that vocabulary. The two
-// numeric topics are stored as numbers, so a band ("2–4 hours") is stored as
+// constraints (backend migration 228) accept exactly that vocabulary. The
+// numeric topic is stored as a number, so a band ("2–4 hours") is stored as
 // the band's midpoint (3), which is the only honest number a band contains:
 // the correct long-run error of a midpoint is zero, and it keeps the column's
 // NUMERIC type meaningful instead of overloading it with tokens like '2_4'.
 //
-//   occupation      desk_job · active_job · physical_labor · … (migration 228's list)
 //   sitting hours   <2 → 1 · 2–4 → 3 · 4–6 → 5 · 6–8 → 7 · 8+ → 9
-//   screen time     <2 · 2_4 · 4_6 · 6_8 · 8_plus      (already canonical)
-//   sleep hours     <5 → 4.5 · 5–6 → 5.5 · 6–7 → 6.5 · 7–8 → 7.5 · 8+ → 8.5
 //   meal regularity regular · irregular · inconsistent
 //                   ("frequently skipped" is the plan-facing reading of a
 //                    meal pattern the column calls inconsistent)
-//   smoking         never · occasionally · daily · former
-//   alcohol         never · occasionally · weekly · frequently
 //   training days   1 · 2 · 3 · 4 · 5 · 6 · 7   (migration 240 widened 0–7)
 //
 // The seven free-text questions this page used to ask — training history, pain
@@ -32,13 +27,10 @@
 // record and the save below never writes over them.
 
 import type { LucideIcon } from 'lucide-react';
-import { Armchair, BedDouble, Briefcase, CalendarClock, Cigarette, Smartphone, UtensilsCrossed } from 'lucide-react';
-import type { ToneName } from '@/components/profile/profileTheme';
+import { Armchair, CalendarClock, UtensilsCrossed } from 'lucide-react';
 
 export type InterviewField =
-  | 'lifestyle_occupation' | 'lifestyle_sitting_hours' | 'lifestyle_screen_time'
-  | 'lifestyle_sleep_hours' | 'lifestyle_meal_regularity' | 'lifestyle_smoking'
-  | 'lifestyle_alcohol' | 'lifestyle_training_days';
+  | 'lifestyle_sitting_hours' | 'lifestyle_meal_regularity' | 'lifestyle_training_days';
 
 export interface InterviewOption {
   /** Stored as-is. */
@@ -63,8 +55,7 @@ export interface InterviewQuestion {
   /** The question as it is asked out loud. */
   prompt: string;
   icon: LucideIcon;
-  tone: ToneName;
-  /** One control, or two where the topic has two independent answers. */
+  /** The answer controls for this topic. */
   controls: readonly InterviewControl[];
 }
 
@@ -77,46 +68,12 @@ const SITTING: readonly InterviewOption[] = [
   { value: '9', label: '8+ hours' },
 ];
 
-const SLEEP: readonly InterviewOption[] = [
-  { value: '4.5', label: 'Under 5 hours' },
-  { value: '5.5', label: '5 – 6 hours' },
-  { value: '6.5', label: '6 – 7 hours' },
-  { value: '7.5', label: '7 – 8 hours' },
-  { value: '8.5', label: '8+ hours' },
-];
-
 export const INTERVIEW_QUESTIONS: readonly InterviewQuestion[] = [
-  {
-    id: 'occupation',
-    label: 'Occupation',
-    prompt: 'What kind of work does the client do?',
-    icon: Briefcase,
-    tone: 'indigo',
-    controls: [{
-      key: 'lifestyle_occupation',
-      label: 'Type of work',
-      hint: 'Changes recovery and which hours a plan has to fit.',
-      options: [
-        { value: 'desk_job', label: 'Desk job' },
-        { value: 'active_job', label: 'Active job — on their feet' },
-        { value: 'physical_labor', label: 'Physical labour' },
-        { value: 'driver', label: 'Driver' },
-        { value: 'healthcare', label: 'Healthcare' },
-        { value: 'police', label: 'Police / security' },
-        { value: 'fitness_professional', label: 'Fitness professional' },
-        { value: 'student', label: 'Student' },
-        { value: 'homemaker', label: 'Homemaker' },
-        { value: 'retired', label: 'Retired' },
-        { value: 'other', label: 'Other' },
-      ],
-    }],
-  },
   {
     id: 'sitting',
     label: 'Daily sitting',
     prompt: 'How long do they sit on a typical day?',
     icon: Armchair,
-    tone: 'mint',
     controls: [{
       key: 'lifestyle_sitting_hours',
       label: 'Sitting hours',
@@ -125,43 +82,10 @@ export const INTERVIEW_QUESTIONS: readonly InterviewQuestion[] = [
     }],
   },
   {
-    id: 'screen-time',
-    label: 'Screen time',
-    prompt: 'How much screen time do they get?',
-    icon: Smartphone,
-    tone: 'rose',
-    controls: [{
-      key: 'lifestyle_screen_time',
-      label: 'Screen time',
-      hint: 'Work and leisure together.',
-      options: [
-        { value: '<2', label: 'Under 2 hours' },
-        { value: '2_4', label: '2 – 4 hours' },
-        { value: '4_6', label: '4 – 6 hours' },
-        { value: '6_8', label: '6 – 8 hours' },
-        { value: '8_plus', label: '8+ hours' },
-      ],
-    }],
-  },
-  {
-    id: 'sleep',
-    label: 'Sleep',
-    prompt: 'How much do they sleep?',
-    icon: BedDouble,
-    tone: 'gold',
-    controls: [{
-      key: 'lifestyle_sleep_hours',
-      label: 'Sleep per night',
-      hint: 'Over the last two to four weeks.',
-      options: SLEEP,
-    }],
-  },
-  {
     id: 'meals',
     label: 'Meal pattern',
     prompt: 'How regular are their meals?',
     icon: UtensilsCrossed,
-    tone: 'berry',
     controls: [{
       key: 'lifestyle_meal_regularity',
       label: 'Meal regularity',
@@ -174,43 +98,10 @@ export const INTERVIEW_QUESTIONS: readonly InterviewQuestion[] = [
     }],
   },
   {
-    id: 'substances',
-    label: 'Smoking & alcohol',
-    prompt: 'Any smoking or drinking?',
-    icon: Cigarette,
-    tone: 'violet',
-    // Two columns, two answers — never one combined score.
-    controls: [
-      {
-        key: 'lifestyle_smoking',
-        label: 'Smoking',
-        hint: 'Never, occasionally, daily, or stopped.',
-        options: [
-          { value: 'never', label: 'Never' },
-          { value: 'occasionally', label: 'Occasionally' },
-          { value: 'daily', label: 'Daily' },
-          { value: 'former', label: 'Formerly' },
-        ],
-      },
-      {
-        key: 'lifestyle_alcohol',
-        label: 'Alcohol',
-        hint: 'How often they drink.',
-        options: [
-          { value: 'never', label: 'Never' },
-          { value: 'occasionally', label: 'Occasionally' },
-          { value: 'weekly', label: 'Weekly' },
-          { value: 'frequently', label: 'Frequently' },
-        ],
-      },
-    ],
-  },
-  {
     id: 'training-days',
     label: 'Training days',
     prompt: 'How many days a week can they train?',
     icon: CalendarClock,
-    tone: 'sky',
     controls: [{
       key: 'lifestyle_training_days',
       label: 'Days a week',

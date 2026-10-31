@@ -6,9 +6,16 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import fs from 'node:fs';
 import path from 'node:path';
 import StepContext from '@/components/pt-os/nutrition-assessment/StepContext';
-import { initNutritionForm } from '@/components/pt-os/nutrition-assessment/types';
+import { COACH_NOTE_FIELDS, initNutritionForm } from '@/components/pt-os/nutrition-assessment/types';
 
 describe('medical context', () => {
+  it('asks for medical notes once, not again in coach notes', () => {
+    // The top-level column drives the risk score; a second box wrote a
+    // different value into coach_notes.medical_notes.
+    expect(COACH_NOTE_FIELDS.map((f) => f.key)).not.toContain('medical_notes');
+    // The old stored value still round-trips through the form shape.
+    expect(initNutritionForm().coachNotes.medical_notes).toBe('');
+  });
   it('shows the conditions and notes on the form', () => {
     const set = vi.fn();
     render(<StepContext form={initNutritionForm()} set={set} />);

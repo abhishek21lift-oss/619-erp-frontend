@@ -20,7 +20,7 @@ import type { GoalMetric } from '@/lib/goal-calculations';
 import {
   STEPS, LAST_STEP, GOAL_TYPE_META, PRIORITY_META, initGoalFormForClient, n,
 } from '@/components/pt-os/goal-assessment/types';
-import { formFromGoalRow } from '@/components/pt-os/goal-assessment/form-from-row';
+import { formFromGoalRow, k11MeasureFor } from '@/components/pt-os/goal-assessment/form-from-row';
 import type { CoachingBlock, K11Block } from '@/components/pt-os/goal-assessment/form-from-row';
 import type {
   GoalFormData, FormErrors, StepId, LifestyleAnswers, ClientContext, RetestInfo, GoalClientDefaults,
@@ -669,14 +669,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         barrier_plans: barrierPayload(form.barrierPlans),
       };
       const k11: K11Block = {
-        measure: measure ? {
-          metric: measure.metric,
-          exercise: measure.exercise ?? null,
-          label: measure.label ?? null,
-          current: measure.current,
-          target: measure.target,
-          unit: measure.unit || null,
-        } : undefined,
+        measure: k11MeasureFor(measure),
         client_agreement: form.clientAgreed,
         client_expectation: form.clientExpectation.trim() || null,
       };
