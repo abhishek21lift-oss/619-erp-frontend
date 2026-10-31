@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { buildReportOnlyCsp } from '@/lib/security-headers';
-import { SESSIONLESS_PAGES, isMetadataImagePath, isVerificationFile, signInPathFor } from '@/lib/public-paths';
+import {
+  SESSIONLESS_PAGES,
+  isMetadataImagePath,
+  isVerificationFile,
+  signInPathFor,
+} from '@/lib/public-paths';
 
 const PUBLIC_ASSET_PREFIXES: string[] = [
   '/checkin',
