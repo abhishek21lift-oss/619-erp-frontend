@@ -9,9 +9,11 @@ interface StepAgreementsProps {
   form: InformedConsentFormData;
   set: <K extends keyof InformedConsentFormData>(key: K, val: InformedConsentFormData[K]) => void;
   error?: string;
+  /** Overrides "Step 2 of 3" when this is one step of a longer flow. */
+  stepLabel?: string;
 }
 
-export function StepAgreements({ form, set, error }: StepAgreementsProps) {
+export function StepAgreements({ form, set, error, stepLabel }: StepAgreementsProps) {
   const toggle = (key: keyof InformedConsentAcknowledgements) => {
     set('acknowledgements', { ...form.acknowledgements, [key]: !form.acknowledgements[key] });
   };
@@ -24,7 +26,7 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Confidentiality, Participation & Declaration</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 2 of 3 — all items must be checked to continue.</p>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel || 'Step 2 of 3'} — all items must be checked to continue.</p>
         </div>
       </div>
 

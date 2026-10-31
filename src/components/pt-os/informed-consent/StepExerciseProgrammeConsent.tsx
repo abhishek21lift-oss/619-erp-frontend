@@ -8,11 +8,13 @@ interface StepExerciseProgrammeConsentProps {
   form: InformedConsentFormData;
   set: <K extends keyof InformedConsentFormData>(key: K, val: InformedConsentFormData[K]) => void;
   error?: string;
+  /** Overrides "Step 1 of 3" when this is one step of a longer flow. */
+  stepLabel?: string;
 }
 
 // Verbatim consent text (see EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS in
 // ./types.ts) — do not edit the wording here or anywhere else.
-export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseProgrammeConsentProps) {
+export function StepExerciseProgrammeConsent({ form, set, error, stepLabel }: StepExerciseProgrammeConsentProps) {
   return (
     <div className="space-y-7">
       <div className="flex items-start gap-4">
@@ -21,7 +23,7 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Consent</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 1 of 3</p>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel || 'Step 1 of 3'}</p>
         </div>
       </div>
 

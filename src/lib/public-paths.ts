@@ -17,6 +17,10 @@ export const SESSIONLESS_PAGES = [
   '/reset-password',
   '/auth/set-password',
   '/client/activate',
+  // Remote PAR-Q + consent signing. The one-time token is in the query
+  // string, and the page has no session by design — the client may not have
+  // a login yet.
+  '/sign',
   '/start-free',
   // Public PT OS marketing page. `/pt-os/clients` remains authenticated.
   '/pt-os',

@@ -313,17 +313,17 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   const stepperSteps = useMemo(() => STEPS.map((s) => ({ id: s.id, label: s.label })), []);
   const isLastStep = nextStepId(step) == null;
 
-  // Persists whatever has been filled in so far. Returns the (possibly new,
-  // if this PATCH versioned a completed record) record id.
-  const persist = useCallback(async (): Promise<string> => {
+  // Persists whatever has been filled in so far. Returns the saved record —
+  // possibly a new version, if this PATCH versioned a completed one.
+  const persist = useCallback(async (): Promise<InformedConsent> => {
     let targetId = currentId;
     if (!targetId) {
       try {
         const res = await api.progress.informedConsent.create(buildCreatePayload(form, clientId));
-        const id = res?.data?.id;
-        if (!id) throw new Error('Server did not return a record id.');
-        setCurrentId(id);
-        return id;
+        const saved = res?.data;
+        if (!saved?.id) throw new Error('Server did not return a record id.');
+        setCurrentId(saved.id);
+        return saved;
       } catch (err: unknown) {
         // Someone (another tab, another device) started or finished a consent
         // for this client since the page loaded. Save into that record — a
@@ -335,16 +335,17 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
       }
     }
     const res = await api.progress.informedConsent.update(targetId, buildUpdatePayload(form));
-    const id = res?.data?.id;
-    if (!id) throw new Error('Server did not return a record id.');
-    if (id !== currentId) setCurrentId(id);
-    return id;
+    const saved = res?.data;
+    if (!saved?.id) throw new Error('Server did not return a record id.');
+    if (saved.id !== currentId) setCurrentId(saved.id);
+    return saved;
   }, [currentId, form, clientId]);
 
   const handleFinish = useCallback(async () => {
     setSaving(true);
     try {
-      const id = await persist();
+      const saved = await persist();
+      const id = saved.id;
       // The witness signs FIRST. The record completes — and stops accepting
       // signatures — the moment client and trainer have both signed, so a
       // witness signing last was refused (409): the consent was saved but
@@ -354,7 +355,12 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
           signer: 'witness', signature: form.witnessSignature, witness_name: form.witnessName || undefined,
         });
       }
-      await api.progress.informedConsent.sign(id, { signer: 'client', signature: form.clientSignature });
+      // A remote-signed consent already carries the client's signature from
+      // their own phone. Re-signing it here would be refused (ALREADY_SIGNED)
+      // and the trainer's countersignature would never be captured.
+      if (!saved.client_signature) {
+        await api.progress.informedConsent.sign(id, { signer: 'client', signature: form.clientSignature });
+      }
       const res = await api.progress.informedConsent.sign(id, { signer: 'trainer', signature: form.trainerSignature });
       const final = res?.data;
       clear();

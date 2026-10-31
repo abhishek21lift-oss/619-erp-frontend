@@ -27,6 +27,7 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot, { normaliseSnapshot, type SnapshotState } from '@/components/pt-os/ClientSnapshot';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
+import ScreeningLinkCard from '@/components/pt-os/ScreeningLinkCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
 import {
@@ -847,9 +848,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </SectionCard>
 
               {/* ── CLIENT LOGIN ──
-                  Under the money, because eligibility depends on it. */}
+                  Under the money because that is where the reader looks for
+                  "what does this client still owe / have access to". The login
+                  itself no longer depends on payment — see clientInvitations.js. */}
               <div className="mb-5">
                 <ClientLoginCard clientId={client.id} />
+              </div>
+
+              {/* ── REMOTE SCREENING ──
+                  Sits with the login card: both are one-time links sent to the
+                  client, and the trainer who is about to send one is usually
+                  also about to send the other. */}
+              <div className="mb-5">
+                <ScreeningLinkCard
+                  clientId={client.id}
+                  clientName={client.name}
+                  phone={client.whatsapp || client.mobile}
+                />
               </div>
 
               {/* ── WORKSPACE ── */}

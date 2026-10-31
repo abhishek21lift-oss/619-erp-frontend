@@ -83,6 +83,7 @@ const BARE = [
   'pt-os',                       // redirect to /pt-os/clients
   'pt-os/pdf-viewer',            // full-screen viewer
   'reset-password',
+  'sign',                        // one-time signing link — token, no session
   'start-free',                  // public
   'subscription',                // renders AppShell itself — see below
   'subscription/checkout/[id]',
