@@ -86,7 +86,7 @@ function formFromRow(row: Record<string, unknown>): NutritionFormData {
     favouriteFoods: fav.known, favouriteFoodOther: fav.other,
     takesSupplements: typeof row.takes_supplements === 'boolean' ? row.takes_supplements : null,
     supplements: Array.isArray(row.supplements) ? row.supplements as NutritionFormData['supplements'] : [],
-    digestiveIssues: Array.isArray(row.digestive_issues) ? row.digestive_issues as NutritionFormData['digestiveIssues'] : [],
+    digestiveIssues: Array.isArray(row.digestive_issues) ? row.digestive_issues as NutritionFormData['digestiveIssues'] : null,
     mealsPerDay: row.meals_per_day != null ? String(row.meals_per_day) : '',
     breakfastRegularity: (row.breakfast_regularity as NutritionFormData['breakfastRegularity']) || '',
     lunchRegularity: (row.lunch_regularity as NutritionFormData['lunchRegularity']) || '',

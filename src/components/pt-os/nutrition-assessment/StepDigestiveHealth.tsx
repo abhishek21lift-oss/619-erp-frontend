@@ -13,7 +13,7 @@ interface StepDigestiveHealthProps {
 
 export function StepDigestiveHealth({ form, set }: StepDigestiveHealthProps) {
   const score = useMemo(() => calcDigestiveHealthScore(form.digestiveIssues), [form.digestiveIssues]);
-  const noIssues = form.digestiveIssues.length === 0;
+  const noIssues = form.digestiveIssues != null && form.digestiveIssues.length === 0;
 
   return (
     <div className="space-y-6">
@@ -40,11 +40,11 @@ export function StepDigestiveHealth({ form, set }: StepDigestiveHealthProps) {
         No Issues
       </button>
 
-      <DigestiveIssuesChecklist value={form.digestiveIssues} onChange={(v) => set('digestiveIssues', v)} />
+      <DigestiveIssuesChecklist value={form.digestiveIssues ?? []} onChange={(v) => set('digestiveIssues', v)} />
 
       <div className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
         <span className="text-[12.5px] font-[600] text-[color:var(--text-muted)]">Digestive Health Score</span>
-        <span className="text-[16px] font-[800]" style={{ color: score >= 70 ? '#059669' : score >= 50 ? '#d97706' : '#dc2626' }}>{score}</span>
+        <span className="text-[16px] font-[800]" style={{ color: score == null ? 'var(--text-muted)' : score >= 70 ? '#059669' : score >= 50 ? '#d97706' : '#dc2626' }}>{score ?? '—'}</span>
       </div>
     </div>
   );

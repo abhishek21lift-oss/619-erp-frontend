@@ -9,6 +9,7 @@ const READINESS_STYLE: Record<string, { bg: string; color: string }> = {
   Average: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
   'Needs Improvement': { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
   'High Risk': { bg: 'rgba(220,38,38,0.18)', color: '#dc2626' },
+  'Insufficient data': { bg: 'var(--bg-subtle)', color: 'var(--text-muted)' },
 };
 
 interface AssessmentScoreCardProps {

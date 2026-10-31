@@ -38,7 +38,7 @@ export interface NutritionFormData {
   supplements: Supplement[];
 
   // Step 5 — Digestive Health
-  digestiveIssues: DigestiveIssue[];
+  digestiveIssues: DigestiveIssue[] | null;
 
   // Step 6 — Meal Pattern & Eating Behaviour
   mealsPerDay: string;
@@ -105,7 +105,7 @@ export function initNutritionForm(): NutritionFormData {
     foodsToAvoid: [], foodsToAvoidOther: '', foodsToAvoidReason: '',
     favouriteFoods: [], favouriteFoodOther: '',
     takesSupplements: null, supplements: [],
-    digestiveIssues: [],
+    digestiveIssues: null,
     mealsPerDay: '', breakfastRegularity: '', lunchRegularity: '', dinnerRegularity: '',
     snacksPerDay: '', lateNightEating: null, mealTimingConsistency: '', eatingOutFrequency: '',
     weekendEatingHabits: '', eatingBehaviours: [],
