@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
 import { C, EASE, SHADOW } from './tokens';
@@ -11,6 +11,10 @@ import { HOME_FAQ, type FaqItem } from './faq-content';
 /**
  * FAQ — accordion. Defaults are the homepage's answers; `/pt-os` passes its
  * own list and header.
+ *
+ * Every answer stays mounted in the HTML so a crawler that runs no JavaScript
+ * still reads all of them. Closed panels are collapsed, transparent and
+ * `aria-hidden`; opening one only animates height and opacity.
  */
 export default function FaqSection({
   items = HOME_FAQ,
@@ -65,22 +69,18 @@ export default function FaqSection({
                       <ChevronDown size={17} style={{ color: isOpen ? C.blueHi : C.faint }} />
                     </m.span>
                   </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <m.div
-                        id={`faq-panel-${i}`}
-                        role="region"
-                        aria-labelledby={`faq-button-${i}`}
-                        initial={reduce ? false : { height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={reduce ? undefined : { height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: EASE }}
-                        className="overflow-hidden"
-                      >
-                        <p className="px-5 pb-5 text-[14px] leading-[1.6]" style={{ color: C.muted }}>{f.a}</p>
-                      </m.div>
-                    )}
-                  </AnimatePresence>
+                  <m.div
+                    id={`faq-panel-${i}`}
+                    role="region"
+                    aria-labelledby={`faq-button-${i}`}
+                    aria-hidden={!isOpen}
+                    initial={false}
+                    animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+                    transition={reduce ? { duration: 0 } : { duration: 0.3, ease: EASE }}
+                    className="overflow-hidden"
+                  >
+                    <p className="px-5 pb-5 text-[14px] leading-[1.6]" style={{ color: C.muted }}>{f.a}</p>
+                  </m.div>
                 </div>
               </Reveal>
             );
