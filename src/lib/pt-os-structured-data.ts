@@ -3,6 +3,7 @@ import { SITE_URL } from '@/lib/seo-routes';
 import {
   ORGANIZATION_ID,
   ORGANIZATION_NODE,
+  SOFTWARE_FEATURES,
   SOFTWARE_ID,
   SITE_NAME,
   WEBSITE_ID,
@@ -37,6 +38,7 @@ export const PT_OS_STRUCTURED_DATA = {
       url: PAGE_URL,
       description: DESCRIPTION,
       publisher: { '@id': ORGANIZATION_ID },
+      featureList: SOFTWARE_FEATURES,
     },
     {
       '@type': 'WebPage',

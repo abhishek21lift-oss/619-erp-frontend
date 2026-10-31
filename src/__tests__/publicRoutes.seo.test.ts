@@ -8,7 +8,7 @@ vi.mock('next/font/google', () => {
 });
 import fs from 'node:fs';
 import path from 'node:path';
-import robots, { PRIVATE_PREFIXES, PRIVATE_SEGMENTS } from '@/app/robots';
+import robots, { AI_CRAWLERS, PRIVATE_PREFIXES, PRIVATE_SEGMENTS } from '@/app/robots';
 import sitemap, { PUBLIC_ROUTES } from '@/app/sitemap';
 import { PUBLIC_SEO_ROUTES, SITE_URL, canonicalUrl } from '@/lib/seo-routes';
 import { SESSIONLESS_PAGES } from '@/lib/public-paths';
@@ -16,8 +16,15 @@ import { isPublicProxyPath } from '@/proxy';
 import nextConfig from '../../next.config.js';
 import { metadata as rootMetadata } from '@/app/layout';
 import { metadata as homeMetadata } from '@/app/(chrome)/page';
-import { HOME_STRUCTURED_DATA } from '@/lib/home-structured-data';
+import {
+  HOME_STRUCTURED_DATA,
+  buildHomeStructuredData,
+  buildPlanOffers,
+} from '@/lib/home-structured-data';
+import type { PublicPlan } from '@/components/landing/types';
 import { PT_OS_STRUCTURED_DATA } from '@/lib/pt-os-structured-data';
+import { ORGANIZATION_NODE, SOFTWARE_FEATURES } from '@/lib/schema-org';
+import { START_FREE_STRUCTURED_DATA } from '@/lib/start-free-structured-data';
 import { PT_OS_FAQ } from '@/components/landing/pt-os-faq-content';
 import { HOME_FAQ } from '@/components/landing/faq-content';
 import { metadata as ptOsMetadata } from '@/app/(bare)/pt-os/page';
@@ -59,7 +66,7 @@ describe('indexable marketing routes', () => {
     };
     for (const route of PUBLIC_ROUTES) {
       const src = read(optIns[route]);
-      expect(src).toMatch(/robots:\s*\{\s*index:\s*true,\s*follow:\s*true\s*\}/);
+      expect(src).toMatch(/robots:\s*\{\s*index:\s*true,\s*follow:\s*true\b/);
       expect(src).not.toMatch(/^\s*['"]use client['"]\s*;?\s*$/m);
       expect(src).toMatch(/export const metadata/);
     }
@@ -139,6 +146,44 @@ describe('robots.txt describes routes that exist', () => {
   });
 });
 
+// ── AI crawler policy ──────────────────────────────────────────────────────
+//
+// One explicit group for the answer engines, with exactly the same public
+// allow-list and private blocks as the `*` rule. Duplicating the policy for AI
+// must not open a door the wildcard rule closes.
+
+describe('AI crawler policy', () => {
+  type Rule = { userAgent: string | string[]; allow?: string[]; disallow?: string[] };
+  const rules = robots().rules as Rule[];
+
+  it('keeps the wildcard rule first', () => {
+    expect(rules[0].userAgent).toBe('*');
+  });
+
+  it('gives AI crawlers the same public allow-list as everyone else', () => {
+    expect(rules).toHaveLength(2);
+    expect(rules[1].userAgent).toEqual(AI_CRAWLERS);
+    expect(rules[1].allow).toEqual([...PUBLIC_SEO_ROUTES]);
+  });
+
+  it('blocks the same private segments for AI crawlers', () => {
+    expect(rules[1].disallow).toEqual(rules[0].disallow);
+    expect(rules[1].disallow).toContain('/api/');
+    expect(rules[1].disallow).toContain('/login');
+    expect(rules[1].disallow).toContain('/pt-os/');
+    expect(rules[1].disallow).not.toContain('/pt-os');
+  });
+
+  it('names the answer-engine crawlers the product wants to reach', () => {
+    expect(AI_CRAWLERS).toEqual([
+      'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',
+      'PerplexityBot', 'Perplexity-User',
+      'ClaudeBot', 'Claude-SearchBot', 'Claude-User',
+      'Google-Extended', 'Applebot-Extended', 'CCBot',
+    ]);
+  });
+});
+
 // ── The SEO route contract ──────────────────────────────────────────────────
 //
 // One list (lib/seo-routes.ts) and every crawler-facing surface held to it.
@@ -181,7 +226,12 @@ describe('the public SEO contract', () => {
 
   it.each(PUBLIC_SEO_ROUTES)('%s is indexable, followable and self-canonical', (route) => {
     const m = PUBLIC_METADATA[route];
-    expect(m.robots).toEqual({ index: true, follow: true });
+    expect(m.robots).toEqual({
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+    });
     expect(m.alternates?.canonical).toBe(route);
     const og = m.openGraph as { url?: string } | undefined;
     if (og?.url) expect(og.url.replace(/\/$/, '')).toBe(canonicalUrl(route));
@@ -421,6 +471,31 @@ describe('social preview images', () => {
   });
 });
 
+// ── llms.txt ───────────────────────────────────────────────────────────────
+//
+// A static crawler aid. It is not a page in the SEO contract: no canonical,
+// no sitemap entry, no `robots` metadata — just a file the proxy must serve
+// without a session.
+
+describe('llms.txt', () => {
+  const file = path.join(__dirname, '..', '..', 'public', 'llms.txt');
+
+  it('exists, names every public URL and states the trial and contact', () => {
+    const txt = fs.readFileSync(file, 'utf8');
+    for (const route of PUBLIC_SEO_ROUTES) expect(txt).toContain(canonicalUrl(route));
+    expect(txt).toContain('7-day free trial');
+    expect(txt).toContain('support@myptstudio.com');
+  });
+
+  it('is served without a session', () => {
+    expect(isPublicProxyPath('/llms.txt')).toBe(true);
+  });
+
+  it('is not part of the indexable page contract', () => {
+    expect(PUBLIC_SEO_ROUTES as readonly string[]).not.toContain('/llms.txt');
+  });
+});
+
 // ── Search-engine ownership proof ──────────────────────────────────────────
 //
 // The property was verified with a root-level google<hex>.html file. The auth
@@ -443,5 +518,137 @@ describe('search-engine ownership proof', () => {
     expect(isPublicProxyPath('/checkout.html')).toBe(false);
     expect(isPublicProxyPath('/google-verify.html')).toBe(false);
     expect(isPublicProxyPath('/wireframes.html')).toBe(false);
+  });
+});
+
+// ── Shared entity details ──────────────────────────────────────────────────
+//
+// Facts an answer engine can quote: how to reach support and what the product
+// actually does. Both are shared constants so the homepage and /pt-os cannot
+// drift into describing different companies or different products.
+
+describe('shared entity details', () => {
+  it('states the real support contact without inventing an address', () => {
+    expect(ORGANIZATION_NODE.email).toBe('support@myptstudio.com');
+    expect(ORGANIZATION_NODE.contactPoint).toEqual({
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      email: 'support@myptstudio.com',
+    });
+    expect(ORGANIZATION_NODE).not.toHaveProperty('address');
+    expect(ORGANIZATION_NODE).not.toHaveProperty('sameAs');
+  });
+
+  it('lists every shipped product area once', () => {
+    expect(SOFTWARE_FEATURES).toEqual([
+      'Command dashboard',
+      'Attendance & check-in',
+      'Billing & collections',
+      'Client lifecycle',
+      'Programmes & templates',
+      'Exercise library',
+      'Progress tracking',
+      'AI Coach',
+      'AI insights',
+      'Knowledge base',
+      'WhatsApp outreach',
+      'Campaigns & offers',
+      'Finance & forecast',
+      'Multi-branch',
+    ]);
+  });
+
+  it('puts the same feature list on both SoftwareApplication nodes', () => {
+    type SchemaNode = Record<string, unknown> & { '@type': string };
+    for (const data of [HOME_STRUCTURED_DATA, PT_OS_STRUCTURED_DATA]) {
+      const graph = data['@graph'] as readonly SchemaNode[];
+      const app = graph.find((n) => n['@type'] === 'SoftwareApplication');
+      expect(app?.featureList).toBe(SOFTWARE_FEATURES);
+    }
+  });
+});
+
+// ── Homepage offers ────────────────────────────────────────────────────────
+//
+// Prices come from the same live plan payload the page renders. If the API
+// returns nothing, the markup says nothing: an empty `offers: []` or a made-up
+// price would both be worse than no offer at all.
+
+describe('homepage offers', () => {
+  const plans: PublicPlan[] = [
+    {
+      code: 'starter', name: 'Starter', price_inr: 999, effective_price_inr: 899,
+      is_launch: false, duration_months: 1, client_limit: 30, best_for: 'Solo trainers',
+    },
+    {
+      code: 'growth', name: 'Growth', price_inr: 0, effective_price_inr: 0,
+      is_launch: true, duration_months: 12, client_limit: null, best_for: null,
+    },
+  ];
+  type SchemaNode = Record<string, unknown> & { '@type': string };
+  const softwareNode = (data: ReturnType<typeof buildHomeStructuredData>) =>
+    (data['@graph'] as readonly SchemaNode[])
+      .find((n) => n['@type'] === 'SoftwareApplication') as Record<string, unknown>;
+
+  it('builds one Offer per live plan from the effective price', () => {
+    expect(buildPlanOffers(plans)).toEqual([
+      {
+        '@type': 'Offer', name: 'Starter', price: 899, priceCurrency: 'INR',
+        description: '1-month plan', url: `${SITE_URL}/#pricing`,
+      },
+      {
+        '@type': 'Offer', name: 'Growth', price: 0, priceCurrency: 'INR',
+        description: '12-month plan', url: `${SITE_URL}/#pricing`,
+      },
+    ]);
+  });
+
+  it('adds the offers to the SoftwareApplication node', () => {
+    const node = softwareNode(buildHomeStructuredData(buildPlanOffers(plans)));
+    expect(node.offers).toHaveLength(2);
+  });
+
+  it('omits offers when no plans load, rather than claiming a price', () => {
+    expect(softwareNode(buildHomeStructuredData())).not.toHaveProperty('offers');
+    expect(softwareNode(buildHomeStructuredData([]))).not.toHaveProperty('offers');
+  });
+
+  it('keeps the no-offers base graph for the other contract tests', () => {
+    expect(HOME_STRUCTURED_DATA['@graph'].map((n) => (n as { '@type': string })['@type'])).toEqual([
+      'Organization', 'WebSite', 'SoftwareApplication', 'WebPage', 'FAQPage',
+    ]);
+  });
+});
+
+// ── /start-free structured data ────────────────────────────────────────────
+
+describe('/start-free structured data', () => {
+  type SchemaNode = Record<string, unknown> & { '@type': string };
+  const graph = START_FREE_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+  const node = (type: string) => graph.find((n) => n['@type'] === type);
+
+  it('describes the organization, site, page and breadcrumb', () => {
+    expect(graph.map((n) => n['@type'])).toEqual([
+      'Organization', 'WebSite', 'WebPage', 'BreadcrumbList',
+    ]);
+  });
+
+  it('crumbs home to /start-free in one step', () => {
+    const crumbs = (node('BreadcrumbList') as { itemListElement: { item: string }[] }).itemListElement;
+    expect(crumbs.map((c) => c.item)).toEqual([SITE_URL, canonicalUrl('/start-free')]);
+  });
+
+  it('shares the homepage entity ids', () => {
+    const home = HOME_STRUCTURED_DATA['@graph'] as readonly SchemaNode[];
+    for (const type of ['Organization', 'WebSite']) {
+      const own = node(type) as Record<string, unknown>;
+      const shared = home.find((n) => n['@type'] === type) as Record<string, unknown>;
+      expect(own['@id']).toBe(shared['@id']);
+    }
+  });
+
+  it('ships the JSON-LD in the layout a crawler receives', () => {
+    expect(read('(bare)/start-free/layout.tsx')).toMatch(/START_FREE_STRUCTURED_DATA_JSON/);
+    expect(read('(bare)/start-free/layout.tsx')).toMatch(/application\/ld\+json/);
   });
 });

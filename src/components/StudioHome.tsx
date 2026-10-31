@@ -19,6 +19,7 @@ import Guard from '@/components/Guard';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import LandingPage from '@/components/LandingPage';
 import BrandLogo from '@/components/BrandLogo';
+import type { PublicLandingData } from '@/lib/public-landing';
 
 // The signed-in dashboard (and the chart library behind it) must not ride in
 // the bundle a visitor downloads to read the landing page. next/dynamic gives
@@ -42,7 +43,13 @@ const INIT_TIMEOUT_MS = 20_000;
  * page rather than the loading splash, so the server HTML holds the real
  * content. ChromeGate lays the same splash over it until the check answers.
  */
-export default function StudioHome({ anonymousHint = false }: { anonymousHint?: boolean }) {
+export default function StudioHome({
+  anonymousHint = false,
+  initialPublicData = null,
+}: {
+  anonymousHint?: boolean;
+  initialPublicData?: PublicLandingData | null;
+}) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
@@ -150,7 +157,7 @@ export default function StudioHome({ anonymousHint = false }: { anonymousHint?: 
   }
 
   if (!user) {
-    return <LandingPage />;
+    return <LandingPage initialData={initialPublicData} />;
   }
 
   // The blank frame that paired with the redirect removed above is gone too.

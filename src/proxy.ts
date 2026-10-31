@@ -28,6 +28,7 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   '/no-zoom.js',
   '/sitemap.xml',
   '/robots.txt',
+  '/llms.txt',
   '/icons',
   '/images',
 ];

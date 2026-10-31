@@ -15,6 +15,26 @@ export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
 export const SOFTWARE_ID = `${SITE_URL}/#software`;
 
+const SUPPORT_EMAIL = 'support@myptstudio.com';
+
+/** Product areas the public site claims, shared by every SoftwareApplication. */
+export const SOFTWARE_FEATURES = [
+  'Command dashboard',
+  'Attendance & check-in',
+  'Billing & collections',
+  'Client lifecycle',
+  'Programmes & templates',
+  'Exercise library',
+  'Progress tracking',
+  'AI Coach',
+  'AI insights',
+  'Knowledge base',
+  'WhatsApp outreach',
+  'Campaigns & offers',
+  'Finance & forecast',
+  'Multi-branch',
+] as const;
+
 export const ORGANIZATION_NODE = {
   '@type': 'Organization',
   '@id': ORGANIZATION_ID,
@@ -22,6 +42,12 @@ export const ORGANIZATION_NODE = {
   url: SITE_URL,
   logo: `${SITE_URL}/icon-512.png`,
   description: SITE_DESCRIPTION,
+  email: SUPPORT_EMAIL,
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: SUPPORT_EMAIL,
+  },
 } as const;
 
 export const WEBSITE_NODE = {

@@ -11,13 +11,19 @@
 // the comment there. This is the opt-in.
 
 import type { Metadata } from 'next';
+import { START_FREE_STRUCTURED_DATA_JSON } from '@/lib/start-free-structured-data';
 
 export const metadata: Metadata = {
   // "Start free" alone carried no topic. The root template appends the brand.
   title: 'Start Free — Personal Trainer Software',
   description:
     'Start a free MY PT STUDIO trial — clients, training, nutrition, progress, payments and analytics for personal trainers, in one place.',
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+  },
   alternates: { canonical: '/start-free' },
   openGraph: {
     url: 'https://myptstudio.com/start-free',
@@ -29,5 +35,14 @@ export const metadata: Metadata = {
 };
 
 export default function StartFreeLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      {/* In the layout, not a component: it must be in the HTML a crawler gets. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: START_FREE_STRUCTURED_DATA_JSON }}
+      />
+      {children}
+    </>
+  );
 }

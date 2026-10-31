@@ -35,12 +35,19 @@
 import type { Metadata } from 'next';
 import StudioHome from '@/components/StudioHome';
 import { isAnonymousRequest } from '@/lib/session-hint';
-import { HOME_STRUCTURED_DATA_JSON } from '@/lib/home-structured-data';
+import { getPublicLandingData } from '@/lib/public-landing';
+import { buildHomeStructuredData, buildPlanOffers } from '@/lib/home-structured-data';
+import { toJsonLd } from '@/lib/schema-org';
 
 export const metadata: Metadata = {
   // The opt-in. Explicit on both keys rather than relying on a partial merge
   // over the root's `{ index: false, follow: false }`.
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+  },
   // Set here rather than globally. The root layout used to declare
   // `alternates: { canonical: '/' }`, which every page inherited — so all 124
   // URLs told a crawler they were really the homepage. Inert while everything
@@ -52,15 +59,22 @@ export const metadata: Metadata = {
 // for a request with no session cookie, rather than a loading splash — see
 // lib/session-hint.ts. A signed-in user's page is unchanged.
 export default async function Page() {
+  const anonymous = await isAnonymousRequest();
+  // Only an anonymous request gets the server fetch: a signed-in user's HTML
+  // has no business carrying public pricing, and the dashboard does not use it.
+  const publicData = anonymous ? await getPublicLandingData() : null;
+  const jsonLd = toJsonLd(
+    buildHomeStructuredData(buildPlanOffers(publicData?.plans ?? [])),
+  );
   return (
     <>
       {/* In the page rather than a component: it must be in the HTML a crawler
           receives, including the anonymous server render. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: HOME_STRUCTURED_DATA_JSON }}
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
-      <StudioHome anonymousHint={await isAnonymousRequest()} />
+      <StudioHome anonymousHint={anonymous} initialPublicData={publicData} />
     </>
   );
 }

@@ -1,0 +1,44 @@
+# MY PT STUDIO
+
+> MY PT STUDIO is a business management platform for personal trainers and
+> small studios. It brings clients, training, nutrition, progress, payments and
+> analytics into one workspace, with AI assistance grounded in each client's own
+> records.
+
+## Who it is for
+
+Personal trainers, fitness coaches and small studio owners, particularly in
+India.
+
+## What it does
+
+- **Operate:** command dashboard, attendance and check-in, billing and
+  collections, client lifecycle.
+- **Train:** programmes and templates, exercise library, progress tracking.
+- **Intelligence:** AI Coach, AI insights, knowledge base.
+- **Engage:** WhatsApp outreach, campaigns and offers.
+- **Grow:** finance and forecast, multi-branch.
+
+## Pricing and trial
+
+- 7-day free trial. No card required.
+- Prices are in INR and are always shown live at https://myptstudio.com/#pricing.
+- Plans differ by billing period and client limit. The live pricing section is
+  the only authoritative price list.
+
+## Public pages
+
+- https://myptstudio.com/ — homepage and product overview
+- https://myptstudio.com/pt-os — PT OS, personal trainer software for India
+- https://myptstudio.com/start-free — start a free trial
+
+## Contact
+
+support@myptstudio.com
+
+## Not for indexing
+
+The authenticated application — paths under /pt-os/ such as /pt-os/clients, and
+app routes such as /login, /client, /member, /trainer, /attendance, /finance and
+/settings — is private. It holds client health, payment and business data. It is
+disallowed in robots.txt; do not index or reproduce it.

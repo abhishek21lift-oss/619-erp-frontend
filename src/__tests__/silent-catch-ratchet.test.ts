@@ -133,8 +133,8 @@ const KNOWN = [
   'app/(platform)/platform/_tabs/FinanceTab.tsx:344',
   'app/(platform)/platform/_tabs/FinanceTab.tsx:100',
   'app/(platform)/platform/_tabs/StudiosTab.tsx:375',
-  'components/LandingPage.tsx:60',
-  'components/LandingPage.tsx:67',
+  'components/LandingPage.tsx:63',
+  'components/LandingPage.tsx:70',
   'components/TrialBanner.tsx:19',
   // 130/136 -> 151/157 -> 184/190 -> 188/194: the day prefill, the
   // record-backed form and then the generation's client id added helpers
