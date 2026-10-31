@@ -122,7 +122,7 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
       {journey.next === null ? (
         <div className="space-y-2 rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
           <p className="text-[12.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>
-            Onboarding complete — client is active.
+            Onboarding steps complete.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Link href={`/pt-os/clients/${clientId}/workout-log`}

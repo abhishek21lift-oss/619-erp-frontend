@@ -50,7 +50,7 @@ function day(days: number): string {
 }
 
 type Auth = { headers: Record<string, string> };
-type Step = { key: string; state: string; detail?: string };
+type Step = { key: string; state: string; detail?: string; optional?: boolean };
 type Journey = { steps: Step[]; next: string | null };
 
 async function login(api: APIRequestContext, who: { email: string; password: string }): Promise<Auth> {
@@ -161,7 +161,10 @@ test.describe('the PT client lifecycle, through the real API', () => {
     await completeWelcomeTour(id);
     j = await journey(id);
     expect(stateOf(j, 'welcome_tour')?.state).toBe('done');
-    expect(j.next).toBe('enrolment');
+    // Enrolment is optional until the client is enrolled: the screening comes
+    // first, and the rest of intake is not held behind it.
+    expect(stateOf(j, 'enrolment')?.optional).toBe(true);
+    expect(j.next).toBe('consent');
 
     // Enrolment is provisional: the term is written, the client stays pending
     // until consent and a fully answered PAR-Q exist.
