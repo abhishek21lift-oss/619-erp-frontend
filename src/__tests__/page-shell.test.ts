@@ -260,6 +260,7 @@ describe('the five module pages', () => {
     const wp = src('app', 'pt-os', 'workout-plans', 'page.tsx');
     expect(wp).not.toContain('max-w-[1400px]');
     expect(wp).not.toContain('from-indigo-500/10 via-violet-500/10 to-pink-500/10');
+    expect(wp).toContain('showcase');
   });
 
   it('today keeps its progress bar, on the hero', () => {
