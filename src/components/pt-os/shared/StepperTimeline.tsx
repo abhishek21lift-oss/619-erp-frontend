@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { semantic } from '@/lib/palette';
 
 export interface StepperTimelineStep<Id extends number = number> {
   id: Id;
@@ -13,12 +14,16 @@ interface StepperTimelineProps<Id extends number> {
   steps: readonly StepperTimelineStep<Id>[];
   current: Id;
   onStep: (id: Id) => void;
+  /** The surface the stepper sits on. The studio wizards are dark; the public
+   *  signing page is the same light stage as the marketing site. */
+  tone?: 'dark' | 'light';
 }
 
 /** Numbered circles with animated fill bars, click-to-jump when a step is
  *  reachable (`step.id <= current + 1`). Every assessment wizard passes its
  *  own `steps` list rather than keeping a near-identical wrapper. */
-export function StepperTimeline<Id extends number>({ steps, current, onStep }: StepperTimelineProps<Id>) {
+export function StepperTimeline<Id extends number>({ steps, current, onStep, tone = 'dark' }: StepperTimelineProps<Id>) {
+  const light = tone === 'light';
   // Reachability is computed by array *position*, not raw numeric id — a
   // caller (e.g. PAR-Q) may pass a `steps` list with gaps in `id` when a
   // step is conditionally hidden, so "id <= current + 1" would wrongly
@@ -35,7 +40,7 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep }: S
 
   return (
     <div className="overflow-x-auto pb-1">
-      <div className="flex items-center min-w-max px-1">
+      <div className={`flex items-center px-1 ${light ? 'w-full min-w-0 justify-center' : 'min-w-max'}`}>
         {steps.map((s, i) => {
           // By position, like reachability: ids may have gaps.
           const done = currentIndex > -1 && i < currentIndex;
@@ -51,11 +56,15 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep }: S
                 className="flex flex-col items-center gap-2 min-w-0"
               >
                 <div
-                  className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-[800] transition-all duration-300"
+                  className={`relative flex flex-shrink-0 items-center justify-center rounded-full text-[13px] font-[800] transition-all duration-300 ${light ? 'h-8 w-8 sm:h-10 sm:w-10' : 'h-10 w-10'}`}
                   style={{
-                    background: done ? '#A33757' : active ? '#fff' : 'rgba(255,255,255,0.14)',
-                    color: done ? '#fff' : active ? '#0F172A' : 'rgba(255,255,255,0.7)',
-                    boxShadow: active ? '0 0 0 4px rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                    background: done ? '#A33757' : active ? '#fff' : light ? semantic.surface : 'rgba(255,255,255,0.14)',
+                    color: done ? '#fff' : active ? semantic.ink : light ? semantic.muted : 'rgba(255,255,255,0.7)',
+                    boxShadow: active
+                      ? light
+                        ? '0 0 0 3px rgba(163,55,87,0.16), 0 2px 8px rgba(0,0,0,0.08)'
+                        : '0 0 0 4px rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.2)'
+                      : 'none',
                     transform: active ? 'scale(1.08)' : 'scale(1)',
                   }}
                 >
@@ -76,14 +85,23 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep }: S
                     min-h keeps one- and two-line labels the same height so
                     the connector sits level with every circle. */}
                 <span
-                  className="min-h-[26px] max-w-[90px] text-center text-[10.5px] font-[680] leading-tight tracking-tight"
-                  style={{ color: active ? '#fff' : done ? '#FFBB94' : 'rgba(255,255,255,0.55)' }}
+                  className={`min-h-[26px] max-w-[90px] text-center text-[10.5px] font-[680] leading-tight tracking-tight ${light ? 'hidden sm:block' : ''}`}
+                  style={{
+                    color: active
+                      ? light ? semantic.ink : '#fff'
+                      : done
+                        ? light ? '#A33757' : '#FFBB94'
+                        : light ? semantic.muted : 'rgba(255,255,255,0.55)',
+                  }}
                 >
                   {s.label}
                 </span>
               </button>
               {i < steps.length - 1 && (
-                <div className="relative h-[2px] w-8 sm:w-12 mx-1.5 mb-5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.18)' }}>
+                <div
+                  className={`relative h-[2px] rounded-full overflow-hidden ${light ? 'w-3 sm:w-12 mx-1 sm:mx-1.5 mb-0 sm:mb-5' : 'w-8 sm:w-12 mx-1.5 mb-5'}`}
+                  style={{ background: light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.18)' }}
+                >
                   <m.div
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{ background: 'linear-gradient(90deg, #A33757, #852E4E)' }}
