@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { buildReportOnlyCsp } from '@/lib/security-headers';
-import { SESSIONLESS_PAGES, isMetadataImagePath, signInPathFor } from '@/lib/public-paths';
+import { SESSIONLESS_PAGES, isMetadataImagePath, isVerificationFile, signInPathFor } from '@/lib/public-paths';
 
 const PUBLIC_ASSET_PREFIXES: string[] = [
   '/checkin',
@@ -23,6 +23,7 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   '/no-zoom.js',
   '/sitemap.xml',
   '/robots.txt',
+  '/llms.txt',
   '/icons',
   '/images',
 ];
@@ -40,6 +41,10 @@ function isPublicPath(pathname: string): boolean {
   // The social-preview images those pages declare. Without this the og:image
   // URL resolves to a redirect to /login.
   if (isMetadataImagePath(pathname)) return true;
+
+  // Search-engine ownership proof. It used to 307 to /login, so the crawler
+  // sent to verify the domain never saw the token.
+  if (isVerificationFile(pathname)) return true;
 
   return PUBLIC_ASSET_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?')

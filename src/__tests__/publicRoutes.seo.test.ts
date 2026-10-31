@@ -420,3 +420,53 @@ describe('social preview images', () => {
     expect(rootMetadata.twitter).toEqual({ card: 'summary_large_image' });
   });
 });
+
+// ── llms.txt ───────────────────────────────────────────────────────────────
+//
+// A static crawler aid. It is not a page in the SEO contract: no canonical,
+// no sitemap entry, no `robots` metadata — just a file the proxy must serve
+// without a session.
+
+describe('llms.txt', () => {
+  const file = path.join(__dirname, '..', '..', 'public', 'llms.txt');
+
+  it('exists, names every public URL and states the trial and contact', () => {
+    const txt = fs.readFileSync(file, 'utf8');
+    for (const route of PUBLIC_SEO_ROUTES) expect(txt).toContain(canonicalUrl(route));
+    expect(txt).toContain('7-day free trial');
+    expect(txt).toContain('support@myptstudio.com');
+  });
+
+  it('is served without a session', () => {
+    expect(isPublicProxyPath('/llms.txt')).toBe(true);
+  });
+
+  it('is not part of the indexable page contract', () => {
+    expect(PUBLIC_SEO_ROUTES as readonly string[]).not.toContain('/llms.txt');
+  });
+});
+
+// ── Search-engine ownership proof ──────────────────────────────────────────
+//
+// The property was verified with a root-level google<hex>.html file. The auth
+// proxy was redirecting it to /login, so the crawler sent to re-verify the
+// domain never saw the token.
+
+describe('search-engine ownership proof', () => {
+  it('allows every google verification file that exists in public/', () => {
+    const pub = path.join(APP, '..', '..', 'public');
+    const files = fs.readdirSync(pub).filter((f) => /^google[0-9a-f]+\.html$/i.test(f));
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) expect(isPublicProxyPath(`/${f}`)).toBe(true);
+  });
+
+  it('allows BingSiteAuth.xml', () => {
+    expect(isPublicProxyPath('/BingSiteAuth.xml')).toBe(true);
+  });
+
+  it('does not open arbitrary .html files', () => {
+    expect(isPublicProxyPath('/checkout.html')).toBe(false);
+    expect(isPublicProxyPath('/google-verify.html')).toBe(false);
+    expect(isPublicProxyPath('/wireframes.html')).toBe(false);
+  });
+});
