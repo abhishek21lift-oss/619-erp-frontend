@@ -16,7 +16,7 @@ import { clients, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, workoutGenerator, diet } from './endpoints/training';
 import { progress } from './endpoints/progress';
-import { pt } from './endpoints/ptOs';
+import { pt, formSigning, screeningLink } from './endpoints/ptOs';
 import { gymSettings, qr, subscription } from './endpoints/studio';
 import {
   superAdmin, settings, features, invitations, integrations, whatsapp,
@@ -31,6 +31,7 @@ export { http } from '../http';
 export { ROLES, TENANT_ROLES, hasRole, isRole } from '../roles';
 export * from './types';
 export type { WhatsAppState, WhatsAppStatus, WhatsAppQr } from './endpoints/platform';
+export type { FormSigningPreview, ScreeningLinkResult } from './endpoints/ptOs';
 
 // qsOf and buildQs remain private to the endpoint modules.
 
@@ -51,6 +52,8 @@ export const api = {
   diet,
   progress,
   pt,
+  formSigning,
+  screeningLink,
   gymSettings,
   qr,
   subscription,

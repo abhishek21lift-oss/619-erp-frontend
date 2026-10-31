@@ -13,7 +13,8 @@
  *   Activated      the account's state, plus resend / deactivate.
  *
  * `can_activate` and `blocked_message` come off the API. The rule they encode
- * — a login is what somebody gets for having paid — is enforced server-side on
+ * — a login needs a valid email and the trainer's activation, not a payment or
+ * a PT package — is enforced server-side on
  * every call anyway, so re-deriving it here would give two implementations of
  * the same rule and one of them would eventually be the wrong one. This
  * component renders the answer; it does not compute it.

@@ -14,9 +14,12 @@ interface StepConsentProps {
   /** Editing a signed screening whose answers have changed: the signature on
    *  file attests to the old answers, so the client signs again. */
   resignRequired?: boolean;
+  /** Remote signing collects one signature at the end of the whole flow; the
+   *  pad here would ask for the same signature twice. */
+  hideSignature?: boolean;
 }
 
-export function StepConsent({ form, set, error, stepLabel, resignRequired }: StepConsentProps) {
+export function StepConsent({ form, set, error, stepLabel, resignRequired, hideSignature = false }: StepConsentProps) {
   const [userAgent, setUserAgent] = useState('');
   useEffect(() => { if (typeof navigator !== 'undefined') setUserAgent(navigator.userAgent); }, []);
 
@@ -33,7 +36,11 @@ export function StepConsent({ form, set, error, stepLabel, resignRequired }: Ste
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Digital Consent</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel} — the client confirms these answers and signs.</p>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
+              {hideSignature
+                ? `${stepLabel} — the client confirms these answers are true.`
+                : `${stepLabel} — the client confirms these answers and signs.`}
+            </p>
           </div>
         </div>
 
@@ -70,11 +77,13 @@ export function StepConsent({ form, set, error, stepLabel, resignRequired }: Ste
           )}
         </div>
 
-        <div className="sm:max-w-[520px]">
-          <SignaturePad label="Client Signature" required value={form.clientSignature} onChange={(v) => set('clientSignature', v)} />
-        </div>
+        {!hideSignature && (
+          <div className="sm:max-w-[520px]">
+            <SignaturePad label="Client Signature" required value={form.clientSignature} onChange={(v) => set('clientSignature', v)} />
+          </div>
+        )}
 
-        {userAgent && (
+        {userAgent && !hideSignature && (
           <p className="text-[10.5px] font-[550]" style={{ color: 'var(--border-2)' }}>
             Device recorded for this consent: {userAgent}
           </p>

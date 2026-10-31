@@ -24,6 +24,7 @@ const PRIVATE_SEGMENTS = [
   '/reset-password',
   '/sales',
   '/settings',
+  '/sign',
   '/subscription',
   '/support',
   '/trainer',

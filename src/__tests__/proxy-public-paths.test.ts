@@ -77,6 +77,11 @@ const TOKEN_ENTRY_POINTS: Array<{ url: string; page: string; who: string }> = [
     page: 'app/reset-password/page.tsx',
     who: 'anyone who forgot their password',
   },
+  {
+    url: '/sign?token=abc',
+    page: 'app/sign/page.tsx',
+    who: 'a client sent a remote screening link',
+  },
 ];
 
 describe('the proxy lets in everyone who arrives from an email', () => {

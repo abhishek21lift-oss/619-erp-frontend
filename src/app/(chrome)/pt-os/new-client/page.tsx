@@ -12,6 +12,7 @@ import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
+import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { CLIENT_SOURCES, RELATIONSHIPS } from '@/lib/client-intake';
 import { ageFrom } from '@/lib/enrollment';
@@ -331,6 +332,14 @@ function NewClientForm() {
           </m.div>
 
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col gap-3 justify-center mt-6">
+            {/* A login is the first thing this person needs, and the trainer is
+                already looking at the screen that has their email in it. Asking
+                for it later means remembering to come back. */}
+            {createdId && form.email.trim() && (
+              <div className="mb-1 text-left">
+                <ClientLoginCard clientId={createdId} />
+              </div>
+            )}
             <Button
               style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
               onClick={() => router.push(`/pt-os/welcome-tour?client_id=${createdId}`)}

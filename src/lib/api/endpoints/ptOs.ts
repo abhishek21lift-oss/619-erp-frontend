@@ -196,3 +196,43 @@ export const pt = {
       method: 'PUT', body: JSON.stringify(data),
     }),
 };
+
+// ── Remote screening ─────────────────────────────────────────
+//
+// A one-time link lets an online client fill and sign their PAR-Q and informed
+// consent on their own phone, before they have a login or a PT package. The
+// token is the only credential on the public half.
+
+export interface FormSigningPreview {
+  client_name: string;
+  studio_name: string;
+  email: string | null;
+  expires_at: string;
+}
+
+export interface ScreeningLinkResult {
+  url: string;
+  emailed: boolean;
+  email: string | null;
+  expires_at: string;
+}
+
+/** Public, no session. */
+export const formSigning = {
+  preview: (token: string) =>
+    http<{ data: FormSigningPreview }>(`/api/public/form-signing/${encodeURIComponent(token)}`),
+  submit: (token: string, body: Record<string, unknown>) =>
+    http<{ data: { parq_form_id: string; risk_level: string } }>(
+      `/api/public/form-signing/${encodeURIComponent(token)}`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+};
+
+/** Trainer side: issue a link, email it when the client has an address, and
+ *  return the copyable URL either way. */
+export const screeningLink = {
+  create: (clientId: string) =>
+    http<{ data: ScreeningLinkResult }>('/api/form-links', {
+      method: 'POST', body: JSON.stringify({ client_id: clientId }),
+    }),
+};

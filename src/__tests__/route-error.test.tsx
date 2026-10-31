@@ -185,6 +185,9 @@ describe('every route segment has a boundary', () => {
     // The Command Center's own door. Public for the same reason the other two
     // are: nobody standing at it has a session yet.
     'platform-login',
+    // One-time signing link: the client has no account at all, so there is no
+    // session for Guard to find and no shell to rebuild.
+    'sign',
     'reset-password', 'start-free',
   ]);
   // A fallback rebuilds the shell only when NOTHING above it has one.
