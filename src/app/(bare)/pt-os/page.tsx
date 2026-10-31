@@ -6,7 +6,12 @@ export const metadata: Metadata = {
   title: 'PT OS: Personal Trainer Software for India',
   description:
     'PT OS helps Indian personal trainers run clients, programmes, sessions, payments and renewals in one workspace. Start free today.',
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+  },
   alternates: { canonical: '/pt-os' },
   openGraph: {
     url: 'https://myptstudio.com/pt-os',

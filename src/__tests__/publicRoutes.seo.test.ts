@@ -66,7 +66,7 @@ describe('indexable marketing routes', () => {
     };
     for (const route of PUBLIC_ROUTES) {
       const src = read(optIns[route]);
-      expect(src).toMatch(/robots:\s*\{\s*index:\s*true,\s*follow:\s*true\s*\}/);
+      expect(src).toMatch(/robots:\s*\{\s*index:\s*true,\s*follow:\s*true\b/);
       expect(src).not.toMatch(/^\s*['"]use client['"]\s*;?\s*$/m);
       expect(src).toMatch(/export const metadata/);
     }
@@ -226,7 +226,12 @@ describe('the public SEO contract', () => {
 
   it.each(PUBLIC_SEO_ROUTES)('%s is indexable, followable and self-canonical', (route) => {
     const m = PUBLIC_METADATA[route];
-    expect(m.robots).toEqual({ index: true, follow: true });
+    expect(m.robots).toEqual({
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+    });
     expect(m.alternates?.canonical).toBe(route);
     const og = m.openGraph as { url?: string } | undefined;
     if (og?.url) expect(og.url.replace(/\/$/, '')).toBe(canonicalUrl(route));

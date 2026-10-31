@@ -2,7 +2,8 @@
 // reads from.
 //
 // Exactly these URLs are indexable: each answers 200 with its own HTML, opts
-// in with `robots: { index: true, follow: true }`, declares itself canonical,
+// in with `robots: { index: true, follow: true, 'max-snippet': -1,
+// 'max-image-preview': 'large' }`, declares itself canonical,
 // is listed in the sitemap, and is allowed by robots.txt. Everything else on
 // the origin inherits the root layout's `noindex, nofollow` default and is
 // never sitemap-listed.

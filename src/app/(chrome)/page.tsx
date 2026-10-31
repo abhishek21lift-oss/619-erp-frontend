@@ -42,7 +42,12 @@ import { toJsonLd } from '@/lib/schema-org';
 export const metadata: Metadata = {
   // The opt-in. Explicit on both keys rather than relying on a partial merge
   // over the root's `{ index: false, follow: false }`.
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+  },
   // Set here rather than globally. The root layout used to declare
   // `alternates: { canonical: '/' }`, which every page inherited — so all 124
   // URLs told a crawler they were really the homepage. Inert while everything

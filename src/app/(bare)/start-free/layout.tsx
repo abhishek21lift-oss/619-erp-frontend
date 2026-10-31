@@ -18,7 +18,12 @@ export const metadata: Metadata = {
   title: 'Start Free — Personal Trainer Software',
   description:
     'Start a free MY PT STUDIO trial — clients, training, nutrition, progress, payments and analytics for personal trainers, in one place.',
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+  },
   alternates: { canonical: '/start-free' },
   openGraph: {
     url: 'https://myptstudio.com/start-free',
