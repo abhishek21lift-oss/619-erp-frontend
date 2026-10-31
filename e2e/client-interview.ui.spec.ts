@@ -80,7 +80,7 @@ test.describe('Client interview and journey', () => {
     // skipped" is inconsistent.
     await sitting.selectOption('7');
     await page.getByLabel('Meal regularity').selectOption('inconsistent');
-    await page.getByLabel('Days a week').selectOption('4');
+    await page.getByLabel('Days a week', { exact: true }).selectOption('4');
     await page.getByRole('button', { name: 'Complete interview' }).click();
 
     // The UI's own success state.
