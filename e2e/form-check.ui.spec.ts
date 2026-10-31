@@ -15,7 +15,12 @@ import { ALPHA_MEMBER, apiGet, apiToken, memberApiToken } from './helpers/sessio
  * is the browser's job and not what this proves.
  */
 
-const LIFT = 'E2E form check';
+/**
+ * Unique per attempt. A serial group is retried as a whole, so a fixed name
+ * would leave the first attempt's row behind and the retry's upload would
+ * match two headings — a strict-mode failure that hides the real cause.
+ */
+let LIFT = 'E2E form check';
 const NOTE = 'Third set — lower back felt tight.';
 const COMMENT = 'Right knee tracks in on the way up.';
 const AT_SECOND = '3';
@@ -56,6 +61,7 @@ test.describe('Member — send a lift', () => {
 
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(120_000);
+    LIFT = `E2E form check ${Date.now()}`;
     page = await browser.newPage();
     await page.goto('/member-login');
     await page.getByLabel('Email address').fill(ALPHA_MEMBER.email);
@@ -99,6 +105,9 @@ test.describe('Member — send a lift', () => {
   test('nothing can be sent without a video', async () => {
     const before = (await memberChecks(token)).length;
     await page.goto('/member/form-check');
+    // The lift name is filled so the browser's own required-field check does
+    // not stop the submit: this test is about the video guard underneath it.
+    await page.getByLabel('Lift').fill(LIFT);
     await page.getByRole('button', { name: 'Send to trainer' }).click();
     await expect(page.getByText('Choose the video first.')).toBeVisible();
     expect(await memberChecks(token)).toHaveLength(before);
