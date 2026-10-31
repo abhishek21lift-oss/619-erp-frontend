@@ -60,7 +60,7 @@ export default function ChurnRow({ row, onMark, busy }: {
           aria-label={`Risk score ${row.score} of 100`}
         >
           <span className="text-[16px] font-[800] leading-none tabular-nums">{row.score}</span>
-          <span className="mt-0.5 text-[8.5px] font-[750] uppercase tracking-[0.06em]">score</span>
+          <span className="mt-0.5 text-[9px] font-[750] uppercase tracking-[0.06em]">score</span>
         </span>
 
         <div className="min-w-0 flex-1">
