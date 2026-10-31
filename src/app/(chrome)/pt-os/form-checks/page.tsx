@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Loader2, MessageSquarePlus, Play, Video } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero, Skeleton } from '@/components/ui';
+import { NumberField, TextAreaField, useStandaloneField } from '@/components/ui/form';
+import { clampNumericText } from '@/components/ui/FloatInput';
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
@@ -52,13 +54,19 @@ export default function TrainerFormChecksPage() {
     [selectedId],
   );
 
-  const [atSeconds, setAtSeconds] = useState(0);
+  // Held as the string the user typed, like every numeric field on the
+  // platform: an in-progress value is never coerced on its way to state.
+  const [atSeconds, setAtSeconds] = useState('');
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
+  const seconds = atSeconds === '' ? 0 : Number(atSeconds);
+  const atField = useStandaloneField('fc-at', atSeconds,
+    (v: string) => setAtSeconds(clampNumericText(v, 'integer')));
+  const commentField = useStandaloneField('fc-comment', comment, setComment);
 
   useEffect(() => {
-    setAtSeconds(0);
+    setAtSeconds('');
     setComment('');
   }, [selectedId]);
 
@@ -67,9 +75,10 @@ export default function TrainerFormChecksPage() {
   const addComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedId || !comment.trim()) return;
+    if (comment.trim().length > 1000) return toast.error('Keep the comment to 1000 characters.');
     setSaving(true);
     try {
-      await api.pt.commentFormCheck(selectedId, Math.max(0, Math.floor(atSeconds)), comment.trim());
+      await api.pt.commentFormCheck(selectedId, seconds, comment.trim());
       setComment('');
       toast.success('Comment added');
       await Promise.all([detail.refetch(), queue.refetch()]);
@@ -96,7 +105,7 @@ export default function TrainerFormChecksPage() {
 
   const useCurrentTime = () => {
     const el = video.current;
-    if (el) setAtSeconds(Math.floor(el.currentTime));
+    if (el) setAtSeconds(String(Math.floor(el.currentTime)));
   };
 
   const seek = (c: FormCheckComment) => {
@@ -179,7 +188,7 @@ export default function TrainerFormChecksPage() {
                     className="w-full rounded-[18px] px-4 py-3 text-left"
                     style={{
                       background: 'var(--bg-card)',
-                      border: `1px solid ${selectedId === row.id ? 'var(--accent, #A33757)' : 'var(--border)'}`,
+                      border: `1px solid ${selectedId === row.id ? 'var(--accent)' : 'var(--border)'}`,
                     }}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -296,7 +305,7 @@ export default function TrainerFormChecksPage() {
                             className="flex w-full items-start gap-2 rounded-[11px] px-2.5 py-2 text-left"
                             style={{ background: 'var(--bg-subtle)' }}>
                             <span className="mt-[1px] inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-[800] tabular-nums"
-                              style={{ background: 'rgba(59,130,246,0.14)', color: 'var(--accent, #2563EB)' }}>
+                              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
                               <Play size={9} /> {clock(c.at_seconds)}
                             </span>
                             <span className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
@@ -310,30 +319,24 @@ export default function TrainerFormChecksPage() {
 
                   <form onSubmit={addComment} className="mt-3 space-y-2">
                     <div className="flex items-end gap-2">
-                      <div className="w-[104px]">
-                        <label htmlFor="fc-at" className="mb-1 block text-[10.5px] font-[700]" style={{ color: 'var(--text-muted)' }}>
-                          At second
-                        </label>
-                        <input
-                          id="fc-at" type="number" min={0} step={1} value={atSeconds}
-                          onChange={(e) => setAtSeconds(Math.max(0, Number(e.target.value) || 0))}
-                          className="w-full rounded-[10px] px-2.5 py-2 text-[12.5px] tabular-nums outline-none"
-                          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                        />
+                      <div className="w-[124px]">
+                        <NumberField field={atField} label="At second" mode="integer" min={0} placeholder="0" />
                       </div>
                       <Button type="button" size="sm" variant="ghost" onClick={useCurrentTime}>
                         Use current time
                       </Button>
                       <span className="pb-2 text-[11px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                        {clock(atSeconds)}
+                        {clock(seconds)}
                       </span>
                     </div>
-                    <label htmlFor="fc-comment" className="sr-only">Comment</label>
-                    <textarea
-                      id="fc-comment" value={comment} onChange={(e) => setComment(e.target.value)}
-                      rows={2} maxLength={1000} placeholder="e.g. Right knee tracks in on the way up."
-                      className="w-full resize-none rounded-[11px] px-3 py-2 text-[12.5px] outline-none"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    <TextAreaField
+                      field={commentField}
+                      label="Comment"
+                      labelHidden
+                      rows={2}
+                      maxLength={1000}
+                      showCount
+                      placeholder="e.g. Right knee tracks in on the way up."
                     />
                     <Button type="submit" size="sm" disabled={saving || !comment.trim()}
                       iconLeft={saving ? <Loader2 size={13} className="animate-spin" /> : <MessageSquarePlus size={13} />}>

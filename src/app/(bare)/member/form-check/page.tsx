@@ -21,11 +21,10 @@ import {
 } from '@/components/member/MemberUI';
 import { api } from '@/lib/api';
 import type { FormCheckComment, MeFormCheck } from '@/lib/api';
+import { TextAreaField, TextField, useStandaloneField } from '@/components/ui/form';
+import { acceptAttribute, checkFile, VIDEO_RULES } from '@/lib/forms/files';
 import { errorMessage } from '@/lib/forms/errors';
 import { useToast } from '@/lib/toast';
-
-const MB = 1024 * 1024;
-const MAX_VIDEO = 60 * MB;
 
 /** 83 → "1:23". */
 const clock = (seconds: number) => {
@@ -52,6 +51,8 @@ function FormCheckBody() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const exerciseField = useStandaloneField('fc-exercise', exercise, setExercise);
+  const noteField = useStandaloneField('fc-note', note, setNote);
 
   const load = useCallback(() => {
     api.me.formChecks()
@@ -60,11 +61,12 @@ function FormCheckBody() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const pick = (picked: File | null) => {
-    if (picked && picked.size > MAX_VIDEO) {
-      toast.error('That video is over 60 MB. Trim it and try again.');
-      return;
-    }
+  const pick = async (picked: File | null) => {
+    if (!picked) { setFile(null); return; }
+    // The bytes and the size, before the upload burns the member's data: the
+    // server repeats both, but a 200 MB video should never leave the phone.
+    const check = await checkFile(picked, VIDEO_RULES);
+    if (!check.ok) { setFile(null); toast.error(check.message); return; }
     setFile(picked);
   };
 
@@ -72,6 +74,8 @@ function FormCheckBody() {
     e.preventDefault();
     if (!file) return toast.error('Choose the video first.');
     if (!exercise.trim()) return toast.error('Name the lift in the video.');
+    if (exercise.trim().length > 120) return toast.error('Keep the lift name to 120 characters.');
+    if (note.trim().length > 500) return toast.error('Keep the note to 500 characters.');
     setBusy(true);
     try {
       await api.me.uploadFormCheck(file, exercise.trim(), note.trim() || undefined);
@@ -106,9 +110,9 @@ function FormCheckBody() {
                 Video (MP4 or MOV, 60 MB max)
               </label>
               <input
-                id="fc-video" ref={fileInput} type="file" accept="video/mp4,video/quicktime"
+                id="fc-video" ref={fileInput} type="file" accept={acceptAttribute(VIDEO_RULES)}
                 className="sr-only"
-                onChange={(e) => pick(e.target.files?.[0] ?? null)}
+                onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ''; }}
               />
               <button
                 type="button"
@@ -120,31 +124,23 @@ function FormCheckBody() {
               </button>
             </div>
 
-            <div>
-              <label htmlFor="fc-exercise" className="mb-1.5 block text-[11px] font-[750]" style={{ color: MC.muted }}>
-                Lift
-              </label>
-              <input
-                id="fc-exercise" value={exercise} maxLength={120} required
-                onChange={(e) => setExercise(e.target.value)}
-                placeholder="e.g. Back squat, 80 kg"
-                className="w-full rounded-[13px] px-3.5 py-2.5 text-[13.5px] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: MC.ink }}
-              />
-            </div>
+            <TextField
+              field={exerciseField}
+              label="Lift"
+              placeholder="e.g. Back squat, 80 kg"
+              required
+              maxLength={120}
+              showCount
+            />
 
-            <div>
-              <label htmlFor="fc-note" className="mb-1.5 block text-[11px] font-[750]" style={{ color: MC.muted }}>
-                Anything they should know (optional)
-              </label>
-              <textarea
-                id="fc-note" value={note} maxLength={500} rows={2}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Third set — lower back felt tight."
-                className="w-full resize-none rounded-[13px] px-3.5 py-2.5 text-[13.5px] outline-none"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: MC.ink }}
-              />
-            </div>
+            <TextAreaField
+              field={noteField}
+              label="Anything they should know (optional)"
+              placeholder="e.g. Third set — lower back felt tight."
+              rows={2}
+              maxLength={500}
+              showCount
+            />
 
             <button
               type="submit" disabled={busy}
