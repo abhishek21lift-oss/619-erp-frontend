@@ -65,7 +65,7 @@ const MEMBER_ICONS: Record<string, typeof Home> = {
 };
 
 /** Pages reached from More: the More tab lights up on each of them. */
-const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/habits', '/member/photos', '/member/notifications', '/member/forms', '/member/account', '/member/coach'];
+const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/habits', '/member/photos', '/member/form-check', '/member/notifications', '/member/forms', '/member/account', '/member/coach'];
 
 /** Reserve this much above the bar so the last card clears it. */
 export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px))';

@@ -4956,6 +4956,48 @@ export interface ChurnRiskResult {
 }
 export interface ChurnInsight { summary: string; themes: string[]; this_week: string[]; }
 
+// ── Form review (async video) ────────────────────────────────
+//
+// A member records a lift; the trainer comments pinned to seconds in the
+// clip. The member sees their own history through /api/me, the trainer sees
+// the queue through /api/pt-os; both are scoped to the session, never an id
+// from the request.
+export interface FormCheckComment {
+  id: string;
+  /** Video position in whole seconds. */
+  at_seconds: number;
+  body: string;
+  created_at: string;
+}
+
+export interface MeFormCheck {
+  id: string;
+  exercise: string;
+  note: string | null;
+  /** A /uploads/form-checks/... path, served with HTTP Range for seeking. */
+  video_url: string;
+  status: 'pending' | 'reviewed';
+  created_at: string;
+  reviewed_at: string | null;
+  comments: FormCheckComment[];
+}
+
+export interface TrainerFormCheck {
+  id: string;
+  client_id: string;
+  client_name: string;
+  exercise: string;
+  note: string | null;
+  video_url: string;
+  status: 'pending' | 'reviewed';
+  created_at: string;
+  reviewed_at: string | null;
+  /** Present in the queue list. */
+  comment_count?: number;
+  /** Present in the detail read. */
+  comments?: FormCheckComment[];
+}
+
 // ── Hostinger hosting console (platform control plane) ───────────────────────
 //
 // Everything here is a projection of the official Hostinger API, and the

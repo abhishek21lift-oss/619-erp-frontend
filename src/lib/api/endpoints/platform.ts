@@ -16,6 +16,7 @@ import type {
   MeProfile, MeCoach, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
+  MeFormCheck,
   MeBooking, MeBookingAvailability,
   ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
   ProgressHabitPreferences, ProgressDashboard,
@@ -971,6 +972,16 @@ export const me = {
   /** Only the member's own uploads; a trainer's photo is a 404. */
   deletePhoto: (id: string) =>
     http<void>(`/api/me/progress-photos/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  /** Lift videos the member sent, newest first, each with the trainer's comments. */
+  formChecks: () => http<{ data: MeFormCheck[] }>('/api/me/form-checks'),
+  /** Multipart: an MP4 or MOV of 60 MB at most, decided by the bytes server-side. */
+  uploadFormCheck: (file: Blob, exercise: string, note?: string) => {
+    const form = new FormData();
+    form.append('exercise', exercise);
+    if (note) form.append('note', note);
+    form.append('video', file, 'lift.mp4');
+    return http<{ data: MeFormCheck }>('/api/me/form-checks', { method: 'POST', body: form });
+  },
   /** Records and streaks. */
   achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
   /** Latest PAR-Q and informed consent. */
