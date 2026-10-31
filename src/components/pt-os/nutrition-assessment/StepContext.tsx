@@ -1,8 +1,16 @@
 'use client';
 
 import { Wallet } from 'lucide-react';
+import FloatInput from '@/components/ui/FloatInput';
+import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
 import type { NutritionFormData } from './types';
 import type { MealPreparer, NutritionBudget } from '@/lib/nutrition-calculations';
+
+/** Any selection other than "None" counts as a condition in the risk score. */
+const MEDICAL_CONDITION_OPTIONS = [
+  'None', 'Diabetes', 'Hypertension', 'Heart Disease', 'Thyroid', 'Asthma',
+  'Arthritis', 'High Cholesterol', 'Kidney Disease', 'PCOS',
+];
 
 const MEAL_PREPARER_OPTIONS: { value: MealPreparer; label: string; icon: string }[] = [
   { value: 'self', label: 'Self', icon: '👤' },
@@ -34,7 +42,7 @@ export function StepContext({ form, set }: StepContextProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Context</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 8 — cooking and budget.</p>
+            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 8 — cooking, budget and medical context.</p>
           </div>
         </div>
 
@@ -81,6 +89,14 @@ export function StepContext({ form, set }: StepContextProps) {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Medical Conditions</p>
+          <MultiSelectChips value={form.medicalConditions} onChange={(v) => set('medicalConditions', v)} options={MEDICAL_CONDITION_OPTIONS} />
+          <div className="mt-3 max-w-sm">
+            <FloatInput label="Medical notes" maxLength={2000} value={form.medicalNotes} onChange={(v) => set('medicalNotes', v)} />
           </div>
         </div>
 

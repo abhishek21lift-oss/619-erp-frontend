@@ -44,7 +44,8 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
     () => calcDailyFluidIntake(liters, n(form.teaCupsPerDay), n(form.coffeeCupsPerDay), n(form.softDrinksPerDay), n(form.juicesPerDay)),
     [liters, form.teaCupsPerDay, form.coffeeCupsPerDay, form.softDrinksPerDay, form.juicesPerDay]
   );
-  const hydrationScore = useMemo(() => calcHydrationScore(liters, n(form.softDrinksPerDay), n(form.alcoholicDrinksPerWeek)), [liters, form.softDrinksPerDay, form.alcoholicDrinksPerWeek]);
+  // Alcohol quantity is asked in Lifestyle; the server applies it.
+  const hydrationScore = useMemo(() => calcHydrationScore(liters, n(form.softDrinksPerDay), null), [liters, form.softDrinksPerDay]);
   const label = hydrationLabel(hydrationScore);
   const badge = label ? CATEGORY_STYLE[label] : null;
 

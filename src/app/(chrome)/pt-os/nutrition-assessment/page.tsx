@@ -102,7 +102,6 @@ function formFromRow(row: Record<string, unknown>): NutritionFormData {
     coffeeCupsPerDay: row.coffee_cups_per_day != null ? String(row.coffee_cups_per_day) : '',
     softDrinksPerDay: row.soft_drinks_per_day != null ? String(row.soft_drinks_per_day) : '',
     juicesPerDay: row.juices_per_day != null ? String(row.juices_per_day) : '',
-    alcoholicDrinksPerWeek: row.alcoholic_drinks_per_week != null ? String(row.alcoholic_drinks_per_week) : '',
     cravings: Array.isArray(row.cravings) ? (row.cravings as string[]) : [],
     cravingFrequency: (row.craving_frequency as NutritionFormData['cravingFrequency']) || '',
     mealPreparer: (row.meal_preparer as NutritionFormData['mealPreparer']) || '',
@@ -249,7 +248,8 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
     );
     const protein = assessProtein(form.favouriteFoods, form.takesSupplements, form.supplements);
     const dailyFluidIntake = calcDailyFluidIntake(n(form.waterIntakeLiters), n(form.teaCupsPerDay), n(form.coffeeCupsPerDay), n(form.softDrinksPerDay), n(form.juicesPerDay));
-    const hydrationScore = calcHydrationScore(n(form.waterIntakeLiters), n(form.softDrinksPerDay), n(form.alcoholicDrinksPerWeek));
+    // Alcohol quantity is asked in Lifestyle; the server applies it.
+    const hydrationScore = calcHydrationScore(n(form.waterIntakeLiters), n(form.softDrinksPerDay), null);
     const digestiveHealthScore = calcDigestiveHealthScore(form.digestiveIssues);
     const supplementScore = calcSupplementScore(form.takesSupplements, form.supplements);
 
@@ -357,13 +357,12 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
         coffee_cups_per_day: n(form.coffeeCupsPerDay) ?? null,
         soft_drinks_per_day: n(form.softDrinksPerDay) ?? null,
         juices_per_day: n(form.juicesPerDay) ?? null,
-        alcoholic_drinks_per_week: n(form.alcoholicDrinksPerWeek) ?? undefined,
         cravings: form.cravings,
         craving_frequency: form.cravingFrequency || null,
         meal_preparer: form.mealPreparer || null,
         nutrition_budget: form.nutritionBudget || null,
-        medical_conditions: form.medicalConditions.length ? form.medicalConditions : undefined,
-        medical_notes: form.medicalNotes || undefined,
+        medical_conditions: form.medicalConditions.length ? form.medicalConditions : null,
+        medical_notes: form.medicalNotes || null,
         coach_notes: form.coachNotes,
       };
 

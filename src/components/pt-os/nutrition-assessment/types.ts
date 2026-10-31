@@ -58,7 +58,6 @@ export interface NutritionFormData {
   coffeeCupsPerDay: string;
   softDrinksPerDay: string;
   juicesPerDay: string;
-  alcoholicDrinksPerWeek: string;
   cravings: string[];
   cravingFrequency: CravingFrequency | '';
 
@@ -110,7 +109,7 @@ export function initNutritionForm(): NutritionFormData {
     snacksPerDay: '', lateNightEating: null, mealTimingConsistency: '', eatingOutFrequency: '',
     weekendEatingHabits: '', eatingBehaviours: [],
     waterIntakeLiters: '', teaCupsPerDay: '', coffeeCupsPerDay: '', softDrinksPerDay: '', juicesPerDay: '',
-    alcoholicDrinksPerWeek: '', cravings: [], cravingFrequency: '',
+    cravings: [], cravingFrequency: '',
     mealPreparer: '', nutritionBudget: '', medicalConditions: [], medicalNotes: '',
     coachNotes: { dietary_advice: '', meal_planning: '', supplement_advice: '', medical_notes: '', special_instructions: '' },
   };
