@@ -48,7 +48,10 @@ export default function JourneyNextButton({ clientId, current, className = '' }:
   }
   if (!journey) return null;
   // The first outstanding step other than this one.
-  const next = journey.steps.find((s) => s.state !== 'done' && s.key !== current);
+  const next = journey.steps.find((s) => s.state !== 'done' && s.key !== current
+    // Enrolment is optional until the client is enrolled: the rest of intake
+    // must not be held behind it.
+    && !(s.key === 'enrolment' && s.state === 'todo' && s.optional));
   if (!next) {
     return (
       <button type="button" onClick={() => router.push(`/pt-os/clients/${clientId}`)}

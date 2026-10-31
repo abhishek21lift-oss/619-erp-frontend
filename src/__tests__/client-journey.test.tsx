@@ -92,12 +92,33 @@ describe('ClientJourneyCard', () => {
     expect(await screen.findByText(/activation pending screening/)).toBeTruthy();
   });
 
+  it('shows an untouched enrolment as optional and offers the rest of intake', async () => {
+    mockJourney.mockResolvedValue({ data: {
+      steps: [
+        { key: 'welcome_tour', state: 'done' },
+        { key: 'enrolment', state: 'todo', optional: true },
+        { key: 'consent', state: 'todo' },
+        { key: 'parq', state: 'todo' },
+        { key: 'interview', state: 'todo', optional: true },
+        { key: 'goals', state: 'todo' },
+        { key: 'assessment', state: 'todo' },
+        { key: 'program_design', state: 'blocked' },
+      ],
+      next: 'consent',
+      screening: {},
+    } });
+    render(<ClientJourneyCard clientId="c1" />);
+    expect(await screen.findByText(/PT Enrolment/)).toHaveTextContent('optional');
+    expect(screen.getByRole('link', { name: /Next: Informed Consent/ }))
+      .toHaveAttribute('href', '/pt-os/informed-consent?client_id=c1');
+  });
+
   it('a completed journey links to the ongoing tools', async () => {
     mockJourney.mockResolvedValue(journeyOf(
       { welcome_tour: 'done', enrolment: 'done', consent: 'done', parq: 'done', interview: 'done',
         goals: 'done', assessment: 'done', program_design: 'done' }, null));
     render(<ClientJourneyCard clientId="c1" />);
-    expect(await screen.findByText(/Onboarding complete/)).toBeTruthy();
+    expect(await screen.findByText('Onboarding steps complete.')).toBeTruthy();
     expect(screen.getByRole('link', { name: /Workout Log/ }))
       .toHaveAttribute('href', '/pt-os/clients/c1/workout-log');
     expect(screen.getByRole('link', { name: /Progress & Retest/ }))
@@ -111,6 +132,21 @@ describe('JourneyNextButton', () => {
     render(<JourneyNextButton clientId="c1" current="parq" />);
     fireEvent.click(await screen.findByRole('button', { name: /Continue to Client Interview/ }));
     expect(mockPush).toHaveBeenCalledWith('/pt-os/interview?client_id=c1');
+  });
+
+  it('skips an optional, untouched enrolment', async () => {
+    mockJourney.mockResolvedValue({ data: {
+      steps: [
+        { key: 'welcome_tour', state: 'done' },
+        { key: 'enrolment', state: 'todo', optional: true },
+        { key: 'consent', state: 'todo' },
+      ],
+      next: 'consent',
+      screening: {},
+    } });
+    render(<JourneyNextButton clientId="c1" current="welcome_tour" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Continue to Informed Consent/ }));
+    expect(mockPush).toHaveBeenCalledWith('/pt-os/informed-consent?client_id=c1');
   });
 
   it('a blocked next step shows its reason, not a button', async () => {
