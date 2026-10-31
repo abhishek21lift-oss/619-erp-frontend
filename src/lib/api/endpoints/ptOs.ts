@@ -11,6 +11,7 @@ import type {
   AvailabilityWindow, BookingSettings, TimeOff, TrainerAvailability,
   ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
+  ChurnInsight, ChurnRiskResult, ChurnRiskRow,
 } from '../types';
 import type { ClientInterview, ClientJourney } from '../../journey';
 
@@ -33,6 +34,15 @@ export const pt = {
    */
   signals: (params?: { weeks?: number }) =>
     http<{ data: RosterSignalSweep }>(`/api/pt-os/signals${buildQs(params)}`),
+  /** Ranked roster with reasons and one next action per client. */
+  churnRisk: () =>
+    http<{ data: ChurnRiskResult }>('/api/pt-os/churn-risk'),
+  markChurnFollowup: (id: string, body: { outcome: 'contacted' | 'snoozed'; snooze_until?: string; note?: string }) =>
+    http<{ data: ChurnRiskRow }>(`/api/pt-os/churn-risk/${id}/followup`, { method: 'POST', body: JSON.stringify(body) }),
+  /** One roster-level narrative; deterministic when nothing is flagged. */
+  churnInsight: () =>
+    http<{ data: ChurnInsight; model: string; tier: string; used_fallback: boolean }>(
+      '/api/ai/business/churn', { method: 'POST' }),
   client: (id: string) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
   /**

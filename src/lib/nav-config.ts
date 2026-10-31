@@ -65,6 +65,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Users',
     items: [
       { href: '/pt-os/clients',           label: 'All Clients',         icon: 'Users' },
+      { href: '/pt-os/clients/at-risk',   label: 'At-risk Clients',     icon: 'AlertTriangle' },
       { href: '/pt-os/leads',             label: 'Leads',               icon: 'UserSearch' },
       { href: '/pt-os/messages',          label: 'Member Messages',     icon: 'MessagesSquare', badge: 'messagesUnread', matchPrefix: '/pt-os/messages' },
       { href: '/pt-os/clients/birthdays', label: 'Clients Birthday',    icon: 'Cake' },

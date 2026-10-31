@@ -313,6 +313,13 @@ function Shell({
               </p>
             )}
           </div>
+          <Link
+            href="/pt-os/clients/at-risk"
+            className="shrink-0 self-center rounded-lg px-2 py-1.5 text-[11.5px] font-[700] hover:underline"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            View all
+          </Link>
           {flagged !== undefined && (
             <div
               className="flex shrink-0 flex-col items-center rounded-[16px] px-3.5 py-2"
