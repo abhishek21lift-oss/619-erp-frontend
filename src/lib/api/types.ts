@@ -4925,6 +4925,37 @@ export interface RosterSignalSweep {
   clients_detail: RosterSignalClient[];
 }
 
+// ── Churn risk ───────────────────────────────────────────────
+//
+// Server-computed: every point traces to a reason, and the score on a logged
+// follow-up is the score the list showed, never a client-supplied number.
+export type ChurnBand = 'critical' | 'high' | 'medium' | 'low';
+export interface ChurnReason { code: string; label: string; points: number; }
+export interface ChurnRiskRow {
+  client_id: string;
+  client_name: string;
+  score: number;
+  band: ChurnBand;
+  reasons: ChurnReason[];
+  next_action: string;
+  last_session: string | null;
+  days_quiet: number | null;
+  term: { state: 'current' | 'ended' | 'unknown'; end: string | null; days_left: number | null };
+  balance_amount: number;
+  risk_increased: boolean;
+  outcome?: 'contacted' | 'snoozed';
+  hide_until?: string;
+}
+export interface ChurnRiskResult {
+  as_of: string;
+  assessed: number;
+  flagged: number;
+  bands: Record<ChurnBand, number>;
+  rows: ChurnRiskRow[];
+  handled: ChurnRiskRow[];
+}
+export interface ChurnInsight { summary: string; themes: string[]; this_week: string[]; }
+
 // ── Hostinger hosting console (platform control plane) ───────────────────────
 //
 // Everything here is a projection of the official Hostinger API, and the
