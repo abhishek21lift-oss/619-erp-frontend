@@ -1,13 +1,15 @@
 // The Client Interview, as a set of selects (2026-10-19).
 //
-// The interview now asks seven topics — eight answers, because smoking and
-// alcohol are captured independently — and every answer is chosen from a
-// select whose value is already the canonical one the server stores. The page
-// must still resume a saved draft, save only what it asks for (the older
-// free-text answers stay on the record), refuse to complete an empty
-// interview, and hand off to the Fitness Assessment. The progress the trainer
-// can see — the bar in the hero, the topic pills, the count on the action bar
-// — must agree with what is actually chosen.
+// The interview now asks three topics — one answer each. Occupation, screen
+// time, sleep, smoking and alcohol moved to the Lifestyle Assessment, which
+// owns those columns; asking both places let one answer disagree with the
+// other. Every answer is chosen from a select whose value is already the
+// canonical one the server stores. The page must still resume a saved draft,
+// save only what it asks for (the older free-text answers stay on the record),
+// refuse to complete an empty interview, and hand off to the Fitness
+// Assessment. The progress the trainer can see — the bar in the hero, each
+// card's Answered mark, the count on the action bar — must agree with what is
+// actually chosen.
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -65,7 +67,7 @@ const select = (label: string) => screen.getByLabelText(label) as HTMLSelectElem
 const answeredCount = () =>
   screen.getByRole('progressbar', { name: 'Interview progress' }).getAttribute('aria-valuenow');
 /** The hero's heading: the client the interview belongs to. */
-const clientHeading = () => screen.findByText('Mina Rao');
+const clientHeading = () => screen.findByText("Mina Rao's Interview");
 
 beforeEach(() => {
   mockDrafts = [];
@@ -79,13 +81,11 @@ describe('<InterviewPage />', () => {
     render(<InterviewPage />);
     await clientHeading();
 
-    // Seven topics, one pill each; the smoking topic carries two answers.
-    expect(INTERVIEW_QUESTIONS).toHaveLength(7);
-    expect(INTERVIEW_FIELDS).toHaveLength(8);
-
-    const nav = screen.getByRole('navigation', { name: 'Interview topics' });
-    expect(within(nav).getAllByRole('link').map((a) => a.getAttribute('href')))
-      .toEqual(INTERVIEW_QUESTIONS.map((q) => `#q-${q.id}`));
+    // Three topics, one card each, one answer each.
+    expect(INTERVIEW_QUESTIONS).toHaveLength(3);
+    expect(INTERVIEW_FIELDS).toHaveLength(3);
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent))
+      .toEqual(INTERVIEW_QUESTIONS.map((q) => q.prompt));
 
     // Each answer is the only thing its label names (the e2e suite finds
     // fields with getByLabel), and it starts unanswered.
@@ -94,9 +94,7 @@ describe('<InterviewPage />', () => {
       expect(el.value).toBe('');
       expect(within(el).getByRole('option', { name: 'Not provided' })).toBeTruthy();
     }
-    // Smoke and drink are two independent columns, not one answer.
-    expect(select('Smoking')).not.toBe(select('Alcohol'));
-    // Rendering seven cards of selects and reading every option's accessible
+    // Rendering the cards of selects and reading every option's accessible
     // name is slow in jsdom; the default 5s budget is not this test's to spend
     // on a loaded machine.
   }, 20_000);
@@ -122,24 +120,21 @@ describe('<InterviewPage />', () => {
     expect(answeredCount()).toBe('0');
 
     // Choosing counts; the "Not provided" placeholder is the unanswered state.
-    fireEvent.change(select('Smoking'), { target: { value: 'never' } });
+    fireEvent.change(select('Meal regularity'), { target: { value: 'irregular' } });
     expect(answeredCount()).toBe('1');
-    // Half a topic is not a finished topic: the pill only ticks once every
-    // answer it asks for is in.
-    expect(screen.getByRole('link', { name: 'Smoking & alcohol' })).toBeTruthy();
-
-    fireEvent.change(select('Alcohol'), { target: { value: 'occasionally' } });
-    expect(answeredCount()).toBe('2');
-    expect(screen.getByRole('link', { name: 'Smoking & alcohol, answered' })).toBeTruthy();
+    // A topic is marked Answered only when its own answer is in.
+    const card = screen.getByRole('region', { name: 'How regular are their meals?' });
+    expect(within(card).getByText('Answered')).toBeTruthy();
+    const untouched = screen.getByRole('region', { name: 'How many days a week can they train?' });
+    expect(within(untouched).queryByText('Answered')).toBeNull();
     expect(complete.disabled).toBe(false);
   });
 
   it('resumes a saved draft, trims Postgres\' numeric scale, and leaves untouched fields alone', async () => {
     // lifestyle_sitting_hours is NUMERIC(4,1): a stored 7 arrives as '7.0'.
-    mockDrafts = [{ id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z', lifestyle_occupation: 'desk_job', lifestyle_sitting_hours: '7.0' }];
+    mockDrafts = [{ id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z', lifestyle_sitting_hours: '7.0' }];
     render(<InterviewPage />);
     expect(await screen.findByText(/Resumed from your draft/)).toBeTruthy();
-    expect(select('Type of work').value).toBe('desk_job');
     expect(select('Sitting hours').value).toBe('7');
 
     // Nothing was edited, so nothing is written: the update carries the
@@ -154,7 +149,7 @@ describe('<InterviewPage />', () => {
   it('writes only what the trainer changed, and never the older free-text columns', async () => {
     render(<InterviewPage />);
     await clientHeading();
-    fireEvent.change(select('Smoking'), { target: { value: 'former' } });
+    fireEvent.change(select('Meal regularity'), { target: { value: 'irregular' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete interview' }));
 
     expect(await screen.findByText('Interview complete')).toBeTruthy();
@@ -162,7 +157,7 @@ describe('<InterviewPage />', () => {
     expect(mockCreate.mock.calls[0][0]).toBe('c1');
     // One changed answer, and the status. The API reads an empty string as
     // "clear this column", so an unchanged field is omitted, not sent blank.
-    expect(body).toEqual({ lifestyle_smoking: 'former', status: 'completed' });
+    expect(body).toEqual({ lifestyle_meal_regularity: 'irregular', status: 'completed' });
     // The free-text columns this form no longer asks for are not sent at all,
     // so whatever an earlier interview recorded survives.
     for (const text of ['training_history', 'pain_and_injuries', 'lifestyle', 'motivation', 'availability', 'preferences', 'notes']) {
@@ -170,28 +165,35 @@ describe('<InterviewPage />', () => {
     }
 
     const covered = screen.getByRole('list', { name: 'Topics covered' });
-    expect(within(covered).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Smoking & alcohol']);
+    expect(within(covered).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Meal pattern']);
 
     fireEvent.click(await screen.findByRole('button', { name: /continue to fitness assessment/i }));
     expect(mockPush).toHaveBeenCalledWith('/pt-os/assessment?client_id=c1');
   });
 
-  it('leaves an answer this form cannot show exactly as the record holds it', async () => {    // An interview written before these selects existed: the occupation as
-    // free text, and numbers that are not one of the bands.
+  it('leaves an answer this form cannot show exactly as the record holds it', async () => {
+    // An interview written before these selects existed: a sitting value that
+    // is not one of the bands, plus columns the Lifestyle Assessment owns now.
     mockDrafts = [{
       id: 'iv-legacy', status: 'draft', updated_at: '2026-09-01T10:00:00Z',
-      lifestyle_occupation: 'Software engineer', lifestyle_sitting_hours: '7.5', lifestyle_sleep_hours: '7',
+      lifestyle_occupation: 'Software engineer', lifestyle_sitting_hours: '7.5',
+      lifestyle_sleep_hours: '7', lifestyle_meal_regularity: 'irregular',
     }];
     render(<InterviewPage />);
     expect(await screen.findByText(/Resumed from your draft/)).toBeTruthy();
 
-    fireEvent.change(select('Smoking'), { target: { value: 'daily' } });
-    // The three stored answers still count as answers.
-    expect(answeredCount()).toBe('4');
+    // The stored answers still count as answers.
+    expect(answeredCount()).toBe('2');
+    fireEvent.change(select('Meal regularity'), { target: { value: 'regular' } });
     fireEvent.click(screen.getByRole('button', { name: /save draft/i }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
-    expect(mockUpdate.mock.calls[0][1]).toEqual({ lifestyle_smoking: 'daily', status: 'draft' });
+    const body = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    expect(body).toEqual({ lifestyle_meal_regularity: 'regular', status: 'draft' });
+    // Sitting 7.5 is still on the record; saving beside it must not clear it.
+    for (const old of ['lifestyle_occupation', 'lifestyle_sitting_hours', 'lifestyle_sleep_hours']) {
+      expect(body).not.toHaveProperty(old);
+    }
   });
 
   it('offers every whole training day from one to seven', () => {

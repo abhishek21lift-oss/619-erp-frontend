@@ -5,7 +5,7 @@
 // route types. It also keeps the mapping testable without mounting the wizard.
 
 import { barrierPlansFor } from '@/lib/goal-plan';
-import type { BarrierPlan, GoalMilestone } from '@/lib/goal-plan';
+import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
 import { CHALLENGE_OPTIONS } from './StepChallenges';
 import { initGoalForm } from './types';
 import type { GoalFormData } from './types';
@@ -48,6 +48,45 @@ export interface RoutineBlueprint {
   equipment?: string;
   coaching?: CoachingBlock;
   k11?: K11Block;
+}
+
+/**
+ * What belongs in routine_blueprint.k11.measure. Weight and body fat already
+ * have target_weight / target_body_fat columns, and the backend reads those
+ * first — writing them twice let the two copies disagree after a partial
+ * update. Everything else has no column and lives here.
+ */
+export function k11MeasureFor(measure: GoalMeasure | null | undefined): K11MeasureBlock | undefined {
+  if (!measure || measure.metric === 'weight' || measure.metric === 'body_fat') return undefined;
+  return {
+    metric: measure.metric,
+    exercise: measure.exercise ?? null,
+    label: measure.label ?? null,
+    current: measure.current,
+    target: measure.target,
+    unit: measure.unit || null,
+  };
+}
+
+/**
+ * The target to show for a saved goal. The target columns win for weight and
+ * body fat because they are the canonical copy; K11 covers the metrics that
+ * have no column. Old rows wrote both, so either path reads the same number.
+ */
+export function goalMeasureFromRow(row: Record<string, unknown>): GoalMeasure | null {
+  const weight = Number(row.target_weight);
+  if (row.target_weight != null && Number.isFinite(weight)) {
+    return { metric: 'weight', current: null, target: weight, unit: 'kg' };
+  }
+  const bodyFat = Number(row.target_body_fat);
+  if (row.target_body_fat != null && Number.isFinite(bodyFat)) {
+    return { metric: 'body_fat', current: null, target: bodyFat, unit: '%' };
+  }
+  const k11 = ((row.routine_blueprint as RoutineBlueprint | null) || {}).k11;
+  const measure = k11?.measure;
+  return measure?.metric
+    ? { ...measure, metric: measure.metric, current: measure.current ?? null, target: measure.target ?? null, unit: measure.unit ?? '' }
+    : null;
 }
 
 export function formFromGoalRow(row: Record<string, unknown>): GoalFormData {

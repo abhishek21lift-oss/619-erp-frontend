@@ -7,28 +7,26 @@
 //
 // The conversation in which the trainer learns the client's training history,
 // what hurts, how they live, why they came and when they can train, written
-// down (backend migration 227). It is optional — it never blocks enrolment —
-// but it is a step: once completed, the next one is Fitness Assessment.
+// down (backend migration 227). It is optional — it never blocks enrolment or
+// a plan — but it is a step: once completed, the next one is read from the
+// server.
 //
 // The local draft is scoped to the signed-in trainer and studio and purged at
 // logout (useAutoSaveDraft); its key matches the purge pattern.
 
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { m, useReducedMotion } from 'framer-motion';
 import { CheckCircle2, Loader2, MessagesSquare, Save } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PageContainer } from '@/components/ui';
+import { Button, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { InterviewSection } from '@/components/pt-os/interview/InterviewSection';
-import { InterviewHero, SectionNav } from '@/components/pt-os/interview/InterviewChrome';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 import {
   EMPTY_ANSWERS as EMPTY, INTERVIEW_FIELDS, INTERVIEW_QUESTIONS, answeredCount, topicAnswered,
   type Answers, type InterviewField,
 } from '@/components/pt-os/interview/questions';
-import { semantic, rgba } from '@/lib/palette';
-import { gradient, ringStops, tones } from '@/components/profile/profileTheme';
+import { rgba, semantic } from '@/lib/palette';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -55,7 +53,7 @@ function answersFrom(row: ClientInterview | null): Answers {
 export default function InterviewPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: semantic.primary }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: 'var(--text-muted)' }} /></div>}>
         <InterviewContent />
       </Suspense>
     </Guard>
@@ -70,7 +68,6 @@ function InterviewContent() {
 }
 
 function InterviewForm({ clientId }: { clientId: string }) {
-  const router = useRouter();
   const { toast } = useToast();
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -79,8 +76,6 @@ function InterviewForm({ clientId }: { clientId: string }) {
   const [saving, setSaving] = useState<'draft' | 'completed' | null>(null);
   const [completed, setCompleted] = useState(false);
 
-  const formRef = useRef<HTMLFormElement>(null);
-  const bar = useColumnRect(formRef, !loading && !completed);
   /**
    * The interview as the record holds it, and the baseline the save diffs
    * against. A field equal to its baseline is left out of the request body
@@ -169,152 +164,86 @@ function InterviewForm({ clientId }: { clientId: string }) {
   if (completed) return <InterviewComplete clientName={clientName} clientId={clientId} answers={answers} />;
 
   const answered = answeredCount(answers);
+  const total = INTERVIEW_FIELDS.length;
+  const percent = total ? (answered / total) * 100 : 0;
 
   return (
     <PageContainer>
-      <InterviewHero clientName={clientName} answers={answers} answered={answered} resumed={current !== null} />
-      <form ref={formRef} id="interview-form" className="mx-auto mt-2 max-w-3xl space-y-3 pb-32 sm:mt-3 sm:space-y-4"
+      <PageHero
+        icon={<MessagesSquare size={20} />}
+        title={`${clientName}'s Interview`}
+        subtitle="Client interview · step 4"
+      >
+        <div className="mt-3 flex items-center gap-3">
+          <div role="progressbar" aria-valuemin={0} aria-valuenow={answered} aria-valuemax={total}
+            aria-label="Interview progress" className="h-[6px] flex-1 overflow-hidden rounded-full"
+            style={{ background: 'rgba(255,255,255,0.22)' }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${percent}%`, background: '#fff' }} />
+          </div>
+          <span className="shrink-0 text-[12px] font-[700] tabular-nums text-white">{answered}/{total}</span>
+        </div>
+        {current && (
+          <p className="mt-2 text-[11.5px] font-[600]" style={{ color: 'rgba(255,255,255,0.72)' }}>
+            Resumed from your draft
+          </p>
+        )}
+      </PageHero>
+
+      <form id="interview-form" className="mx-auto w-full max-w-3xl space-y-3 pb-32"
         onSubmit={(e) => { e.preventDefault(); save('completed'); }}>
-        <SectionNav answers={answers} />
         {INTERVIEW_QUESTIONS.map((q, i) => (
           <InterviewSection key={q.id} question={q} index={i} answers={answers}
             onChange={(field: InterviewField, next: string) => setAnswers((a) => ({ ...a, [field]: next }))} />
         ))}
-
       </form>
 
-      {/* The action bar: glass, fixed above the bottom nav and laid over the
-          form's own column. Fixed rather than sticky — see SectionNav. */}
-      <div className="fixed above-bottom-nav z-40 flex items-center gap-2 rounded-[22px] p-2.5"
-        style={{
-          left: bar.left, width: bar.width,
-          background: 'color-mix(in srgb, var(--bg-elevated, var(--bg-base)) 82%, transparent)',
-          border: '1px solid var(--border-2)',
-          backdropFilter: 'blur(20px) saturate(1.4)', WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-          boxShadow: '0 22px 46px -22px rgba(15,23,42,0.45), inset 0 1px 0 rgba(255,255,255,0.12)',
-        }}>
-        <span aria-hidden className="pointer-events-none absolute inset-x-7 top-0 h-[2px] rounded-b-full"
-          style={{ background: `linear-gradient(90deg, transparent, ${semantic.primary}, transparent)`, opacity: 0.45 }} />
-        <span className="pl-1 text-[12px] font-[750] tabular-nums sm:hidden" style={{ color: 'var(--text-muted)' }}>
-          <span style={{ color: 'var(--text-primary)' }}>{answered}</span>/{INTERVIEW_FIELDS.length}
-        </span>
-        <p className="hidden min-w-0 flex-1 pl-2 text-[12.5px] font-[650] sm:block" style={{ color: 'var(--text-muted)' }}
-          aria-live="polite">
-          <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{answered}</span> of {INTERVIEW_FIELDS.length} answered
-        </p>
-        <div className="flex flex-1 gap-2 sm:flex-none">
-          <Button type="button" variant="outline" className="flex-1 sm:flex-none" iconLeft={<Save size={14} />}
-            disabled={saving !== null} loading={saving === 'draft'} onClick={() => save('draft')}>
-            Save draft
-          </Button>
-          <Button type="submit" form="interview-form" className="flex-1 sm:flex-none" iconLeft={<CheckCircle2 size={14} />}
-            disabled={saving !== null || !hasAnyAnswer} loading={saving === 'completed'}
-            style={{ background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`, color: '#fff' }}>
-            Complete interview
-          </Button>
+      <div className="page-action-bar" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)' }}>
+        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
+          <p className="min-w-0 flex-1 text-[12.5px] font-[650]" style={{ color: 'var(--text-muted)' }} aria-live="polite">
+            <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{answered}</span> of {total} answered
+          </p>
+          <div className="flex shrink-0 items-center gap-3">
+            <Button type="button" variant="ghost" onClick={() => save('draft')} disabled={saving !== null} loading={saving === 'draft'}>
+              Save draft
+            </Button>
+            <Button type="submit" form="interview-form" disabled={saving !== null || !hasAnyAnswer} loading={saving === 'completed'}
+              style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}>
+              Complete interview
+            </Button>
+          </div>
         </div>
       </div>
     </PageContainer>
   );
 }
 
-/**
- * Where the form's column is on screen, so a fixed bar can sit over it. It
- * moves when the sidebar collapses or the window resizes; a viewport-centred
- * bar would sit half over the sidebar on desktop.
- */
-function useColumnRect(ref: React.RefObject<HTMLElement | null>, mounted: boolean) {
-  const [rect, setRect] = useState<{ left: number | string; width: number | string }>({ left: 16, width: 'calc(100% - 32px)' });
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      const r = el.getBoundingClientRect();
-      if (r.width > 0) setRect({ left: r.left, width: r.width });
-    };
-    measure();
-    // The sidebar collapsing resizes the column without resizing the window.
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-    ro?.observe(el);
-    window.addEventListener('resize', measure);
-    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); };
-  }, [ref, mounted]);
-  return rect;
-}
-
-/** The finish line: a celebration, what was captured, and the next step. */
+/** The finish line: what was captured, and the next step. */
 function InterviewComplete({ clientName, clientId, answers }: { clientName: string; clientId: string; answers: Answers }) {
   const router = useRouter();
-  const reduce = useReducedMotion();
   const covered = INTERVIEW_QUESTIONS.filter((q) => topicAnswered(q, answers));
   return (
     <PageContainer>
-      <m.div
-        initial={reduce ? false : { opacity: 0, scale: 0.96, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center py-10 text-center">
-        <div className="relative">
-          <div aria-hidden className="absolute -inset-10 rounded-full blur-3xl"
-            style={{ background: `radial-gradient(circle, ${rgba(tones.berry.from, 0.30)}, transparent 68%)` }} />
-          {/* An Apple Fitness-style award: a spectrum ring around the completed
-              tick, not another success banner. */}
-          <m.div
-            initial={reduce ? false : { scale: 0.72, opacity: 0, rotate: -6 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 190, damping: 16, delay: 0.08 }}
-            className="relative grid h-[120px] w-[120px] place-items-center rounded-full"
-            style={{
-              background: `conic-gradient(from 210deg, ${ringStops[0]}, ${ringStops[1]} 26%, ${ringStops[2]} 46%, ${tones.mint.from} 64%, ${tones.indigo.from} 82%, ${ringStops[0]})`,
-              boxShadow: `0 26px 50px -24px ${rgba(tones.violet.to, 0.6)}`,
-            }}>
-            <div className="grid h-[100px] w-[100px] place-items-center rounded-full" style={{ background: 'var(--bg-base)' }}>
-              <div className="grid h-[76px] w-[76px] place-items-center rounded-[24px] text-white"
-                style={{
-                  background: `linear-gradient(135deg, ${semantic.success}, ${semantic.successLo})`,
-                  boxShadow: `0 16px 30px -12px ${rgba(semantic.success, 0.6)}, inset 0 1px 0 rgba(255,255,255,0.35)`,
-                }}>
-                <CheckCircle2 size={36} strokeWidth={2.2} />
-              </div>
-            </div>
-          </m.div>
-          {/* A few sparks in the page's own tones — static, so the award stays
-              the only thing that moves. */}
-          {!reduce && (
-            <>
-              <span aria-hidden className="absolute -right-2 top-1 h-2.5 w-2.5 rounded-full"
-                style={{ background: tones.gold.from, boxShadow: `0 0 12px ${tones.gold.glow}` }} />
-              <span aria-hidden className="absolute -left-3 bottom-3 h-2 w-2 rounded-full"
-                style={{ background: tones.sky.from, boxShadow: `0 0 12px ${tones.sky.glow}` }} />
-              <span aria-hidden className="absolute -top-3 left-4 h-1.5 w-1.5 rounded-full"
-                style={{ background: tones.berry.from, boxShadow: `0 0 10px ${tones.berry.glow}` }} />
-            </>
-          )}
+      <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col items-center justify-center py-10 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: rgba(semantic.success, 0.12) }}>
+          <CheckCircle2 size={32} style={{ color: semantic.success }} />
         </div>
-        <p className="mt-7 text-[10px] font-[820] uppercase tracking-[0.16em]" style={{ color: semantic.successLo }}>
+        <p className="mt-5 text-[10px] font-[820] uppercase tracking-[0.16em]" style={{ color: semantic.successLo }}>
           Intake step 4 complete
         </p>
-        <h1 className="mt-1.5 text-[27px] font-[860] tracking-[-0.03em]"
-          style={{ color: 'var(--text-primary)', textWrap: 'balance' }}>Interview complete</h1>
-        <p className="mt-2 max-w-[36ch] text-[13.5px] leading-relaxed" style={{ color: 'var(--text-muted)', textWrap: 'pretty' }}>
+        <h1 className="mt-1.5 text-[24px] font-[860] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+          Interview complete
+        </h1>
+        <p className="mt-2 max-w-[38ch] text-[13.5px] leading-relaxed" style={{ color: 'var(--text-muted)', textWrap: 'pretty' }}>
           {clientName}&apos;s interview has been recorded — {covered.length} of {INTERVIEW_QUESTIONS.length} topics covered.
         </p>
-        {/* What was captured, in each topic's own tone. */}
         <ul className="mt-6 flex flex-wrap justify-center gap-1.5" aria-label="Topics covered">
           {covered.map((q) => {
-            const tone = tones[q.tone];
             const Icon = q.icon;
             return (
-              <li key={q.id} className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[11.5px] font-[700]"
-                style={{
-                  background: tone.wash,
-                  border: `1px solid ${rgba(tone.from, 0.22)}`,
-                  color: 'var(--text-primary)',
-                }}>
-                <span aria-hidden className="flex h-5 w-5 items-center justify-center rounded-full text-white"
-                  style={{ background: gradient(tone), boxShadow: `0 4px 10px -5px ${tone.glow}` }}>
-                  <Icon size={11} strokeWidth={2.4} />
-                </span>
+              <li key={q.id} className="flex items-center gap-1.5 rounded-full py-1 pl-2 pr-2.5 text-[11.5px] font-[700]"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                <Icon size={12} aria-hidden style={{ color: 'var(--text-muted)' }} />
                 {q.label}
               </li>
             );
@@ -326,22 +255,21 @@ function InterviewComplete({ clientName, clientId, answers }: { clientName: stri
           onClick={() => router.push(`/pt-os/clients/${clientId}`)}>
           Back to profile
         </button>
-      </m.div>
+      </div>
     </PageContainer>
   );
 }
 
-/** The page's own shape while the client loads: hero, pills, two cards. */
+/** The page's own shape while the client loads: hero, two cards. */
 function InterviewSkeleton() {
-  const block = (h: string, r = 'rounded-[24px]') => (
+  const block = (h: string, r = 'rounded-[20px]') => (
     <div className={`${h} ${r} animate-pulse`} style={{ background: 'var(--bg-subtle)' }} />
   );
   return (
     <PageContainer>
       <div role="status" aria-label="Loading the interview" className="space-y-4">
-        {block('h-[118px]', 'rounded-[26px]')}
+        {block('h-[132px]', 'rounded-[24px]')}
         <div className="mx-auto max-w-3xl space-y-3">
-          {block('h-8', 'rounded-full')}
           {block('h-[188px]')}
           {block('h-[188px]')}
         </div>

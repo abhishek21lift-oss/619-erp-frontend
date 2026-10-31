@@ -4,7 +4,7 @@ import { ChevronRight, Target } from 'lucide-react';
 import { PremiumProgressChart } from '@/components/visualizations';
 import { calcCompletionPct, calcAchievementStatus, daysRemaining } from '@/lib/goal-calculations';
 import { formatGoalMeasure } from '@/lib/goal-plan';
-import type { GoalMeasure } from '@/lib/goal-plan';
+import { goalMeasureFromRow } from './form-from-row';
 import { GOAL_TYPE_META } from './types';
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -39,8 +39,7 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
     ? Math.ceil((new Date(targetDate).getTime() - new Date(String(goal.created_at)).getTime()) / 86400000)
     : null;
   const status = STATUS_STYLE[calcAchievementStatus(completion, days, totalDays)];
-  const k11 = (goal.routine_blueprint as { k11?: { measure?: GoalMeasure } } | null)?.k11;
-  const measureLabel = formatGoalMeasure(k11?.measure ?? null);
+  const measureLabel = formatGoalMeasure(goalMeasureFromRow(goal));
   const reviewDate = goal.review_date ? String(goal.review_date).slice(0, 10) : null;
 
   return (

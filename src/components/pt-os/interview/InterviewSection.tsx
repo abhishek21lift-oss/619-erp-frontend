@@ -1,23 +1,15 @@
 'use client';
 
-// One topic of the Client Interview, dressed as an Apple-style card: a
-// gradient squircle in the topic's own tone, the question as it is asked out
-// loud, and a select for every answer it takes.
-//
-// The tone is decoration. Whether the topic is answered is the only state on
-// the card, and it is shown in emerald with a word as well as a mark. The
-// colour lives in the card's wash and edge, never behind the answer itself,
-// so a select stays the figure and the decoration stays the ground.
+// One topic of the Client Interview, in the same card as every other intake
+// step: a navy tile with a peach mark, the question, and a select for every
+// answer it takes. Whether the topic is answered is the card's only state,
+// and it is shown in emerald with a word as well as a mark.
 
 import { useId } from 'react';
-import { m, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { SelectField, useStandaloneField } from '@/components/ui/form';
-import { semantic, rgba } from '@/lib/palette';
-import { gradient, tones } from '@/components/profile/profileTheme';
+import { gray, indigo, rgba, semantic } from '@/lib/palette';
 import { topicComplete, type Answers, type InterviewControl, type InterviewField, type InterviewQuestion } from './questions';
-
-const inkClass = 'text-[var(--tone-ink)] dark:text-[var(--tone-ink-dark)]';
 
 export function InterviewSection({
   question, index, answers, onChange,
@@ -27,51 +19,29 @@ export function InterviewSection({
   answers: Answers;
   onChange: (field: InterviewField, next: string) => void;
 }) {
-  const reduce = useReducedMotion();
   const titleId = useId();
-  const tone = tones[question.tone];
   const Icon = question.icon;
   const answered = topicComplete(question, answers);
 
   return (
-    <m.section
+    <section
       id={`q-${question.id}`}
       aria-labelledby={titleId}
-      initial={reduce ? false : { opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: reduce ? 0 : Math.min(index, 3) * 0.04 }}
-      // scroll-mt clears the top bar when a pill jumps here.
-      className="group relative scroll-mt-20 overflow-hidden rounded-[26px] p-4 transition-[box-shadow,border-color] duration-300 sm:p-[22px]"
+      className="scroll-mt-20 rounded-[20px] p-4 sm:p-5"
       style={{
-        background: `linear-gradient(158deg, ${tone.wash} 0%, transparent 46%), var(--bg-card, var(--bg-elevated))`,
-        border: `1px solid ${answered ? rgba(tone.from, 0.30) : 'var(--border)'}`,
-        boxShadow: answered
-          ? `0 18px 38px -24px ${tone.glow}, inset 0 1px 0 rgba(255,255,255,0.16)`
-          : '0 1px 2px rgba(15,23,42,0.04)',
-        ['--tone-ink' as string]: tone.ink,
-        ['--tone-ink-dark' as string]: tone.inkDark,
+        background: 'var(--bg-card)',
+        border: `1px solid ${answered ? rgba(semantic.success, 0.30) : 'var(--border)'}`,
       }}
     >
-      {/* A wash of the tone from the top corner — the card's colour without
-          putting colour behind the answers. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 opacity-90"
-        style={{ background: `radial-gradient(120% 100% at 0% 0%, ${tone.wash}, transparent 72%)` }} />
-      {/* A hairline of the tone along the top edge: the card gains colour
-          without gaining another border. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-[2px] rounded-b-full"
-        style={{ background: gradient(tone, 90), opacity: answered ? 0.9 : 0.45 }} />
-
-      <div className="relative flex items-start gap-3.5">
-        <span aria-hidden
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px] text-white transition-transform duration-300 group-focus-within:scale-105 group-hover:scale-[1.03]"
-          style={{ background: gradient(tone), boxShadow: `0 10px 20px -8px ${tone.glow}, inset 0 1px 0 rgba(255,255,255,0.35)` }}>
-          <Icon size={21} strokeWidth={2.2} />
+      <div className="flex items-start gap-3.5">
+        <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px]"
+          style={{ background: gray[900] }}>
+          <Icon size={20} color={indigo[300]} />
         </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className={`text-[10.5px] font-[800] uppercase tracking-[0.12em] ${inkClass}`}>
+            <span className="text-[10.5px] font-[800] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
               {String(index + 1).padStart(2, '0')} · {question.label}
             </span>
             {answered && (
@@ -88,13 +58,13 @@ export function InterviewSection({
         </div>
       </div>
 
-      <div className="relative mt-4 grid gap-3.5"
+      <div className="mt-4 grid gap-3.5"
         style={question.controls.length > 1 ? { gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' } : undefined}>
         {question.controls.map((control) => (
           <Control key={control.key} control={control} value={answers[control.key] ?? ''} onChange={onChange} />
         ))}
       </div>
-    </m.section>
+    </section>
   );
 }
 

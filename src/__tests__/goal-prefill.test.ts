@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { initGoalFormForClient } from '@/components/pt-os/goal-assessment/types';
-import { formFromGoalRow } from '@/components/pt-os/goal-assessment/form-from-row';
+import { formFromGoalRow, goalMeasureFromRow, k11MeasureFor } from '@/components/pt-os/goal-assessment/form-from-row';
 
 describe('a new goal starts from the client record', () => {
   it('prefills experience and weekly training days', () => {
@@ -62,5 +62,34 @@ describe('editing a goal saved before milestones had a description', () => {
       { type: 'start', label: 'Start', date: '2026-10-18', description: '' },
       { type: 'short_term', label: 'Week 8 checkpoint', date: '2026-12-13', description: '' },
     ]);
+  });
+});
+
+describe('weight and body-fat targets stay in their columns', () => {
+  it('does not copy them into routine_blueprint.k11', () => {
+    expect(k11MeasureFor({ metric: 'weight', current: 90, target: 78, unit: 'kg' })).toBeUndefined();
+    expect(k11MeasureFor({ metric: 'body_fat', current: 30, target: 22, unit: '%' })).toBeUndefined();
+    expect(k11MeasureFor(null)).toBeUndefined();
+  });
+
+  it('keeps the metrics that have no column in the K11 block', () => {
+    expect(k11MeasureFor({
+      metric: 'lift', current: 100, target: 120, unit: 'kg', exercise: 'Squat',
+    })).toEqual({
+      metric: 'lift', exercise: 'Squat', label: null, current: 100, target: 120, unit: 'kg',
+    });
+  });
+});
+
+describe('reading a saved goal target', () => {
+  it('uses K11 when present and the target columns otherwise', () => {
+    expect(goalMeasureFromRow({
+      routine_blueprint: { k11: { measure: { metric: 'lift', target: 120, unit: 'kg', exercise: 'Squat' } } },
+    })).toMatchObject({ metric: 'lift', target: 120, exercise: 'Squat' });
+    expect(goalMeasureFromRow({ target_weight: '78' }))
+      .toEqual({ metric: 'weight', current: null, target: 78, unit: 'kg' });
+    expect(goalMeasureFromRow({ target_body_fat: 22 }))
+      .toEqual({ metric: 'body_fat', current: null, target: 22, unit: '%' });
+    expect(goalMeasureFromRow({})).toBeNull();
   });
 });
