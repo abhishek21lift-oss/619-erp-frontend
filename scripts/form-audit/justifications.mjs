@@ -234,6 +234,16 @@ export const JUSTIFIED = {
       'already handles for a drawn stroke. There is no form state to bind a ' +
       'schema to; the control produces an image, not a field value.',
   },
+  'src/components/pt-os/ChurnRow.tsx': {
+    allow: 1,
+    reason:
+      'The one native control is the snooze date that opens inside a single ' +
+      'row of the at-risk list. The list can hold the whole roster, so a form ' +
+      'instance per row (what DateFieldControl would need) is worse than the ' +
+      'table it replaces — the inline-editor case this file names. The input ' +
+      'sits in its own <label>, its min/max mirror the server\'s 1-90 day ' +
+      'window, and its value is sent as snooze_until only after Save.',
+  },
 };
 
 export function justificationFor(rel) {

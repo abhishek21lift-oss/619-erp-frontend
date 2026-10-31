@@ -90,6 +90,10 @@ export const JOURNEYS = {
   'e2e/flexibility-protocol.ui.spec.ts': [
     'src/app/(chrome)/pt-os/assessment/page.tsx',
   ],
+  'e2e/form-check.ui.spec.ts': [
+    'src/app/(bare)/member/form-check/page.tsx',
+    'src/app/(chrome)/pt-os/form-checks/page.tsx',
+  ],
 };
 
 /** Every form file some journey claims to cover. */

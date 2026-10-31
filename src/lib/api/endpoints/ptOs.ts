@@ -11,6 +11,8 @@ import type {
   AvailabilityWindow, BookingSettings, TimeOff, TrainerAvailability,
   ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
+  ChurnInsight, ChurnRiskResult, ChurnRiskRow,
+  FormCheckComment, TrainerFormCheck,
 } from '../types';
 import type { ClientInterview, ClientJourney } from '../../journey';
 
@@ -33,6 +35,30 @@ export const pt = {
    */
   signals: (params?: { weeks?: number }) =>
     http<{ data: RosterSignalSweep }>(`/api/pt-os/signals${buildQs(params)}`),
+  /** Ranked roster with reasons and one next action per client. */
+  churnRisk: () =>
+    http<{ data: ChurnRiskResult }>('/api/pt-os/churn-risk'),
+  markChurnFollowup: (id: string, body: { outcome: 'contacted' | 'snoozed'; snooze_until?: string; note?: string }) =>
+    http<{ data: ChurnRiskRow }>(`/api/pt-os/churn-risk/${id}/followup`, { method: 'POST', body: JSON.stringify(body) }),
+  /** One roster-level narrative; deterministic when nothing is flagged. */
+  churnInsight: () =>
+    http<{ data: ChurnInsight; model: string; tier: string; used_fallback: boolean }>(
+      '/api/ai/business/churn', { method: 'POST' }),
+  /** The form-review queue; pending is what still needs watching. */
+  formChecks: (status: 'pending' | 'reviewed' | 'all' = 'pending') =>
+    http<{ data: TrainerFormCheck[] }>(`/api/pt-os/form-checks?status=${status}`),
+  /** One check with its video and every comment in video order. */
+  formCheck: (id: string) =>
+    http<{ data: TrainerFormCheck }>(`/api/pt-os/form-checks/${encodeURIComponent(id)}`),
+  commentFormCheck: (id: string, atSeconds: number, body: string) =>
+    http<{ data: FormCheckComment }>(`/api/pt-os/form-checks/${encodeURIComponent(id)}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ at_seconds: atSeconds, body }),
+    }),
+  reviewFormCheck: (id: string) =>
+    http<{ data: TrainerFormCheck }>(`/api/pt-os/form-checks/${encodeURIComponent(id)}/reviewed`, {
+      method: 'POST',
+    }),
   client: (id: string) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
   /**

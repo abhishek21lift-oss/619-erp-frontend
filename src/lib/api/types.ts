@@ -4925,6 +4925,79 @@ export interface RosterSignalSweep {
   clients_detail: RosterSignalClient[];
 }
 
+// ── Churn risk ───────────────────────────────────────────────
+//
+// Server-computed: every point traces to a reason, and the score on a logged
+// follow-up is the score the list showed, never a client-supplied number.
+export type ChurnBand = 'critical' | 'high' | 'medium' | 'low';
+export interface ChurnReason { code: string; label: string; points: number; }
+export interface ChurnRiskRow {
+  client_id: string;
+  client_name: string;
+  score: number;
+  band: ChurnBand;
+  reasons: ChurnReason[];
+  next_action: string;
+  last_session: string | null;
+  days_quiet: number | null;
+  term: { state: 'current' | 'ended' | 'unknown'; end: string | null; days_left: number | null };
+  balance_amount: number;
+  risk_increased: boolean;
+  outcome?: 'contacted' | 'snoozed';
+  hide_until?: string;
+}
+export interface ChurnRiskResult {
+  as_of: string;
+  assessed: number;
+  flagged: number;
+  bands: Record<ChurnBand, number>;
+  rows: ChurnRiskRow[];
+  handled: ChurnRiskRow[];
+}
+export interface ChurnInsight { summary: string; themes: string[]; this_week: string[]; }
+
+// ── Form review (async video) ────────────────────────────────
+//
+// A member records a lift; the trainer comments pinned to seconds in the
+// clip. The member sees their own history through /api/me, the trainer sees
+// the queue through /api/pt-os; both are scoped to the session, never an id
+// from the request.
+export interface FormCheckComment {
+  id: string;
+  /** Video position in whole seconds. */
+  at_seconds: number;
+  body: string;
+  created_at: string;
+}
+
+export interface MeFormCheck {
+  id: string;
+  exercise: string;
+  note: string | null;
+  /** A /uploads/form-checks/... path, served with HTTP Range for seeking. */
+  video_url: string;
+  status: 'pending' | 'reviewed';
+  created_at: string;
+  reviewed_at: string | null;
+  comments: FormCheckComment[];
+}
+
+export interface TrainerFormCheck {
+  id: string;
+  client_id: string;
+  client_name: string;
+  exercise: string;
+  note: string | null;
+  video_url: string;
+  status: 'pending' | 'reviewed';
+  created_at: string;
+  reviewed_at: string | null;
+  /** Present in the queue list. */
+  comment_count?: number;
+  /** Present in the detail read. */
+  comments?: FormCheckComment[];
+}
+
 // ── Hostinger hosting console (platform control plane) ───────────────────────
 //
 // Everything here is a projection of the official Hostinger API, and the

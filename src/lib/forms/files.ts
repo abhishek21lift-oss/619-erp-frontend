@@ -100,7 +100,29 @@ const TEXT: FileSignature = {
   label: 'text file',
 };
 
-export const SIGNATURES = { PNG, JPEG, WEBP, GIF, PDF, TEXT } as const;
+/**
+ * Lift videos from a phone. MP4 and MOV are both ISO base media files: the box
+ * type "ftyp" sits at byte 4, after a four-byte size. The major brand that
+ * separates them from HEIC/AVIF is not checked here — it is at a fixed offset
+ * that varies by encoder — so the server repeats this check on the bytes and
+ * refuses an image in the same container. This gate is for the user's data
+ * allowance and an immediate answer, not security.
+ */
+const MP4: FileSignature = {
+  mime: 'video/mp4',
+  extensions: ['mp4', 'm4v'],
+  magic: [{ offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }], // "ftyp"
+  label: 'MP4 video',
+};
+
+const MOV: FileSignature = {
+  mime: 'video/quicktime',
+  extensions: ['mov'],
+  magic: [{ offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }], // "ftyp"
+  label: 'MOV video',
+};
+
+export const SIGNATURES = { PNG, JPEG, WEBP, GIF, PDF, TEXT, MP4, MOV } as const;
 
 /** Photos: what an avatar, logo or progress picture may be. */
 export const IMAGE_FORMATS = [PNG, JPEG, WEBP] as const;
@@ -113,6 +135,9 @@ export const DOCUMENT_FORMATS = [PDF, PNG, JPEG] as const;
 
 /** What the AI knowledge base ingests. */
 export const KNOWLEDGE_FORMATS = [PDF, TEXT] as const;
+
+/** A lift clip a member sends for form review. */
+export const VIDEO_FORMATS = [MP4, MOV] as const;
 
 export const MB = 1024 * 1024;
 
@@ -379,6 +404,15 @@ export const KNOWLEDGE_RULES: FileRules = {
   formats: KNOWLEDGE_FORMATS,
   // Both upload endpoints (studio and platform corpus) cap multer at 15 MB.
   maxBytes: 15 * MB,
+};
+
+/**
+ * A lift video for form review. 60 MB matches the member endpoint's multer
+ * limit, so the two cannot disagree about what is too large.
+ */
+export const VIDEO_RULES: FileRules = {
+  formats: VIDEO_FORMATS,
+  maxBytes: 60 * MB,
 };
 
 /**

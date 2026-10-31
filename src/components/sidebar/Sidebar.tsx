@@ -30,7 +30,7 @@ import {
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
   Flag, Move, Accessibility, ShieldCheck, FileSignature,
   Receipt, Smartphone, UserRound, UserSearch, ScrollText, ToggleRight, ShieldAlert, LifeBuoy, HardDrive,
-  CalendarDays, MessagesSquare, BadgeCheck,
+  CalendarDays, MessagesSquare, BadgeCheck, AlertTriangle, Video,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -46,6 +46,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   // the map is an allowlist, not a lookup with a fallback. Anything added to
   // nav-config.ts must be added here too.
   Receipt, Smartphone, UserRound, UserSearch, ScrollText, ToggleRight, ShieldAlert, LifeBuoy, HardDrive,
+  AlertTriangle, Video,
 };
 
 // ── Design constants ──────────────────────────────────────────────────────────
