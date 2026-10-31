@@ -96,7 +96,7 @@ jobs:
           echo "CI result:  ${{ github.event.workflow_run.conclusion || 'n/a (manual dispatch)' }}"
           echo "Commit:     ${{ github.event.workflow_run.head_sha || github.sha }}"
 
-      # ── Why there are four attempts ─────────────────────────────────────
+      # ── Why there are three attempts, and why the waits poll ────────────
       #
       # The runner intermittently cannot reach the VPS on 22:
       #
@@ -106,19 +106,17 @@ jobs:
       # were dropped, not refused. A wrong key gives a rejection, a wrong host
       # gives a DNS error; this is a filter or a box that is not answering.
       #
-      # The ladder has been widened twice by evidence, and the comment that
-      # used to sit here claimed seven minutes "covers every occurrence seen so
-      # far". That is no longer true, so it is corrected rather than kept:
+      # Observed windows: ~10 min on 05 Aug, >10 min on 08 Aug (which
+      # swallowed three attempts at 0s, +90s and +5min), and ~25 min on
+      # 31 Oct 2026, where the box served HTTPS the whole time while SSH from
+      # the runner timed out.
       #
-      #   05 Aug  outage swallowed 07:17 and 07:20, over by 07:27  (~10 min)
-      #   08 Aug  swallowed 06:43, 06:46 AND 06:52 — all three attempts —
-      #           on a box that had deployed successfully at 06:05  (>10 min)
-      #
-      # Three attempts at 0s, +90s and +5min span about seven minutes, and the
-      # 08 Aug outage outlasted them. A fourth at +15min takes the ladder to
-      # roughly twenty-two, which covers both observed windows with margin. A
-      # job may run for six hours, so the cost of the extra wait is only paid
-      # on a day that was already broken.
+      # The old ladder waited 90s, 5min and 15min with `sleep`. Those waits are
+      # blind: they run to the end even after the box answers, so a 6-minute
+      # outage still cost 22 minutes, and the deploy started whenever the last
+      # sleep expired rather than when SSH came back. These steps poll 22 every
+      # 10s and return the moment it opens, so the retry starts within ~10s of
+      # recovery and the worst case (20 min of waiting) is unchanged.
       #
       # `continue-on-error` keeps each failure from ending the job; the last
       # attempt has none, so it decides the outcome. This hides a blip, not an
@@ -133,9 +131,10 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # Default is 30s. The observed failures took the full 30 and then
-          # gave up; the box answers again shortly after.
-          timeout: 60s
+          # A healthy handshake completes in well under a second. 60s was
+          # borrowed from the old 30s default with no evidence it was needed;
+          # it only made each failed attempt a full minute of dead time.
+          timeout: 20s
           # A cold `docker compose build` of the Next.js image is minutes, and
           # the default 10m has no margin on a busy box.
           command_timeout: 20m
@@ -145,9 +144,15 @@ jobs:
           script_stop: true
           script: ${{ env.DEPLOY_SCRIPT }}
 
-      - name: Wait for the box to answer again
+      # Polls instead of sleeping: exits as soon as 22 answers, or after the
+      # budget so the next attempt reports the real error. Never fails the job.
+      - name: Wait for the box to answer again (up to 10 min)
         if: steps.attempt.outcome == 'failure'
-        run: sleep 90
+        run: |
+          for i in $(seq 1 60); do
+            timeout 5 bash -c "cat < /dev/null > /dev/tcp/${{ secrets.HOST }}/22" 2>/dev/null && exit 0
+            sleep 10
+          done
 
       - name: Deploy to VPS via SSH (retry 1)
         id: retry1
@@ -158,46 +163,28 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
+          timeout: 20s
           command_timeout: 20m
           script_stop: true
           script: ${{ env.DEPLOY_SCRIPT }}
 
-      - name: Wait longer
+      - name: Wait longer (up to 10 min)
         if: steps.attempt.outcome == 'failure' && steps.retry1.outcome == 'failure'
-        run: sleep 300
-
-      - name: Deploy to VPS via SSH (retry 2)
-        id: retry2
-        continue-on-error: true
-        if: steps.attempt.outcome == 'failure' && steps.retry1.outcome == 'failure'
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
-          command_timeout: 20m
-          script_stop: true
-          script: ${{ env.DEPLOY_SCRIPT }}
-
-      - name: Wait out a longer outage
-        if: >-
-          steps.attempt.outcome == 'failure' && steps.retry1.outcome == 'failure'
-          && steps.retry2.outcome == 'failure'
-        run: sleep 900
+        run: |
+          for i in $(seq 1 60); do
+            timeout 5 bash -c "cat < /dev/null > /dev/tcp/${{ secrets.HOST }}/22" 2>/dev/null && exit 0
+            sleep 10
+          done
 
       # The last attempt has no continue-on-error: it decides the job.
-      - name: Deploy to VPS via SSH (retry 3)
-        if: >-
-          steps.attempt.outcome == 'failure' && steps.retry1.outcome == 'failure'
-          && steps.retry2.outcome == 'failure'
+      - name: Deploy to VPS via SSH (retry 2)
+        if: steps.attempt.outcome == 'failure' && steps.retry1.outcome == 'failure'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
+          timeout: 20s
           command_timeout: 20m
           script_stop: true
           script: ${{ env.DEPLOY_SCRIPT }}
