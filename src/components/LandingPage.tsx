@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { C } from './landing/tokens';
 import type { PublicPlan, PublicStats } from './landing/types';
+import type { PublicLandingData } from '@/lib/public-landing';
 
 import LandingNav from './landing/LandingNav';
 import PublicPullToRefresh from './PublicPullToRefresh';
@@ -34,13 +35,15 @@ import Footer from './landing/Footer';
  * swallowed on purpose: the page must still render if the API is cold or
  * unreachable — it renders without live figures, never with invented ones.
  */
-export default function LandingPage() {
-  const [plans, setPlans] = useState<PublicPlan[]>([]);
-  const [founderSlots, setFounderSlots] = useState<number | null>(null);
-  const [trialDays, setTrialDays] = useState(7);
+export default function LandingPage({
+  initialData = null,
+}: { initialData?: PublicLandingData | null }) {
+  const [plans, setPlans] = useState<PublicPlan[]>(initialData?.plans ?? []);
+  const [founderSlots, setFounderSlots] = useState<number | null>(initialData?.founderSlots ?? null);
+  const [trialDays, setTrialDays] = useState(initialData?.trialDays ?? 7);
   // The hero states the trial length only once it is the live figure.
-  const [trialLoaded, setTrialLoaded] = useState(false);
-  const [stats, setStats] = useState<PublicStats | null>(null);
+  const [trialLoaded, setTrialLoaded] = useState(initialData?.trialDays != null);
+  const [stats, setStats] = useState<PublicStats | null>(initialData?.stats ?? null);
 
   useEffect(() => {
     const base = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '');

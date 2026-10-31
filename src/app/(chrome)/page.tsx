@@ -35,10 +35,9 @@
 import type { Metadata } from 'next';
 import StudioHome from '@/components/StudioHome';
 import { isAnonymousRequest } from '@/lib/session-hint';
-import { buildHomeStructuredData } from '@/lib/home-structured-data';
+import { getPublicLandingData } from '@/lib/public-landing';
+import { buildHomeStructuredData, buildPlanOffers } from '@/lib/home-structured-data';
 import { toJsonLd } from '@/lib/schema-org';
-
-const HOME_JSON_LD = toJsonLd(buildHomeStructuredData());
 
 export const metadata: Metadata = {
   // The opt-in. Explicit on both keys rather than relying on a partial merge
@@ -55,15 +54,22 @@ export const metadata: Metadata = {
 // for a request with no session cookie, rather than a loading splash — see
 // lib/session-hint.ts. A signed-in user's page is unchanged.
 export default async function Page() {
+  const anonymous = await isAnonymousRequest();
+  // Only an anonymous request gets the server fetch: a signed-in user's HTML
+  // has no business carrying public pricing, and the dashboard does not use it.
+  const publicData = anonymous ? await getPublicLandingData() : null;
+  const jsonLd = toJsonLd(
+    buildHomeStructuredData(buildPlanOffers(publicData?.plans ?? [])),
+  );
   return (
     <>
       {/* In the page rather than a component: it must be in the HTML a crawler
           receives, including the anonymous server render. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: HOME_JSON_LD }}
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
-      <StudioHome anonymousHint={await isAnonymousRequest()} />
+      <StudioHome anonymousHint={anonymous} initialPublicData={publicData} />
     </>
   );
 }
