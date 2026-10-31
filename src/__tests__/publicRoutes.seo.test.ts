@@ -8,7 +8,7 @@ vi.mock('next/font/google', () => {
 });
 import fs from 'node:fs';
 import path from 'node:path';
-import robots, { PRIVATE_PREFIXES, PRIVATE_SEGMENTS } from '@/app/robots';
+import robots, { AI_CRAWLERS, PRIVATE_PREFIXES, PRIVATE_SEGMENTS } from '@/app/robots';
 import sitemap, { PUBLIC_ROUTES } from '@/app/sitemap';
 import { PUBLIC_SEO_ROUTES, SITE_URL, canonicalUrl } from '@/lib/seo-routes';
 import { SESSIONLESS_PAGES } from '@/lib/public-paths';
@@ -136,6 +136,44 @@ describe('robots.txt describes routes that exist', () => {
 
   it('points at the sitemap', () => {
     expect(robots().sitemap).toBe('https://myptstudio.com/sitemap.xml');
+  });
+});
+
+// ── AI crawler policy ──────────────────────────────────────────────────────
+//
+// One explicit group for the answer engines, with exactly the same public
+// allow-list and private blocks as the `*` rule. Duplicating the policy for AI
+// must not open a door the wildcard rule closes.
+
+describe('AI crawler policy', () => {
+  type Rule = { userAgent: string | string[]; allow?: string[]; disallow?: string[] };
+  const rules = robots().rules as Rule[];
+
+  it('keeps the wildcard rule first', () => {
+    expect(rules[0].userAgent).toBe('*');
+  });
+
+  it('gives AI crawlers the same public allow-list as everyone else', () => {
+    expect(rules).toHaveLength(2);
+    expect(rules[1].userAgent).toEqual(AI_CRAWLERS);
+    expect(rules[1].allow).toEqual([...PUBLIC_SEO_ROUTES]);
+  });
+
+  it('blocks the same private segments for AI crawlers', () => {
+    expect(rules[1].disallow).toEqual(rules[0].disallow);
+    expect(rules[1].disallow).toContain('/api/');
+    expect(rules[1].disallow).toContain('/login');
+    expect(rules[1].disallow).toContain('/pt-os/');
+    expect(rules[1].disallow).not.toContain('/pt-os');
+  });
+
+  it('names the answer-engine crawlers the product wants to reach', () => {
+    expect(AI_CRAWLERS).toEqual([
+      'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',
+      'PerplexityBot', 'Perplexity-User',
+      'ClaudeBot', 'Claude-SearchBot', 'Claude-User',
+      'Google-Extended', 'Applebot-Extended', 'CCBot',
+    ]);
   });
 });
 

@@ -40,13 +40,28 @@ const PRIVATE_SEGMENTS = [
  */
 const PRIVATE_PREFIXES = ['/pt-os/'];
 
+/** Answer-engine crawlers that should see the same public surface as `*`. */
+export const AI_CRAWLERS = [
+  'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',
+  'PerplexityBot', 'Perplexity-User',
+  'ClaudeBot', 'Claude-SearchBot', 'Claude-User',
+  'Google-Extended', 'Applebot-Extended', 'CCBot',
+];
+
 export default function robots(): MetadataRoute.Robots {
+  const allow = [...PUBLIC_SEO_ROUTES];
+  const disallow = ['/api/', '/login', ...PRIVATE_SEGMENTS, ...PRIVATE_PREFIXES];
   return {
     rules: [
       {
         userAgent: '*',
-        allow: [...PUBLIC_SEO_ROUTES],
-        disallow: ['/api/', '/login', ...PRIVATE_SEGMENTS, ...PRIVATE_PREFIXES],
+        allow,
+        disallow,
+      },
+      {
+        userAgent: AI_CRAWLERS,
+        allow,
+        disallow,
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
