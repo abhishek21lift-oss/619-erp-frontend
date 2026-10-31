@@ -36,10 +36,10 @@ jobs:
           cache: npm
 
       - name: Install project dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Install Capacitor
-        run: npm install --no-save @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
+        run: npm install --no-save --legacy-peer-deps @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8
 
       - name: Add Android platform
         run: npx cap add android
