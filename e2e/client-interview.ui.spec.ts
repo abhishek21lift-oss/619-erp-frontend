@@ -91,9 +91,9 @@ test.describe('Client interview and journey', () => {
     const [row] = await interviews();
     expect(row.status).toBe('completed');
     expect(row.completed_at).toBeTruthy();
-    expect(String(row.lifestyle_sitting_hours)).toBe('7');
+    expect(Number(row.lifestyle_sitting_hours)).toBe(7);
     expect(row.lifestyle_meal_regularity).toBe('inconsistent');
-    expect(String(row.lifestyle_training_days)).toBe('4');
+    expect(Number(row.lifestyle_training_days)).toBe(4);
     // This form never writes the free-text columns.
     expect(row.training_history).toBeNull();
 
