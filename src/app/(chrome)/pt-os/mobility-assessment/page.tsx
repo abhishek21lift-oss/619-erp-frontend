@@ -192,7 +192,7 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
 
   const analysis = useMemo(() => {
     const mobilityScore = calcMobilityScore(form.bodyRegions, form.mobilityTests);
-    const mobilityCategory = classifyMobility(mobilityScore);
+    const mobilityCategory = classifyMobility(mobilityScore, form.bodyRegions, form.mobilityTests);
     const referrals = calcMobilityReferrals(form.bodyRegions, form.mobilityTests);
     return { mobilityScore, mobilityCategory, referrals };
   }, [form.bodyRegions, form.mobilityTests]);
