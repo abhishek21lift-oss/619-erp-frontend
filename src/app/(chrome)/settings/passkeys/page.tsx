@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useWebAuthn, isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero } from '@/components/ui';
+import { HeroButton, PageHero, FormField, TextInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -313,23 +313,20 @@ function PasskeysContent() {
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
             Give this device a name so you can identify it later.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-            <input
-              value={deviceName}
-              onChange={e => setDeviceName(e.target.value)}
-              placeholder="e.g. iPhone 15, MacBook, Work PC…"
-              disabled={registering}
-              style={{
-                flex: 1, padding: '10px 14px', borderRadius: 10, fontSize: 14,
-                background: 'var(--bg-subtle)', border: '1px solid var(--border)',
-                color: 'var(--text-primary)', fontFamily: 'inherit',
-              }}
-              // `registering` guarded here as well as on the button: Enter in
-              // this field bypassed the button's disabled state, and a second
-              // enrolment started while the first is waiting on the biometric
-              // prompt is a second challenge for the same user.
-              onKeyDown={e => { if (e.key === 'Enter' && !registering) handleRegister(); }}
-            />
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-end' }}>
+            <FormField label="Device name" density="compact" className="flex-1">
+              <TextInput
+                value={deviceName}
+                onChange={e => setDeviceName(e.target.value)}
+                placeholder="e.g. iPhone 15, MacBook, Work PC…"
+                disabled={registering}
+                // `registering` guarded here as well as on the button: Enter in
+                // this field bypassed the button's disabled state, and a second
+                // enrolment started while the first is waiting on the biometric
+                // prompt is a second challenge for the same user.
+                onKeyDown={e => { if (e.key === 'Enter' && !registering) handleRegister(); }}
+              />
+            </FormField>
             <button
               onClick={handleRegister}
               disabled={registering || hookLoading}
@@ -449,18 +446,19 @@ function PasskeysContent() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {renameId === cred.id ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <input aria-label="Passkey name"
-                          ref={renameRef}
-                          value={renameVal}
-                          onChange={e => setRenameVal(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenameId(null); }}
-                          style={{
-                            padding: '5px 10px', borderRadius: 8, fontSize: 13,
-                            background: 'var(--bg-subtle)', border: '1.5px solid rgba(163,55,87,0.4)',
-                            color: 'var(--text-primary)', fontFamily: 'inherit',
-                            maxWidth: 200,
-                          }}
-                        />
+                        <FormField label="Passkey name" labelHidden>
+                          <TextInput
+                            ref={renameRef}
+                            value={renameVal}
+                            onChange={e => setRenameVal(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenameId(null); }}
+                            style={{
+                              padding: '5px 10px', borderRadius: 8, fontSize: 13,
+                              minHeight: 32, maxWidth: 200,
+                              border: '1.5px solid rgba(163,55,87,0.4)',
+                            }}
+                          />
+                        </FormField>
                         <button
                           onClick={commitRename}
                           disabled={renaming}

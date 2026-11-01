@@ -911,6 +911,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={handleChatKeyDown}
                     rows={1}
+                    aria-label="Ask your AI coach anything"
                     placeholder="Ask your AI coach anything…"
                     style={{
                       flex: 1, resize: 'none', background: 'rgba(255,255,255,0.06)',

@@ -174,7 +174,7 @@ export default function TrainerStatedFields({
                     {f.label}
                   </span>
                   <input
-                    type={f.numeric ? 'number' : 'text'}
+                    type="text"
                     inputMode={f.numeric ? 'numeric' : undefined}
                     value={values[f.key] ?? ''}
                     onChange={(e) => set(f.key, e.target.value)}

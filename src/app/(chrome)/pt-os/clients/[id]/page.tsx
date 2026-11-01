@@ -22,7 +22,7 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
-import { PremiumAreaChart, Button, cardSurfaceGlow } from '@/components/ui';
+import { PremiumAreaChart, Button, cardSurfaceGlow, FormField, TextArea } from '@/components/ui';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot, { normaliseSnapshot, type SnapshotState } from '@/components/pt-os/ClientSnapshot';
@@ -417,11 +417,11 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
     >
       {editing ? (
         <div className="space-y-3">
-          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} autoFocus
-            aria-label="Coach notes"
-            className="w-full resize-none rounded-[14px] px-3.5 py-3 text-[14px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-            style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}
-            placeholder="Injuries, preferences, what worked last session…" />
+          <FormField label="Coach notes" labelHidden>
+            <TextArea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} autoFocus
+              className="resize-none text-[14px] leading-relaxed"
+              placeholder="Injuries, preferences, what worked last session…" />
+          </FormField>
           <div className="flex gap-2">
             <button onClick={save} disabled={saving}
               className="flex h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[12px] text-[13.5px] font-[700] text-white disabled:opacity-60"

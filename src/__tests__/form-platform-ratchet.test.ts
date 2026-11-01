@@ -102,11 +102,13 @@ const CEILING = {
   // for strength-tracking and the builder's ExerciseCard, then 83 → 67 for the
   // four P2 platform centres, then 67 → 64 for settings/profile, then 64 → 60
   // for the engagement feedback and WhatsApp controls, then 60 → 54 for
-  // activity-log, AboutSection and ProgressionRule. Lower again when the next
-  // phase lands; never raise.
-  unjustified: 54,
+  // activity-log, AboutSection and ProgressionRule, then 54 → 11 for the
+  // platform tabs, command panel, security centre and the vetted native
+  // controls in justifications.mjs, then 11 → 0 for the AI coach surfaces.
+  // Zero is now the invariant, not a step: never raise.
+  unjustified: 0,
   p0Unjustified: 0,
-  p1Unjustified: 23,
+  p1Unjustified: 0,
   /**
    * §9. Zero, and it stays zero.
    *
@@ -239,8 +241,15 @@ describe('ceilings — these may only fall', () => {
     expect(a.totals.coercions).toBe(CEILING.riskyCoercions);
   });
 
-  it('unjustified native business controls never increase', () => {
-    expect(a.totals.unjustified).toBeLessThanOrEqual(CEILING.unjustified);
+  it('has no unjustified native business controls', () => {
+    // The audit reached zero, so this is now an invariant rather than a
+    // ceiling. A new native control on a business field must either migrate or
+    // arrive with a justification a person wrote.
+    const offenders = a.rows
+      .filter((r) => r.unjustified > 0)
+      .map((r) => `${r.file} (${r.unjustified})`);
+    expect(offenders).toEqual([]);
+    expect(a.totals.unjustified).toBe(CEILING.unjustified);
   });
 
   it('P0 has no unjustified native business control at all', () => {
@@ -255,8 +264,8 @@ describe('ceilings — these may only fall', () => {
     expect(a.totals.byRisk.P0!.unjustified).toBe(CEILING.p0Unjustified);
   });
 
-  it('P1 unjustified never increases', () => {
-    expect(a.totals.byRisk.P1!.unjustified).toBeLessThanOrEqual(CEILING.p1Unjustified);
+  it('P1 unjustified is zero', () => {
+    expect(a.totals.byRisk.P1!.unjustified).toBe(CEILING.p1Unjustified);
   });
 
   it('every upload site reaches the canonical validator', () => {

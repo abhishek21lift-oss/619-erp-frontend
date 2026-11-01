@@ -15,7 +15,7 @@ import {
   LifeBuoy, Loader2, AlertTriangle, Plus, Send, ChevronLeft, CheckCircle2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero } from '@/components/ui';
+import { HeroButton, PageHero, FormField, TextArea, TextInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SupportTicket, TicketStatus, TicketPriority, TicketCategory } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -132,12 +132,13 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           </p>
         ) : (
           <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
-            <textarea
-              value={body} onChange={(e) => setBody(e.target.value)} rows={3}
-              placeholder="Add to this request…" aria-label="Your reply"
-              className="w-full resize-y rounded-[10px] px-2.5 py-2 text-[12.5px] outline-none"
-              style={{ ...cardStyle, color: 'var(--text-primary)' }}
-            />
+            <FormField label="Your reply" labelHidden>
+              <TextArea
+                value={body} onChange={(e) => setBody(e.target.value)} rows={3}
+                placeholder="Add to this request…"
+                className="resize-y"
+              />
+            </FormField>
             <button
               onClick={send} disabled={busy || !body.trim()}
               className="mt-2 flex h-10 items-center gap-1.5 rounded-[11px] px-4 text-[12.5px] font-[700] text-white disabled:opacity-50"
@@ -183,19 +184,16 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: () 
       </div>
 
       <div className="space-y-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Subject</span>
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200}
-            placeholder="Check-ins are failing on the QR scanner"
-            className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={{ ...cardStyle, color: 'var(--text-primary)' }} />
-        </label>
+        <FormField label="Subject" density="compact">
+          <TextInput value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200}
+            placeholder="Check-ins are failing on the QR scanner" />
+        </FormField>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>What is happening?</span>
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={10000}
+        <FormField label="What is happening?" density="compact">
+          <TextArea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={10000}
             placeholder="Tell us what you were doing and what happened instead."
-            className="resize-y rounded-[10px] px-2.5 py-2 text-[12.5px] outline-none" style={{ ...cardStyle, color: 'var(--text-primary)' }} />
-        </label>
+            className="resize-y" />
+        </FormField>
 
         <div>
           <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Category</span>

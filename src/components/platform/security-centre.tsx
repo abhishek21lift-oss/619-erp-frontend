@@ -23,6 +23,7 @@ import type {
   SecurityOverview, SecurityThreats, LoginEvent, LoginEventQuery, ActiveSession,
 } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { FormField, SelectInput } from '@/components/ui';
 import { CcCard, CcDonut, CcRing, CcStat } from './cc-viz';
 import { ccState } from './ccTheme';
 
@@ -336,16 +337,15 @@ export default function SecurityCentre() {
           <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.18 }} className="overflow-hidden">
             <div className="grid grid-cols-1 gap-3 rounded-[14px] p-3.5 sm:grid-cols-2 lg:grid-cols-4" style={cardStyle}>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Outcome</span>
-                <select
+              <FormField label="Outcome" density="compact">
+                <SelectInput
                   value={outcome} onChange={(e) => { setOutcome(e.target.value); setOffset(0); }}
-                  className="h-10 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={inputStyle}
+                  className="px-2.5 text-[12.5px]"
                 >
                   <option value="">Any</option>
                   {Object.entries(OUTCOME).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
-              </label>
+                </SelectInput>
+              </FormField>
               <div className="flex items-end">
                 <button
                   onClick={() => { setOutcome(''); setQ(''); setDebouncedQ(''); setFailedOnly(true); setOffset(0); }}

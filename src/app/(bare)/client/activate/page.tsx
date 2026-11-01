@@ -29,7 +29,8 @@ import { invitationPasswordRules } from '@/lib/password-policy';
 import { errorMessage } from '@/lib/forms/errors';
 import { clientActivateSchema } from '@/lib/forms/schemas/client';
 import { Wordmark } from '@/components/landing/Wordmark';
-import { C, CARD, FIELD, PRIMARY_BUTTON } from '@/components/landing/tokens';
+import { SoftField, SoftInput } from '@/components/landing/SoftField';
+import { C, CARD, PRIMARY_BUTTON } from '@/components/landing/tokens';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -268,57 +269,39 @@ function ActivateForm() {
       </div>
 
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <div>
-          <label htmlFor="pw" className="mb-1.5 block text-[12.5px] font-[600]" style={{ color: C.ink }}>
-            New password
-          </label>
-          <div className="relative">
-            <input
-              id="pw"
-              type={show ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
-              autoComplete="new-password"
-              autoFocus
-              aria-invalid={fieldErrors.password ? true : undefined}
-              aria-describedby={fieldErrors.password ? 'pw-error' : undefined}
-              className={`${FIELD.base} ${FIELD.ok} h-12 pl-4 pr-12`}
-              style={inputStyle}
-            />
-            <button
-              type="button"
-              onClick={() => setShow((v) => !v)}
-              aria-label={show ? 'Hide password' : 'Show password'}
-              className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-[9px] transition-colors hover:bg-black/5"
-              style={{ color: C.muted }}
-            >
-              {show ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-          {fieldErrors.password && (
-            <p id="pw-error" role="alert" className="mt-1.5 text-[12px]" style={{ color: C.red }}>{fieldErrors.password}</p>
-          )}
-        </div>
+        <SoftField label="New password" error={fieldErrors.password}>
+          <SoftInput
+            type={show ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
+            autoComplete="new-password"
+            autoFocus
+            className="h-12"
+            style={inputStyle}
+            trailing={
+              <button
+                type="button"
+                onClick={() => setShow((v) => !v)}
+                aria-label={show ? 'Hide password' : 'Show password'}
+                className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-[9px] transition-colors hover:bg-black/5"
+                style={{ color: C.muted }}
+              >
+                {show ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            }
+          />
+        </SoftField>
 
-        <div>
-          <label htmlFor="pw2" className="mb-1.5 block text-[12.5px] font-[600]" style={{ color: C.ink }}>
-            Confirm password
-          </label>
-          <input
-            id="pw2"
+        <SoftField label="Confirm password" error={fieldErrors.confirm}>
+          <SoftInput
             type={show ? 'text' : 'password'}
             value={confirm}
             onChange={(e) => { setConfirm(e.target.value); clearFieldError('confirm'); }}
             autoComplete="new-password"
-            aria-invalid={fieldErrors.confirm ? true : undefined}
-            aria-describedby={fieldErrors.confirm ? 'pw2-error' : undefined}
-            className={`${FIELD.base} ${FIELD.ok} h-12 px-4`}
+            className="h-12"
             style={inputStyle}
           />
-          {fieldErrors.confirm && (
-            <p id="pw2-error" role="alert" className="mt-1.5 text-[12px]" style={{ color: C.red }}>{fieldErrors.confirm}</p>
-          )}
-        </div>
+        </SoftField>
 
         {/* A live checklist rather than a strength bar. "Strength: fair" does
             not tell anyone what to type next; a rule that flips to a tick

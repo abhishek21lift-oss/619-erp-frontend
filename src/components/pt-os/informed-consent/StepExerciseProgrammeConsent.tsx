@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, Check, FileSignature } from 'lucide-react';
+import { FormField, TextInput } from '@/components/ui/form';
 import type { InformedConsentFormData } from './types';
 import { EXERCISE_PROGRAMME_CONSENT_PARAGRAPHS, EXERCISE_PROGRAMME_CHECKBOX_LABEL } from './types';
 
@@ -113,17 +114,12 @@ function PhysicianAdvice({ form, set }: Pick<StepExerciseProgrammeConsentProps, 
     );
   };
   const field = (key: 'physicianName' | 'physicianHospital' | 'medicalCondition', label: string, required = false) => (
-    <label className="block">
-      <span className="mb-1.5 block text-[12px] font-[650] text-[color:var(--text-secondary)]">
-        {label}{required && <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>}
-      </span>
-      <input
+    <FormField label={label} required={required}>
+      <TextInput
         value={form[key]} onChange={(e) => set(key, e.target.value)} maxLength={key === 'medicalCondition' ? 1000 : 255}
-        required={required}
-        className="h-[44px] w-full rounded-[12px] px-3.5 text-[14px] outline-none"
-        style={{ background: 'var(--bg-card)', border: '1.5px solid rgba(15,23,42,0.1)', color: 'var(--text-primary)' }}
+        style={{ background: 'var(--bg-card)' }}
       />
-    </label>
+    </FormField>
   );
 
   return (

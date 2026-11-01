@@ -87,6 +87,120 @@ describe('one form system, not eighteen', () => {
     expect(enroll).not.toMatch(/tone=/);
   });
 
+  it('renders migrated Phase 2 forms through the field system', () => {
+    // Phase 2 of the form migration. Each file had raw business controls with
+    // their own label or aria-label rather than the shared wiring. The guardrail
+    // is source-level on purpose: the behaviour is unchanged, so a render test
+    // would pass before and after. Add one entry per migrated page.
+    const migrated = [
+      'app/(chrome)/support/page.tsx',
+      'app/(chrome)/settings/passkeys/page.tsx',
+      'components/pt-os/workout-log/SessionSummary.tsx',
+      'components/pt-os/analytics/WeeklyReport.tsx',
+      'app/(chrome)/pt-os/clients/[id]/page.tsx',
+    ];
+    for (const file of migrated) {
+      const src = readFileSync(join(SRC, file), 'utf8');
+      expect(src, file).not.toMatch(/<(input|textarea)\b/);
+      expect(src, file).toMatch(/<FormField\b/);
+    }
+  });
+
+  it('renders the progress photo comparison selects through the field system', () => {
+    // The two comparison pickers were the only raw business controls on the
+    // page. The range input beside them is a direct-manipulation control, not
+    // a labelled field, so it keeps its own aria-label.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/progress-photos/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
+  it('renders the client edit gender and delete confirmation through the field system', () => {
+    // The photo picker stays a native file input: it is a button-shaped
+    // affordance with its own aria-label, not a labelled text field.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/clients/[id]/edit/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+    expect(src).not.toMatch(/<input\s+id="delete-confirm"/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
+  it('renders the diet log date and intake fields through the field system', () => {
+    // The two search boxes are filters and stay SearchField candidates, not
+    // payload fields; these two are the log's actual controls.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/diet-plans/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/aria-label="Diet log date"/);
+    expect(src).not.toMatch(/<input\s+type="text"/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
+  it('renders the workout log program filter through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
+  it('renders the exercise library sort through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/exercise-library/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
+  it('renders the platform knowledge upload fields through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(platform)/platform/_tabs/KnowledgeTab.tsx'), 'utf8');
+    expect(src).not.toMatch(/<input\s+id="mpts-title"/);
+    expect(src).not.toMatch(/<input\s+id="mpts-source-version"/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
+  it('renders the platform user and activity filters through the field system', () => {
+    for (const file of [
+      'app/(platform)/platform/_tabs/UsersTab.tsx',
+      'app/(platform)/platform/_tabs/ActivityTab.tsx',
+    ]) {
+      const src = readFileSync(join(SRC, file), 'utf8');
+      expect(src, file).not.toMatch(/<select\b/);
+      expect(src, file).toMatch(/<SelectInput\b/);
+    }
+  });
+
+  it('renders the command panel confirmation and queue through the field system', () => {
+    const src = readFileSync(join(SRC, 'components/platform/command-panel.tsx'), 'utf8');
+    expect(src).not.toMatch(/<input\b/);
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<TextInput\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
+  it('renders the security centre outcome filter through the field system', () => {
+    const src = readFileSync(join(SRC, 'components/platform/security-centre.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
+  it('renders the client activation password fields on the public field contract', () => {
+    const src = readFileSync(join(SRC, 'app/(bare)/client/activate/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<input\b/);
+    expect(src).toMatch(/<SoftField\b/);
+    expect(src).toMatch(/<SoftInput\b/);
+  });
+
+  it('renders the physician-advice fields through the field system', () => {
+    const src = readFileSync(join(SRC, 'components/pt-os/informed-consent/StepExerciseProgrammeConsent.tsx'), 'utf8');
+    expect(src).not.toMatch(/<input\b/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
+  it('renders the AI coach knowledge title through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(chrome)/ai-coach/knowledge/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/id="kb-title"/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
@@ -145,33 +259,9 @@ describe('the label audit, resolved case by case', () => {
   //
   // The other fifteen split three ways by what the caption actually names.
 
-  it('associates the captions that sit beside a real control', () => {
-    // This list shrinks as screens move onto the universal form platform, and
-    // that is the list working rather than the property lapsing. A migrated
-    // field renders through FormField (or its soft-surface twin), which
-    // GENERATES the id and points its own <label htmlFor> at it — so the
-    // association holds by construction instead of by two hand-written strings
-    // continuing to agree. Re-adding a hand-written id after a migration would
-    // assert a property the component no longer has.
-    //
-    // Already retired this way: `fp-email` (forgot-password), `rp-password`
-    // and `rp-confirm` (reset-password), `pay-ref` (Record Payment),
-    // `leave-reason` (the leave request form, now a TextAreaField — the
-    // reject-note textarea beside it is still raw, so it stays below).
-    //
-    // The property itself is still covered, and more strictly:
-    // label-association.test.ts asserts that NO control in the app is
-    // nameless, with no per-file list to fall out of date.
-    const associated: [string, string][] = [
-      ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
-      ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
-    ];
-    for (const [file, id] of associated) {
-      const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
-      expect(src, `${file}: no label for ${id}`).toMatch(new RegExp(`htmlFor="${id}"`));
-      expect(src, `${file}: no control with id ${id}`).toMatch(new RegExp(`id="${id}"`));
-    }
-  });
+  // The last hand-written association retired with `kb-title` (AI coach
+  // knowledge), which is FormField now. There is no per-file list left to
+  // maintain; label-association.test.ts covers the property globally.
 
   it('no longer needs a per-row id for the invoice fields', () => {
     // The Create Invoice modal used to render its four fields from a map, so a
@@ -364,15 +454,16 @@ describe('FloatInput tones', () => {
     expect(screen.getByLabelText('Display Name')).toBeInstanceOf(HTMLInputElement);
   });
 
-  it('keeps the caption visible once the field has a value', () => {
-    // The reason this pattern is allowed to stay: the caption lifts, it does
-    // not disappear. That is the rule the whole phase is about.
+  it('keeps the label visible once the field has a value', () => {
+    // The label sits above the control now, so it cannot be mistaken for a
+    // placeholder that disappears on typing — the rule the whole phase is
+    // about. The assertion is the same; only the anatomy changed.
     render(<FloatInput label="Job title" value="Head Coach" onChange={() => {}} />);
     expect(screen.getByLabelText('Job title')).toHaveValue('Head Coach');
     expect(screen.getByText('Job title')).toBeVisible();
   });
 
-  it('small-caps the lifted caption only when asked', () => {
+  it('small-caps the label only when asked', () => {
     const { unmount } = render(<FloatInput label="Plain" value="x" onChange={() => {}} />);
     expect(screen.getByText('Plain').className).not.toMatch(/uppercase/);
     unmount();

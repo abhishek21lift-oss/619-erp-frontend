@@ -7,7 +7,7 @@ import {
   AlertTriangle, Loader2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PullToRefresh, PageContainer, PageHero } from '@/components/ui';
+import { Button, FormField, PullToRefresh, PageContainer, PageHero, TextInput } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
 import { api, AiKnowledgeDocument } from '@/lib/api';
@@ -255,11 +255,9 @@ export default function AiKnowledgeBasePage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label htmlFor="kb-title" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Title</label>
-                <input id="kb-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP"
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box' }} />
-              </div>
+              <FormField label="Title" className="min-w-0">
+                <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP" />
+              </FormField>
 
               <div>
                 <span id="kb-category-label" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Category</span>

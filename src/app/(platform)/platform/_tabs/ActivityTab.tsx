@@ -6,7 +6,7 @@
 // Component bodies, props and rendered markup are unchanged.
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, RefreshCw, Activity } from 'lucide-react';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { Organization, ActivityEntry } from '@/lib/api';
 import { fmtWhen } from '../_shared/format';
@@ -58,12 +58,14 @@ export function ActivityTab() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <select aria-label="Filter by studio" value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)}
-          className="min-h-[44px] min-w-0 flex-1 rounded-[10px] px-3 text-[12.5px] outline-none"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-          <option value="">All studios</option>
-          {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-        </select>
+        <FormField label="Filter by studio" labelHidden className="min-w-0 flex-1">
+          <SelectInput value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)}
+            className="min-h-[44px] text-[12.5px]"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+            <option value="">All studios</option>
+            {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </SelectInput>
+        </FormField>
         <button onClick={load} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] transition hover:bg-black/5"
           style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }} title="Refresh"><RefreshCw size={14} /></button>
       </div>

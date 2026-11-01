@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Loader2, RefreshCw, Search, ShieldCheck, KeyRound, Users2, UserX, Clock,
 } from 'lucide-react';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { PlatformUser, PlatformUserQuery, PlatformUserSummary } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
@@ -179,31 +179,33 @@ export function UsersTab() {
           />
         </div>
 
-        <select
-          className={inputCls}
-          style={{ ...inputStyle, width: 'auto' }}
-          value={role}
-          onChange={(e) => { setRole(e.target.value as RoleFilter); setOffset(0); }}
-          aria-label="Filter by role"
-        >
-          <option value="">All roles</option>
-          <option value="trainer">Trainers (Owners)</option>
-          <option value="member">Members</option>
-          <option value="platform">Platform operators</option>
-        </select>
+        <FormField label="Filter by role" labelHidden>
+          <SelectInput
+            className={inputCls}
+            style={{ ...inputStyle, width: 'auto' }}
+            value={role}
+            onChange={(e) => { setRole(e.target.value as RoleFilter); setOffset(0); }}
+          >
+            <option value="">All roles</option>
+            <option value="trainer">Trainers (Owners)</option>
+            <option value="member">Members</option>
+            <option value="platform">Platform operators</option>
+          </SelectInput>
+        </FormField>
 
-        <select
-          className={inputCls}
-          style={{ ...inputStyle, width: 'auto' }}
-          value={status}
-          onChange={(e) => { setStatus(e.target.value as StatusFilter); setOffset(0); }}
-          aria-label="Filter by account status"
-        >
-          <option value="">Any status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Disabled</option>
-          <option value="deleted">Deleted</option>
-        </select>
+        <FormField label="Filter by account status" labelHidden>
+          <SelectInput
+            className={inputCls}
+            style={{ ...inputStyle, width: 'auto' }}
+            value={status}
+            onChange={(e) => { setStatus(e.target.value as StatusFilter); setOffset(0); }}
+          >
+            <option value="">Any status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Disabled</option>
+            <option value="deleted">Deleted</option>
+          </SelectInput>
+        </FormField>
 
         <button
           onClick={load}

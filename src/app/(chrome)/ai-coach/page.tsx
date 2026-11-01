@@ -548,6 +548,7 @@ export default function AiCoachPage() {
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
                 }}
                 rows={1}
+                aria-label="Ask anything"
                 placeholder="Ask anything…"
                 className="flex-1 resize-none rounded-[14px] px-3.5 py-2.5 text-[13px] outline-none"
                 style={{

@@ -15,6 +15,7 @@ import {
 import { api } from '@/lib/api';
 import type { PlatformKnowledgeDocument } from '@/lib/api/endpoints/platform';
 import { useToast } from '@/lib/toast';
+import { FormField, TextInput } from '@/components/ui';
 import { errorMessage } from '@/lib/forms/errors';
 import { acceptAttribute, checkFile, formatBytes, KNOWLEDGE_RULES } from '@/lib/forms/files';
 
@@ -196,22 +197,14 @@ export default function KnowledgeTab() {
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor="mpts-title" className="mb-1.5 block text-[11px] font-[700]"
-                style={{ color: 'var(--text-muted)' }}>Title</label>
-              <input id="mpts-title" value={title} onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. MPTS Training Methodology"
-                className="w-full rounded-[10px] px-3 py-2 text-[13px]"
-                style={{ border: '1.5px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)' }} />
-            </div>
-            <div>
-              <label htmlFor="mpts-source-version" className="mb-1.5 block text-[11px] font-[700]"
-                style={{ color: 'var(--text-muted)' }}>Source version (optional)</label>
-              <input id="mpts-source-version" value={sourceVersion} onChange={(e) => setSourceVersion(e.target.value)}
-                placeholder="e.g. 2026.1"
-                className="w-full rounded-[10px] px-3 py-2 text-[13px]"
-                style={{ border: '1.5px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)' }} />
-            </div>
+            <FormField label="Title">
+              <TextInput value={title} onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. MPTS Training Methodology" />
+            </FormField>
+            <FormField label="Source version (optional)">
+              <TextInput value={sourceVersion} onChange={(e) => setSourceVersion(e.target.value)}
+                placeholder="e.g. 2026.1" />
+            </FormField>
           </div>
 
           <div className="mt-3">

@@ -112,6 +112,20 @@ describe('keeping numeric text numeric', () => {
   });
 });
 
+describe('the wrapper keeps the old extras', () => {
+  it('keeps an interactive suffix clickable', () => {
+    const onClick = vi.fn();
+    render(<Field suffix={<button type="button" onClick={onClick}>Show</button>} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it('renders a multiline field as a textarea under the same label', () => {
+    render(<Field multiline autoGrow value="One line" />);
+    expect(screen.getByLabelText(/Weight/).tagName).toBe('TEXTAREA');
+  });
+});
+
 describe('the error, announced rather than merely drawn', () => {
   it('marks the control invalid', () => {
     render(<Field error="Weight must be between 20 and 400 kg." />);
