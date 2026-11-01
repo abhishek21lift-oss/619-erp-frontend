@@ -105,6 +105,21 @@ function FormCheckBody() {
       <Section title="Send a lift">
         <Card className="p-4">
           <form onSubmit={send} className="space-y-3">
+            {/* Every clip that failed the rep-count spike failed on capture,
+                not on the pose model — so the guidance sits where the file is
+                chosen, not in a help page. */}
+            <div className="rounded-[13px] px-3.5 py-3" style={{ background: 'var(--bg-subtle)' }}>
+              <p className="text-[10px] font-[780] uppercase tracking-[0.12em]" style={{ color: MC.muted }}>
+                Before you record
+              </p>
+              <ul className="mt-1.5 space-y-1 text-[12px] leading-relaxed" style={{ color: MC.ink }}>
+                <li>Prop the phone up — a hand-held clip is hard to read.</li>
+                <li>Keep the whole body in frame, head to heels.</li>
+                <li>One continuous shot, fixed angle, no zoom or cuts.</li>
+                <li>Film the whole set, not just the last rep.</li>
+              </ul>
+            </div>
+
             <div>
               <label htmlFor="fc-video" className="mb-1.5 block text-[11px] font-[750]" style={{ color: MC.muted }}>
                 Video (MP4 or MOV, 60 MB max)
