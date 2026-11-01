@@ -98,7 +98,7 @@ const KNOWN = [
   // the unused photo state above it, and the remote-screening card added one
   // import. The entry itself is unchanged — still one silent catch, still the
   // same statement.
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:605',
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:606',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:83',
   'app/(chrome)/pt-os/diet-plans/page.tsx:187',
   'app/(chrome)/pt-os/diet-plans/page.tsx:188',

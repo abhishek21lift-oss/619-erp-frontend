@@ -22,7 +22,7 @@ export interface ChipOption {
 interface MultiSelectChipsProps {
   value: string[];
   onChange: (v: string[]) => void;
-  options: (ChipOption | string)[];
+  options: readonly (ChipOption | string)[];
 }
 
 /** Toggle (not replace) multi-select chip row — mirrors the day-of-week
