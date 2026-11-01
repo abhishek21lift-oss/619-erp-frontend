@@ -349,6 +349,29 @@ export const JUSTIFIED = {
       'clearing the box after a successful send.',
   },
 
+  'src/components/ai/AiCommandCenter.tsx': {
+    allow: 1,
+    reason:
+      'The single textarea is an AI prompt COMPOSER, not a data field. It ' +
+      'carries aria-label="Ask AI anything"; Enter submits and Shift+Enter ' +
+      'breaks the line; the sheet grows it as the prompt grows. There is no ' +
+      'payload schema, no reset and no field error contract — the assistant ' +
+      'refuses a blank prompt and the response renders in the thread. A label ' +
+      'above it would repeat the assistant header and break the composer row ' +
+      'that holds the send and dictation buttons.',
+  },
+
+  'src/components/pt-os/ClientAiPanel.tsx': {
+    allow: 1,
+    reason:
+      'The chat composer input already has a real <label htmlFor> — "Ask a ' +
+      'question about {clientName}" — hidden with sr-only, plus minHeight 44, ' +
+      'an explicit disabled state and a wrapping form whose submit calls the ' +
+      'same send path as the button. Nothing is missing from the field ' +
+      'contract that FormField would add; what would change is the chat row ' +
+      'with the send button beside it, which a label-above shape breaks.',
+  },
+
   'src/lib/insights/date-range.tsx': {
     allow: 1,
     reason:
