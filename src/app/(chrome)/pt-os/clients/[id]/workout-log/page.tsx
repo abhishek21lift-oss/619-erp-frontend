@@ -9,7 +9,7 @@ import {
   TrendingUp, Flame, CheckCircle2, Clock, Sparkles,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PremiumAreaChart, PremiumBarChart, PullToRefresh } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PremiumAreaChart, PremiumBarChart, PullToRefresh, FormField, SelectInput } from '@/components/ui';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
@@ -421,12 +421,12 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 />
               </div>
               {programs.length > 0 && (
-                <select aria-label="Filter by program" value={programFilter} onChange={(e) => setProgramFilter(e.target.value)}
-                  className="rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
-                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <option value="">All programs</option>
-                  {programs.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
+                <FormField label="Filter by program" labelHidden>
+                  <SelectInput value={programFilter} onChange={(e) => setProgramFilter(e.target.value)}>
+                    <option value="">All programs</option>
+                    {programs.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </SelectInput>
+                </FormField>
               )}
             </div>
           )}
