@@ -174,6 +174,12 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<SelectInput\b/);
   });
 
+  it('renders the security centre outcome filter through the field system', () => {
+    const src = readFileSync(join(SRC, 'components/platform/security-centre.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
