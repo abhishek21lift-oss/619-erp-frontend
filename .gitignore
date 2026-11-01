@@ -63,3 +63,9 @@ __pycache__/
 
 # Playwright signs in once and replays the session; never commit it.
 e2e/.auth/
+
+# local git worktrees — each holds a full copy of the app and its tests
+/.worktrees/
+
+# browser-automation scratch state
+/.playwright-mcp/

@@ -628,6 +628,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? subscriptionHistory.length
     : hasPtTerm(client) ? 1 : 0;
 
+  // More than the single 'enrollment' term means a renewal (studio, UPI, or a
+  // legacy row) already exists — and the server refuses a term edit with
+  // USE_RENEW, so the link would lead to a form that cannot save.
+  const hasRenewed = subscriptionHistory.length > 1
+    || subscriptionHistory.some((s: any) => s.source !== 'enrollment');
+
   // PT term progress: elapsed over total, clamped so a finished term is 100%.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
     ? Math.max(1, Math.round((new Date(client.pt_end_date).getTime() - new Date(client.pt_start_date).getTime()) / 86400000))
@@ -851,8 +857,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     while the term is running: once it has ended the server
                     refuses a term edit and Renew is the path (its arithmetic
                     and history live there). A price with no end date is not a
-                    term yet — that client is still waiting to be enrolled. */}
-                {hasTerm && client.days_left != null && !termEnded(client.days_left, client.pt_end_date) && (
+                    term yet — that client is still waiting to be enrolled.
+                    Once they have renewed, the server answers USE_RENEW and
+                    this link would lead to a form that cannot save. */}
+                {hasTerm && client.days_left != null && !termEnded(client.days_left, client.pt_end_date)
+                  && !hasRenewed && (
                   <Link
                     href={`/pt-os/clients/${id}/enroll`}
                     className="mt-3 inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[700]"

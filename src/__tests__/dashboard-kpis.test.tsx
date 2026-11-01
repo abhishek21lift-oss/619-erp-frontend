@@ -28,6 +28,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+// The dashboard mounts several data-dependent cards and a cold CI box has
+// timed this file out at the 5 s default. The assertions still fail on their
+// own query timeouts; this only stops the runner from killing the test first.
+vi.setConfig({ testTimeout: 15_000 });
+
 const requested: string[] = [];
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), back: vi.fn() }) }));
