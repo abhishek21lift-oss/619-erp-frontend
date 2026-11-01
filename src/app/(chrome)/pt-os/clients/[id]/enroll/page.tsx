@@ -273,7 +273,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // PAY-1). The server refuses it too (USE_RENEW); this says so up front.
       setHasRenewed(Array.isArray(renewalsRes?.data) && renewalsRes.data.length > 0);
       const hasTerm = hasPtTerm(c as PtTermFields);
-      setEditing(hasTerm);
+      // An END DATE is what every path that actually creates a term writes —
+      // enrol, renew, and a member's UPI purchase (backend lib/ptTerm.js).
+      // hasPtTerm also accepts a price on the row, and a package sets one at
+      // creation; treating that as "already enrolled" would skip the
+      // signature on somebody's first term.
+      setEditing(/^\d{4}-\d{2}-\d{2}/.test(String(c.pt_end_date ?? '').trim()));
       setClientStatus(String(c.status ?? ''));
       const screening = c.screening as ScreeningSummary | undefined;
       if (screening && !hasTerm && !screening.complete) {

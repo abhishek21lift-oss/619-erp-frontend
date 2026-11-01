@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ALPHA, gotoApp, apiToken, apiGet } from './helpers/session';
+import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session';
 
 /**
  * Journey 3 — Enrolment.
@@ -12,6 +12,12 @@ import { ALPHA, gotoApp, apiToken, apiGet } from './helpers/session';
  * save happens on the sheet's Done button and nowhere else, so an enrolment
  * saved without a ticked box and a drawn signature would be an agreement
  * nobody made.
+ *
+ * Each test owns a client created for it. The journey has to be the client's
+ * FIRST enrolment — once they have an end date the same page is an edit
+ * screen, by design, and the agreement is not re-signed. Sharing one fixture
+ * across the file made the suite order-dependent: the first save enrolled the
+ * client and every later test landed on "Save changes" instead of "Finish".
  */
 
 type Client = {
@@ -27,6 +33,10 @@ const clientById = (token: string, id: string) =>
   apiGet<{ data?: Client }>(`/api/pt-os/clients/${id}`, token).then((b) => b.data!);
 
 const num = (v: unknown) => Number(v ?? NaN);
+
+let seq = 0;
+const uniqueName = () => `E2E-ENROL-${Date.now().toString(36).toUpperCase()}-${++seq}`;
+const uniqueMobile = () => `9${String(Date.now() + seq).slice(-9)}`;
 
 function inDays(days: number): string {
   const d = new Date();
@@ -79,11 +89,28 @@ async function fillEnrolment(page: Page, opts: { final: string; paid: string }) 
 
 test.describe('Enrolment', () => {
   let token: string;
+  let clientId = '';
+  const created: string[] = [];
 
   test.beforeEach(async ({ page }) => {
     token = await apiToken();
-    await gotoApp(page, `/pt-os/clients/${ALPHA.secondClientId}/enroll`);
+    // A brand-new client: no price, no dates, no renewals. That is the state
+    // this journey is about, and it cannot be borrowed from the shared fixture
+    // without the tests depending on each other's writes.
+    const res = await apiPost<{ data: { id: string } }>('/api/pt-os/clients', token, {
+      name: uniqueName(), mobile: uniqueMobile(), gender: 'male',
+    });
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    clientId = res.body.data.id;
+    created.push(clientId);
+
+    await gotoApp(page, `/pt-os/clients/${clientId}/enroll`);
     await expect(page.getByRole('button', { name: 'Finish' })).toBeVisible({ timeout: 25_000 });
+  });
+
+  test.afterAll(async () => {
+    const t = await apiToken();
+    for (const id of created) await apiDelete(`/api/pt-os/clients/${id}`, t);
   });
 
   test('the money fields have names a screen reader can read', async ({ page }) => {
@@ -97,10 +124,10 @@ test.describe('Enrolment', () => {
   });
 
   test('the agreement gates the save, and nothing is written before it', async ({ page }) => {
-    const before = await clientById(token, ALPHA.secondClientId);
+    const before = await clientById(token, clientId);
 
     let posted = 0;
-    await page.route(`**/api/pt-os/clients/${ALPHA.secondClientId}`, (route) => {
+    await page.route(`**/api/pt-os/clients/${clientId}`, (route) => {
       if (route.request().method() === 'PATCH') posted += 1;
       return route.continue();
     });
@@ -126,10 +153,10 @@ test.describe('Enrolment', () => {
     await done.click();
 
     // Now it saves, and the three numbers land as typed.
-    await expect.poll(async () => num((await clientById(token, ALPHA.secondClientId)).final_amount),
+    await expect.poll(async () => num((await clientById(token, clientId)).final_amount),
       { timeout: 20_000 }).toBe(18000);
 
-    const after = await clientById(token, ALPHA.secondClientId);
+    const after = await clientById(token, clientId);
     expect(num(after.paid_amount), 'paid today').toBe(6000);
     expect(num(after.balance_amount), 'what the screen showed as due').toBe(12000);
     expect(num(after.duration_months)).toBe(3);
@@ -172,7 +199,7 @@ test.describe('Enrolment', () => {
   });
 
   test('a server failure is reported and leaks nothing', async ({ page }) => {
-    await page.route(`**/api/pt-os/clients/${ALPHA.secondClientId}`, (route) =>
+    await page.route(`**/api/pt-os/clients/${clientId}`, (route) =>
       route.request().method() === 'PATCH'
         ? route.fulfill({
             status: 500,

@@ -111,4 +111,17 @@ describe('editing an enrolment that already exists', () => {
     expect(screen.getByRole('dialog', { name: /digital agreement/i })).toBeTruthy();
     expect(updateClient).not.toHaveBeenCalled();
   });
+
+  it('treats a package price with no end date as not enrolled yet', async () => {
+    // A package sets final_amount at creation, which is enough for
+    // hasPtTerm() to call the client enrolled. No term exists until an END
+    // DATE is written, and that first save is still an agreement.
+    clientFixture = { ...LOADED, status: 'pending', has_pt_term: true, pt_start_date: null, pt_end_date: null };
+    await renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: /finish/i }));
+
+    expect(screen.getByRole('dialog', { name: /digital agreement/i })).toBeTruthy();
+    expect(updateClient).not.toHaveBeenCalled();
+  });
 });
