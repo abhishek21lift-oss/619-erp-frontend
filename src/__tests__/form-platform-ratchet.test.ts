@@ -102,13 +102,13 @@ const CEILING = {
   // for strength-tracking and the builder's ExerciseCard, then 83 → 67 for the
   // four P2 platform centres, then 67 → 64 for settings/profile, then 64 → 60
   // for the engagement feedback and WhatsApp controls, then 60 → 54 for
-  // activity-log, AboutSection and ProgressionRule, then 54 → 14 for the
+  // activity-log, AboutSection and ProgressionRule, then 54 → 13 for the
   // platform tabs, command panel, security centre and the vetted native
   // controls in justifications.mjs. Lower again when the next phase lands;
   // never raise.
-  unjustified: 14,
+  unjustified: 13,
   p0Unjustified: 0,
-  p1Unjustified: 3,
+  p1Unjustified: 2,
   /**
    * §9. Zero, and it stays zero.
    *
