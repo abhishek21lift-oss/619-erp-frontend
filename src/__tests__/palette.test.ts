@@ -151,10 +151,9 @@ describe('the app uses only the palette', () => {
     // Attendance and Check-In are the ninth: hero meshes, the rate ring and
     // the viewfinder glow, in components/attendance/attendanceTheme.ts.
     //
-    // Fitness Testing is the tenth: the assessment wizard's energy mesh, one
-    // hue per fitness domain and the score ring, in
-    // components/pt-os/fitness-testing/fitnessTheme.ts. Decoration only — a
-    // score band on these screens is still emerald / amber / red.
+    // Fitness Testing is the tenth: one hue per fitness domain and the score
+    // ring, in components/pt-os/fitness-testing/fitnessTheme.ts. Decoration
+    // only — a score band on these screens is still emerald / amber / red.
     const known = new Set(
       [...allHexes(), ...Object.values(founderGold)].map((h) => h.toUpperCase())
     );
@@ -319,13 +318,12 @@ describe('the app uses only the palette', () => {
   });
 
   it('confines the fitness-testing colours to the assessment module', () => {
-    // fitnessTheme is the tenth exception: the assessment wizard's hero
-    // mesh, one hue per fitness domain and the score ring. Decorative only —
-    // every score band on these screens still comes from the five families,
-    // so a domain tile cannot borrow "green" to mean "all good". Its hexes
-    // are exempt from the scan above, and this keeps them from spreading:
-    // outside the module, only the assessment page itself may reach for the
-    // mesh and the band helpers.
+    // fitnessTheme is the tenth exception: one hue per fitness domain and the
+    // score ring. Decorative only — every score band on these screens still
+    // comes from the five families, so a domain tile cannot borrow "green" to
+    // mean "all good". Its hexes are exempt from the scan above, and this
+    // keeps them from spreading: outside the module, only the assessment page
+    // itself may reach for the domain tones and the band helpers.
     const users: string[] = [];
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir)) {
