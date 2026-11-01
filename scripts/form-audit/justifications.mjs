@@ -414,10 +414,11 @@ export const JUSTIFIED = {
       'chrome surface: its controls use rgba(255,255,255,…) text and fills, so ' +
       'FormField/TextInput would put theme-aware text on a fixed dark panel. ' +
       'Its local Field component wraps each control in a <label> with the ' +
-      'visible caption, the numeric input is type="text" with inputMode and a ' +
-      'readOnly record state, the local select is named by that same label, ' +
-      'and the chat composer now carries aria-label. No error state exists ' +
-      'here to wire. The fourth input is the client search, native by kind.',
+      'visible caption, the numeric input is type="text" with inputMode, an ' +
+      'aria-label and a readOnly record state, the local select carries its ' +
+      'own aria-label, and the chat composer now carries one too. No error ' +
+      'state exists here to wire. The fourth input is the client search, ' +
+      'native by kind.',
   },
 
   'src/lib/insights/date-range.tsx': {

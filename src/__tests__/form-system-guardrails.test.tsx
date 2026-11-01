@@ -259,33 +259,9 @@ describe('the label audit, resolved case by case', () => {
   //
   // The other fifteen split three ways by what the caption actually names.
 
-  it('associates the captions that sit beside a real control', () => {
-    // This list shrinks as screens move onto the universal form platform, and
-    // that is the list working rather than the property lapsing. A migrated
-    // field renders through FormField (or its soft-surface twin), which
-    // GENERATES the id and points its own <label htmlFor> at it — so the
-    // association holds by construction instead of by two hand-written strings
-    // continuing to agree. Re-adding a hand-written id after a migration would
-    // assert a property the component no longer has.
-    //
-    // Already retired this way: `fp-email` (forgot-password), `rp-password`
-    // and `rp-confirm` (reset-password), `pay-ref` (Record Payment),
-    // `leave-reason` (the leave request form, now a TextAreaField — the
-    // reject-note textarea beside it is still raw, so it stays below), and
-    // `delete-confirm` (client edit, now a TextInput).
-    //
-    // The property itself is still covered, and more strictly:
-    // label-association.test.ts asserts that NO control in the app is
-    // nameless, with no per-file list to fall out of date.
-    const associated: [string, string][] = [
-      ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
-    ];
-    for (const [file, id] of associated) {
-      const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
-      expect(src, `${file}: no label for ${id}`).toMatch(new RegExp(`htmlFor="${id}"`));
-      expect(src, `${file}: no control with id ${id}`).toMatch(new RegExp(`id="${id}"`));
-    }
-  });
+  // The last hand-written association retired with `kb-title` (AI coach
+  // knowledge), which is FormField now. There is no per-file list left to
+  // maintain; label-association.test.ts covers the property globally.
 
   it('no longer needs a per-row id for the invoice fields', () => {
     // The Create Invoice modal used to render its four fields from a map, so a

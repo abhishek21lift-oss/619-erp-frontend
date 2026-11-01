@@ -601,7 +601,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
                 {/* Goal select */}
                 <Field label="Goal">
-                  <SelectInput value={goal} onChange={setGoal} disabled={goalFromRecord} label="Goal" placeholder="Select goal...">
+                  <SelectInput value={goal} onChange={setGoal} disabled={goalFromRecord} placeholder="Select goal...">
                     {goal && !WORKOUT_GOALS.includes(goal) && <option value={goal}>{goal}</option>}
                     {WORKOUT_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
                   </SelectInput>
@@ -609,7 +609,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 </Field>
 
                 <Field label="Experience Level">
-                  <SelectInput value={experience} onChange={setExperience} disabled={experienceFromRecord} label="Experience Level" placeholder="Select level...">
+                  <SelectInput value={experience} onChange={setExperience} disabled={experienceFromRecord} placeholder="Select level...">
                     {experience && !EXPERIENCE_LEVELS.includes(experience) && <option value={experience}>{experience}</option>}
                     {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                   </SelectInput>
@@ -619,6 +619,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 <Field label="Training Days per Week">
                   <input
                     type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
+                    aria-label="Training days per week"
                     readOnly={daysFromRecord}
                     onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
                     style={{ ...inputStyle, ...(daysFromRecord ? { cursor: 'default', opacity: 0.85 } : {}) }}
@@ -1055,11 +1056,11 @@ function RecordNote() {
 }
 
 function SelectInput({
-  value, onChange, label, placeholder, children, disabled = false,
-}: { value: string; onChange: (v: string) => void; label: string; placeholder: string; children: React.ReactNode; disabled?: boolean }) {
+  value, onChange, placeholder, children, disabled = false,
+}: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode; disabled?: boolean }) {
   return (
     <div style={{ position: 'relative' }}>
-      <select aria-label={label}
+      <select aria-label={placeholder}
         value={value}
         disabled={disabled}
         onChange={e => onChange(e.target.value)}
