@@ -195,6 +195,11 @@ export const pt = {
     http<{ data: BookingSettings }>('/api/pt-os/booking-settings', {
       method: 'PUT', body: JSON.stringify(data),
     }),
+  /** Replaces the feed URL; the old one stops working immediately. */
+  rotateCalendarToken: () =>
+    http<{ data: { ics_token: string } }>('/api/pt-os/booking-settings/calendar-token/rotate', {
+      method: 'POST',
+    }),
 };
 
 // ── Remote screening ─────────────────────────────────────────

@@ -404,6 +404,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "pt.removeTimeOff → /api/pt-os/time-off/",
   "pt.revenue → /api/pt-os/revenue",
   "pt.reviewFormCheck → /api/pt-os/form-checks/",
+  "pt.rotateCalendarToken → /api/pt-os/booking-settings/calendar-token/rotate",
   "pt.saveAvailability → /api/pt-os/availability",
   "pt.saveBookingSettings → /api/pt-os/booking-settings",
   "pt.sessions → /api/pt-os/sessions",

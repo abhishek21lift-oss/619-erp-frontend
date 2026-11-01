@@ -98,7 +98,7 @@ describe('booking endpoints', () => {
   it('exposes the trainer and member booking methods', () => {
     for (const key of [
       'availability', 'saveAvailability', 'timeOff', 'addTimeOff',
-      'removeTimeOff', 'bookingSettings', 'saveBookingSettings',
+      'removeTimeOff', 'bookingSettings', 'saveBookingSettings', 'rotateCalendarToken',
     ]) {
       expect(api.pt, `api.pt.${key}`).toHaveProperty(key);
       expect((api.pt as unknown as Record<string, unknown>)[key]).toBeTypeOf('function');
