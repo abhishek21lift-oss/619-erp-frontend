@@ -1,7 +1,23 @@
 'use client';
 
-import { useState, useId, useRef, useEffect } from 'react';
+/**
+ * The assessment/settings field, rendered through the one field system.
+ *
+ * This component used to draw its own floating-label box: 14px radius, caption
+ * inside the control, ~52px tall. The rest of the app had moved to a 44px
+ * label-above field, so the same product showed two form languages depending
+ * on which screen you were on.
+ *
+ * The external props are unchanged — the ~40 assessment screens still pass
+ * `value`/`onChange` rather than a schema field — but the markup underneath is
+ * now `FormField` + `TextInput`/`TextArea`. One anatomy, one error row, one set
+ * of ARIA wiring.
+ */
+
+import { useEffect, useRef } from 'react';
 import { cn } from './cn';
+import { FormField } from './form/FormField';
+import { TextArea, TextInput } from './form/controls';
 
 interface FloatInputProps {
   label: string;
@@ -14,9 +30,9 @@ interface FloatInputProps {
    * not "no label": it is a label of zero characters, so the control has no
    * accessible name at all and is announced as "edit text, blank".
    *
-   * Same contract as Slider's prop of the same name, deliberately: applied
-   * only when `label` is empty, so a field can never carry two competing
-   * names. Enforced by the guardrail in form-system-guardrails.test.tsx.
+   * Applied only when `label` is empty, so a field can never carry two
+   * competing names. Enforced by the guardrail in
+   * form-system-guardrails.test.tsx.
    */
   ariaLabel?: string;
   /**
@@ -82,14 +98,12 @@ interface FloatInputProps {
    *
    * 'gold' is the PT-OS assessment language — 39 files use it, and the Slider
    * on those same screens is `accent-[#F59E0B]`. 'brand' is the Settings
-   * language, and existed only because Settings had its own copy of this
-   * component rather than because anyone chose a second component.
+   * language. The anatomy is now shared; only the ring colour differs.
    */
   tone?: 'gold' | 'brand';
   /**
-   * Renders the lifted caption in small caps. The Settings profile screen does
-   * this; the Settings account screen does not, and both are being preserved
-   * exactly rather than reconciled here.
+   * Small-caps the label. The Settings profile screen had this on its floating
+   * caption; preserved as a label style rather than a second field.
    */
   upperLifted?: boolean;
   /**
@@ -99,10 +113,6 @@ interface FloatInputProps {
    */
   maxLength?: number;
 }
-
-/** Native pickers draw their own placeholder ("--:--", "dd/mm/yyyy"), so the
- *  label must sit lifted above it, or the two overlap. */
-const PICKER_TYPES = new Set(['time', 'date', 'datetime-local', 'month', 'week']);
 
 /** Types a caller may write that must never reach the DOM. See `numeric`. */
 const NUMERIC_TYPES = new Set(['number']);
@@ -134,23 +144,15 @@ export function clampNumericText(raw: string, mode: 'integer' | 'decimal'): stri
   return negative ? `-${body}` : body;
 }
 
-/** The two accent bundles. Everything else about the field is shared. */
-const TONES = {
+/** Focus accents. The field's anatomy is shared; only the ring colour differs. */
+const ACCENTS = {
   gold: {
     accent: 'var(--gold, #F59E0B)',
-    focusBorder: 'color-mix(in srgb, var(--gold, #F59E0B) 50%, transparent)',
-    focusRing: '0 0 0 3px color-mix(in srgb, var(--gold, #F59E0B) 10%, transparent)',
-    restShadow: 'none',
-    restBorder: 'var(--border-2)',
-    borderWidth: '1px',
+    soft: 'color-mix(in srgb, var(--gold, #F59E0B) 14%, transparent)',
   },
   brand: {
     accent: 'var(--action)',
-    focusBorder: 'color-mix(in srgb, var(--action) 45%, transparent)',
-    focusRing: '0 0 0 3px color-mix(in srgb, var(--action) 12%, transparent), 0 2px 8px color-mix(in srgb, var(--action) 8%, transparent)',
-    restShadow: '0 1px 2px rgba(15,23,42,0.04)',
-    restBorder: 'var(--border-2)',
-    borderWidth: '1.5px',
+    soft: 'color-mix(in srgb, var(--action) 12%, transparent)',
   },
 } as const;
 
@@ -163,7 +165,7 @@ export function FloatInput({
   value,
   onChange,
   onBlur,
-  placeholder = ' ',
+  placeholder,
   suffix,
   prefix,
   required,
@@ -178,10 +180,7 @@ export function FloatInput({
   upperLifted = false,
   maxLength,
 }: FloatInputProps) {
-  const t = TONES[tone];
-  const id = useId();
-  const errorId = `${id}-error`;
-  const [focused, setFocused] = useState(false);
+  const t = ACCENTS[tone];
 
   /*
    * A bare `type="number"` is read as a DECLARATION that the field is numeric,
@@ -195,11 +194,6 @@ export function FloatInput({
   const renderedInputMode =
     inputMode ?? (numericMode === 'integer' ? 'numeric' : numericMode === 'decimal' ? 'decimal' : undefined);
 
-  /** Numeric fields keep their text numeric; everything else passes through. */
-  const handleChange = (next: string) =>
-    onChange(numericMode ? clampNumericText(next, numericMode) : next);
-  const lifted = focused || value.length > 0 || PICKER_TYPES.has(type);
-  const nearLimit = maxLength != null && value.length >= maxLength * 0.8;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -209,124 +203,73 @@ export function FloatInput({
     el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
   }, [multiline, autoGrow, maxHeight, value]);
 
-  const baseInputClass = cn(
-    'w-full bg-transparent pb-3 pt-7 text-[13.5px] font-medium outline-none',
-    'text-[var(--text-primary)]',
-    prefix ? 'pl-10 pr-4' : 'px-4',
-    suffix ? 'pr-10' : '',
-    'disabled:cursor-not-allowed',
+  const nearLimit = maxLength != null && value.length >= maxLength * 0.8;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    onChange(numericMode ? clampNumericText(e.target.value, numericMode) : e.target.value);
+
+  // The old floating box had room for an icon inside it; the standard control
+  // pads for one instead, so a prefix/suffix still cannot sit on the text.
+  const controlClass = cn(
+    prefix && 'pl-10',
+    suffix && 'pr-10',
+    autoGrow && 'resize-none overflow-y-auto',
   );
 
   return (
-    <div className={cn('relative', className)}>
-      <div
-        className={cn(
-          'relative overflow-hidden rounded-[var(--radius,14px)]',
-          'transition-all duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
-          'motion-reduce:transition-none',
-          disabled && 'opacity-50',
-        )}
-        style={{
-          background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: `${t.borderWidth} solid ${
-            focused ? t.focusBorder
-              : error ? 'color-mix(in srgb, var(--danger) 60%, transparent)'
-                : t.restBorder}`,
-          boxShadow: focused ? t.focusRing
-            : error ? '0 0 0 3px color-mix(in srgb, var(--danger) 8%, transparent)'
-              : t.restShadow,
-        }}
+    <div style={{ '--brand': t.accent, '--brand-soft': t.soft } as React.CSSProperties}>
+      <FormField
+        label={label || ariaLabel || ''}
+        labelHidden={!label}
+        labelClassName={upperLifted ? 'uppercase tracking-[0.03em] text-[10px]' : undefined}
+        error={error}
+        required={required}
+        disabled={disabled}
+        className={className}
       >
-        {/* Floating label */}
-        <label
-          htmlFor={id}
-          className={cn(
-            'pointer-events-none absolute font-medium transition-all',
-            'duration-[150ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
-            prefix ? 'left-10' : 'left-4',
-            lifted
-              ? 'top-2 text-[10px]'
-              : 'top-[18px] text-[13px]',
-            lifted && upperLifted && 'uppercase tracking-[0.03em]',
-            !lifted || (!focused && !error) ? 'text-[var(--text-muted)]' : '',
-            lifted && error && !focused ? 'text-[var(--danger-text)]' : '',
+        <span className="relative block">
+          {prefix && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+              {prefix}
+            </span>
           )}
-          style={lifted && focused && !error ? { color: t.accent } : undefined}
-        >
-          {label}
-          {required && (
-            <span className="ml-0.5" style={{ color: t.accent }} aria-hidden>*</span>
+
+          {multiline ? (
+            <TextArea
+              ref={textareaRef}
+              rows={autoGrow ? 1 : rows}
+              value={value}
+              placeholder={placeholder}
+              onChange={handleChange}
+              onBlur={onBlur}
+              disabled={disabled}
+              required={required}
+              maxLength={maxLength}
+              className={controlClass}
+              style={autoGrow ? { maxHeight } : undefined}
+            />
+          ) : (
+            <TextInput
+              type={renderedType}
+              inputMode={renderedInputMode}
+              value={value}
+              placeholder={placeholder}
+              onChange={handleChange}
+              onBlur={onBlur}
+              disabled={disabled}
+              required={required}
+              maxLength={maxLength}
+              className={controlClass}
+            />
           )}
-        </label>
 
-        {/* Prefix icon */}
-        {prefix && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-            {prefix}
-          </div>
-        )}
+          {suffix && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-[600] text-[var(--text-muted)]">
+              {suffix}
+            </span>
+          )}
+        </span>
+      </FormField>
 
-        {/* Input or Textarea */}
-        {multiline ? (
-          <textarea
-            id={id}
-            ref={textareaRef}
-            value={value}
-            placeholder={lifted ? placeholder : ''}
-            onChange={(e) => handleChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => { setFocused(false); onBlur?.(); }}
-            disabled={disabled}
-            required={required}
-            {...(label ? {} : { 'aria-label': ariaLabel })}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? errorId : undefined}
-            rows={autoGrow ? 1 : rows}
-            maxLength={maxLength}
-            className={cn(baseInputClass, 'resize-none', autoGrow && 'overflow-y-auto')}
-            style={{
-              caretColor: t.accent,
-              ...(autoGrow ? { maxHeight } : { minHeight: `${rows * 24 + 28}px` }),
-            }}
-          />
-        ) : (
-          <input
-            id={id}
-            type={renderedType}
-            inputMode={renderedInputMode}
-            value={value}
-            placeholder={lifted ? placeholder : ''}
-            onChange={(e) => handleChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => { setFocused(false); onBlur?.(); }}
-            disabled={disabled}
-            required={required}
-            {...(label ? {} : { 'aria-label': ariaLabel })}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? errorId : undefined}
-            className={baseInputClass}
-            maxLength={maxLength}
-            style={{ caretColor: t.accent }}
-          />
-        )}
-
-        {/* Suffix icon */}
-        {suffix && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-            {suffix}
-          </div>
-        )}
-      </div>
-
-      {/* Error message.
-          It carries an id and the control points at it with
-          `aria-describedby`. Before, this was a loose <p> next to the field:
-          visible to anyone looking at it and announced to nobody. */}
-      {error && (
-        <p id={errorId} className="mt-1.5 text-[11px] font-medium text-[var(--danger-text)]">
-          {error}
-        </p>
-      )}
       {nearLimit && (
         <p className="mt-1 text-right text-[11px] font-medium tabular-nums text-[var(--text-muted)]" aria-live="polite">
           {value.length} / {maxLength}

@@ -86,6 +86,8 @@ export interface FormFieldProps {
    * than in a fourth local component.
    */
   density?: 'default' | 'compact';
+  /** Extra classes for the label only — a surface's caption treatment. */
+  labelClassName?: string;
   className?: string;
   /** Escape hatch for a caller that must control the id (a deep-link anchor). */
   id?: string;
@@ -158,6 +160,7 @@ export function FormField({
   labelHidden = false,
   labelAside,
   density = 'default',
+  labelClassName,
   className,
   id: idOverride,
 }: FormFieldProps) {
@@ -185,9 +188,12 @@ export function FormField({
           <span className="flex items-baseline gap-0.5">
             <label
               htmlFor={id}
-              className={compact
-                ? 'text-[10px] font-[700] uppercase tracking-wide leading-none'
-                : 'text-[11.5px] font-[650] leading-none'}
+              className={cn(
+                compact
+                  ? 'text-[10px] font-[700] uppercase tracking-wide leading-none'
+                  : 'text-[11.5px] font-[650] leading-none',
+                labelClassName,
+              )}
               style={{
                 color: disabled
                   ? 'var(--text-disabled)'

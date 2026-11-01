@@ -364,15 +364,16 @@ describe('FloatInput tones', () => {
     expect(screen.getByLabelText('Display Name')).toBeInstanceOf(HTMLInputElement);
   });
 
-  it('keeps the caption visible once the field has a value', () => {
-    // The reason this pattern is allowed to stay: the caption lifts, it does
-    // not disappear. That is the rule the whole phase is about.
+  it('keeps the label visible once the field has a value', () => {
+    // The label sits above the control now, so it cannot be mistaken for a
+    // placeholder that disappears on typing — the rule the whole phase is
+    // about. The assertion is the same; only the anatomy changed.
     render(<FloatInput label="Job title" value="Head Coach" onChange={() => {}} />);
     expect(screen.getByLabelText('Job title')).toHaveValue('Head Coach');
     expect(screen.getByText('Job title')).toBeVisible();
   });
 
-  it('small-caps the lifted caption only when asked', () => {
+  it('small-caps the label only when asked', () => {
     const { unmount } = render(<FloatInput label="Plain" value="x" onChange={() => {}} />);
     expect(screen.getByText('Plain').className).not.toMatch(/uppercase/);
     unmount();

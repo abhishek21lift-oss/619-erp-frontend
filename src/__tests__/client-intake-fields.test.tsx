@@ -164,11 +164,12 @@ describe('Relationship, which replaced Occupation', () => {
 describe('Address', () => {
   it('no longer carries a required marker', () => {
     render(<NewPTClientPage />);
-    // FloatInput renders the asterisk inside the field's own label element,
-    // so this asks the rendered label, not the file.
+    // The required marker is a sibling of the label in FormField, so ask the
+    // label that actually names this control rather than the nearest div.
     const address = screen.getByLabelText(/^address/i);
-    const label = address.closest('div')?.querySelector('label');
-    expect(label?.textContent).not.toContain('*');
+    const label = document.querySelector(`label[for="${address.id}"]`);
+    expect(label?.textContent ?? '').not.toContain('*');
+    expect(address).not.toBeRequired();
   });
 
   it('lets a client be created without one', async () => {
