@@ -127,10 +127,10 @@ const CEILING = {
    * map every error and reset cleanly while posting a field name the endpoint
    * ignores, and score perfectly.
    *
-   * A ceiling rather than an invariant because thirty-five critical forms is
+   * A ceiling rather than an invariant because thirty-four critical forms is
    * an honest starting number, not a passing one. It may only fall.
    */
-  criticalWithoutJourney: 35,
+  criticalWithoutJourney: 34,
   /**
    * §19. `type="number"` controls, which `inputMode` replaces.
    *

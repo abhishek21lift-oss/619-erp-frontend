@@ -35,6 +35,9 @@ export const JOURNEYS = {
   'e2e/record-payment.ui.spec.ts': [
     'src/app/(chrome)/pt-os/clients/[id]/payments/page.tsx',
   ],
+  'e2e/verify-payments.ui.spec.ts': [
+    'src/app/(chrome)/finance/verify-payments/page.tsx',
+  ],
   'e2e/client-create.ui.spec.ts': [
     'src/app/(chrome)/pt-os/new-client/page.tsx',
   ],
