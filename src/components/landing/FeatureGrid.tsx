@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, Dumbbell, Sparkles, MessageSquareText, LineChart, ClipboardCheck,
-  CalendarCheck2, Wallet, BookOpen, FileText, BarChart3, Building2,
+  CalendarCheck2, Wallet, BookOpen, FileText, BarChart3, Radar,
 } from 'lucide-react';
 import { Container, Reveal, Section, SectionHeader } from './primitives';
 import { C, SHADOW } from './tokens';
@@ -49,7 +49,7 @@ const CATEGORIES = [
     color: C.tealHi,
     features: [
       { icon: <LineChart size={15} />, t: 'Finance & forecast', d: 'Revenue trends, pending collections and forecasting.' },
-      { icon: <Building2 size={15} />, t: 'Multi-branch', d: 'Roll up studios into one view of the business.' },
+      { icon: <Radar size={15} />, t: 'Retention radar', d: 'Who is about to leave, why, and what to do next.' },
     ],
   },
 ];
