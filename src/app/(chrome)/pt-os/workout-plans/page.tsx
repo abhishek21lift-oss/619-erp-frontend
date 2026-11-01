@@ -9,7 +9,7 @@ import {
   Users, Trophy, CalendarDays, Sparkles, X, ShieldAlert, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero, HeroButton } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, LibraryExercise, TrainingBrief, WorkoutPlanAssignment } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -319,72 +319,57 @@ function Inner() {
     <div style={{ minHeight: '100%', position: 'relative' }}>
       <PageContainer>
         {/* ── Hero ──
-            This was a lavender-to-pink gradient card with its own corner
-            glows and its own max-w-[1400px] container — a different surface
-            from every other page's header, 120px wider than the dashboard,
-            and starting at mt-1 instead of matching the dashboard's own gap.
-            The stat tiles that lived inside it move out below, where they
-            are cards like every other KPI row in the app. */}
-        {/* ── Header ──
-            Was a 200px+ gradient slab with corner glows, a grid overlay and a
-            vignette. It is a flat header now: the page's name, one line of
-            context, and the two controls that act on the page. Roughly a
-            third of the height, and nothing decorative left to look past. */}
+            The green aurora panel: glass icon tile, the page's name, and the
+            actions as pills beneath it. PageHero owns the layout so this page
+            still shares the one header every other page uses. */}
         <PageHero
-          compact
-          icon={<Dumbbell size={18} />}
+          showcase
+          icon={<Dumbbell size={30} />}
           title={briefClient?.name ?? 'Workout Plans'}
-
           actions={(
-          <div className="flex shrink-0 items-center gap-2">
-            {/* View toggle — compact, and only where a grid exists to toggle. */}
-            <div
-              className="flex shrink-0 gap-0.5 rounded-[11px] p-0.5"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-            >
-              {(['grid', 'list'] as const).map((v) => (
-                <button key={v} type="button" onClick={() => setView(v)}
-                  aria-pressed={view === v}
-                  aria-label={v === 'grid' ? 'Grid view' : 'List view'}
-                  className="flex items-center justify-center rounded-[9px] transition-colors"
-                  style={{
-                    height: 44, width: 44,
-                    background: view === v ? 'var(--bg-card)' : 'transparent',
-                    color: view === v ? ACCENT : 'var(--text-disabled)',
-                    boxShadow: view === v ? '0 1px 2px rgba(15,23,42,0.10)' : 'none',
-                  }}>
-                  {v === 'grid' ? <LayoutGrid size={15} /> : <List size={15} />}
-                </button>
-              ))}
+            <div className="flex w-full flex-wrap items-center gap-2.5">
+              <HeroButton
+                size="lg"
+                onClick={openCreate}
+                icon={<Plus size={18} />}
+                className="flex-1 sm:flex-none"
+              >
+                New Plan
+              </HeroButton>
+
+              {/* AI, at the weight it deserves: a quiet secondary beside the
+                  primary, replacing the 52px floating button that used to sit
+                  on top of the plan cards. */}
+              <HeroButton
+                size="lg"
+                variant="glass"
+                onClick={() => setAiPanelOpen(true)}
+                aria-label="Open AI Assist"
+                icon={<Sparkles size={17} />}
+                style={{ background: 'rgba(3,46,32,0.32)' }}
+              >
+                <span className="hidden sm:inline">AI Assist</span>
+              </HeroButton>
+
+              {/* View toggle — compact, and only where a grid exists to toggle. */}
+              <div
+                className="ml-auto flex shrink-0 gap-0.5 rounded-full p-1"
+                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)' }}
+              >
+                {(['grid', 'list'] as const).map((v) => (
+                  <button key={v} type="button" onClick={() => setView(v)}
+                    aria-pressed={view === v}
+                    aria-label={v === 'grid' ? 'Grid view' : 'List view'}
+                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    style={{
+                      background: view === v ? '#FFFFFF' : 'transparent',
+                      color: view === v ? '#047857' : 'rgba(255,255,255,0.72)',
+                    }}>
+                    {v === 'grid' ? <LayoutGrid size={16} /> : <List size={16} />}
+                  </button>
+                ))}
+              </div>
             </div>
-
-            {/* AI, at the weight it deserves: a quiet secondary beside the
-                primary, replacing the 52px floating button that used to sit
-                on top of the plan cards. */}
-            <button
-              type="button"
-              onClick={() => setAiPanelOpen(true)}
-              aria-label="Open AI Assist"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-[11px] px-3 text-[12.5px] font-[650] transition-colors"
-              style={{
-                minHeight: 44,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-card)',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Sparkles size={14} style={{ color: ACCENT }} />
-              <span className="hidden sm:inline">AI Assist</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[11px] px-4 text-[13px] font-[700] text-white transition-transform active:scale-[0.98] sm:flex-none"
-              style={{ background: ACCENT, minHeight: 44, boxShadow: '0 2px 10px rgba(163,55,87,0.28)' }}>
-              <Plus size={16} /> New Plan
-            </button>
-          </div>
           )}
         />
 

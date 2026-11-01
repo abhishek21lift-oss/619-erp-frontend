@@ -69,10 +69,88 @@ export interface PageHeroProps {
    * page's token file (e.g. components/attendance/attendanceTheme.ts).
    */
   surface?: { background: string; shadow: string };
+  /**
+   * The arrival treatment: an emerald aurora with concentric rings, a large
+   * glass icon tile and the page's actions as pills under the title. Opt-in,
+   * so every existing caller keeps the hero it has.
+   */
+  showcase?: boolean;
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface, showcase }: PageHeroProps) {
   const reduce = useReducedMotion();
+
+  if (showcase) {
+    return (
+      <m.div
+        initial={reduce ? false : { opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className={cn('relative overflow-hidden rounded-[28px] p-5 sm:rounded-[34px] sm:p-8', className)}
+        style={{
+          background:
+            'radial-gradient(80% 95% at 18% 0%, rgba(255,255,255,0.16) 0%, transparent 60%),'
+            + 'radial-gradient(60% 78% at 100% 104%, rgba(133,46,78,0.62) 0%, transparent 64%),'
+            + 'radial-gradient(120% 140% at 84% 16%, #10B981 0%, transparent 58%),'
+            + 'linear-gradient(118deg, #047857 0%, #059669 44%, #10B981 78%, #047857 100%)',
+          boxShadow:
+            '0 24px 52px -30px rgba(6,78,59,0.55), 0 8px 24px rgba(4,120,87,0.20),'
+            + 'inset 0 1px 0 rgba(255,255,255,0.22)',
+        }}
+      >
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          {[440, 640, 850].map((size) => (
+            <div
+              key={size}
+              className="absolute rounded-full"
+              style={{
+                width: size,
+                height: size,
+                right: -size * 0.34,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                border: '1px solid rgba(255,255,255,0.10)',
+              }}
+            />
+          ))}
+          <div
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(120% 130% at 42% 30%, transparent 46%, rgba(3,46,32,0.20) 100%)' }}
+          />
+        </div>
+
+        <div className="relative z-10 flex flex-col gap-6 sm:gap-7">
+          <div className="flex min-w-0 items-center gap-4">
+            {icon && (
+              <span
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-white sm:h-[72px] sm:w-[72px] sm:rounded-[22px]"
+                style={{
+                  background: 'rgba(255,255,255,0.13)',
+                  border: '1px solid rgba(255,255,255,0.26)',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)',
+                }}
+              >
+                {icon}
+              </span>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-[26px] font-[800] leading-tight tracking-[-0.025em] text-white sm:text-[34px]">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-1 text-[12.5px] leading-snug sm:text-[13.5px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
+          {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}
+          {children && <div>{children}</div>}
+        </div>
+      </m.div>
+    );
+  }
 
   if (compact) {
     return (
@@ -209,20 +287,25 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
  */
 export interface HeroButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'solid' | 'glass';
+  /** The taller pill used by the showcase hero. */
+  size?: 'default' | 'lg';
   icon?: React.ReactNode;
 }
 
 export const HeroButton = React.forwardRef<HTMLButtonElement, HeroButtonProps>(function HeroButton(
-  { variant = 'solid', icon, className, children, type = 'button', style, ...rest }, ref,
+  { variant = 'solid', size = 'default', icon, className, children, type = 'button', style, ...rest }, ref,
 ) {
   return (
     <button
       ref={ref}
       type={type}
       className={cn(
-        'inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-1.5 rounded-[12px] px-4 text-[13px] font-[700]',
+        'inline-flex cursor-pointer items-center justify-center gap-1.5 font-[700]',
         'transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+        size === 'lg'
+          ? 'min-h-[52px] rounded-full px-6 text-[15px]'
+          : 'min-h-[40px] rounded-[12px] px-4 text-[13px]',
         variant === 'glass' && 'text-white hover:bg-white/20',
         variant === 'solid' && 'hover:bg-white/90',
         className,
