@@ -180,6 +180,13 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<SelectInput\b/);
   });
 
+  it('renders the client activation password fields on the public field contract', () => {
+    const src = readFileSync(join(SRC, 'app/(bare)/client/activate/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<input\b/);
+    expect(src).toMatch(/<SoftField\b/);
+    expect(src).toMatch(/<SoftInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
