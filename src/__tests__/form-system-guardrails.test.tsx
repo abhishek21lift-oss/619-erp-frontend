@@ -147,6 +147,25 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<SelectInput\b/);
   });
 
+  it('renders the platform knowledge upload fields through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(platform)/platform/_tabs/KnowledgeTab.tsx'), 'utf8');
+    expect(src).not.toMatch(/<input\s+id="mpts-title"/);
+    expect(src).not.toMatch(/<input\s+id="mpts-source-version"/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
+  it('renders the platform user and activity filters through the field system', () => {
+    for (const file of [
+      'app/(platform)/platform/_tabs/UsersTab.tsx',
+      'app/(platform)/platform/_tabs/ActivityTab.tsx',
+    ]) {
+      const src = readFileSync(join(SRC, file), 'utf8');
+      expect(src, file).not.toMatch(/<select\b/);
+      expect(src, file).toMatch(/<SelectInput\b/);
+    }
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
