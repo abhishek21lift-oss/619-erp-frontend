@@ -12,7 +12,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
-    exclude: ['e2e/**', 'node_modules/**'],
+    // .worktrees holds full checkouts of this repo; running their tests from
+    // here runs yesterday's copy of every file twice.
+    exclude: ['e2e/**', 'node_modules/**', '.worktrees/**'],
   },
   resolve: {
     alias: {

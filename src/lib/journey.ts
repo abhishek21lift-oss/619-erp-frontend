@@ -52,6 +52,14 @@ export interface ClientInterview {
   lifestyle_smoking?: string | null;
   lifestyle_alcohol?: string | null;
   lifestyle_training_days?: number | null;
+  // The redesigned interview's own fields (migration 254). `notes` is the
+  // trainer's summary; every other field here is what the client said.
+  job_details?: string | null;
+  occupation_other_details?: string | null;
+  previous_workout_experience?: 'never' | 'beginner' | 'intermediate' | 'advanced' | null;
+  training_challenges?: string[] | null;
+  challenge_other?: string | null;
+  important_client_statements?: string | null;
 }
 
 export const STEP_LABEL: Record<JourneyStepKey, string> = {

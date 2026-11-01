@@ -48,6 +48,7 @@ import type { ScreeningSummary } from '@/lib/screening';
 import { termEnded } from '@/lib/term-dates';
 import MessagePreferences from '@/components/pt-os/client/MessagePreferences';
 import ClientJourneyCard from '@/components/pt-os/client/ClientJourneyCard';
+import InterviewSnapshotCard from '@/components/pt-os/client/InterviewSnapshotCard';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -1066,6 +1067,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               <TabPanel id="documents" active={tab}>
+                <div className="mb-4">
+                  <InterviewSnapshotCard clientId={client.id} />
+                </div>
                 <div className="mb-4">
                   <LinkPanel
                     icon={<ShieldCheck size={16} />}
