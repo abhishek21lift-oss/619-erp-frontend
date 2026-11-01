@@ -103,6 +103,15 @@ describe('one form system, not eighteen', () => {
     }
   });
 
+  it('renders the progress photo comparison selects through the field system', () => {
+    // The two comparison pickers were the only raw business controls on the
+    // page. The range input beside them is a direct-manipulation control, not
+    // a labelled field, so it keeps its own aria-label.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/progress-photos/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField

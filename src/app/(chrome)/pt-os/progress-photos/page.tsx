@@ -8,7 +8,7 @@ import {
   RefreshCw, GitCompare,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageContainer, PageHero, FormField, SelectInput } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -293,19 +293,17 @@ function BeforeAfterCompare({ photos }: { photos: ProgressPhoto[] }) {
         <h2 className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Before / After Comparison</h2>
       </div>
 
-      <div className="flex flex-wrap gap-4 mb-4">
-        <label className="flex items-center gap-2 text-[12.5px] font-[600] text-slate-500">
-          Before
-          <select value={beforeId} onChange={(e) => setBeforeId(e.target.value)} className="rounded-[8px] px-2 py-1.5 text-[12px]" style={{ border: '1px solid #cbd5e1' }}>
+      <div className="mb-4 flex flex-wrap items-end gap-4">
+        <FormField label="Before" density="compact">
+          <SelectInput value={beforeId} onChange={(e) => setBeforeId(e.target.value)}>
             {photos.map((p) => <option key={p.id} value={p.id}>{p.taken_at} · {p.photo_type}</option>)}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-[12.5px] font-[600] text-slate-500">
-          After
-          <select value={afterId} onChange={(e) => setAfterId(e.target.value)} className="rounded-[8px] px-2 py-1.5 text-[12px]" style={{ border: '1px solid #cbd5e1' }}>
+          </SelectInput>
+        </FormField>
+        <FormField label="After" density="compact">
+          <SelectInput value={afterId} onChange={(e) => setAfterId(e.target.value)}>
             {photos.map((p) => <option key={p.id} value={p.id}>{p.taken_at} · {p.photo_type}</option>)}
-          </select>
-        </label>
+          </SelectInput>
+        </FormField>
       </div>
 
       <div className="relative mx-auto overflow-hidden rounded-[16px] select-none" style={{ aspectRatio: '3/4', maxWidth: 360, background: '#0f172a' }}>
