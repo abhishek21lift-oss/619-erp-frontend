@@ -244,6 +244,121 @@ export const JUSTIFIED = {
       'sits in its own <label>, its min/max mirror the server\'s 1-90 day ' +
       'window, and its value is sent as snooze_until only after Save.',
   },
+
+  'src/app/(chrome)/pt-os/new-client/page.tsx': {
+    allow: 1,
+    reason:
+      'The "Same as Mobile" checkbox, and only that. It is a boolean that ' +
+      'mirrors the mobile number into the WhatsApp field and is never posted: ' +
+      'the request sends the resolved number, not the flag. It sits inside ' +
+      'its own <label> with visible text, so its accessible name is the ' +
+      'sentence beside it, and both number fields are FloatInput on the ' +
+      'platform. A checkbox is the right shape for a two-state choice; a ' +
+      'label-above text field would misdescribe it.',
+  },
+
+  'src/components/member/GuidedWorkout.tsx': {
+    allow: 1,
+    reason:
+      'One inline STEPPER — minus, centred input, plus — not a labelled text ' +
+      'field. The input carries its own aria-label (the exercise metric) and ' +
+      'inputMode for the numeric keypad; the column already names the metric, ' +
+      'so a FormField label would add a second name and break the 44px row ' +
+      'the three pieces share. The value is written by the logger through ' +
+      'its existing onField path, not by a form submit, so a schema-bound ' +
+      'field would attach to nothing.',
+  },
+
+  'src/components/pt-os/TrainerStatedFields.tsx': {
+    allow: 1,
+    reason:
+      'A dense, table-like row of five trainer statements. The caption and ' +
+      'the input share one line inside a wrapping <label>, so each control is ' +
+      'named by its visible caption without an id; FormField stacks the label ' +
+      'above the control and would turn a one-line statement list into a ' +
+      'five-row form inside an already collapsible panel. These are ' +
+      'statements for one generation, not a submitted record, so no schema ' +
+      'or submit exists to attach. The numeric field renders type="text" with ' +
+      'inputMode="numeric" — a scroll wheel over it cannot change the value.',
+  },
+
+  'src/components/pt-os/analytics/LandmarkEditor.tsx': {
+    allow: 1,
+    reason:
+      'A table inline editor: one 54px numeric cell per row, committed on ' +
+      'blur and on Enter, named by its aria-label. A FormField per cell would ' +
+      'add a visible label above every cell in a grid already named by the ' +
+      'column heading, and a form per row is worse than the table it ' +
+      'replaces. The control is type="text" with inputMode="numeric"; commit ' +
+      'refuses a non-finite value rather than writing it, and skips an ' +
+      'unchanged pair.',
+  },
+
+  'src/components/pt-os/exercise-library/ExerciseFilterRail.tsx': {
+    allow: 1,
+    reason:
+      'A real checkbox drawn as an iOS switch. It sits inside a <label> with ' +
+      'the visible label and hint text, keeps the native keyboard and ' +
+      'screen-reader behaviour, and role="switch" announces on/off rather ' +
+      'than ticked. It narrows the rendered exercise list and posts nothing; ' +
+      'FormField\'s label-above shape exists for data entry, which is what ' +
+      'the same header says it deliberately does not force on a switch.',
+  },
+
+  'src/components/pt-os/posture-assessment/StepPostureObservations.tsx': {
+    allow: 1,
+    reason:
+      'The "No posture issues noted" checkbox, inside its own <label> with ' +
+      'visible text. A checkbox is the control the question calls for, and ' +
+      'the label-above shape would separate the sentence from the box that ' +
+      'answers it. It is disabled while findings exist, so the two states ' +
+      'cannot contradict each other, and the surrounding observations are ' +
+      'FloatInput on the platform.',
+  },
+
+  'src/components/platform/feature-manager.tsx': {
+    allow: 2,
+    reason:
+      'The two per-feature switches — "Restrict to plans" and "On by default" ' +
+      '— each a checkbox inside its own <label> with visible text, patched ' +
+      'immediately on change. They are boolean state toggles, not payload ' +
+      'fields of a submitted form, so there is no schema, submit or reset to ' +
+      'attach; the label-above shape would separate each switch from the ' +
+      'words that name it. The third input in the file is the feature search ' +
+      'box, which is native by kind.',
+  },
+
+  'src/components/platform/live-logs.tsx': {
+    allow: 1,
+    reason:
+      'A live query filter: every keystroke becomes q on the logs request and ' +
+      'resets the cursor; nothing is posted. It carries aria-label="Filter by ' +
+      'message" and is one of the row of filters beside the level buttons and ' +
+      'the export window, so a label above it would repeat the placeholder ' +
+      'and push the filter row taller. §1 names filters explicitly.',
+  },
+
+  'src/components/chat/ChatComposer.tsx': {
+    allow: 1,
+    reason:
+      'A chat composer, not a form field: one autosizing textarea plus Send, ' +
+      'named with aria-label="Message", capped at the same 2000 characters ' +
+      'the API enforces. Enter sends on a keyboard and starts a new line on a ' +
+      'touch screen, which is a keyboard contract a label-above wrapper does ' +
+      'not model. There is no submit payload to validate and no reset beyond ' +
+      'clearing the box after a successful send.',
+  },
+
+  'src/lib/insights/date-range.tsx': {
+    allow: 1,
+    reason:
+      'The ONE canonical Insights date control, used as a filter on every ' +
+      'insights page: it sets the from/to query keys and posts nothing. Each ' +
+      'input is type="date" inside its own <label> with a visible caption, ' +
+      'clamped by min/max, and keeps the platform date picker and keyboard ' +
+      'editing. Rewriting it as a FormField would either duplicate the ' +
+      'canonical component or lose the native date semantics.',
+  },
 };
 
 export function justificationFor(rel) {
