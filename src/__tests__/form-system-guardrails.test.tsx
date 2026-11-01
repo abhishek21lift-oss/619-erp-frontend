@@ -96,6 +96,7 @@ describe('one form system, not eighteen', () => {
       'app/(chrome)/support/page.tsx',
       'app/(chrome)/settings/passkeys/page.tsx',
       'components/pt-os/workout-log/SessionSummary.tsx',
+      'app/(chrome)/pt-os/clients/[id]/page.tsx',
     ];
     for (const file of migrated) {
       const src = readFileSync(join(SRC, file), 'utf8');
