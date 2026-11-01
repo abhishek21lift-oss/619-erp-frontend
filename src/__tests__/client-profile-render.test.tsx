@@ -50,6 +50,10 @@ describe('client profile', () => {
     await waitFor(() => expect(screen.getAllByText('Hari Narayan Singh').length).toBeGreaterThan(0), { timeout: 3000 });
     expect(screen.getByRole('link', { name: 'Renew' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Enroll' })).toBeNull();
+    // An enrolled client can correct their term without re-enrolling them,
+    // which would rewrite the payment history (the server refuses it).
+    expect(screen.getByRole('link', { name: /edit enrolment/i }))
+      .toHaveAttribute('href', '/pt-os/clients/c1/enroll');
     expect(screen.getByRole('link', { name: 'Call' })).toBeTruthy();
     // The e2e renewal-offer journey opens the sheet by this accessible name.
     expect(screen.getByRole('button', { name: 'Renewal offer' })).toBeTruthy();

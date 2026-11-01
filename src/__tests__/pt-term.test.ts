@@ -68,6 +68,7 @@ describe('every Enroll-or-Renew screen reads the one rule', () => {
 
   it('the enroll screen does not pre-fill a start date invented at creation', () => {
     const src = read('enroll/page.tsx');
-    expect(src).toMatch(/hasPtTerm\(c as PtTermFields\) && String\(c\.pt_start_date/);
+    expect(src).toMatch(/const hasTerm = hasPtTerm\(c as PtTermFields\)/);
+    expect(src).toMatch(/hasTerm && String\(c\.pt_start_date/);
   });
 });

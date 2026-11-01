@@ -213,6 +213,15 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [hasRenewed, setHasRenewed] = useState(false);
+  // This client already has a term, so this page is editing it rather than
+  // enrolling them. An edit must not re-open the signed agreement: correcting a
+  // start date or a fee is not a new contract, and the only way past that gate
+  // is a fresh signature the client never gave.
+  const [editing, setEditing] = useState(false);
+  // Sent back unchanged. The server auto-promotes to 'active' whenever a term
+  // is in the payload, which would flip a provisional (screening-pending)
+  // enrolment on the strength of an edit.
+  const [clientStatus, setClientStatus] = useState('');
   // What a NEW client's screening is still missing. It no longer stops the
   // enrolment: the server writes the term and keeps the client 'pending' until
   // the consent and PAR-Q are complete, and this warns the trainer up front.
@@ -263,8 +272,16 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // here either fails or rewrites their payment history (payments audit
       // PAY-1). The server refuses it too (USE_RENEW); this says so up front.
       setHasRenewed(Array.isArray(renewalsRes?.data) && renewalsRes.data.length > 0);
+      const hasTerm = hasPtTerm(c as PtTermFields);
+      // An END DATE is what every path that actually creates a term writes —
+      // enrol, renew, and a member's UPI purchase (backend lib/ptTerm.js).
+      // hasPtTerm also accepts a price on the row, and a package sets one at
+      // creation; treating that as "already enrolled" would skip the
+      // signature on somebody's first term.
+      setEditing(/^\d{4}-\d{2}-\d{2}/.test(String(c.pt_end_date ?? '').trim()));
+      setClientStatus(String(c.status ?? ''));
       const screening = c.screening as ScreeningSummary | undefined;
-      if (screening && !hasPtTerm(c as PtTermFields) && !screening.complete) {
+      if (screening && !hasTerm && !screening.complete) {
         setScreeningMissing({
           consent: screening.consent.status !== 'completed',
           parq: !screening.parq.complete || screening.parq.status === 'none' || screening.parq.status === 'in_progress',
@@ -294,7 +311,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         // An existing term's start date is kept; a client with no term starts
         // today. Client creation used to stamp pt_start_date on everyone, so a
         // stale "start" from the day they were added would otherwise pre-fill.
-        startDate: (hasPtTerm(c as PtTermFields) && String(c.pt_start_date ?? '').slice(0, 10)) || todayISO(),
+        startDate: (hasTerm && String(c.pt_start_date ?? '').slice(0, 10)) || todayISO(),
         duration: c.duration_months ? String(c.duration_months) : '',
         trainerId: String(c.trainer_id ?? ''),
         trainerName: String(c.trainer_name ?? ''),
@@ -412,7 +429,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
     // actually enrolls them — this save IS that enrollment. The server keeps
     // them 'pending' when their screening is incomplete (provisional
     // enrolment) and promotes them once the consent and PAR-Q are done.
-    status: 'active',
+    //
+    // On an edit the status travels back unchanged. Omitting it is not the
+    // same thing: the server promotes to 'active' whenever a term is in the
+    // body, so leaving it out would activate a provisional client as a side
+    // effect of fixing a typo.
+    status: editing ? clientStatus : 'active',
     pt_start_date: form.startDate,
     pt_end_date: endDate,
     duration_months: Number(form.duration),
@@ -461,7 +483,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
       // has been saved, and pushing straight to the profile would take that
       // away half a second after earning it.
       setEnrolled(true);
-      toast.success('Client enrolled in PT.');
+      toast.success(editing ? 'Enrolment updated.' : 'Client enrolled in PT.');
     } catch (err: unknown) {
       // No HTTP response at all (err isn't an ApiError) or a 5xx — both are
       // consistent with a proxy timeout / backend cold start. A 4xx is a
@@ -504,6 +526,15 @@ function EnrollForm({ clientId }: { clientId: string }) {
       const firstKey = order.find((k) => nextErrors[k]);
       toast.error((firstKey && nextErrors[firstKey]) || 'Please fix the highlighted fields.');
       if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    // An edit is not a new agreement. Re-signing would overwrite the signature
+    // and timestamp of the contract that was actually made, and there is no
+    // honest way to get a fresh one for a corrected start date.
+    if (editing) {
+      setSubmitError(null);
+      setSaving(true);
+      attemptSave(false);
       return;
     }
     // Everything is valid — now the agreement. It opens here rather than
@@ -608,7 +639,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
           <Check size={30} style={{ color: '#059669' }} />
         </m.div>
         <h2 className="mt-4 text-[19px] font-[820] tracking-[-0.02em] text-slate-900">
-          {activationPending ? 'Enrolled — activation pending screening' : 'Enrolled'}
+          {editing ? 'Enrolment updated' : activationPending ? 'Enrolled — activation pending screening' : 'Enrolled'}
         </h2>
         <p className="mt-1 text-[13px] font-[560] text-slate-500">
           {clientName} is on a {form.duration}-month programme starting {fmtDateLong(form.startDate)}.
@@ -1071,7 +1102,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
               onClick={handleSubmit}
               style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
             >
-              {saving ? 'Saving...' : 'Finish'}
+              {saving ? 'Saving...' : editing ? 'Save changes' : 'Finish'}
             </Button>
           </div>
         </div>

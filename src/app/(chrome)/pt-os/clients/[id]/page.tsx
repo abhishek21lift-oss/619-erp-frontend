@@ -846,6 +846,21 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </div>
                   ))}
                 </div>
+
+                {/* Editing the term, rather than enrolling them again. Only
+                    while the term is running: once it has ended the server
+                    refuses a term edit and Renew is the path (its arithmetic
+                    and history live there). A price with no end date is not a
+                    term yet — that client is still waiting to be enrolled. */}
+                {hasTerm && client.days_left != null && !termEnded(client.days_left, client.pt_end_date) && (
+                  <Link
+                    href={`/pt-os/clients/${id}/enroll`}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[700]"
+                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}
+                  >
+                    <Pencil size={13} aria-hidden /> Edit enrolment
+                  </Link>
+                )}
               </SectionCard>
 
               {/* ── CLIENT LOGIN ──
