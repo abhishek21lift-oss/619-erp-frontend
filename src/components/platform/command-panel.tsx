@@ -32,6 +32,7 @@ import { ApiError } from '@/lib/http';
 import { semantic, rgba } from '@/lib/palette';
 import type { CommandCenterCommand } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
+import { FormField, SelectInput, TextInput } from '@/components/ui';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
 import { uuid } from '@/lib/uuid';
@@ -139,24 +140,20 @@ function ConfirmDialog({
           {cmd.blast_radius}
         </p>
 
-        <label htmlFor="confirm-phrase" className="mb-1.5 block text-[11px] font-[650] uppercase tracking-wide"
-          style={{ color: 'var(--text-tertiary)' }}>
-          Type <span style={{ color: 'var(--text-primary)' }}>{cmd.name}</span> to confirm
-        </label>
-        <input id="confirm-phrase"
-          autoFocus
-          value={typed}
-          onChange={(e) => setTyped(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && matches && !running) onConfirm(); }}
-          spellCheck={false}
-          autoComplete="off"
-          className="mb-4 w-full rounded-[11px] px-3 py-2 text-[13px] font-mono outline-none"
-          style={{
-            background: 'var(--bg-subtle)',
-            border: `1px solid ${matches ? semantic.success : 'var(--border)'}`,
-            color: 'var(--text-primary)',
-          }}
-        />
+        <FormField label={`Type ${cmd.name} to confirm`} className="mb-4">
+          <TextInput
+            autoFocus
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && matches && !running) onConfirm(); }}
+            spellCheck={false}
+            autoComplete="off"
+            className="font-mono"
+            style={{
+              border: `1px solid ${matches ? semantic.success : 'var(--border)'}`,
+            }}
+          />
+        </FormField>
 
         <div className="flex justify-end gap-2">
           <button
@@ -246,19 +243,19 @@ function CommandRow({
 
         <div className="flex flex-shrink-0 items-center gap-2">
           {cmd.accepts_queue && !blocked && (
-            <select
-              /* flex-1 on the phone so the queue picker and Run share the row
-                 instead of the picker collapsing to its longest option. */
-              value={queue}
-              onChange={(e) => onQueue(e.target.value)}
-              aria-label={`Queue for ${cmd.label}`}
-              className="flex-1 rounded-[10px] px-2 py-2.5 text-[12px] font-[600] outline-none sm:flex-none sm:rounded-[9px] sm:py-1.5 sm:text-[11.5px]"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              {/* Straight from the server's QUEUE_NAMES — the client never
-                  invents a queue name, and an unknown one is a 400 anyway. */}
-              {(cmd.queues ?? []).map((q) => <option key={q} value={q}>{q}</option>)}
-            </select>
+            <FormField label={`Queue for ${cmd.label}`} labelHidden className="flex-1 sm:flex-none">
+              <SelectInput
+                /* flex-1 on the phone so the queue picker and Run share the row
+                   instead of the picker collapsing to its longest option. */
+                value={queue}
+                onChange={(e) => onQueue(e.target.value)}
+                className="text-[12px] font-[600] sm:text-[11.5px]"
+              >
+                {/* Straight from the server's QUEUE_NAMES — the client never
+                    invents a queue name, and an unknown one is a 400 anyway. */}
+                {(cmd.queues ?? []).map((q) => <option key={q} value={q}>{q}</option>)}
+              </SelectInput>
+            </FormField>
           )}
 
           <button
