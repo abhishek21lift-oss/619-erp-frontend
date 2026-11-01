@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn } from '@/components/ui';
+import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -288,17 +288,18 @@ function ExerciseLibrary() {
             </button>
           ))}
 
-          <select
-            value={filters.sort}
-            onChange={(e) => setFilter('sort', e.target.value)}
-            aria-label="Sort exercises"
-            className="h-11 shrink-0 cursor-pointer sm:h-12 rounded-2xl border border-slate-200/70 bg-white px-4 text-[13px] font-[650] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none dark:border-white/10 dark:bg-white/[0.05]"
-          >
-            <option value="name">A → Z</option>
-            <option value="name_desc">Z → A</option>
-            <option value="updated">Recently updated</option>
-            <option value="created">Newest</option>
-          </select>
+          <FormField label="Sort exercises" labelHidden className="shrink-0">
+            <SelectInput
+              value={filters.sort}
+              onChange={(e) => setFilter('sort', e.target.value)}
+              className="h-11 w-auto shrink-0 cursor-pointer rounded-2xl px-4 text-[13px] font-[650] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:h-12"
+            >
+              <option value="name">A → Z</option>
+              <option value="name_desc">Z → A</option>
+              <option value="updated">Recently updated</option>
+              <option value="created">Newest</option>
+            </SelectInput>
+          </FormField>
         </div>
       </div>
 

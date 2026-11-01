@@ -140,6 +140,12 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<SelectInput\b/);
   });
 
+  it('renders the exercise library sort through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/exercise-library/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
