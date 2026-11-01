@@ -16,7 +16,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  CalendarClock, Copy, ExternalLink, Loader2, Plus, Trash2, Bell, Check,
+  CalendarClock, Copy, ExternalLink, Loader2, Plus, RefreshCw, Trash2, Bell, Check,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import {
@@ -88,7 +88,7 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
     () => settingsText(data.settings),
   );
   const [token, setToken] = useState<string | null>(data.settings.ics_token);
-  const [busy, setBusy] = useState<null | 'week' | 'timeoff' | 'settings'>(null);
+  const [busy, setBusy] = useState<null | 'week' | 'timeoff' | 'settings' | 'token'>(null);
 
   const [range, setRange] = useState({ starts_on: '', ends_on: '', reason: '' });
 
@@ -193,6 +193,22 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
       await onSaved();
     } catch (err) {
       toast.error(errorMessage(err, 'Could not save booking settings.'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function rotateToken() {
+    if (!window.confirm(
+      'Rotate the calendar link? Any calendar already subscribed to the old link stops updating until you add the new one.',
+    )) return;
+    setBusy('token');
+    try {
+      const res = await api.pt.rotateCalendarToken();
+      setToken(res.data.ics_token);
+      toast.success('Calendar link rotated — add the new link to your calendar.');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Could not rotate the calendar link.'));
     } finally {
       setBusy(null);
     }
@@ -361,7 +377,8 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
         <p className="mb-3 text-[12px] text-slate-500">
           A read-only subscription: booked sessions appear in your calendar, and
           nothing in the calendar can change them. Saving booking settings the
-          first time creates the link; later saves keep it.
+          first time creates the link; later saves keep it. Treat the link as a
+          password — anyone holding it can read your sessions.
         </p>
 
         {feedUrl ? (
@@ -389,6 +406,9 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
                   <ExternalLink size={14} /> Add to Google Calendar
                 </a>
               )}
+              <Button variant="secondary" onClick={rotateToken} disabled={busy !== null}>
+                <RefreshCw size={14} /> {busy === 'token' ? 'Rotating…' : 'Rotate link'}
+              </Button>
             </div>
           </div>
         ) : (
