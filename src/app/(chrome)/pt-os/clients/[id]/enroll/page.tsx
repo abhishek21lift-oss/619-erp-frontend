@@ -333,7 +333,9 @@ function EnrollForm({ clientId }: { clientId: string }) {
         paymentMethod: String(c.payment_method ?? ''),
       };
 
-      const draft = restore();
+      // A draft written before the client row was last saved is stale — the
+      // server copy already holds anything that changed since.
+      const draft = restore(c.updated_at ? { notBefore: Date.parse(String(c.updated_at)) } : undefined);
       const finalForm = draft ? { ...loaded, ...draft } : loaded;
       setForm(finalForm);
       initFormRef.current = loaded;

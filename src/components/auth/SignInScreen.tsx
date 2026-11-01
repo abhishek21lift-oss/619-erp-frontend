@@ -549,7 +549,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
               )}
             </AnimatePresence>
 
-            {/* remember me */}
+            {/* remember my email — the session cookie is unaffected */}
             <label className="flex cursor-pointer select-none items-center gap-2.5">
               <span className="relative grid place-items-center">
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="peer sr-only" />
@@ -564,7 +564,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                   {remember && <Check size={12} strokeWidth={3} className="text-white" />}
                 </span>
               </span>
-              <span className="text-[13.5px] font-[560]" style={{ color: C.body }}>Keep me signed in on this device</span>
+              <span className="text-[13.5px] font-[560]" style={{ color: C.body }}>Remember my email on this device</span>
             </label>
 
             {/* submit */}

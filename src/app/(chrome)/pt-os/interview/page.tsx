@@ -134,13 +134,12 @@ function InterviewForm({ clientId }: { clientId: string }) {
 
         const loaded = answersFrom(active as unknown as Record<string, unknown> | null);
         savedRef.current = loaded;
-        if (active?.status === 'draft') {
-          const restored = restore({ notBefore: Date.parse(active.updated_at) });
-          setAnswers(restored ? { ...loaded, ...restored } : loaded);
-          if (restored) toast.info('Restored your unsaved draft.');
-        } else {
-          setAnswers(loaded);
-        }
+        // Always look for a local draft — the record may be completed, or not
+        // exist yet, and the unsaved answers are still newer than it. `notBefore`
+        // keeps a draft written BEFORE the server copy from overwriting it.
+        const restored = restore(active ? { notBefore: Date.parse(active.updated_at) } : undefined);
+        setAnswers(restored ? { ...loaded, ...restored } : loaded);
+        if (restored) toast.info('Restored your unsaved draft.');
       } catch (err: unknown) {
         if (!cancelled) toast.error(errorMessage(err, 'Could not load this client.'));
       } finally {

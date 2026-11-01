@@ -24,13 +24,14 @@ const mockUpdate = vi.fn();
 const mockToast = { info: vi.fn(), error: vi.fn(), success: vi.fn() };
 let mockInterviews: unknown[] = [];
 let mockLifestyle: unknown[] = [];
+let mockRestore: () => Record<string, unknown> | null = () => null;
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
   useSearchParams: () => new URLSearchParams('client_id=c1'),
 }));
 vi.mock('@/components/Guard', () => ({ default: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
-vi.mock('@/hooks/useAutoSaveDraft', () => ({ useAutoSaveDraft: () => ({ restore: () => null, clear: vi.fn() }) }));
+vi.mock('@/hooks/useAutoSaveDraft', () => ({ useAutoSaveDraft: () => ({ restore: () => mockRestore(), clear: vi.fn() }) }));
 vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: mockToast }) }));
 vi.mock('@/lib/api', () => ({
   api: {
@@ -81,6 +82,7 @@ const clientHeading = () => screen.findByText("Mina Rao's Interview");
 beforeEach(() => {
   mockInterviews = [];
   mockLifestyle = [];
+  mockRestore = () => null;
   mockPush.mockReset();
   mockToast.info.mockReset();
   mockToast.error.mockReset();
@@ -354,6 +356,17 @@ describe('<InterviewPage />', () => {
     expect(await screen.findByRole('button', { name: 'Save draft' })).toBeTruthy();
     expect(answeredCount()).toBe('0');
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('restores a local draft when the server has no interview yet', async () => {
+    // The record does not exist, but the trainer typed answers and the tab
+    // closed. Restoring only when a server draft existed lost exactly this.
+    mockRestore = () => ({ job_details: 'Unsaved draft answer' });
+    render(<InterviewPage />);
+    await clientHeading();
+
+    await waitFor(() => expect(textField('Job details').value).toBe('Unsaved draft answer'));
+    expect(mockToast.info).toHaveBeenCalledWith('Restored your unsaved draft.');
   });
 
   it('stores every canonical challenge key the server accepts', () => {

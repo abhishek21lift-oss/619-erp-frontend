@@ -35,16 +35,18 @@ interface Integration {
 // it passed on any plausible-looking typo. A studio owner following that flow
 // got a green badge and a live secret sitting in plaintext, and no integration.
 //
-// Razorpay is the one that works, and it is configured by the operator through
-// RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET — not from this screen. Its card is
-// therefore read-only and reports what the server says, which is why
-// `managed: 'server'` exists.
+// Razorpay is configured by the operator through RAZORPAY_KEY_ID /
+// RAZORPAY_KEY_SECRET — not from this screen. Its card is therefore read-only
+// and reports what the server says, which is why `managed: 'server'` exists.
+// The keys are not a working checkout: nothing in the app creates or captures
+// a Razorpay payment, and the webhook only logs. The card says so rather than
+// showing "Connected", which read as "online payments are live".
 //
 // WhatsApp and OpenRouter are not in this list either: each has a live card
 // below with its own lifecycle (a device pairing, a model health check) rather
 // than a stored string.
 const STATIC_INTEGRATIONS: Integration[] = [
-  { id: 'razorpay', name: 'Razorpay', description: 'Payment gateway for fees, memberships & PT packages', category: 'payments', icon: 'CreditCard', color: '#A33757', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
+  { id: 'razorpay', name: 'Razorpay', description: 'Razorpay keys, held by your operator. Online checkout is not enabled — record payments manually.', category: 'payments', icon: 'CreditCard', color: '#A33757', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
 ];
 
 const CATEGORIES = [
@@ -228,10 +230,12 @@ function StaticCard({ integration, isConnected, connectedAt }: {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: sc[status] }}>
           {isConnected ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[status], display: 'inline-block', boxShadow: `0 0 8px ${sc[status]}` }} />}
-          {sl[status]}
+          {/* "Connected" would claim a working payment channel. All this card
+              knows is that the operator's keys are present. */}
+          {isConnected ? 'Keys configured' : sl[status]}
         </span>
         {isConnected && connectedAt && (
-          <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Connected {new Date(connectedAt).toLocaleDateString()}</span>
+          <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Configured {new Date(connectedAt).toLocaleDateString()}</span>
         )}
       </div>
       {/* Server-managed: say who holds the credential rather than offering a
@@ -243,8 +247,8 @@ function StaticCard({ integration, isConnected, connectedAt }: {
           <Settings size={13} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>
             {isConnected
-              ? 'Configured by your operator. Keys are held in the server environment, not in this studio\u2019s settings.'
-              : 'Not configured. Ask your operator to set the Razorpay keys in the server environment to enable online payments.'}
+              ? 'Keys are held in the server environment, not in this studio\u2019s settings. Online checkout is not enabled yet — fees are recorded manually.'
+              : 'Not configured. Ask your operator to set the Razorpay keys in the server environment.'}
           </span>
         </div>
       )}
