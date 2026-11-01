@@ -32,7 +32,7 @@ export const SOFTWARE_FEATURES = [
   'WhatsApp outreach',
   'Campaigns & offers',
   'Finance & forecast',
-  'Multi-branch',
+  'Retention radar',
 ] as const;
 
 export const ORGANIZATION_NODE = {

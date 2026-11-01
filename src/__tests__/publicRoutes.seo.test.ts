@@ -554,7 +554,7 @@ describe('shared entity details', () => {
       'WhatsApp outreach',
       'Campaigns & offers',
       'Finance & forecast',
-      'Multi-branch',
+      'Retention radar',
     ]);
   });
 
