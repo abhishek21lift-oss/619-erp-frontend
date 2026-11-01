@@ -14,7 +14,7 @@ import {
   Tooltip as ChartTooltip, LineChart, Line, ReferenceLine,
 } from 'recharts';
 import Guard from '@/components/Guard';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart, PageContainer, PageHero } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart, PageContainer, PageHero, FormField, TextInput } from '@/components/ui';
 import { clampNumericText } from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import type {
@@ -371,12 +371,13 @@ function Inner() {
         {/* The date and Add Meal were a flex row that wrapped under the title
             on a phone; on the hero they are a fixed two-up. */}
         <div className="grid grid-cols-2 gap-2.5">
-          <input
-            type="date" value={date} onChange={(e) => setDate(e.target.value)}
-            aria-label="Diet log date"
-            className="h-[44px] w-full min-w-0 rounded-[12px] px-3 text-[13px] font-[600] text-white outline-none"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
-          />
+          <FormField label="Diet log date" labelHidden className="min-w-0">
+            <TextInput
+              type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              className="h-[44px] font-[600] text-white"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+            />
+          </FormField>
           <button
             type="button"
             onClick={() => setAddMealOpen(true)}
@@ -506,18 +507,17 @@ function Inner() {
               { key: 'carbs', label: 'Carbs', unit: 'g', mode: 'decimal' as const },
               { key: 'fats', label: 'Fats', unit: 'g', mode: 'decimal' as const },
             ].map((field) => (
-              <label key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)' }}>
-                {field.label} ({field.unit})
-                <input
-                  type="text" inputMode={field.mode === 'integer' ? 'numeric' : 'decimal'} placeholder="—"
+              <FormField key={field.key} label={`${field.label} (${field.unit})`} density="compact" className="min-w-0">
+                <TextInput
+                  inputMode={field.mode === 'integer' ? 'numeric' : 'decimal'} placeholder="—"
                   value={intake[field.key as keyof typeof intake]}
                   onChange={(e) => setIntake((prev) => ({
                     ...prev, [field.key]: clampNumericText(e.target.value, field.mode),
                   }))}
                   disabled={!clientId}
-                  style={{ height: 38, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', padding: '0 10px', fontSize: 13, fontFamily: 'inherit', minWidth: 0 }}
+                  style={{ height: 38, minHeight: 38, borderRadius: 9, padding: '0 10px', fontSize: 13 }}
                 />
-              </label>
+              </FormField>
             ))}
             <button
               onClick={saveIntake}

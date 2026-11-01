@@ -122,6 +122,16 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<TextInput\b/);
   });
 
+  it('renders the diet log date and intake fields through the field system', () => {
+    // The two search boxes are filters and stay SearchField candidates, not
+    // payload fields; these two are the log's actual controls.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/diet-plans/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/aria-label="Diet log date"/);
+    expect(src).not.toMatch(/<input\s+type="text"/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
