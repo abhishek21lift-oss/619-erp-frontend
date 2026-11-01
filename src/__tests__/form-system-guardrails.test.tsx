@@ -194,6 +194,13 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<TextInput\b/);
   });
 
+  it('renders the AI coach knowledge title through the field system', () => {
+    const src = readFileSync(join(SRC, 'app/(chrome)/ai-coach/knowledge/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/id="kb-title"/);
+    expect(src).toMatch(/<FormField\b/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
