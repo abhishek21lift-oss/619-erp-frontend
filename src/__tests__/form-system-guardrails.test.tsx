@@ -87,6 +87,16 @@ describe('one form system, not eighteen', () => {
     expect(enroll).not.toMatch(/tone=/);
   });
 
+  it('renders the support ticket composer and reply through the field system', () => {
+    // Phase 2 of the form migration. These three were the page's only raw
+    // business controls, and each carried its own label or aria-label rather
+    // than the shared wiring. The guardrail is source-level on purpose: the
+    // behaviour is unchanged, so a render test would pass before and after.
+    const src = readFileSync(join(SRC, 'app/(chrome)/support/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<(input|textarea)\b/);
+    expect(src).toMatch(/<FormField\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
