@@ -42,8 +42,8 @@ import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessA
 import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
-import { bandInk, fitnessMesh, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
-import { indigo, emerald, gray, tint } from '@/lib/palette';
+import { bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
+import { emerald, tint } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
@@ -666,31 +666,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   return (
     <PageContainer>
-      <PageHero
-        icon={<ClipboardCheck size={18} />}
-        title="Fitness Testing"
-
-        surface={{
-          background: [
-            `radial-gradient(circle 260px at 6% 115%, ${fitnessMesh.glowA}, transparent 70%)`,
-            `radial-gradient(circle 240px at 102% -12%, ${fitnessMesh.glowB}, transparent 70%)`,
-            fitnessMesh.base,
-          ].join(', '),
-          shadow: fitnessMesh.shadow,
-        }}
-      />
-
-      {!reviewMode && !lastSaved && (
-        <div
-          className="mx-auto mb-5 max-w-6xl rounded-[20px] px-4 py-4 sm:px-6"
-          style={{
-            background: `linear-gradient(150deg, ${gray[900]} 0%, ${indigo[900]} 55%, ${gray[900]} 100%)`,
-            boxShadow: '0 18px 40px -20px rgba(15,23,42,0.45)',
-          }}
-        >
-          <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />
-        </div>
-      )}
+      <PageHero icon={<ClipboardCheck size={18} />} title="Fitness Testing">
+        {!reviewMode && !lastSaved && <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />}
+      </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">
         <ScreeningStatusCard screening={screening} clientId={clientId} />

@@ -1,14 +1,14 @@
 /**
  * Fitness Testing colour — the assessment wizard and its results dashboard,
- * dressed like Apple Fitness: an energy-mesh hero, gradient squircles, one
- * hue per fitness domain, an activity ring for the overall score.
+ * dressed like Apple Fitness: gradient squircles, one hue per fitness domain,
+ * an activity ring for the overall score.
  *
  * The five palette families still carry every STATE on these screens: a
  * score band is emerald / amber / red, an unsafe BP reading is red, a stale
- * PAR-Q is amber. What this file adds is decoration — the hero mesh, the
- * domain hues, the ring — none of which may borrow a family that means
- * something, or a dashboard of green tiles reads as a dashboard of "all
- * good". The scoring thresholds are untouched; this file only paints.
+ * PAR-Q is amber. What this file adds is decoration — the domain hues and the
+ * ring — none of which may borrow a family that means something, or a
+ * dashboard of green tiles reads as a dashboard of "all good". The scoring
+ * thresholds are untouched; this file only paints.
  *
  * The tenth deliberate exception to the palette, made like the others: its
  * own token file, exempt from the palette scan in palette.test.ts, and
@@ -76,16 +76,6 @@ export const stepTones = {
   5: tones.sunset,
   6: tones.aqua,
   7: tones.gold,
-} as const;
-
-/** The hero: an energy sweep from indigo through pink, with an aqua and a
- *  gold glow. Deep enough under the title that white body text stays
- *  readable everywhere text lands on it. */
-export const fitnessMesh = {
-  base: `linear-gradient(140deg, ${spectrum.indigo[700]} 0%, ${spectrum.indigo[600]} 28%, ${spectrum.violet[600]} 62%, ${spectrum.pink[600]} 100%)`,
-  glowA: 'rgba(34,211,238,0.45)',
-  glowB: 'rgba(250,204,21,0.38)',
-  shadow: 'rgba(79,70,229,0.5)',
 } as const;
 
 /** For the small dark cards that carry text on the light page — the AI
