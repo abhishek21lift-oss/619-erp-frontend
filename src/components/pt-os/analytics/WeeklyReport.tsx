@@ -43,6 +43,7 @@ import { useState } from 'react';
 import { FileText, Loader2, MessageCircle, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { TrainingAnalytics } from '@/lib/api';
+import { FormField, TextArea } from '@/components/ui';
 import { useToast } from '@/lib/toast';
 
 export interface WeeklyReportProps {
@@ -114,11 +115,11 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
         Built from this week&rsquo;s logged sessions.
       </p>
 
-      <label className="mb-3 block">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-            A note for your client (optional)
-          </span>
+      <FormField
+        label="A note for your client (optional)"
+        description="AI can draft a starting point from this week’s data — edit it before sending, it’s still your note."
+        className="mb-3"
+        labelAside={
           <button
             type="button"
             onClick={() => void draftWithAi()}
@@ -129,19 +130,16 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
             {drafting ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
             {drafting ? 'Drafting…' : 'Draft with AI'}
           </button>
-        </div>
-        <textarea
+        }
+      >
+        <TextArea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           placeholder="What you want them to take from this week…"
-          className="min-h-[66px] w-full resize-y rounded-[12px] px-3 py-2.5 text-[13px] outline-none"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          className="min-h-[66px]"
         />
-        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
-          AI can draft a starting point from this week&rsquo;s data — edit it before sending, it&rsquo;s still your note.
-        </p>
-      </label>
+      </FormField>
 
       <div className="flex flex-wrap gap-2">
         <button
