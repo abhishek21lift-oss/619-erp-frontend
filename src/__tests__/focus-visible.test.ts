@@ -98,9 +98,13 @@ describe('nothing defeats it inline', () => {
 
   it('still allows the Tailwind class, which is harmless', () => {
     // Guards against someone "fixing" this by banning outline-none too. It
-    // loses to the later :focus-visible rule and is used 200+ times.
+    // loses to the later :focus-visible rule and is used across the app.
+    //
+    // The count is deliberately not pinned: it fell from 200+ to 89 as fields
+    // moved onto the design system, which already owns its focus treatment.
+    // Pinning a number would make the migration fail a test it is improving.
     const uses = sources().reduce(
       (n, f) => n + (readFileSync(f, 'utf8').match(/\boutline-none\b/g) ?? []).length, 0);
-    expect(uses).toBeGreaterThan(100);
+    expect(uses).toBeGreaterThan(0);
   });
 });
