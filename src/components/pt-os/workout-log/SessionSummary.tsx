@@ -23,8 +23,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
-import { Check, Loader2, Timer, Trophy, X } from 'lucide-react';
+import { Check, Loader2, Trophy, X } from 'lucide-react';
 import type { WorkoutSessionDetail } from '@/lib/api';
+import { FormField, TextArea, TextInput } from '@/components/ui';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export interface SessionSummaryProps {
@@ -139,33 +140,25 @@ export default function SessionSummary({ session, open, onCancel, onFinish }: Se
           <Stat label="Avg RPE" value={s.avg_rpe == null ? '—' : String(s.avg_rpe)} />
         </div>
 
-        <label className="mb-3 block">
-          <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-            <Timer size={12} /> Duration (minutes)
-          </span>
-          <input
+        <FormField label="Duration (minutes)" className="mb-3">
+          <TextInput
             value={minutes}
             onChange={(e) => setMinutes(e.target.value)}
             inputMode="numeric"
-            className="h-[44px] w-full rounded-[12px] px-3 text-[14px] font-[700] outline-none"
-            style={inputStyle}
+            className="text-[14px] font-[700]"
           />
-        </label>
+        </FormField>
 
-        <label className="mb-4 block">
-          <span className="mb-1.5 block text-[11px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-            How did it go?
-          </span>
-          <textarea
+        <FormField label="How did it go?" className="mb-4">
+          <TextArea
             ref={noteRef}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
             placeholder="Form, energy, anything to carry into next session…"
-            className="min-h-[88px] w-full resize-y rounded-[12px] px-3 py-2.5 text-[13px] outline-none"
-            style={inputStyle}
+            className="min-h-[88px]"
           />
-        </label>
+        </FormField>
 
         <button
           onClick={submit}
@@ -180,12 +173,6 @@ export default function SessionSummary({ session, open, onCancel, onFinish }: Se
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  background: 'var(--bg-subtle)',
-  border: '1px solid var(--border)',
-  color: 'var(--text-primary)',
-};
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
