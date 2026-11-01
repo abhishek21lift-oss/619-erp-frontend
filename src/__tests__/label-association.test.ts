@@ -57,8 +57,9 @@ describe('the accessible-name audit itself', () => {
     // cross-boundary resolver still works at scale — so it is set well under
     // the current count, which keeps falling as wrappers are replaced by
     // `FormField` outright rather than merely fixed. 50 → 35 after the platform
-    // centres' hand-labelled controls moved to FormField.
-    expect(audit.wrapped).toBeGreaterThan(35);
+    // centres' hand-labelled controls moved to FormField, 34 after the client
+    // edit form did.
+    expect(audit.wrapped).toBeGreaterThan(20);
   });
 });
 

@@ -112,6 +112,16 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/<SelectInput\b/);
   });
 
+  it('renders the client edit gender and delete confirmation through the field system', () => {
+    // The photo picker stays a native file input: it is a button-shaped
+    // affordance with its own aria-label, not a labelled text field.
+    const src = readFileSync(join(SRC, 'app/(chrome)/pt-os/clients/[id]/edit/page.tsx'), 'utf8');
+    expect(src).not.toMatch(/<select\b/);
+    expect(src).toMatch(/<SelectInput\b/);
+    expect(src).not.toMatch(/<input\s+id="delete-confirm"/);
+    expect(src).toMatch(/<TextInput\b/);
+  });
+
   it('has no second search-input component', () => {
     // components/ui/SearchInput.tsx was a second search implementation with
     // zero call sites and an unlabelled clear button. It is gone; SearchField
@@ -182,14 +192,14 @@ describe('the label audit, resolved case by case', () => {
     // Already retired this way: `fp-email` (forgot-password), `rp-password`
     // and `rp-confirm` (reset-password), `pay-ref` (Record Payment),
     // `leave-reason` (the leave request form, now a TextAreaField — the
-    // reject-note textarea beside it is still raw, so it stays below).
+    // reject-note textarea beside it is still raw, so it stays below), and
+    // `delete-confirm` (client edit, now a TextInput).
     //
     // The property itself is still covered, and more strictly:
     // label-association.test.ts asserts that NO control in the app is
     // nameless, with no per-file list to fall out of date.
     const associated: [string, string][] = [
       ['app/(chrome)/ai-coach/knowledge/page.tsx', 'kb-title'],
-      ['app/(chrome)/pt-os/clients/[id]/edit/page.tsx', 'delete-confirm'],
     ];
     for (const [file, id] of associated) {
       const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');

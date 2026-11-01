@@ -7,7 +7,7 @@ import {
   Save, User, Trash2, AlertTriangle, Camera, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button } from '@/components/ui';
+import { Button, FormField, SelectInput, TextInput } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
@@ -372,22 +372,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <FloatInput label="Full Name" required value={form.name} onChange={set('name')} error={fieldErrors.name} />
               <FloatInput label="Phone Number" type="tel" value={form.mobile} onChange={set('mobile')} error={fieldErrors.mobile} />
               <FloatInput label="Email Address" type="email" value={form.email} onChange={set('email')} error={fieldErrors.email} />
-              <div>
-                <label htmlFor="client-gender" className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Gender</label>
-                <select id="client-gender"
+              <FormField label="Gender">
+                <SelectInput
                   value={form.gender}
-                  onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
-                  className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                  style={{
-                    background: 'var(--bg-card)', color: form.gender ? '#0F172A' : '#64748b',
-                    border: '1.5px solid var(--border)',
-                  }}>
+                  onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
-                </select>
-              </div>
+                </SelectInput>
+              </FormField>
               <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={set('dob')} error={fieldErrors.dob} />
               <div className="sm:col-span-2">
                 <FloatInput label="Address" value={form.address} onChange={set('address')} error={fieldErrors.address} />
@@ -460,20 +454,15 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   </button>
                 ) : (
                   <div className="mt-3 space-y-2.5">
-                    <label htmlFor="delete-confirm" className="block text-[11px] font-[700]" style={{ color: 'var(--text-muted)' }}>
-                      Type <span style={{ color: '#b91c1c' }}>{form.name}</span> to confirm
-                    </label>
-                    <input
-                      id="delete-confirm"
-                      value={confirmText}
-                      onChange={(e) => setConfirmText(e.target.value)}
-                      placeholder={form.name}
-                      className="w-full max-w-[320px] rounded-[10px] px-3 text-[13px] outline-none"
-                      style={{
-                        height: 44, background: 'var(--bg-card)',
-                        border: '1px solid rgba(220,38,38,0.3)', color: 'var(--text-primary)',
-                      }}
-                    />
+                    <FormField label={`Type ${form.name} to confirm`}>
+                      <TextInput
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder={form.name}
+                        className="max-w-[320px]"
+                        style={{ background: 'var(--bg-card)', border: '1px solid rgba(220,38,38,0.3)' }}
+                      />
+                    </FormField>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={handleDelete}
                         disabled={deleting || confirmText.trim() !== (form.name ?? '').trim() || !form.name}
