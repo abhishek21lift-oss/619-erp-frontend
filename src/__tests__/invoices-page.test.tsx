@@ -96,6 +96,11 @@ const rows = [
     issue_date: '2026-10-03', due_date: '2026-10-10',
     status: 'paid', notes: '',
   },
+  {
+    id: 'INV-4', client_name: 'Dev Patel', amount: 4321,
+    issue_date: '2026-10-04', due_date: '2026-10-11',
+    status: 'paid', notes: 'UPI approval', payment_method: 'UPI',
+  },
 ];
 
 beforeEach(() => {
@@ -132,6 +137,17 @@ describe('<InvoicesPage />', () => {
     expect(screen.getByText('Ben Okafor')).toBeTruthy();
     expect(screen.getAllByText('Sent').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Partial').length).toBeGreaterThan(0);
+  });
+
+  it('renders an uppercase payment method instead of crashing the finance route', async () => {
+    // The UPI approval path writes `UPI`, while the invoice form writes `upi`.
+    // Looking the raw value up in the lowercase icon map threw
+    // `undefined.label`, and the route-level error boundary replaced all of
+    // finance with "This part of the app failed to load".
+    await renderPage();
+
+    expect(screen.getByText('Dev Patel')).toBeTruthy();
+    expect(screen.getByText('UPI')).toBeTruthy();
   });
 
   it('reads issue_date and the notes fallback so cards are not blank', async () => {

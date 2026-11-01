@@ -109,6 +109,21 @@ function toInvoiceStatus(value: unknown): InvoiceStatus {
     : 'draft';
 }
 
+/**
+ * Payment methods arrive in two dialects: the invoice form sends `upi`, while
+ * the UPI approval, renewal and desk-payment paths write `UPI`, `CASH` or
+ * `BANK_TRANSFER`. Indexing the icon map with the raw value threw
+ * `undefined.label` on the first approved UPI invoice and took the whole
+ * finance route down with it. Unknown methods are dropped rather than
+ * crashing — a missing badge is a cosmetic bug, a blank finance screen is not.
+ */
+function toPaymentMethod(value: unknown): PaymentMethod | undefined {
+  if (typeof value !== 'string') return undefined;
+  const key = value.toLowerCase().replace(/_/g, '-');
+  const normalised = key === 'card' ? 'credit-card' : key;
+  return normalised in PAYMENT_ICONS ? normalised as PaymentMethod : undefined;
+}
+
 function normaliseInvoice(raw: Record<string, unknown>): Invoice {
   return {
     id: String(raw.id ?? ''),
@@ -121,7 +136,7 @@ function normaliseInvoice(raw: Record<string, unknown>): Invoice {
     date: String(raw.issue_date ?? raw.date ?? ''),
     dueDate: String(raw.due_date ?? raw.dueDate ?? ''),
     status: toInvoiceStatus(raw.status),
-    paymentMethod: (raw.payment_method ?? raw.paymentMethod ?? undefined) as PaymentMethod | undefined,
+    paymentMethod: toPaymentMethod(raw.payment_method ?? raw.paymentMethod),
     // A simplified invoice stores its description in `notes` as well as its
     // single line item; the list does not return a `description` column.
     description: String(raw.description ?? raw.notes ?? ''),
