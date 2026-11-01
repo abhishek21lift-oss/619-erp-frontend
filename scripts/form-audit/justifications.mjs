@@ -372,6 +372,54 @@ export const JUSTIFIED = {
       'with the send button beside it, which a label-above shape breaks.',
   },
 
+  'src/app/(chrome)/insights/revenue/page.tsx': {
+    allow: 3,
+    reason:
+      'Three query FILTERS on a read: the year <select> and the from/to date ' +
+      'inputs. They set the year and range the charts and KPIs re-read, and ' +
+      'the only write on this screen — MonthlyTargetHero — is on the platform. ' +
+      'Each control sits inside its own <label> with a visible caption; the ' +
+      'dates are clamped to each other and to today; none is part of a ' +
+      'payload, so there is no schema, submit or reset to attach. §1 names ' +
+      'filters explicitly.',
+  },
+
+  'src/app/(chrome)/operations/leaderboard/page.tsx': {
+    allow: 2,
+    reason:
+      'The from/to date FILTERS under the preset buttons. Choosing a date sets ' +
+      'preset to custom and re-reads the leaderboard; nothing is posted. Each ' +
+      'is type="date" inside its own <label>, clamped to the other end and to ' +
+      'today, and the presets beside them already cover the common ranges. ' +
+      'A schema and submit guard would model a payload this screen does not ' +
+      'have.',
+  },
+
+  'src/app/(chrome)/ai-coach/page.tsx': {
+    allow: 2,
+    reason:
+      'A chat COMPOSER and an inline rename box, not a business form. The ' +
+      'composer is a one-row textarea with aria-label="Ask anything", Enter ' +
+      'sends and Shift+Enter breaks the line; there is no field to validate ' +
+      'beyond a non-blank prompt. The rename box is an inline rail editor with ' +
+      'aria-label="Conversation name", committing on blur or Enter and ' +
+      'cancelling on Escape — a form-per-row would be worse than the rail it ' +
+      'replaces. Both are named, and the two search boxes are native by kind.',
+  },
+
+  'src/components/fitness/AiCoachPanel.tsx': {
+    allow: 3,
+    reason:
+      'This panel is hard-coded white-on-dark glass, not the theme-aware ' +
+      'chrome surface: its controls use rgba(255,255,255,…) text and fills, so ' +
+      'FormField/TextInput would put theme-aware text on a fixed dark panel. ' +
+      'Its local Field component wraps each control in a <label> with the ' +
+      'visible caption, the numeric input is type="text" with inputMode and a ' +
+      'readOnly record state, the local select is named by that same label, ' +
+      'and the chat composer now carries aria-label. No error state exists ' +
+      'here to wire. The fourth input is the client search, native by kind.',
+  },
+
   'src/lib/insights/date-range.tsx': {
     allow: 1,
     reason:
