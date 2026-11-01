@@ -101,8 +101,9 @@ test.describe('Client interview and journey', () => {
 
     await page.getByRole('button', { name: 'Complete interview' }).click();
 
-    // The UI's own success state.
-    await expect(page.getByText('Interview completed')).toBeVisible({ timeout: 20_000 });
+    // The UI's own success state — the banner, not the toast, which reads
+    // "Interview completed." and would match a substring.
+    await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     // The assertion with teeth: the row, in the canonical vocabulary.
     await expect.poll(async () => (await interviews()).length, { timeout: 15_000 }).toBe(1);
@@ -155,7 +156,7 @@ test.describe('Client interview and journey', () => {
     await page.reload();
     await expect(page.getByLabel('Meal regularity')).toHaveValue('irregular', { timeout: 25_000 });
     await page.getByRole('button', { name: 'Complete interview' }).click();
-    await expect(page.getByText('Interview completed')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     rows = await interviews();
     expect(rows, 'the draft was completed, not duplicated').toHaveLength(1);
@@ -177,7 +178,7 @@ test.describe('Client interview and journey', () => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
     await expect(page.getByLabel('Trainer summary')).toHaveValue('Knees flare on deep lunges', { timeout: 25_000 });
     await page.getByRole('button', { name: 'Complete interview' }).click();
-    await expect(page.getByText('Interview completed')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     // The client's words and the trainer's summary are shown under their own
     // labels, not merged into one "notes" block.
@@ -188,7 +189,7 @@ test.describe('Client interview and journey', () => {
     await page.getByRole('button', { name: 'Edit answers' }).click();
     await page.getByLabel('Trainer summary').fill('Knees flare on deep lunges; use a box.');
     await page.getByRole('button', { name: 'Save changes' }).click();
-    await expect(page.getByText('Interview completed')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     await expect.poll(async () => (await interviews())[0]?.notes, { timeout: 15_000 })
       .toBe('Knees flare on deep lunges; use a box.');
