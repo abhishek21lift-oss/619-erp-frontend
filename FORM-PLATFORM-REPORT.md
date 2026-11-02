@@ -20,7 +20,7 @@ coverage (59% schema-bound) and untested journeys.
 | The defect class is gone | `Number('')` cannot become a business value anywhere | **Met.** 0 risky coercions, 0 unjustified submit-time coercions, held as an invariant |
 | The platform is real | One field contract, one schema layer, one error mapper, one submit machine | **Met.** 548 design-system controls, 94% error coverage |
 | Every form uses it | Schema coverage ~100% | **Not met. 59%** — 42 of 71 forms |
-| The journeys are tested | End-to-end coverage of the forms that take money and record facts | **Not met.** 20 of 54 P0/P1 forms have a browser journey |
+| The journeys are tested | End-to-end coverage of the forms that take money and record facts | **Not met.** 22 of 54 P0/P1 forms have a browser journey |
 | The measurement is complete | The audit asks every question that matters | **Met.** It counts `type="number"`, and the count is now 0 |
 
 A platform three fifths adopted is a good platform, not a finished migration.
@@ -56,7 +56,7 @@ Contract coverage, over the 71 forms:
 By risk:   P0 unjustified 0   ·   P1 0   ·   P2 0
 
 End-to-end coverage, over P0/P1 forms:
-  20 of 54 covered by a browser journey   (37%)
+  22 of 54 covered by a browser journey   (41%)
 ```
 
 ### Movement across the migration
@@ -177,14 +177,19 @@ chat composers. The audit reports an entry as stale when the file no longer has
 the controls it excuses, so an exemption cannot outlive the code it described.
 
 **E2E form journeys are partial (§21).** `e2e/` covers tenancy isolation,
-revenue separation and visual polish, and Verify UPI payments now has a real
-browser journey: a pending order is arranged through the API, approved through
-the queue UI, and the approval, submission, receipt and activation are read
-back through the API. Record Payment already had the deepest journey in the
-repo (`e2e/record-payment.ui.spec.ts`); the earlier claim that it had none was
-wrong. The schema tests prove a value is rejected; they do not prove the screen
-that collects it reaches the server. The audit measures the remaining gap:
-20 of 54 P0/P1 forms have a browser journey, and 34 do not.
+revenue separation and visual polish, and two money flows now have real
+browser journeys. Verify UPI payments arranges a pending order through the
+API, approves it through the queue UI, and reads the approval, submission,
+receipt and activation back through the API. Subscription self-checkout drives
+both ends of one flow through the UI: the operator enables self-checkout in
+the platform UPI dialog, the studio opens a plan checkout and submits the UTR,
+and the operator approves it from the queue; the request, UTR, activation and
+plan are then read back through the API. Record Payment already had the
+deepest journey in the repo (`e2e/record-payment.ui.spec.ts`); the earlier
+claim that it had none was wrong. The schema tests prove a value is rejected;
+they do not prove the screen that collects it reaches the server. The audit
+measures the remaining gap: 22 of 54 P0/P1 forms have a browser journey, and
+32 do not.
 
 **`type="number"` is gone: 93 → 0.** This is the figure the audit could not
 see until writing the first version of this report forced the check. It was

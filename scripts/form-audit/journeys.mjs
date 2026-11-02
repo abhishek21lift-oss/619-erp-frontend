@@ -38,6 +38,10 @@ export const JOURNEYS = {
   'e2e/verify-payments.ui.spec.ts': [
     'src/app/(chrome)/finance/verify-payments/page.tsx',
   ],
+  'e2e/subscription-checkout.ui.spec.ts': [
+    'src/app/(bare)/subscription/checkout/[id]/page.tsx',
+    'src/components/platform/subscription-requests.tsx',
+  ],
   'e2e/client-create.ui.spec.ts': [
     'src/app/(chrome)/pt-os/new-client/page.tsx',
   ],
