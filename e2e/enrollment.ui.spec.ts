@@ -27,6 +27,8 @@ type Client = {
   balance_amount?: number | string | null;
   pt_start_date?: string | null;
   duration_months?: number | string | null;
+  session_minutes?: number | string | null;
+  equipment?: string | null;
 };
 
 const clientById = (token: string, id: string) =>
@@ -75,6 +77,7 @@ async function fillEnrolment(page: Page, opts: { final: string; paid: string }) 
   await page.getByLabel('Final / Selling Price').fill(opts.final);
   await page.getByLabel('Amount Paid').fill(opts.paid);
   await choose(page, 'Training Mode', 'Offline');
+  await choose(page, 'Session Length', '60 minutes');
   await page.getByLabel('Preferred Workout Time').fill('07:00');
   // Training days are required too, and are toggle CHIPS rather than a field —
   // so clicking one that is already on turns it off. The page seeds the form
@@ -84,7 +87,8 @@ async function fillEnrolment(page: Page, opts: { final: string; paid: string }) 
     const chip = page.getByRole('button', { name: day, exact: true });
     if ((await chip.getAttribute('aria-pressed')) !== 'true') await chip.click();
   }
-  await choose(page, 'Sessions Per Week', '3 Sessions');
+  await choose(page, 'Training Days / Week', '3 days');
+  await choose(page, 'Equipment', 'Dumbbells Only');
 }
 
 test.describe('Enrolment', () => {
@@ -160,6 +164,8 @@ test.describe('Enrolment', () => {
     expect(num(after.paid_amount), 'paid today').toBe(6000);
     expect(num(after.balance_amount), 'what the screen showed as due').toBe(12000);
     expect(num(after.duration_months)).toBe(3);
+    expect(num(after.session_minutes), 'session length survives the save').toBe(60);
+    expect(after.equipment, 'equipment survives the save').toBe('dumbbells');
     expect(before.id).toBe(after.id);
   });
 

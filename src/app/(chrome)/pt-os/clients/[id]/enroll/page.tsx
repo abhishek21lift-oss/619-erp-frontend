@@ -6,7 +6,7 @@ import type { ScreeningSummary } from '@/lib/screening';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Calendar, Award,
+  ArrowLeft, Calendar, Award, Clock, Dumbbell,
   Check, Sparkles, AlertCircle, Loader2, X, Download, FileSignature,
   ShieldAlert,
 } from 'lucide-react';
@@ -25,8 +25,19 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { errorMessage } from '@/lib/forms/errors';
-import { clientEnrollSchema, ENROLL_SESSIONS_PER_WEEK } from '@/lib/forms/schemas/client';
+import {
+  clientEnrollSchema,
+  ENROLL_SESSIONS_PER_WEEK,
+  ENROLL_SESSION_MINUTES,
+  ENROLL_EQUIPMENT,
+} from '@/lib/forms/schemas/client';
 import { ptEndDate, renewalBalance } from '@/lib/forms/schemas/renewPt';
+import {
+  formatWeeklyCommitment,
+  trainingDaysFrom,
+  weeklyCommitmentMinutes,
+} from '@/lib/goal-plan';
+import { recommendTrainingSplit, buildRoutineBlueprint } from '@/lib/goal-scheduling';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 
 /* ─────────────────────────────────────────────────────── TYPES */
@@ -41,6 +52,8 @@ interface EnrollFormData {
   workoutTime: string;
   trainingDays: string[];
   sessionsPerWeek: string; // '1'..'7'
+  sessionMinutes: string; // '30'..'90'
+  equipment: string;
   // Payment Details — mirrors the existing pt_clients.final_amount /
   // paid_amount columns already used across the rest of the app (add-client,
   // renew, payments, dues, commissions). Kept as strings like every other
@@ -65,6 +78,7 @@ interface ClientMeta {
 interface FormErrors {
   startDate?: string; duration?: string; trainingMode?: string;
   workoutTime?: string; trainingDays?: string; sessionsPerWeek?: string;
+  sessionMinutes?: string; equipment?: string;
   finalAmount?: string; amountPaid?: string; paymentMethod?: string;
   [key: string]: string | undefined;
 }
@@ -96,9 +110,20 @@ const DAYS = [
   { key: 'Sun', letter: 'S', full: 'Sunday' },
 ];
 
-const SESSIONS_OPTIONS = ENROLL_SESSIONS_PER_WEEK.map((v) => ({
-  value: v, label: `${v} Session${v === '1' ? '' : 's'}`,
+const TRAINING_DAYS_OPTIONS = ENROLL_SESSIONS_PER_WEEK.map((v) => ({
+  value: v, label: `${v} day${v === '1' ? '' : 's'}`,
 }));
+
+const SESSION_MINUTES_OPTIONS = ENROLL_SESSION_MINUTES.map((v) => ({
+  value: v, label: `${v} minutes`,
+}));
+
+const EQUIPMENT_OPTIONS = [
+  { value: 'full_gym', label: 'Full Gym' },
+  { value: 'dumbbells', label: 'Dumbbells Only' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'bands', label: 'Resistance Bands' },
+] satisfies { value: (typeof ENROLL_EQUIPMENT)[number]; label: string }[];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -171,7 +196,7 @@ function initForm(): EnrollFormData {
     startDate: todayISO(), duration: '',
     trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '',
     previousTrainerExperience: false, workoutTime: '',
-    trainingDays: [], sessionsPerWeek: '',
+    trainingDays: [], sessionsPerWeek: '', sessionMinutes: '60', equipment: 'full_gym',
     finalAmount: '', amountPaid: '', paymentMethod: '',
   };
 }
@@ -321,6 +346,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
         workoutTime: to24Hour(String(c.preferred_workout_time ?? '')),
         trainingDays: days,
         sessionsPerWeek: c.sessions_per_week ? String(c.sessions_per_week) : '',
+        sessionMinutes: c.session_minutes ? String(c.session_minutes) : '',
+        equipment: String(c.equipment ?? ''),
         // pt_clients.final_amount / paid_amount default to 0 (NOT NULL) in the
         // database, so a freshly created client would otherwise pre-fill these
         // money fields with "0" before any real price has been entered.
@@ -407,6 +434,36 @@ function EnrollForm({ clientId }: { clientId: string }) {
     setErrors((e) => ({ ...e, trainingDays: undefined }));
   };
 
+  const availability = useMemo(() => {
+    const days = trainingDaysFrom(form.sessionsPerWeek, 3);
+    const preferredDays = DAYS.filter((d) => form.trainingDays.includes(d.key)).map((d) => d.full);
+    const schedule = recommendTrainingSplit(form.sessionsPerWeek, {
+      goal: clientMeta?.goal ?? '',
+      experience: form.workoutExperienceLevel,
+      preferredDays,
+    });
+    const blueprint = buildRoutineBlueprint({
+      goal: clientMeta?.goal ?? '',
+      experience: form.workoutExperienceLevel,
+      equipment: form.equipment,
+      trainingDays: days,
+      split: schedule.split,
+    });
+    return {
+      days,
+      schedule,
+      blueprint,
+      commitment: formatWeeklyCommitment(weeklyCommitmentMinutes(days, form.sessionMinutes)),
+    };
+  }, [
+    form.sessionsPerWeek,
+    form.trainingDays,
+    form.workoutExperienceLevel,
+    form.equipment,
+    form.sessionMinutes,
+    clientMeta?.goal,
+  ]);
+
   const handleBack = () => {
     if (isDirty && !window.confirm('Discard unsaved changes?')) return;
     router.push(`/pt-os/clients/${clientId}`);
@@ -448,6 +505,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
     preferred_workout_time: form.workoutTime,
     preferred_training_days: form.trainingDays.join(', '),
     sessions_per_week: Number(form.sessionsPerWeek),
+    session_minutes: form.sessionMinutes ? Number(form.sessionMinutes) : null,
+    equipment: form.equipment || null,
     // Payment fields. They used to be admin/manager-only and were left off
     // for anyone else — which, once the trainer became the studio's owner,
     // meant the one person running the studio could not record what a client
@@ -524,6 +583,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
       const order: (keyof FormErrors)[] = [
         'startDate', 'duration', 'finalAmount', 'amountPaid',
         'trainingMode', 'workoutTime', 'trainingDays', 'sessionsPerWeek',
+        'sessionMinutes', 'equipment',
       ];
       const firstKey = order.find((k) => nextErrors[k]);
       toast.error((firstKey && nextErrors[firstKey]) || 'Please fix the highlighted fields.');
@@ -919,14 +979,158 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 />
               </div>
 
-              {/* Workout Experience */}
-              <div>
-                <SearchableSelect
-                  label="Workout Experience" allowCustom={false}
-                  value={form.workoutExperienceLevel}
-                  onChange={(v) => set('workoutExperienceLevel', v)}
-                  options={WORKOUT_EXPERIENCE_OPTIONS}
-                />
+              {/* Training Availability — the same section the Goal Setting
+                  wizard asks for, consolidated here because this is the screen
+                  that owns the client's enrolled schedule. The old form asked
+                  for experience, time, days and sessions as four unrelated
+                  fields; this card asks them together and shows the schedule
+                  they produce. */}
+              <div
+                className="rounded-[20px] border p-5 sm:p-6"
+                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+              >
+                <div className="mb-4 flex items-center gap-2">
+                  <Calendar size={15} color="#F59E0B" />
+                  <h3 className="text-[13px] font-[800] uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+                    Training Availability
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div ref={bindFieldRef('sessionsPerWeek')}>
+                    <SearchableSelect
+                      label="Training Days / Week" required allowCustom={false}
+                      value={form.sessionsPerWeek}
+                      onChange={(v) => { set('sessionsPerWeek', v); setErrors((e) => ({ ...e, sessionsPerWeek: undefined })); }}
+                      options={TRAINING_DAYS_OPTIONS}
+                      error={errors.sessionsPerWeek}
+                    />
+                  </div>
+                  <div ref={bindFieldRef('sessionMinutes')}>
+                    <SearchableSelect
+                      label="Session Length" allowCustom={false}
+                      value={form.sessionMinutes}
+                      onChange={(v) => { set('sessionMinutes', v); setErrors((e) => ({ ...e, sessionMinutes: undefined })); }}
+                      options={SESSION_MINUTES_OPTIONS}
+                      error={errors.sessionMinutes}
+                    />
+                  </div>
+                </div>
+
+                {/* Preferred Training Days */}
+                <div ref={bindFieldRef('trainingDays')} className="mt-5">
+                  <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                    Preferred Training Days <span style={{ color: '#F59E0B' }}>*</span>
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {DAYS.map(({ key, letter, full }) => {
+                      const selected = form.trainingDays.includes(key);
+                      return (
+                        <button
+                          key={key} type="button" title={full} aria-label={full} aria-pressed={selected}
+                          onClick={() => toggleDay(key)}
+                          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[14px] font-[800] transition-all duration-200"
+                          style={{
+                            background: selected ? 'linear-gradient(135deg, #F59E0B, #D97706)' : '#f8fafc',
+                            color: selected ? '#fff' : '#94a3b8',
+                            border: selected ? 'none' : '1.5px solid #e2e8f0',
+                            boxShadow: selected ? '0 4px 14px rgba(245,158,11,0.35)' : 'none',
+                            transform: selected ? 'scale(1.05)' : 'scale(1)',
+                          }}
+                        >
+                          {letter}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {form.trainingDays.length > 0 && (
+                    <p className="mt-2.5 text-[11.5px] font-[600] text-slate-500">
+                      {DAYS.filter((d) => form.trainingDays.includes(d.key)).map((d) => `✓ ${d.full}`).join('   ')}
+                    </p>
+                  )}
+                  {errors.trainingDays && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{errors.trainingDays}</p>}
+                </div>
+
+                {/* Preferred Workout Time — a native time field: tap it and the
+                    device's own time picker opens, rather than choosing from a
+                    fixed list of slots. */}
+                <div ref={bindFieldRef('workoutTime')} className="mt-5">
+                  <FloatInput
+                    label="Preferred Workout Time" required
+                    type="time" value={form.workoutTime}
+                    onChange={(v) => { set('workoutTime', v); setErrors((e) => ({ ...e, workoutTime: undefined })); }}
+                    onBlur={() => validateOnBlur('workoutTime')}
+                    error={errors.workoutTime}
+                  />
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <SearchableSelect
+                      label="Workout Experience" allowCustom={false}
+                      value={form.workoutExperienceLevel}
+                      onChange={(v) => set('workoutExperienceLevel', v)}
+                      options={WORKOUT_EXPERIENCE_OPTIONS}
+                    />
+                  </div>
+                  <div ref={bindFieldRef('equipment')}>
+                    <SearchableSelect
+                      label="Equipment" allowCustom={false}
+                      value={form.equipment}
+                      onChange={(v) => { set('equipment', v); setErrors((e) => ({ ...e, equipment: undefined })); }}
+                      options={EQUIPMENT_OPTIONS}
+                      error={errors.equipment}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center gap-3 rounded-[14px] px-4 py-3" style={{ background: '#f8fafc' }}>
+                  <Clock size={17} style={{ color: '#B45309', flexShrink: 0 }} />
+                  <div>
+                    <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Weekly Time Commitment</p>
+                    <p className="text-[15px] font-[800]" style={{ color: 'var(--text-primary)' }}>{availability.commitment}</p>
+                  </div>
+                  <p className="ml-auto text-[11.5px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+                    {availability.days} × {form.sessionMinutes || '—'} min
+                  </p>
+                </div>
+
+                <div className="mt-3 rounded-[14px] p-4" style={{ background: '#f8fafc' }}>
+                  <p className="text-[13px] font-[760]" style={{ color: 'var(--text-primary)' }}>{availability.schedule.label}</p>
+                  <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>{availability.schedule.notes}</p>
+                </div>
+
+                <div className="mt-3 grid grid-cols-7 gap-1.5">
+                  {availability.schedule.calendar.map((d) => (
+                    <div
+                      key={d.dayIndex}
+                      className="rounded-[10px] p-1.5 text-center"
+                      style={{
+                        background: d.type === 'training' ? 'rgba(245,158,11,0.10)' : '#f8fafc',
+                        border: d.type === 'training' ? '1px solid rgba(245,158,11,0.30)' : '1px solid var(--border)',
+                      }}
+                    >
+                      <p className="text-[9.5px] font-[700] uppercase" style={{ color: 'rgb(148,163,184)' }}>{d.dayName.slice(0, 3)}</p>
+                      <p className="mt-0.5 text-[9.5px] font-[600] leading-tight" style={{ color: d.type === 'training' ? '#B45309' : 'rgb(148,163,184)' }}>
+                        {d.type === 'training' ? (d.session || 'Train') : 'Rest'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 rounded-[14px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Dumbbell size={15} color="#B45309" />
+                    <p className="text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Routine Blueprint Preview</p>
+                  </div>
+                  <ul className="space-y-1 text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+                    <li>Warm-up: {availability.blueprint.sessionTemplate.warmup}</li>
+                    <li>Main lifts: {availability.blueprint.sessionTemplate.mainLifts.sets} sets × {availability.blueprint.sessionTemplate.mainLifts.reps} reps @ {availability.blueprint.sessionTemplate.mainLifts.rpeOrRir}, rest {availability.blueprint.sessionTemplate.mainLifts.rest}</li>
+                    <li>Accessories: {availability.blueprint.sessionTemplate.accessories.sets} sets × {availability.blueprint.sessionTemplate.accessories.reps}</li>
+                    <li>Core: {availability.blueprint.sessionTemplate.core.sets} sets × {availability.blueprint.sessionTemplate.core.reps}</li>
+                    <li>Deload every 4-6 weeks; reassess every {availability.blueprint.reassessmentWeeks} weeks.</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Previously worked with a trainer — moved here from the PAR-Q
@@ -959,64 +1163,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 </div>
               </div>
 
-              {/* Preferred Workout Time — a native time field: tap it and the
-                  device's own time picker opens, rather than choosing from a
-                  fixed list of slots. */}
-              <div ref={bindFieldRef('workoutTime')}>
-                <FloatInput
-                  label="Preferred Workout Time" required
-                  type="time" value={form.workoutTime}
-                  onChange={(v) => { set('workoutTime', v); setErrors((e) => ({ ...e, workoutTime: undefined })); }}
-                  onBlur={() => validateOnBlur('workoutTime')}
-                  error={errors.workoutTime}
-                />
-              </div>
-
-              {/* Preferred Training Days */}
-              <div ref={bindFieldRef('trainingDays')}>
-                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                  Preferred Training Days <span style={{ color: '#F59E0B' }}>*</span>
-                </p>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {DAYS.map(({ key, letter, full }) => {
-                    const selected = form.trainingDays.includes(key);
-                    return (
-                      <button
-                        key={key} type="button" title={full} aria-label={full} aria-pressed={selected}
-                        onClick={() => toggleDay(key)}
-                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[14px] font-[800] transition-all duration-200"
-                        style={{
-                          background: selected ? 'linear-gradient(135deg, #F59E0B, #D97706)' : '#f8fafc',
-                          color: selected ? '#fff' : '#94a3b8',
-                          border: selected ? 'none' : '1.5px solid #e2e8f0',
-                          boxShadow: selected ? '0 4px 14px rgba(245,158,11,0.35)' : 'none',
-                          transform: selected ? 'scale(1.05)' : 'scale(1)',
-                        }}
-                      >
-                        {letter}
-                      </button>
-                    );
-                  })}
-                </div>
-                {form.trainingDays.length > 0 && (
-                  <p className="mt-2.5 text-[11.5px] font-[600] text-slate-500">
-                    {DAYS.filter((d) => form.trainingDays.includes(d.key)).map((d) => `✓ ${d.full}`).join('   ')}
-                  </p>
-                )}
-                {errors.trainingDays && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{errors.trainingDays}</p>}
-              </div>
-
-              {/* Sessions Per Week */}
-              <div ref={bindFieldRef('sessionsPerWeek')}>
-                <SearchableSelect
-                  label="Sessions Per Week" required allowCustom={false}
-                  value={form.sessionsPerWeek}
-                  onChange={(v) => { set('sessionsPerWeek', v); setErrors((e) => ({ ...e, sessionsPerWeek: undefined })); }}
-                  options={SESSIONS_OPTIONS}
-                  error={errors.sessionsPerWeek}
-                />
-              </div>
-
             </div>
           </div>
         </m.div>
@@ -1043,9 +1189,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   { label: 'Amount Paid', val: form.finalAmount ? fmtINR(money(form.amountPaid) ?? 0) : '—' },
                   { label: 'Balance Due', val: form.finalAmount ? fmtINR(balanceDue) : '—', success: Boolean(form.finalAmount) && isPaidInFull },
                   { label: 'Sessions / Week', val: form.sessionsPerWeek || '—' },
+                  { label: 'Session Length', val: form.sessionMinutes ? `${form.sessionMinutes} min` : '—' },
+                  { label: 'Weekly Commitment', val: availability.commitment },
                   { label: 'Estimated Sessions', val: estimatedSessions || '—' },
                   { label: 'Training Mode', val: form.trainingMode || '—' },
                   { label: 'Workout Experience', val: WORKOUT_EXPERIENCE_OPTIONS.find((o) => o.value === form.workoutExperienceLevel)?.label || '—' },
+                  { label: 'Equipment', val: EQUIPMENT_OPTIONS.find((o) => o.value === form.equipment)?.label || '—' },
                 ].map((r) => (
                   <div key={r.label}>
                     <p className="text-[10.5px] text-white/40 font-[600]">{r.label}</p>
