@@ -179,20 +179,21 @@ export const JUSTIFIED = {
 
   'src/app/(chrome)/pt-os/clients/[id]/enroll/page.tsx': {
     allow: 1,
-    allowStateCoercions: 5,
+    allowStateCoercions: 6,
     reason:
-      'Five `Number(form.x)` reads, every one of them on a value that cannot be ' +
+      'Six `Number(form.x)` reads, every one of them on a value that cannot be ' +
       'blank or unparseable by the time it is read. `duration` is a <select> ' +
       'typed `\'1\'..\'12\'`, `sessionsPerWeek` a <select> the schema also ' +
-      'bounds to 1–7, and `fieldErrors` runs on every submit and blocks it — ' +
-      'the save path is handleSubmit → fieldErrors → agreement sheet → ' +
-      'confirmAndSave, and nothing else calls attemptSave. The two MONEY reads ' +
-      'are not in that six: they were `Number(form.finalAmount)`, they are ' +
-      'toMoneyOrNull now, and that is a fix rather than an exemption — ' +
-      '`Number(\'8,000\')` is NaN, so a price written the way a studio owner ' +
-      'writes one was refused as invalid while parseFloat in the balance ' +
-      'preview beside it quietly showed ₹8. The one remaining native control is ' +
-      'a search box in the trainer picker.',
+      'bounds to 1–7, `sessionMinutes` a <select> bounded to 30–90 (and the ' +
+      'blank branch sends null rather than Number(\'\')), and `fieldErrors` ' +
+      'runs on every submit and blocks it — the save path is handleSubmit → ' +
+      'fieldErrors → agreement sheet → confirmAndSave, and nothing else calls ' +
+      'attemptSave. The two MONEY reads are not in that six: they were ' +
+      '`Number(form.finalAmount)`, they are toMoneyOrNull now, and that is a ' +
+      'fix rather than an exemption — `Number(\'8,000\')` is NaN, so a price ' +
+      'written the way a studio owner writes one was refused as invalid while ' +
+      'parseFloat in the balance preview beside it quietly showed ₹8. The one ' +
+      'remaining native control is a search box in the trainer picker.',
   },
 
   'src/app/(chrome)/attendance/page.tsx': {

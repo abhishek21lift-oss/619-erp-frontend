@@ -11,6 +11,8 @@ function enroll(over: Record<string, unknown> = {}) {
     workoutTime: '09:00',
     trainingDays: ['Mon', 'Wed', 'Fri'],
     sessionsPerWeek: '3',
+    sessionMinutes: '60',
+    equipment: 'full_gym',
     finalAmount: '9000',
     amountPaid: '0',
     ...over,
@@ -79,6 +81,31 @@ describe('clientEnrollSchema', () => {
     expect(clientEnrollSchema.safeParse(enroll({ sessionsPerWeek: '7' })).success).toBe(true);
     expect(clientEnrollSchema.safeParse(enroll({ sessionsPerWeek: '0' })).success).toBe(false);
     expect(clientEnrollSchema.safeParse(enroll({ sessionsPerWeek: '8' })).success).toBe(false);
+  });
+
+  it('accepts the training-availability fields the form saves', () => {
+    const r = clientEnrollSchema.safeParse(
+      enroll({ sessionMinutes: '75', equipment: 'dumbbells' }),
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.sessionMinutes).toBe('75');
+      expect(r.data.equipment).toBe('dumbbells');
+    }
+  });
+
+  it('leaves session length and equipment optional for legacy enrolments', () => {
+    // These columns did not exist before this change. An existing client must
+    // still be editable without inventing a session length or equipment set.
+    expect(
+      clientEnrollSchema.safeParse(enroll({ sessionMinutes: '', equipment: '' })).success,
+    ).toBe(true);
+  });
+
+  it('rejects values outside the session-length and equipment sets', () => {
+    expect(clientEnrollSchema.safeParse(enroll({ sessionMinutes: '20' })).success).toBe(false);
+    expect(clientEnrollSchema.safeParse(enroll({ sessionMinutes: '120' })).success).toBe(false);
+    expect(clientEnrollSchema.safeParse(enroll({ equipment: 'barbell' })).success).toBe(false);
   });
 
   it('requires a final amount greater than zero', () => {

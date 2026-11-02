@@ -269,6 +269,8 @@ export function blankClientUpdate(): ClientUpdateValues {
  * balance_amount itself — this schema never replaces server validation.
  */
 export const ENROLL_SESSIONS_PER_WEEK = ['1', '2', '3', '4', '5', '6', '7'] as const;
+export const ENROLL_SESSION_MINUTES = ['30', '45', '60', '75', '90'] as const;
+export const ENROLL_EQUIPMENT = ['full_gym', 'dumbbells', 'bodyweight', 'bands'] as const;
 
 export const clientEnrollSchema = z
   .object({
@@ -287,6 +289,10 @@ export const clientEnrollSchema = z
       return arr;
     }),
     sessionsPerWeek: enumField(ENROLL_SESSIONS_PER_WEEK, { label: 'Sessions per week', required: true }),
+    // Optional: these columns did not exist before this section moved here, so
+    // an existing enrolment must still be editable without inventing values.
+    sessionMinutes: enumField(ENROLL_SESSION_MINUTES, { label: 'Session length' }),
+    equipment: enumField(ENROLL_EQUIPMENT, { label: 'Equipment' }),
     finalAmount: moneyField({ label: 'Final Selling Price', required: true }),
     amountPaid: moneyField({ label: 'Amount Paid', required: true }),
   })
@@ -321,6 +327,8 @@ export function blankClientEnroll(): ClientEnrollValues {
     workoutTime: null,
     trainingDays: [],
     sessionsPerWeek: null,
+    sessionMinutes: null,
+    equipment: null,
     finalAmount: null,
     amountPaid: null,
   };

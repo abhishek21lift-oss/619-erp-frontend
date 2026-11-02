@@ -124,4 +124,20 @@ describe('editing an enrolment that already exists', () => {
     expect(screen.getByRole('dialog', { name: /digital agreement/i })).toBeTruthy();
     expect(updateClient).not.toHaveBeenCalled();
   });
+
+  it('loads and saves session length and equipment with the rest of training availability', async () => {
+    clientFixture = { ...enrolled, session_minutes: 75, equipment: 'dumbbells' };
+    await renderPage();
+
+    expect(screen.getByText('Training Availability')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Session Length' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Equipment' })).toBeTruthy();
+
+    fireEvent.click(await screen.findByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => expect(updateClient).toHaveBeenCalledTimes(1));
+    const payload = updateClient.mock.calls[0][1];
+    expect(payload.session_minutes).toBe(75);
+    expect(payload.equipment).toBe('dumbbells');
+  });
 });
