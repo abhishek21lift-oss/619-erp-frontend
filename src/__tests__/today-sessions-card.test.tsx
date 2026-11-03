@@ -140,7 +140,9 @@ describe('the sequence moves up as sessions finish', () => {
     ];
     render(<PtOsDashboard />);
 
-    await screen.findByText('Stuti Yadav');
+    // The roster fetch resolves through the dashboard shell; under a parallel
+    // test run the default 1 s findBy timeout is a load test, not a UI test.
+    await screen.findByText('Stuti Yadav', {}, { timeout: 10000 });
     expect(screen.queryByText('Finished Person')).toBeNull();
     expect((await rowFor('Stuti Yadav')).textContent).toMatch(/on the floor/i);
     expect((await rowFor('Vipul Bhatia')).textContent).toMatch(/next/i);

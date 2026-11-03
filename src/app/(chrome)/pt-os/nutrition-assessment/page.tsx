@@ -35,6 +35,7 @@ import CoachNotesPanel from '@/components/pt-os/shared/CoachNotesPanel';
 import NutritionComparison from '@/components/pt-os/nutrition-assessment/NutritionComparison';
 import AssessmentScoreCard from '@/components/pt-os/shared/AssessmentScoreCard';
 import { errorMessage } from '@/lib/forms/errors';
+import type { ParqForm } from '@/lib/api/types';
 import AssessmentDateField, { assessmentDateIssue } from '@/components/pt-os/shared/AssessmentDateField';
 import { rangeIssue } from '@/lib/forms/ranges';
 
@@ -93,7 +94,6 @@ function formFromRow(row: Record<string, unknown>): NutritionFormData {
     dinnerRegularity: (row.dinner_regularity as NutritionFormData['dinnerRegularity']) || '',
     snacksPerDay: row.snacks_per_day != null ? String(row.snacks_per_day) : '',
     lateNightEating: typeof row.late_night_eating === 'boolean' ? row.late_night_eating : null,
-    mealTimingConsistency: (row.meal_timing_consistency as NutritionFormData['mealTimingConsistency']) || '',
     eatingOutFrequency: (row.eating_out_frequency as NutritionFormData['eatingOutFrequency']) || '',
     weekendEatingHabits: (row.weekend_eating_habits as NutritionFormData['weekendEatingHabits']) || '',
     eatingBehaviours: Array.isArray(row.eating_behaviours) ? (row.eating_behaviours as string[]) : [],
@@ -106,7 +106,6 @@ function formFromRow(row: Record<string, unknown>): NutritionFormData {
     cravingFrequency: (row.craving_frequency as NutritionFormData['cravingFrequency']) || '',
     mealPreparer: (row.meal_preparer as NutritionFormData['mealPreparer']) || '',
     nutritionBudget: (row.nutrition_budget as NutritionFormData['nutritionBudget']) || '',
-    medicalConditions: Array.isArray(row.medical_conditions) ? (row.medical_conditions as string[]) : [],
     medicalNotes: row.medical_notes ? String(row.medical_notes) : '',
     coachNotes: { ...fresh.coachNotes, ...coachNotesRaw },
   };
@@ -142,6 +141,7 @@ interface NutritionHubProps {
 function NutritionHub({ clientId, toast }: NutritionHubProps) {
   const [clientName, setClientName] = useState('');
   const [assessments, setAssessments] = useState<Record<string, unknown>[]>([]);
+  const [parq, setParq] = useState<ParqForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [view, setView] = useState<'list' | 'wizard'>('list');
@@ -151,14 +151,18 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, listRes] = await Promise.all([
+      const [clientRes, listRes, parqRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.nutritionAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
+        // A PAR-Q read is context for the summary, never a reason to fail the page.
+        api.progress.parqForms.list({ client_id: clientId }).catch(() => ({ data: [] as ParqForm[] })) as Promise<{ data?: ParqForm[] }>,
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
       setAssessments(Array.isArray(listRes?.data) ? listRes.data : []);
+      const forms = Array.isArray(parqRes?.data) ? parqRes.data : [];
+      setParq(forms.find((f) => f.status !== 'draft') ?? null);
     } catch (err: unknown) {
       setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
@@ -173,7 +177,7 @@ function NutritionHub({ clientId, toast }: NutritionHubProps) {
 
   if (view === 'wizard') {
     const editing = editingId ? assessments.find((a) => String(a.id) === editingId) : null;
-    return <NutritionWizard clientId={clientId} clientName={clientName} editing={editing || null} toast={toast} onDone={closeWizard} />;
+    return <NutritionWizard clientId={clientId} clientName={clientName} editing={editing || null} parq={parq} toast={toast} onDone={closeWizard} />;
   }
 
   return (
@@ -203,11 +207,12 @@ interface NutritionWizardProps {
   clientId: string;
   clientName: string;
   editing: Record<string, unknown> | null;
+  parq: ParqForm | null;
   toast: ReturnType<typeof useToast>['toast'];
   onDone: (refresh: boolean) => void;
 }
 
-function NutritionWizard({ clientId, clientName, editing, toast, onDone }: NutritionWizardProps) {
+function NutritionWizard({ clientId, clientName, editing, parq, toast, onDone }: NutritionWizardProps) {
   const assessmentId = editing ? String(editing.id) : null;
   const initial = useMemo(() => (editing ? formFromRow(editing) : initNutritionForm()), [editing]);
 
@@ -260,7 +265,7 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
     const riskInputs = {
       proteinAssessment: protein.assessment, hydrationScore, digestiveHealthScore,
       cravings: form.cravings, cravingFrequency: form.cravingFrequency || null,
-      medicalConditions: form.medicalConditions, medicalNotes: form.medicalNotes || null,
+      medicalConditions: null, medicalNotes: form.medicalNotes || null,
       alcoholStatus: null, smokingStatus: null,
     };
     const nutritionRiskScore = calcNutritionRiskScore(riskInputs);
@@ -348,7 +353,6 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
         dinner_regularity: form.dinnerRegularity || null,
         snacks_per_day: n(form.snacksPerDay) ?? null,
         late_night_eating: form.lateNightEating ?? null,
-        meal_timing_consistency: form.mealTimingConsistency || null,
         eating_out_frequency: form.eatingOutFrequency || null,
         weekend_eating_habits: form.weekendEatingHabits || null,
         eating_behaviours: form.eatingBehaviours,
@@ -361,7 +365,6 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
         craving_frequency: form.cravingFrequency || null,
         meal_preparer: form.mealPreparer || null,
         nutrition_budget: form.nutritionBudget || null,
-        medical_conditions: form.medicalConditions.length ? form.medicalConditions : null,
         medical_notes: form.medicalNotes || null,
         coach_notes: form.coachNotes,
       };
@@ -409,7 +412,16 @@ function NutritionWizard({ clientId, clientName, editing, toast, onDone }: Nutri
             {step === 5 && <StepDigestiveHealth form={form} set={set} />}
             {step === 6 && <StepMealPatternBehaviour form={form} set={set} error={errors.mealPatternBehaviour} />}
             {step === 7 && <StepHydrationCravings form={form} set={set} error={errors.hydrationCravings} />}
-            {step === 8 && <StepContext form={form} set={set} />}
+            {step === 8 && (
+              <StepContext
+                form={form}
+                set={set}
+                clientId={clientId}
+                parq={parq}
+                legacyMedicalConditions={Array.isArray(editing?.medical_conditions)
+                  ? editing.medical_conditions as string[] : []}
+              />
+            )}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">

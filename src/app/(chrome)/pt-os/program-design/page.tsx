@@ -128,9 +128,9 @@ function ProgramDesign({ clientId }: { clientId: string }) {
   const weightKg = num(assessment?.weight) ?? num(c.weight);
   const heightCm = num(assessment?.height_cm) ?? num(c.height);
   const restingHr = num(assessment?.resting_heart_rate);
-  // Enrolment writes sessions_per_week; the Interview's training-days answer
-  // is a legacy fallback for records that predate it.
-  const trainingDays = num(c.sessions_per_week) ?? num(interview?.lifestyle_training_days);
+  // The Interview owns training availability; enrolment's sessions_per_week
+  // is the fallback for a client who has not been interviewed.
+  const trainingDays = num(interview?.lifestyle_training_days) ?? num(c.sessions_per_week);
   const goalKey = goal ? String(goal.goal_type ?? '') : (c.goal ? String(c.goal) : null);
 
   const bmr = basalMetabolicRate({

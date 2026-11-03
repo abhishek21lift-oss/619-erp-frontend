@@ -199,6 +199,8 @@ export type StepId = typeof STEPS[number]['id'];
 export interface GoalClientDefaults {
   workout_experience_level?: string | null;
   sessions_per_week?: number | string | null;
+  /** The Interview owns training availability; enrolment's copy is fallback. */
+  lifestyle_training_days?: number | string | null;
 }
 
 /**
@@ -214,10 +216,15 @@ export function initGoalFormForClient(client?: GoalClientDefaults | null): GoalF
   const experience = ['beginner', 'intermediate', 'advanced'].includes(rawExperience)
     ? rawExperience
     : form.experienceLevel;
+  const rawInterviewDays = client?.lifestyle_training_days;
+  const interviewDays = rawInterviewDays == null || rawInterviewDays === '' ? null : Number(rawInterviewDays);
   const rawSessions = client?.sessions_per_week;
   const sessions = rawSessions == null || rawSessions === '' ? null : Number(rawSessions);
-  const trainingDays = Number.isInteger(sessions) && sessions! >= 1 && sessions! <= 7
-    ? String(sessions)
+  const days = Number.isInteger(interviewDays) && interviewDays! >= 1 && interviewDays! <= 7
+    ? interviewDays
+    : sessions;
+  const trainingDays = Number.isInteger(days) && days! >= 1 && days! <= 7
+    ? String(days)
     : form.trainingDays;
   return { ...form, experienceLevel: experience, trainingDays };
 }

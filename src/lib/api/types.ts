@@ -3374,9 +3374,9 @@ export type MeMeasurement = {
   /** Null on a studio measurement that recorded body sizes but no weight. */
   weight_kg: number | string | null;
   measured_at: string;
-  /** 'trainer' for a studio measurement, 'checkin' for the member's own weekly check-in. */
-  source?: 'trainer' | 'checkin';
-  /** Body measurements — only ever set on a 'trainer' row. */
+  /** 'assessment' (fitness test) or 'trainer' for a studio measurement, 'checkin' for the member's own weekly check-in. */
+  source?: 'assessment' | 'trainer' | 'checkin';
+  /** Body measurements — only ever set on a studio row. */
   body_fat_pct?: number | string | null;
   chest_cm?: number | string | null;
   waist_cm?: number | string | null;

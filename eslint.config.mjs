@@ -19,6 +19,10 @@ const eslintConfig = [
       // and drowns the ones that are ours.
       '.claude/skills/**',
       '.agents/skills/**',
+      // Local git worktrees: each is a full copy of the app, already ignored
+      // by git. Linting them counts every warning two or three times and made
+      // the 269 ratchet look breached when the repo itself was well under it.
+      '.worktrees/**',
       'postcss.config.js',
       'tailwind.config.ts',
     ],
