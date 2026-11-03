@@ -97,10 +97,9 @@ describe('Program Design hub', () => {
       .toHaveAttribute('href', '/pt-os/clients/c1?tab=ai');
   });
 
-  it('takes training days from enrolment, not the Interview fallback', async () => {
-    // sessions_per_week is what the enrolment form writes. The Interview's
-    // training-days answer is only a fallback for older records; preferring it
-    // programmed a 4-day client for the 6 days they once mentioned.
+  it('takes training days from the Interview, with enrolment as the fallback', async () => {
+    // The Interview owns the client's stated availability. enrolment's
+    // sessions_per_week is the fallback for a client who was never interviewed.
     mockClient.mockResolvedValue({
       data: {
         id: 'c1', name: 'Mina Rao', gender: 'female', dob: '1996-01-01',
@@ -116,8 +115,25 @@ describe('Program Design hub', () => {
 
     render(<ProgramDesignPage />);
 
+    expect(await screen.findByText(/6 days\/week/)).toBeTruthy();
+    expect(screen.queryByText(/4 days\/week/)).toBeNull();
+  });
+
+  it('falls back to enrolment when the client has no interview', async () => {
+    mockClient.mockResolvedValue({
+      data: {
+        id: 'c1', name: 'Mina Rao', gender: 'female', dob: '1996-01-01',
+        weight: 60, height: 165, goal: 'fat_loss', sessions_per_week: 4,
+      },
+    });
+    mockAssessments.mockResolvedValue({ data: [] });
+    mockInterviews.mockResolvedValue({ data: [] });
+    mockGoals.mockResolvedValue({ data: [] });
+    mockAssignments.mockResolvedValue([]);
+
+    render(<ProgramDesignPage />);
+
     expect(await screen.findByText(/4 days\/week/)).toBeTruthy();
-    expect(screen.queryByText(/6 days\/week/)).toBeNull();
   });
 
   it('renders with a bare profile, showing — and a link to complete the assessment', async () => {

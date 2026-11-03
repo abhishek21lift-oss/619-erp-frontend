@@ -65,15 +65,17 @@ function ProgressBody() {
 
   const weights = useMemo<WeightPoint[]>(() => {
     if (!rows) return [];
-    // One point per day; a studio measurement beats a check-in on the same day.
+    // One point per day; a fitness test beats a trainer log, and both beat a check-in.
     const byDay = new Map<string, WeightPoint>();
     for (const r of rows) {
       const kg = num(r.weight_kg);
       if (kg === null || !r.measured_at) continue;
       const d = day(r.measured_at);
-      const source = r.source === 'trainer' ? 'trainer' : 'checkin';
+      const source: WeightPoint['source'] = r.source === 'checkin' ? 'checkin'
+        : r.source === 'assessment' ? 'assessment' : 'trainer';
+      const rank = { checkin: 0, trainer: 1, assessment: 2 };
       const prev = byDay.get(d);
-      if (!prev || (prev.source === 'checkin' && source === 'trainer')) byDay.set(d, { date: d, kg, source });
+      if (!prev || rank[source] > rank[prev.source]) byDay.set(d, { date: d, kg, source });
     }
     return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
   }, [rows]);
@@ -142,7 +144,7 @@ function ProgressBody() {
                   <span className="text-[12.5px] font-[650]" style={{ color: MC.ink }}>{longDate(p.date)}</span>
                   <span className="flex items-center gap-2">
                     <span className="text-[11px]" style={{ color: MC.muted }}>
-                      {p.source === 'trainer' ? 'Studio' : 'Check-in'}
+                      {p.source === 'checkin' ? 'Check-in' : p.source === 'assessment' ? 'Fitness test' : 'Studio'}
                     </span>
                     <span className="w-[64px] text-right text-[13px] font-[780] tabular-nums" style={{ color: MC.ink }}>
                       {fmt(p.kg)} kg

@@ -145,7 +145,11 @@ const goToWeek = async (n: number) => {
  * before the wait cost anything. 700ms per save is a price worth paying to
  * exercise the real debounce.
  */
-const flushAutosave = () => waitFor(() => expect(patch).toHaveBeenCalled(), { timeout: 2500 });
+const flushAutosave = () => waitFor(() => expect(patch).toHaveBeenCalled(), { timeout: 5000 });
+
+// The builder's first paint is three awaited promises deep. Under a parallel
+// CI run the default 1 s findBy timeout fails on load, not on behaviour.
+const FIND = { timeout: 10000 };
 
 beforeEach(() => {
   push.mockReset(); replace.mockReset();
@@ -162,13 +166,13 @@ describe('a later week is editable', () => {
     await renderBuilder();
     await goToWeek(6);
     // Week 6's squat is 60 + 2.5×5 = 72.5, in a field the trainer can type in.
-    expect(await screen.findByDisplayValue('72.5')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('72.5', {}, FIND)).toBeInTheDocument();
   });
 
   it('says where the week’s numbers come from', async () => {
     await renderBuilder();
     await goToWeek(6);
-    expect(await screen.findByText(/Week 6 follows week 1/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Week 6 follows week 1/i, {}, FIND)).toBeInTheDocument();
   });
 });
 
@@ -177,7 +181,7 @@ describe('every write carries its week', () => {
     await renderBuilder();
     await goToWeek(6);
 
-    const field = await screen.findByDisplayValue('72.5');
+    const field = await screen.findByDisplayValue('72.5', {}, FIND);
     fireEvent.change(field, { target: { value: '50' } });
     fireEvent.blur(field);
     await flushAutosave();
@@ -191,7 +195,7 @@ describe('every write carries its week', () => {
     // would also mean the client cannot tell the two cases apart.
     await renderBuilder();
 
-    const field = await screen.findByDisplayValue('60');
+    const field = await screen.findByDisplayValue('60', {}, FIND);
     fireEvent.change(field, { target: { value: '65' } });
     fireEvent.blur(field);
     await flushAutosave();
@@ -207,7 +211,7 @@ describe('every write carries its week', () => {
     await renderBuilder();
     await goToWeek(6);
 
-    const field = await screen.findByDisplayValue('72.5');
+    const field = await screen.findByDisplayValue('72.5', {}, FIND);
     fireEvent.change(field, { target: { value: '50' } });
     fireEvent.blur(field);
 

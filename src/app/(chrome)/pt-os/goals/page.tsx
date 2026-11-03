@@ -299,6 +299,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       setClientDefaults({
         workout_experience_level: stringOrNull(c.workout_experience_level),
         sessions_per_week: numberOrNull(c.sessions_per_week),
+        lifestyle_training_days: numberOrNull(interview?.lifestyle_training_days),
       });
 
       const latest = Array.isArray(assessRes?.data) ? assessRes.data[0] : null;
@@ -333,7 +334,8 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         },
         nutrition: {
           waterLiters: water != null && water > 0 ? water : null,
-          mealRegularity: stringOrNull(nutritionRow.meal_timing_consistency),
+          // The Interview owns meal regularity; Nutrition is the detail source.
+          mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency),
           preferences: stringList(nutritionRow.diet_preferences),
           allergies: stringList(nutritionRow.food_allergies),
           date: isoDate(nutritionRow.assessment_date ?? nutritionRow.created_at),
@@ -350,7 +352,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         screenTime: stringOrNull(lifestyleRow.screen_time_bracket),
         sleepHours: sleep,
         stressLevel: numberOrNull(lifestyleRow.stress_level),
-        mealRegularity: stringOrNull(nutritionRow.meal_timing_consistency),
+        mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency),
         dietPreferences: stringList(nutritionRow.diet_preferences),
         foodAllergies: stringList(nutritionRow.food_allergies),
         smoking: stringOrNull(lifestyleRow.smoking_status),
@@ -646,8 +648,8 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         commitment_level: n(form.commitmentLevel) ?? null,
         biggest_challenges: challenges,
         lifestyle_readiness: buildLifestylePayload(form.lifestyle) ?? null,
-        starting_weight: latestWeight == null ? (n(form.startingWeightManual) ?? undefined) : undefined,
-        starting_body_fat_pct: latestBodyFat == null ? (n(form.startingBodyFatManual) ?? undefined) : undefined,
+        starting_weight: !goalId && latestWeight == null ? (n(form.startingWeightManual) ?? undefined) : undefined,
+        starting_body_fat_pct: !goalId && latestBodyFat == null ? (n(form.startingBodyFatManual) ?? undefined) : undefined,
         notes: form.notes || null,
         status: form.status,
         training_days_per_week: n(form.trainingDays) ?? null,

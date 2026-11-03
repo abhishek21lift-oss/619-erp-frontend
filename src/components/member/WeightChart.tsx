@@ -15,7 +15,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { MC } from './MemberUI';
 import { rgba } from '@/lib/palette';
 
-export type WeightPoint = { date: string; kg: number; source: 'trainer' | 'checkin' };
+export type WeightPoint = { date: string; kg: number; source: 'assessment' | 'trainer' | 'checkin' };
 
 const H = 184;
 const PAD = { top: 18, right: 62, bottom: 26, left: 34 };
@@ -147,7 +147,7 @@ export default function WeightChart({ points }: { points: WeightPoint[] }) {
             {points[shown].kg} kg
           </p>
           <p className="text-[10.5px]" style={{ color: MC.muted }}>
-            {points[shown].source === 'trainer' ? 'Measured at the studio' : 'Your check-in'}
+            {points[shown].source === 'checkin' ? 'Your check-in' : 'Measured at the studio'}
           </p>
         </div>
       )}

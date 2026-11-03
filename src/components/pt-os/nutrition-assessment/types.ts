@@ -3,7 +3,7 @@
 
 import { todayISO } from '@/lib/forms/domain';
 import type {
-  FoodsToAvoidReason, MealRegularity, MealTimingConsistency, EatingOutFrequency,
+  FoodsToAvoidReason, MealRegularity, EatingOutFrequency,
   WeekendEatingHabits, CravingFrequency, MealPreparer, NutritionBudget,
   Supplement, DigestiveIssue,
 } from '@/lib/nutrition-calculations';
@@ -47,7 +47,6 @@ export interface NutritionFormData {
   dinnerRegularity: MealRegularity | '';
   snacksPerDay: string;
   lateNightEating: boolean | null;
-  mealTimingConsistency: MealTimingConsistency | '';
   eatingOutFrequency: EatingOutFrequency | '';
   weekendEatingHabits: WeekendEatingHabits | '';
   eatingBehaviours: string[];
@@ -64,7 +63,6 @@ export interface NutritionFormData {
   // Step 8 — Context
   mealPreparer: MealPreparer | '';
   nutritionBudget: NutritionBudget | '';
-  medicalConditions: string[];
   medicalNotes: string;
 
   coachNotes: CoachNotes;
@@ -106,11 +104,11 @@ export function initNutritionForm(): NutritionFormData {
     takesSupplements: null, supplements: [],
     digestiveIssues: null,
     mealsPerDay: '', breakfastRegularity: '', lunchRegularity: '', dinnerRegularity: '',
-    snacksPerDay: '', lateNightEating: null, mealTimingConsistency: '', eatingOutFrequency: '',
+    snacksPerDay: '', lateNightEating: null, eatingOutFrequency: '',
     weekendEatingHabits: '', eatingBehaviours: [],
     waterIntakeLiters: '', teaCupsPerDay: '', coffeeCupsPerDay: '', softDrinksPerDay: '', juicesPerDay: '',
     cravings: [], cravingFrequency: '',
-    mealPreparer: '', nutritionBudget: '', medicalConditions: [], medicalNotes: '',
+    mealPreparer: '', nutritionBudget: '', medicalNotes: '',
     coachNotes: { dietary_advice: '', meal_planning: '', supplement_advice: '', medical_notes: '', special_instructions: '' },
   };
 }

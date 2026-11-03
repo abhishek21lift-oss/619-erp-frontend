@@ -11,12 +11,6 @@ const REGULARITY_OPTIONS: { value: MealRegularity; label: string }[] = [
   { value: 'daily', label: 'Daily' }, { value: 'sometimes', label: 'Sometimes' }, { value: 'never', label: 'Never' },
 ];
 
-const TIMING_CONSISTENCY_OPTIONS = [
-  { value: 'consistent', label: 'Consistent' },
-  { value: 'somewhat_consistent', label: 'Somewhat Consistent' },
-  { value: 'inconsistent', label: 'Inconsistent' },
-];
-
 const EATING_OUT_OPTIONS = [
   { value: 'rarely', label: 'Rarely' }, { value: 'weekly', label: 'Weekly' },
   { value: 'frequently', label: 'Frequently' }, { value: 'daily', label: 'Daily' },
@@ -116,8 +110,7 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SearchableSelect label="Meal Timing Consistency" allowCustom={false} value={form.mealTimingConsistency} onChange={(v) => set('mealTimingConsistency', v as NutritionFormData['mealTimingConsistency'])} options={TIMING_CONSISTENCY_OPTIONS} />
+        <div className="max-w-sm">
           <SearchableSelect label="Eating Out Frequency" allowCustom={false} value={form.eatingOutFrequency} onChange={(v) => set('eatingOutFrequency', v as NutritionFormData['eatingOutFrequency'])} options={EATING_OUT_OPTIONS} />
         </div>
 
