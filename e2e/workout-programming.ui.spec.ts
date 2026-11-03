@@ -99,7 +99,7 @@ test.describe('Workout generator — review a draft, then save it', () => {
     await save.click();
     // Saving lands on the assign surface for this client, not the builder for
     // a plan nobody is on yet.
-    await expect(page).toHaveURL(new RegExp(`/pt-os/workout-plans\\?client_id=${ALPHA.clientId}`), { timeout: 30_000 });
+    await expect(page).toHaveURL(new RegExp(`/pt-os/clients/${ALPHA.clientId}/training/assigned`), { timeout: 30_000 });
 
     const added = (await plans(token)).filter((p) => !before.has(p.id));
     for (const p of added) created.push(p.id);

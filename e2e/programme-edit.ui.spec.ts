@@ -63,7 +63,9 @@ test.describe('Programme — edit details', () => {
 
     await expect.poll(async () => (await planById(token, plan.id)).name, { timeout: 15_000 }).toBe(renamed);
     const after = await planById(token, plan.id);
-    expect(after.goal).toBe('weight_loss');
+    // The form still offers the legacy label; the server stores the canonical
+    // goal it maps to, so read back what the canonicaliser wrote.
+    expect(after.goal).toBe('fat_loss');
     expect(Number(after.duration_weeks)).toBe(10);
     // Not touched, so not changed.
     expect(after.difficulty).toBe('intermediate');
