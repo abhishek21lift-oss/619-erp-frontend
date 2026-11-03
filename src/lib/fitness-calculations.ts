@@ -216,8 +216,14 @@ export function classifyWhrRisk(whr: number | null, gender: Gender | null): Anth
 // ── Step 3: Body Composition ── Mifflin-St Jeor (1990).
 export function calcBmr(weightKg: number | null, heightCm: number | null, age: number | null, gender: Gender | null): number | null {
   if (!weightKg || !heightCm || !age || !gender) return null;
+  // Mifflin-St Jeor is sex-specific. Mirror the backend: a value that is
+  // neither male nor female yields no automatic BMR, because `gender ===
+  // 'Male'` being false for "male" used to store a different number than the
+  // one shown — a 166 kcal gap on every lowercase gender.
+  const sex = sexOf(gender);
+  if (!sex) return null;
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-  return Math.round(gender === 'Male' ? base + 5 : base - 161);
+  return Math.round(sex === 'Male' ? base + 5 : base - 161);
 }
 
 export function calcLeanBodyMass(weightKg: number | null, bodyFatPct: number | null): number | null {
