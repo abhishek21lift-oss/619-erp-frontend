@@ -39,6 +39,9 @@ const RULES: Record<ProgressionType, { label: string; unit: string; step: number
   weight: { label: 'Add weight', unit: 'kg', step: 2.5, hint: 'Added to each exercise’s prescribed load.' },
   reps: { label: 'Add reps', unit: 'reps', step: 1, hint: 'Added to each exercise’s prescribed reps.' },
   rpe: { label: 'Push intensity', unit: 'RPE', step: 0.5, hint: 'Raises the target RPE, capped at 10.' },
+  // Not offered here: a block plan stores every week, so there is no per-week
+  // rule to pick. The entry exists because the database accepts the type.
+  block: { label: 'Block periodisation', unit: '', step: 0, hint: 'Weeks come from the plan’s stored block, not a rule.' },
 };
 
 const ORDER: ProgressionType[] = ['none', 'weight', 'reps', 'rpe'];

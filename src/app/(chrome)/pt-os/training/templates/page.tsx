@@ -22,9 +22,9 @@ import Guard from '@/components/Guard';
 // current to 2026-09-02, against 1 template with 4 exercises from one August
 // afternoon, whose program_id and week_id are both NULL.
 //
-// The template row itself is NOT deleted. It stays in workout_templates and
-// /api/training/templates still serves it, so nothing has been lost — only the
-// second front door has closed.
+// The template row itself is NOT deleted. It stays in workout_templates, so
+// nothing has been lost — only the second front door has closed. (The old
+// /api/training surface is no longer mounted; workout_* is the only API.)
 export default function TemplatesRetiredRedirect() {
   const router = useRouter();
 

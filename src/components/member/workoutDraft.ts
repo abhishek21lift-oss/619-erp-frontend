@@ -305,6 +305,9 @@ export function toLogInput(d: WorkoutDraft, now: Date = new Date()): MeWorkoutLo
     exercises: d.exercises
       .map((x) => ({
         name: x.name,
+        // Omitted when empty so the payload for an ordinary exercise is
+        // unchanged; the server treats absent and null the same.
+        ...(x.notes ? { notes: x.notes } : {}),
         sets: x.sets.filter(isLogged).map((s) => toLogSet(s, x.kind)),
       }))
       .filter((x) => x.sets.length > 0),

@@ -528,7 +528,10 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                           sets: ex.sets, reps: ex.reps, target_weight: ex.target_weight,
                           ...timedTargets(ex.config),
                         }) || 'No target'}
-                        {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''} target
+                        {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''}
+                        {ex.rir != null ? ` · RIR ${ex.rir}` : ''}
+                        {ex.warmup_sets ? ` · ${ex.warmup_sets} warm-up ${ex.warmup_sets === 1 ? 'set' : 'sets'}` : ''}
+                        {ex.superset_group ? ` · Superset ${ex.superset_group}` : ''} target
                       </p>
                     </div>
                     <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}

@@ -32,12 +32,25 @@ export interface GeneratorOptions {
   hasVerified1RM?: boolean;
 }
 
+/**
+ * A prescription as it comes back from the server. The deterministic twin
+ * produces the RM fields; a powerlifting block adds the load its percentage
+ * resolved to, and says which basis produced it.
+ */
+export type GeneratedPrescription = ReturnType<typeof prescribeStrengthLoad> & {
+  target_weight?: number | null;
+  basis?: 'training_max' | 'rpe' | string;
+};
+
 export interface GeneratedExercise extends SequencedExercise {
   primaryMuscle?: string;
   difficulty?: string;
   equipment?: string;
-  prescription: ReturnType<typeof prescribeStrengthLoad>;
+  prescription: GeneratedPrescription;
 }
+
+export type PeriodizationPhase =
+  | 'base' | 'strength' | 'intensification' | 'peaking' | 'taper';
 
 export interface GeneratedConditioningFitt {
   frequencyPerWeek: number;
@@ -68,13 +81,77 @@ export interface GeneratedConditioning {
   warnings?: string[];
 }
 
-export interface GeneratedWorkout {
-  goal: string;
-  experience: ExperienceLevel;
+export interface GeneratedSession {
+  /** ISO weekday number, 1 = Monday. */
+  day_of_week: number;
+  day_name: string;
+  name: string;
+  focus: string;
+  /** Present on powerlifting block sessions; absent on generic drafts. */
+  phase?: string;
+  phase_label?: string;
+  is_deload?: boolean;
   warmup: Array<{ name: string; minutes: number; intensity: string; notes: string }>;
   mainWork: GeneratedExercise[];
   conditioning: GeneratedConditioning | null;
   cooldown: Array<{ name: string; minutes: number; intensity: string; notes: string }>;
+  estimated_minutes: number;
+  totals: {
+    exercises: number;
+    strengthMinutes: number;
+    cardioMinutes: number;
+    warmupMinutes: number;
+    cooldownMinutes: number;
+  };
+}
+
+/** One week of a powerlifting block, with the sessions that week holds. */
+export interface PeriodizationWeek {
+  week: number;
+  phase: PeriodizationPhase;
+  label: string;
+  week_in_phase: number;
+  phase_weeks: number;
+  is_deload: boolean;
+  sessions: GeneratedSession[];
+}
+
+/** The whole block the powerlifting generator returns, not just one week. */
+export interface PeriodizationBlock {
+  model: 'powerlifting_block';
+  block_weeks: number;
+  phases: Array<{
+    phase: PeriodizationPhase;
+    label: string;
+    start_week: number;
+    end_week: number;
+    weeks: number[];
+    focus: string;
+  }>;
+  weeks: PeriodizationWeek[];
+  training_maxes: Array<{
+    exercise_id: string;
+    name: string;
+    lift: string;
+    training_max_kg: number;
+  }>;
+  missing_training_maxes: Array<{ exercise_id: string; name: string; lift: string }>;
+}
+
+export interface GeneratedWorkout {
+  goal: string;
+  experience: ExperienceLevel;
+  /** How many sessions the week holds; `sessions` is the whole week. */
+  daysPerWeek: number;
+  sessionMinutes: number | null;
+  /** The first session, repeated in the fields below for older readers. */
+  warmup: Array<{ name: string; minutes: number; intensity: string; notes: string }>;
+  mainWork: GeneratedExercise[];
+  conditioning: GeneratedConditioning | null;
+  cooldown: Array<{ name: string; minutes: number; intensity: string; notes: string }>;
+  sessions: GeneratedSession[];
+  /** Present only when the powerlifting block engine built the draft. */
+  periodization?: PeriodizationBlock;
   excluded: Array<{ id: string; name: string; reason: string }>;
   warnings: string[];
   explanations: Array<{ exerciseId: string; reason: string; prescriptionBasis: string }>;
@@ -84,6 +161,8 @@ export interface GeneratedWorkout {
     cardioMinutes: number;
     warmupMinutes: number;
     cooldownMinutes: number;
+    sessions: number;
+    estimatedMinutes: number;
   };
 }
 
@@ -236,22 +315,48 @@ export function generateWorkout(input: {
     prescriptionBasis: ex.prescription.notes,
   }));
 
+  // The twin still builds one session. The API builds the client's whole week;
+  // this shape mirrors it so a caller reading `sessions` sees the same fields.
+  const focus = [...new Set(sequenced.map((e) => e.movementPattern).filter(Boolean))]
+    .slice(0, 2).join(' + ') || 'Full body';
+  const sessionTotals = {
+    exercises: sequenced.length,
+    strengthMinutes: sequenced.length * 6,
+    cardioMinutes: conditioning ? conditioning.minutes : 0,
+    warmupMinutes: warmup.reduce((s, p) => s + p.minutes, 0),
+    cooldownMinutes: cooldown.reduce((s, p) => s + p.minutes, 0),
+  };
+  const estimatedMinutes = sessionTotals.strengthMinutes
+    + sessionTotals.cardioMinutes + sessionTotals.warmupMinutes + sessionTotals.cooldownMinutes;
+
   return {
     goal,
     experience,
+    daysPerWeek: 1,
+    sessionMinutes: null,
     warmup,
     mainWork: sequenced,
     conditioning,
     cooldown,
+    sessions: [{
+      day_of_week: 1,
+      day_name: 'Monday',
+      name: `${focus} session`,
+      focus,
+      warmup,
+      mainWork: sequenced,
+      conditioning,
+      cooldown,
+      estimated_minutes: estimatedMinutes,
+      totals: sessionTotals,
+    }],
     excluded,
     warnings,
     explanations,
     totals: {
-      exercises: sequenced.length,
-      strengthMinutes: sequenced.length * 6,
-      cardioMinutes: conditioning ? conditioning.minutes : 0,
-      warmupMinutes: warmup.reduce((s, p) => s + p.minutes, 0),
-      cooldownMinutes: cooldown.reduce((s, p) => s + p.minutes, 0),
+      ...sessionTotals,
+      sessions: 1,
+      estimatedMinutes,
     },
   };
 }

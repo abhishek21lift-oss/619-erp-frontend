@@ -105,7 +105,10 @@ const PRIMARY: Record<TrackingKind, AnySpec[]> = {
 };
 const ADVANCED_ALL: FieldSpec[] = [
   { key: 'tempo',       label: 'Tempo',    mode: 'text',    placeholder: '3-1-2-0' },
-  { key: 'rpe',         label: 'RPE / RIR', mode: 'decimal' },
+  { key: 'rpe',         label: 'RPE',      mode: 'decimal' },
+  // `rpe` is the 1-10 scale; `rir` is the coach's own scale. Both are kept
+  // because collapsing them lost which one the programme actually asked for.
+  { key: 'rir',         label: 'RIR',      mode: 'decimal' },
   { key: 'warmup_sets', label: 'Warm-up sets', mode: 'numeric' },
   // The card has always RENDERED a "Superset A" badge and never had a way to
   // create one: the column existed, the badge existed, and the only route to a
@@ -343,6 +346,8 @@ export default function ExerciseCard({
                   : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />)
             ))}
           </div>
+          <PlanList label="Alternatives" items={exercise.alternatives} />
+          <PlanList label="Cues" items={exercise.cues} />
           {repBased && <DropSetField exercise={exercise} onCommit={commit} readOnly={readOnly} />}
         </m.div>
       )}
@@ -431,6 +436,38 @@ function StaticField({ spec, exercise }: { spec: FieldSpec; exercise: WorkoutPla
           <span className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>{spec.suffix}</span>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Alternatives and cues: written by the generator or the AI, shown as written.
+ *
+ * These are reference text, not prescription, so there is nothing to type into
+ * on this card — the trainer who wants a different substitute changes the
+ * exercise, not a string.
+ */
+function PlanList({
+  label, items,
+}: { label: string; items?: Array<string | { name: string; reason?: string }> | null }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="pt-1">
+      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </span>
+      <ul className="mt-0.5 space-y-0.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+        {items.map((item, i) => {
+          const text = typeof item === 'string' ? item : item.name;
+          const reason = typeof item === 'string' ? null : item.reason;
+          return (
+            <li key={`${text}-${i}`}>
+              {text}
+              {reason ? <span style={{ color: 'var(--text-muted)' }}> — {reason}</span> : null}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

@@ -162,6 +162,7 @@ function PlanBlock({ plan, titled }: { plan: MeWorkoutPlan; titled: boolean }) {
                     </p>
                     <p className="mt-0.5 text-[11.5px] font-[550]" style={{ color: MC.muted }}>
                       {d.exercises.length} exercise{d.exercises.length === 1 ? '' : 's'}
+                      {d.phase ? ` · ${d.phase.label}${d.phase.is_deload ? ' — deload' : ''}` : ''}
                     </p>
                   </div>
                   <ChevronDown size={16} className="shrink-0 transition-transform"
@@ -200,6 +201,7 @@ function ExerciseRow({ x, n }: { x: MeWorkoutExercise; n: number }) {
   const prescription = [
     ...main,
     x.rpe != null ? `RPE ${x.rpe}` : null,
+    x.rir != null ? `RIR ${x.rir}` : null,
     x.tempo ? `Tempo ${x.tempo}` : null,
   ].filter(Boolean) as string[];
 
@@ -218,9 +220,22 @@ function ExerciseRow({ x, n }: { x: MeWorkoutExercise; n: number }) {
         )}
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11.5px]" style={{ color: MC.muted }}>
           {x.rest_seconds ? <span className="inline-flex items-center gap-1"><Timer size={11} /> Rest {x.rest_seconds}s</span> : null}
+          {x.warmup_sets ? <span>{x.warmup_sets} warm-up {x.warmup_sets === 1 ? 'set' : 'sets'}</span> : null}
+          {x.superset_group ? <span>Superset {x.superset_group}</span> : null}
           {x.equipment ? <span>{x.equipment}</span> : null}
         </div>
         {x.notes && <p className="mt-1 text-[11.5px] leading-relaxed" style={{ color: MC.muted }}>{x.notes}</p>}
+        {x.cues && x.cues.length > 0 && (
+          <p className="mt-1 text-[11.5px] leading-relaxed" style={{ color: MC.muted }}>
+            <strong style={{ color: MC.ink }}>Cues:</strong> {x.cues.join(' · ')}
+          </p>
+        )}
+        {x.alternatives && x.alternatives.length > 0 && (
+          <p className="mt-1 text-[11.5px] leading-relaxed" style={{ color: MC.muted }}>
+            <strong style={{ color: MC.ink }}>If this doesn&apos;t work:</strong>{' '}
+            {x.alternatives.map((a) => (typeof a === 'string' ? a : a.name)).join(', ')}
+          </p>
+        )}
         {x.video_url && (
           <a href={x.video_url} target="_blank" rel="noopener noreferrer"
             className="mt-1 inline-block text-[11.5px] font-[700]" style={{ color: MC.primary }}>

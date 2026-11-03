@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  AiDietPlan, DietAssignment, DietTemplate, ExerciseListResult, ExerciseMeta, ExerciseVersion,
+  AiDietPlan, BlockPhase, DietAssignment, DietTemplate, ExerciseListResult, ExerciseMeta, ExerciseVersion,
   LibraryExercise, Meal, NutritionLog, ProgressionType, SavedFromGeneration,
   WorkoutAssignment, WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan,
   WorkoutPlanExercise, WorkoutPlanVersion,
@@ -33,7 +33,14 @@ export const workouts = {
     create: (data: {
       name: string; description?: string; goal?: string; difficulty?: string;
       duration_weeks?: number; sessions_per_week?: number; is_template?: boolean;
-      exercises?: Array<{ exercise_id: string; day_of_week: number; sort_order?: number; sets?: number; reps?: number; rest_seconds?: number; notes?: string }>;
+      warmup_protocol?: unknown; mobility_protocol?: unknown; cooldown_protocol?: unknown;
+      /** Powerlifting block metadata (migration 260). */
+      periodization_model?: 'linear' | 'powerlifting_block';
+      split_name?: string;
+      block_phases?: BlockPhase[];
+      deload_every_weeks?: number;
+      deload_intensity_pct?: number;
+      exercises?: Array<WorkoutExerciseInput & { week_number?: number }>;
     }) =>
       http<{ message: string; plan: WorkoutPlan }>('/api/workouts/plans', {
         method: 'POST',
@@ -171,6 +178,12 @@ export const workouts = {
       http<WorkoutAssignment[]>(`/api/workouts/assignments${buildQs(params)}`),
     detail: (id: string) =>
       http<WorkoutAssignmentDetail>(`/api/workouts/assignments/${id}`),
+    /** End a programme without deleting it; the row keeps its history. */
+    retire: (id: string, data?: { status?: 'completed' | 'cancelled' | 'paused'; reason?: string }) =>
+      http<{ message: string; assignment: WorkoutAssignment }>(
+        `/api/workouts/assignments/${id}/retire`,
+        { method: 'POST', body: JSON.stringify(data || {}) },
+      ),
   },
   assign: (data: { workout_plan_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
     http<{ message: string; assignment: WorkoutAssignment; screening_warnings?: string[] }>('/api/workouts/assign', {
@@ -322,6 +335,25 @@ export const diet = {
 // recorded constraints, so the response — not a client-side draft — is what
 // the builder should render. Generation never writes; the trainer saves
 // through the plan endpoints.
+
+export interface TrainingMaxSuggestion {
+  suggested_kg: number | null;
+  /** Always false: a max is raised by a trainer, never by the engine. */
+  applied: false;
+  reason: string;
+}
+
+export interface TrainingMaxLift {
+  exercise_id: string;
+  name: string;
+  lift: string;
+  training_max_kg: number | null;
+  source: string | null;
+  best_e1rm_kg: number | null;
+  best_e1rm_date: string | null;
+  suggestion: TrainingMaxSuggestion;
+}
+
 export const workoutGenerator = {
   preview: (clientId: string, data: {
     goal?: string;
@@ -342,6 +374,12 @@ export const workoutGenerator = {
     restingHeartRate?: number;
     measuredMaxHeartRate?: number;
     hasVerified1RM?: boolean;
+    // The training week to draft. Omitted values come from the client record.
+    daysPerWeek?: number;
+    sessionMinutes?: number;
+    /** Ask for a whole powerlifting block instead of one generic week. */
+    periodization?: 'powerlifting_block';
+    blockWeeks?: number;
   }) =>
     http<{
       data: {
@@ -354,4 +392,36 @@ export const workoutGenerator = {
       method: 'POST',
       body: JSON.stringify(data),
     }).then((r) => r.data),
+
+  /**
+   * The trainer's training maxes for one client, plus what the logged e1RM
+   * suggests each could be. The suggestion is advisory: it is never applied.
+   */
+  trainingMaxes: {
+    list: (clientId: string) =>
+      http<{
+        data: {
+          client: { id: string; name: string };
+          experience: string;
+          training_maxes: Array<{
+            exercise_id: string; training_max_kg: number; source_e1rm_kg: number | null;
+            source: string; notes: string | null; updated_at: string;
+          }>;
+          lifts: TrainingMaxLift[];
+        };
+      }>(`/api/pt-os/clients/${clientId}/training-maxes`).then((r) => r.data),
+
+    set: (clientId: string, exerciseId: string, data: {
+      training_max_kg: number; source_e1rm_kg?: number; notes?: string;
+    }) =>
+      http<{
+        data: {
+          exercise_id: string; training_max_kg: string; source_e1rm_kg: string | null;
+          source: string; notes: string | null; updated_at: string;
+        };
+      }>(`/api/pt-os/clients/${clientId}/training-maxes/${exerciseId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }).then((r) => r.data),
+  },
 };
