@@ -238,8 +238,10 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
 
   const weeks = Math.max(1, plan?.duration_weeks ?? 1);
   const hasRule = (plan?.progression_type ?? 'none') !== 'none';
+  /** A block stores every week, so it steps weeks without a progression rule. */
+  const isBlock = plan?.periodization_model === 'powerlifting_block';
   /** Whether this week has been written by hand, rather than computed. */
-  const edited = week > 1 && plan?.week_source === 'override';
+  const edited = !isBlock && week > 1 && plan?.week_source === 'override';
   /** Which week these numbers are computed from — this one, or an earlier edit. */
   const anchor = plan?.anchor_week ?? 1;
 
@@ -387,8 +389,8 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
       {/* ── The rule ──
           Only on week 1. It describes how the programme grows from its first
           week, and offering it from inside week 6 would read as a rule about
-          week 6. */}
-      {plan && week === 1 && <ProgressionRule plan={plan} onChange={saveRule} />}
+          week 6. A block has no rule at all: every week is stored. */}
+      {plan && week === 1 && !isBlock && <ProgressionRule plan={plan} onChange={saveRule} />}
 
       {plan && week === 1 && (
         <PlanVersions
@@ -404,7 +406,7 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
 
           No box around it: it is a heading for what follows, not a panel. The
           hairline is the whole separation the page needs. */}
-      {hasRule && weeks > 1 && (
+      {(hasRule || isBlock) && weeks > 1 && (
         <div
           className="mb-3 flex items-center justify-between gap-2 pb-3"
           style={{ borderBottom: '1px solid var(--border)' }}
@@ -422,9 +424,11 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
               <span className="font-[600]" style={{ color: 'var(--text-muted)' }}> of {weeks}</span>
             </p>
             <p className="text-[10.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-              {week === 1 ? 'The week you write'
-                : edited ? 'Edited — later weeks build on this'
-                  : anchor > 1 ? `Following week ${anchor}` : 'Following week 1'}
+              {isBlock
+                ? `${plan?.phase?.label ?? 'Block'}${plan?.phase?.is_deload ? ' — deload' : ''}`
+                : week === 1 ? 'The week you write'
+                  : edited ? 'Edited — later weeks build on this'
+                    : anchor > 1 ? `Following week ${anchor}` : 'Following week 1'}
             </p>
           </div>
           <WeekStep
@@ -453,9 +457,11 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
           <div className="flex items-start gap-2">
             <Eye size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
             <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              {edited
-                ? `Week ${week} is written by hand. Weeks after it build on these numbers; weeks before it are unchanged.`
-                : `Week ${week} follows week ${anchor}${hasRule ? ' plus the rule' : ''}. Change anything here and it becomes this week's own — weeks before it stay as they are.`}
+              {isBlock
+                ? `Week ${week} is stored as its own prescription${plan?.phase?.is_deload ? ' and is a deload' : ''}. Edits change this week only; the other block weeks are untouched.`
+                : edited
+                  ? `Week ${week} is written by hand. Weeks after it build on these numbers; weeks before it are unchanged.`
+                  : `Week ${week} follows week ${anchor}${hasRule ? ' plus the rule' : ''}. Change anything here and it becomes this week's own — weeks before it stay as they are.`}
             </p>
           </div>
           {edited && (

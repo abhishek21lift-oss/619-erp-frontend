@@ -1029,6 +1029,8 @@ export interface WorkoutPlannedExercise {
   target_weight?: number | null;
   tempo?: string | null;
   rpe?: number | null;
+  /** Reps in reserve as the coach wrote it; `rpe` is the 1-10 equivalent. */
+  rir?: number | null;
   warmup_sets?: number | null;
   superset_group?: string | null;
   config?: Record<string, unknown> | null;
@@ -1369,12 +1371,20 @@ export interface WorkoutPlanExercise {
   target_weight?: number | null;
   /** Four-figure tempo, e.g. "3-1-2-0". "X" means explosive. */
   tempo?: string | null;
-  /** Target intensity — RPE 6-10 or RIR 0-5, whichever scale the studio uses. */
+  /** Target intensity on the 1-10 RPE scale; `rir` keeps the coach's scale. */
   rpe?: number | null;
+  /** Reps in reserve as the coach wrote it; `rpe` stays the 1-10 equivalent. */
+  rir?: number | null;
   /** Count of warm-up sets before the working sets. */
   warmup_sets?: number | null;
   /** Exercises sharing a value are performed together: superset, giant set, circuit. */
   superset_group?: string | null;
+  /** True when the week resolved for a powerlifting block is a deload. */
+  is_deload?: boolean;
+  /** Named swaps for this movement, as written. */
+  alternatives?: Array<string | { name: string; reason?: string }> | null;
+  /** Coaching cues for this movement, as written. */
+  cues?: string[] | null;
   /**
    * Per-method parameters that would otherwise each need a column: drop sets,
    * AMRAP/EMOM caps, timed sets, pause reps, voice notes. Deliberately loose —
@@ -1409,11 +1419,12 @@ export interface WorkoutPlanExercise {
 export type WorkoutExerciseInput = Partial<
   Pick<WorkoutPlanExercise,
     'exercise_id' | 'day_of_week' | 'sort_order' | 'sets' | 'reps' | 'rest_seconds' |
-    'notes' | 'target_weight' | 'tempo' | 'rpe' | 'warmup_sets' | 'superset_group' | 'config'>
+    'notes' | 'target_weight' | 'tempo' | 'rpe' | 'rir' | 'warmup_sets' | 'superset_group' |
+    'alternatives' | 'cues' | 'config'>
 >;
 
 /** How a programme's numbers move from one week to the next. */
-export type ProgressionType = 'none' | 'weight' | 'reps' | 'rpe';
+export type ProgressionType = 'none' | 'weight' | 'reps' | 'rpe' | 'block';
 
 /** Where the rule lands for one exercise: week 1 versus the final week. */
 export interface ProgressionPreview {
@@ -1503,6 +1514,35 @@ export interface WorkoutPlan {
   progression_preview?: ProgressionPreview[] | null;
   version?: number;
   parent_plan_id?: string | null;
+
+  // ── Session protocols (migration 258) ───────────────────────────────────
+  // JSONB as written by the generator or the trainer: an array of lines or a
+  // structured object. Absent when the programme records none.
+  warmup_protocol?: unknown;
+  mobility_protocol?: unknown;
+  cooldown_protocol?: unknown;
+
+  // ── Periodisation (migration 260) ───────────────────────────────────────
+  /** NULL for legacy/linear plans; powerlifting_block when weeks came from the block engine. */
+  periodization_model?: 'linear' | 'powerlifting_block' | null;
+  split_name?: string | null;
+  /** Week labels for a block: [{week, phase, label, is_deload}]. */
+  block_phases?: BlockPhase[] | null;
+  /** Opt-in deload cadence for a linear plan. NULL means no automatic deload. */
+  deload_every_weeks?: number | null;
+  deload_intensity_pct?: number | null;
+  /** The phase label for the week this response describes, when it is a block. */
+  phase?: BlockPhase | null;
+}
+
+/** One week's label inside a powerlifting block. */
+export interface BlockPhase {
+  week: number;
+  phase: 'base' | 'strength' | 'intensification' | 'peaking' | 'taper';
+  label: string;
+  is_deload: boolean;
+  week_in_phase?: number;
+  phase_weeks?: number;
 }
 
 export interface WorkoutAssignment {
@@ -3429,7 +3469,19 @@ export type MeWorkoutLogInput = {
   duration_minutes?: number | null;
   exercises: {
     name: string;
-    sets: { weight_kg?: number | null; reps?: number | null; duration_seconds?: number | null; distance_m?: number | null }[];
+    /** What the member was told to do, kept on the session as a snapshot. */
+    notes?: string | null;
+    sets: {
+      weight_kg?: number | null;
+      reps?: number | null;
+      duration_seconds?: number | null;
+      distance_m?: number | null;
+      rpe?: number | null;
+      rir?: number | null;
+      tempo?: string | null;
+      rest_seconds?: number | null;
+      notes?: string | null;
+    }[];
   }[];
 };
 
@@ -3657,6 +3709,18 @@ export type MeWorkoutExercise = {
   target_weight: number | null;
   tempo: string | null;
   rpe: number | null;
+  /** Reps in reserve as the coach wrote it; `rpe` is the 1-10 equivalent. */
+  rir?: number | null;
+  /** Warm-up sets before the working sets. */
+  warmup_sets?: number | null;
+  /** Exercises sharing a value are performed together. */
+  superset_group?: string | null;
+  /** Named substitutes for a movement the client cannot do as written. */
+  alternatives?: Array<string | { name: string; reason?: string }> | null;
+  /** Coaching cues for this movement, as written. */
+  cues?: string[] | null;
+  /** True when the resolved week is a deload. */
+  is_deload?: boolean;
   notes: string | null;
   equipment: string | null;
   media_url: string | null;
@@ -3681,7 +3745,7 @@ export type MeWorkoutPlan = {
   start_date: string | null;
   end_date: string | null;
   current_week: number | null;
-  days: { day_of_week: number; exercises: MeWorkoutExercise[] }[];
+  days: { day_of_week: number; phase?: BlockPhase | null; exercises: MeWorkoutExercise[] }[];
 };
 
 export type MeDietMeal = {
@@ -4244,6 +4308,12 @@ export type SavedFromGeneration = {
    */
   assigned?: boolean;
   assignment_id?: string | null;
+  /**
+   * Programmes this save retired so the new one is the client's current block.
+   * Zero is the first-assignment case; above zero is normal for a client who
+   * was already on a programme.
+   */
+  retired_assignments?: number;
   /**
    * How many OTHER programmes this client is already active on. Above zero,
    * the session log can no longer link a new session to one plan by itself —

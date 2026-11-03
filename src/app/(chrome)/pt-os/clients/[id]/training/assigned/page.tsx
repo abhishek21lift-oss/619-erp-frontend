@@ -41,6 +41,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
   const { toast } = useToast();
   const [rows, setRows] = useState<WorkoutAssignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retiring, setRetiring] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +67,23 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
     if (b.status === 'active' && a.status !== 'active') return 1;
     return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
   });
+
+  // Retiring ends the programme without deleting it: the plan, dates,
+  // progress and notes stay in the history. Before this, the only way off a
+  // programme was to let its end date pass or to delete the plan.
+  const retire = async (a: WorkoutAssignment) => {
+    if (!window.confirm(`Retire “${a.plan_name}” for this client? The history stays; it just stops being their current programme.`)) return;
+    setRetiring(a.id);
+    try {
+      const out = await api.workouts.assignments.retire(a.id, { status: 'completed', reason: 'retired by trainer' });
+      setRows((prev) => prev.map((r) => (r.id === a.id ? { ...r, ...out.assignment } : r)));
+      toast.success(`${a.plan_name} retired`);
+    } catch {
+      toast.error('Could not retire the programme');
+    } finally {
+      setRetiring(null);
+    }
+  };
 
   return (
     <Guard role="trainer">
@@ -165,6 +183,18 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
                     Open in builder
                     <ChevronRight size={16} />
                   </Link>
+
+                  {a.status === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => retire(a)}
+                      disabled={retiring === a.id}
+                      className="mt-2 flex h-[40px] w-full items-center justify-center rounded-[12px] text-[12.5px] font-[700] disabled:opacity-60"
+                      style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+                    >
+                      {retiring === a.id ? 'Retiring…' : 'Retire programme'}
+                    </button>
+                  )}
                 </m.div>
               );
             })}

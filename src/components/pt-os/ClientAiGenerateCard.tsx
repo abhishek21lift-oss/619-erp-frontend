@@ -385,15 +385,18 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       // this save landed in is the difference between a trainer expecting the
       // client on Today and wondering where they went.
       const clash = out.other_active_assignments ?? 0;
+      const retired = out.retired_assignments ?? 0;
       const detail = out.assigned === false
         ? `Saved, but not assigned — it will not appear on ${client.name}'s Today.`
         : clash > 0
           ? `${client.name} is now on ${clash + 1} active programmes. A started session uses `
             + "the one that prescribes today's workout; choose the programme explicitly if "
             + 'that is not the right one, or finish the older programmes.'
-          : out.assigned
-            ? `Now live for ${client.name}.`
-            : undefined;
+          : retired > 0
+            ? `Now live for ${client.name}. ${retired} earlier programme${retired === 1 ? ' was' : 's were'} retired.`
+            : out.assigned
+              ? `Now live for ${client.name}.`
+              : undefined;
 
       // A warning, not a success, for the one case the trainer has to act on.
       if (clash > 0) toast.warning(message, { description: detail });

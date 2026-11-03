@@ -39,16 +39,18 @@ const INITIAL_FORM = {
   goal: '', experience_level: '', injuries: '', training_days: '',
 };
 
+// The nine goals the programming engines and workout_plans.goal share.
 const GOALS = [
-  'weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility',
-  'general_fitness', 'body_recomposition',
+  'hypertrophy', 'strength', 'fat_loss', 'endurance', 'general_fitness',
+  'body_recomposition', 'recovery', 'flexibility_mobility', 'powerlifting',
 ];
 const EXPERIENCE = ['beginner', 'intermediate', 'advanced'];
 
 const labelMap: Record<string, string> = {
-  weight_loss: 'Weight Loss', muscle_gain: 'Muscle Gain', strength: 'Strength',
-  endurance: 'Endurance', flexibility: 'Flexibility', general_fitness: 'General Fitness',
-  body_recomposition: 'Body Recomposition',
+  hypertrophy: 'Hypertrophy', strength: 'Strength', fat_loss: 'Fat Loss',
+  endurance: 'Endurance', general_fitness: 'General Fitness',
+  body_recomposition: 'Body Recomposition', recovery: 'Recovery',
+  flexibility_mobility: 'Flexibility & Mobility', powerlifting: 'Powerlifting',
   beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced',
   male: 'Male', female: 'Female', other: 'Other',
 };
@@ -405,7 +407,22 @@ export default function WorkoutGeneratorPage() {
     <Guard>
       <PageContainer>
 
-        <PageHero compact icon={<Dumbbell size={20} />} title="AI Workout Generator" />
+        <PageHero
+          compact
+          icon={<Dumbbell size={20} />}
+          title="AI Workout Generator"
+          subtitle="Prompt-based draft from the client's record. For a rule-based programme with powerlifting blocks and training maxes, use the Workout Generator."
+        />
+
+        <p className="mx-auto mb-4 w-full max-w-4xl text-[12.5px]">
+          <Link
+            href={`/pt-os/workout-generator${linkedClientId ? `?client_id=${linkedClientId}` : ''}`}
+            className="font-[700]"
+            style={{ color: ACCENT }}
+          >
+            Open the rule-based Workout Generator →
+          </Link>
+        </p>
 
       <div className="mx-auto w-full max-w-4xl">
 
