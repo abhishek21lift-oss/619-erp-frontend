@@ -32,7 +32,10 @@ import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   blankMemberHabit, memberHabitSchema, toMemberHabitPayload,
 } from '@/lib/forms/schemas/memberHabit';
-import { blue } from '@/lib/palette';
+import {
+  journalHeatLevel, journalHeatmap, type JournalHeatDay,
+} from '@/components/member/journal';
+import { blue, rgba } from '@/lib/palette';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -131,6 +134,11 @@ function HabitJournal() {
     [logs, selectedDate],
   );
 
+  const heatDays = useMemo(
+    () => (summary ? journalHeatmap(logs, summary.period.start_date, summary.period.end_date) : []),
+    [logs, summary],
+  );
+
   const onSaved = async () => {
     toast.success('Journal saved');
     await loadDay(selectedDate);
@@ -199,6 +207,14 @@ function HabitJournal() {
             </div>
           )}
 
+          {heatDays.length > 0 && (
+            <JournalHeatmap
+              days={heatDays}
+              from={summary.period.start_date}
+              to={summary.period.end_date}
+            />
+          )}
+
           <Section title="Which day?" aside={<Link href="/member/progress" className="text-[11.5px] font-[720]" style={{ color: MC.primary }}>Assessment progress →</Link>}>
             <Card className="p-4">
               <div className="grid gap-3 sm:grid-cols-[220px_1fr] sm:items-end">
@@ -263,6 +279,72 @@ function HabitJournal() {
         </>
       )}
     </>
+  );
+}
+
+const HEAT_TONES = [
+  'var(--bg-subtle)',
+  rgba(blue[500], 0.18),
+  rgba(blue[500], 0.38),
+  rgba(blue[500], 0.62),
+  blue[500],
+] as const;
+
+function JournalHeatmap({ days, from, to }: {
+  days: JournalHeatDay[];
+  from: string;
+  to: string;
+}) {
+  const logged = days.filter((d) => d.inRange && d.logged).length;
+  const total = days.filter((d) => d.inRange).length;
+
+  return (
+    <Section
+      title="Journaling rhythm"
+      aside={<span className="text-[11px] font-[700]" style={{ color: MC.muted }}>{logged} of {total} days</span>}
+    >
+      <Card className="p-4">
+        <div className="grid grid-cols-7 gap-1.5" role="group" aria-label={`Daily journal entries from ${from} to ${to}`}>
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+            <span key={i} aria-hidden
+              className="pb-0.5 text-center text-[9px] font-[750] uppercase tracking-[0.04em]"
+              style={{ color: MC.muted }}>{d}</span>
+          ))}
+          {days.map((day) => {
+            const label = longDate(day.date) ?? day.date;
+            const detail = day.logged
+              ? `${day.filled} journal ${day.filled === 1 ? 'value' : 'values'}`
+              : 'no entry';
+            return (
+              <span
+                key={day.date}
+                role={day.inRange ? 'img' : undefined}
+                aria-hidden={!day.inRange || undefined}
+                aria-label={day.inRange ? `${label}: ${detail}` : undefined}
+                title={day.inRange ? `${label} · ${detail}` : undefined}
+                className="aspect-square rounded-[6px]"
+                style={{
+                  background: day.inRange ? HEAT_TONES[journalHeatLevel(day)] : 'transparent',
+                  border: day.inRange ? '1px solid var(--border)' : '1px dashed var(--border)',
+                  opacity: day.inRange ? 1 : 0.4,
+                }}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] font-[650]" style={{ color: MC.muted }}>
+          Less
+          {HEAT_TONES.map((tone, i) => (
+            <span key={i} aria-hidden className="h-2.5 w-2.5 rounded-[3px]"
+              style={{ background: tone, border: '1px solid var(--border)' }} />
+          ))}
+          More
+        </div>
+        <p className="mt-2 text-[10.5px]" style={{ color: MC.muted }}>
+          A blank day has no entry. It is not counted as a zero in any average.
+        </p>
+      </Card>
+    </Section>
   );
 }
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { PremiumBarChart, semantic } from '@/components/visualizations';
 import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -86,6 +87,13 @@ function OffersContent() {
   const active=offers.filter(o=>o.status==='active').length;
   const totalUsed=offers.reduce((s,o)=>s+o.used,0);
 
+  // Per-offer redemption counts, highest first. The offers endpoint returns
+  // every offer (no LIMIT), so these are the full numbers, not a page of them.
+  const redemptions = [...offers]
+    .sort((a, b) => b.used - a.used)
+    .slice(0, 8)
+    .map(o => ({ offer: o.name, redemptions: Number(o.used) || 0 }));
+
   const inp = { width:'100%', border:'1px solid #cbd5e1', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0F172A', background:'#f8fafc', fontFamily:'inherit' } as const;
 
   return (
@@ -122,6 +130,26 @@ function OffersContent() {
           );
         })}
       </m.div>
+
+      <PremiumBarChart
+        data={offers.length > 0 ? redemptions : []}
+        xKey="offer"
+        bars={[{ key: 'redemptions', label: 'Redemptions', color: semantic.info }]}
+        layout="horizontal"
+        showLegend={false}
+        title="Redemptions by offer"
+        subtitle={offers.length > 8
+          ? `Top 8 of ${offers.length} offers · ${totalUsed} redemptions in total`
+          : `${totalUsed} redemptions across ${offers.length} offer${offers.length === 1 ? '' : 's'}`}
+        height={Math.min(8, redemptions.length) * 44 + 40}
+        className="mt-4"
+        loading={loading && offers.length === 0}
+        error={error && offers.length === 0 ? error : null}
+        onRetry={() => { void load(); }}
+        emptyTitle="No offers yet"
+        emptyDescription="Create an offer to start tracking its redemptions."
+        ariaLabel={`Redemptions by offer: ${redemptions.map(r => `${r.offer} ${r.redemptions}`).join(', ') || 'none'}.`}
+      />
 
       {/* ── CREATE FORM ── */}
       {showForm&&(

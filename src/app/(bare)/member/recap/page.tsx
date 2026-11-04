@@ -20,8 +20,9 @@ import MemberShell from '@/components/member/MemberShell';
 import {
   Card, EASE, EmptyState, LoadError, MC, PageSkeleton, PageTitle, Section, Stat,
 } from '@/components/member/MemberUI';
+import { PremiumBarChart } from '@/components/visualizations';
 import {
-  favouriteDay, headlineStats, isEmptyMonth, kg, monthName, previousMonthOf, versus,
+  favouriteDay, headlineStats, isEmptyMonth, kg, monthName, previousMonthOf, versus, weekdayBars,
 } from '@/components/member/recap';
 import { api } from '@/lib/api';
 import type { MeRecap } from '@/lib/api';
@@ -175,6 +176,20 @@ function Details({ recap }: { recap: MeRecap }) {
           </p>
         )}
       </Section>
+
+      {recap.weekdays.some((n) => n > 0) && (
+        <PremiumBarChart
+          data={weekdayBars(recap.weekdays)}
+          xKey="day"
+          bars={[{ key: 'sessions', label: 'Training days', color: MC.primary }]}
+          showLegend={false}
+          title="Weekday rhythm"
+          subtitle={`Training days per weekday in ${monthName(recap.month)}`}
+          height={210}
+          className="mb-4"
+          ariaLabel={`Training days by weekday: ${weekdayBars(recap.weekdays).map((b) => `${b.day} ${b.sessions}`).join(', ')}.`}
+        />
+      )}
 
       {(recap.top_lift || recap.favourite) && (
         <Section title="Highlights">
