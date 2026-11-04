@@ -2,7 +2,6 @@
 
 import { Flame, Frown, Laugh, Meh, Smile } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
 import { Slider } from '@/components/ui';
 import { amber, emerald, gray, red } from '@/lib/palette';
 import GoalStepCard from './GoalStepCard';
@@ -50,11 +49,14 @@ export function StepMotivationCommitment({ form, set, step }: StepMotivationComm
   return (
     <GoalStepCard icon={Flame} title="Motivation & Confidence" step={step} hint="how ready is this client, really?">
       <div className="space-y-8">
-        <FloatInput
-          label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}
-          value={form.motivationReason} onChange={(v) => set('motivationReason', v)}
-          placeholder="Wedding, competition, health, confidence, doctor recommendation, lifestyle, vacation..."
-        />
+        <div>
+          <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>
+            Why they want this (from the Client Interview)
+          </p>
+          <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: gray[800] }}>
+            {form.motivationReason || 'Not recorded in the Client Interview.'}
+          </p>
+        </div>
 
         <div>
           <div className="mb-2 flex items-center justify-between">
