@@ -317,17 +317,6 @@ export const JUSTIFIED = {
       'FloatInput on the platform.',
   },
 
-  'src/components/pt-os/goal-assessment/StepMotivationCommitment.tsx': {
-    allowStateCoercions: 3,
-    reason:
-      'Three `parseInt(form.x, 10) || 1` reads, for the motivation, confidence ' +
-      'and commitment levels. Each value is written by a Slider bound 1–10 as ' +
-      'String(v) and defaults to "7", so the string is always a digit; the ' +
-      '`|| 1` covers the blank/NaN branch regardless. They feed the face, the ' +
-      'colour band and the gap hint in this card, never a payload — the ' +
-      'wizard serialises the raw form values itself.',
-  },
-
   'src/components/platform/feature-manager.tsx': {
     allow: 2,
     reason:
