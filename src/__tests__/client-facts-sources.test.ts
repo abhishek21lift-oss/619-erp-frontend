@@ -1,14 +1,12 @@
 // One home per fact.
 //
-// Sleep, smoking, alcohol and screen time are scored by the
-// Lifestyle assessment; occupation is the Interview's, with Lifestyle's
-// snapshot as the fallback; meal regularity by the Interview, with
-// Nutrition's meal-timing detail as the fallback. Training frequency is the
-// Interview's answer, with enrolment's sessions_per_week as the fallback.
-// Barriers and motivation are owned by the Interview. The goal wizard used to
-// fall back to the Interview's lifestyle answers (and read smoking/alcohol
-// only from the Interview), so the two records could disagree and the wizard
-// showed whichever one it happened to read.
+// Sleep, smoking, alcohol, occupation and screen time are scored by the
+// Lifestyle assessment; meal regularity by the Interview, with Nutrition's
+// meal-timing detail as the fallback. Training frequency is the Interview's
+// answer, with enrolment's sessions_per_week as the fallback. The goal wizard
+// used to fall back to the Interview's lifestyle answers (and read
+// smoking/alcohol only from the Interview), so the two records could disagree
+// and the wizard showed whichever one it happened to read.
 //
 // Pinned as source text, as the other page-level contracts are: mounting the
 // goal wizard means mocking eight API reads plus draft autosave, which is out
@@ -35,10 +33,8 @@ describe('lifestyle facts come from the Lifestyle assessment', () => {
     expect(goals).not.toContain('interview?.lifestyle_alcohol');
   });
 
-  it('reads occupation from the Interview, with the assessment snapshot as fallback', () => {
-    expect(goals).toContain(
-      'occupation: stringOrNull(interview?.occupation_type) ?? stringOrNull(lifestyleRow.occupation_type)',
-    );
+  it('reads occupation and screen time from the assessment only', () => {
+    expect(goals).toContain('occupation: stringOrNull(lifestyleRow.occupation_type)');
     expect(goals).toContain('screenTime: stringOrNull(lifestyleRow.screen_time_bracket)');
     expect(goals).not.toContain('interview?.lifestyle_occupation');
     expect(goals).not.toContain('interview?.lifestyle_screen_time');
@@ -64,12 +60,5 @@ describe('training frequency is owned by the Interview', () => {
     expect(initGoalFormForClient({ lifestyle_training_days: 5, sessions_per_week: 2 }).trainingDays).toBe('5');
     expect(initGoalFormForClient({ sessions_per_week: 2 }).trainingDays).toBe('2');
     expect(initGoalFormForClient({}).trainingDays).toBe('3');
-  });
-});
-
-describe('barriers and motivation are owned by the Interview', () => {
-  it('builds the goal defaults from the Interview answers', () => {
-    expect(goals).toContain('interviewChallenges');
-    expect(goals).toContain('interviewMotivation');
   });
 });

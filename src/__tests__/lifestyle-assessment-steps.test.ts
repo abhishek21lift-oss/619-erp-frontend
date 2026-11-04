@@ -33,27 +33,6 @@ describe('the lifestyle wizard asks each question once', () => {
     }
   });
 
-  it('does not ask occupation here; the interview owns it', () => {
-    const step = read('components/pt-os/lifestyle-assessment/StepOccupationActivity.tsx');
-    expect(step).not.toMatch(/set\('occupationType'/);
-    expect(step).not.toMatch(/const OCCUPATIONS/);
-    const submit = page.slice(page.indexOf('const handleSubmit'), page.indexOf('if (assessmentId)'));
-    expect(submit).not.toContain('occupation_type:');
-  });
-
-  it('reads the interview occupation for the live score', () => {
-    expect(page).toMatch(/api\.pt\.interviews\.list/);
-    expect(page).toMatch(/interviewOccupation/);
-    expect(page).toMatch(/const effectiveOccupation = interviewOccupation \|\| form\.occupationType \|\| ''/);
-    const step = read('components/pt-os/lifestyle-assessment/StepOccupationActivity.tsx');
-    expect(step).toMatch(/occupationSource === 'lifestyle'/);
-    expect(step).toMatch(/not yet recorded\. Add it in the Client Interview/);
-  });
-
-  it('names the step Activity', () => {
-    expect(STEPS.find((s) => s.key === 'occupationActivity')?.label).toBe('Activity');
-  });
-
   it('scores water and meals from the latest Nutrition assessment', () => {
     expect(page).toMatch(/api\.progress\.nutritionAssessments\.list/);
     expect(page).toMatch(/waterIntakeLiters=\{n\(withNutrition\(form, nutritionHabits\)\.waterIntakeLiters\)\}/);

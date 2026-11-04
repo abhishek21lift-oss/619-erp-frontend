@@ -201,8 +201,6 @@ export interface GoalClientDefaults {
   sessions_per_week?: number | string | null;
   /** The Interview owns training availability; enrolment's copy is fallback. */
   lifestyle_training_days?: number | string | null;
-  interviewChallenges?: string[] | null;
-  interviewMotivation?: string | null;
 }
 
 /**
@@ -228,19 +226,7 @@ export function initGoalFormForClient(client?: GoalClientDefaults | null): GoalF
   const trainingDays = Number.isInteger(days) && days! >= 1 && days! <= 7
     ? String(days)
     : form.trainingDays;
-  const challenges = Array.isArray(client?.interviewChallenges)
-    ? client.interviewChallenges.filter((c) => typeof c === 'string' && c.trim())
-    : [];
-  const motivationReason = typeof client?.interviewMotivation === 'string'
-    ? client.interviewMotivation.trim()
-    : '';
-  return {
-    ...form,
-    experienceLevel: experience,
-    trainingDays,
-    biggestChallenges: challenges.length ? challenges : form.biggestChallenges,
-    motivationReason: motivationReason || form.motivationReason,
-  };
+  return { ...form, experienceLevel: experience, trainingDays };
 }
 
 export function initGoalForm(): GoalFormData {

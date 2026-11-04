@@ -57,15 +57,6 @@ export function StepMotivationCommitment({ form, set, step }: StepMotivationComm
         />
 
         <div>
-          <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>
-            Why they want this (from the Client Interview)
-          </p>
-          <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: gray[800] }}>
-            {form.motivationReason || 'Not recorded in the Client Interview.'}
-          </p>
-        </div>
-
-        <div>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Motivation Level</p>
             {(() => {

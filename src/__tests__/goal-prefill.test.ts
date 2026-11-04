@@ -30,36 +30,6 @@ describe('a new goal starts from the client record', () => {
     expect(initGoalFormForClient({ sessions_per_week: 9 }).trainingDays).toBe('3');
     expect(initGoalFormForClient({ sessions_per_week: 0 }).trainingDays).toBe('3');
   });
-
-  it('prefills barriers and motivation from the interview', () => {
-    const form = initGoalFormForClient({
-      interviewChallenges: ['Work schedule', 'Gym access'],
-      interviewMotivation: 'Keep up with my kids.',
-    });
-    expect(form.biggestChallenges).toEqual(['Work schedule', 'Gym access']);
-    expect(form.motivationReason).toBe('Keep up with my kids.');
-  });
-
-  it('falls back to the form defaults when the interview has no barriers or motivation', () => {
-    const form = initGoalFormForClient({ interviewChallenges: [], interviewMotivation: '' });
-    expect(form.biggestChallenges).toEqual([]);
-    expect(form.motivationReason).toBe('');
-  });
-
-  it('drops non-string and whitespace interview entries', () => {
-    const form = initGoalFormForClient({
-      interviewChallenges: ['   ', 123 as unknown as string, 'Work schedule'],
-      interviewMotivation: '   ',
-    });
-    expect(form.biggestChallenges).toEqual(['Work schedule']);
-    expect(form.motivationReason).toBe('');
-  });
-
-  it('keeps labels an older goal saved outside the old chip vocabulary', () => {
-    const form = formFromGoalRow({ biggest_challenges: ['Work schedule', 'A custom barrier'] });
-    expect(form.biggestChallenges).toEqual(['Work schedule', 'A custom barrier']);
-    expect(form.challengeOther).toBe('');
-  });
 });
 
 describe('editing a goal keeps the saved blueprint choices', () => {

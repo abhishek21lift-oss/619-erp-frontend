@@ -46,7 +46,6 @@ import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import { parqBaselineState } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import type { BaselineMetric, BaselineSource } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
-import { challengeLabels } from '@/components/pt-os/interview/questions';
 import { errorMessage } from '@/lib/forms/errors';
 import { todayISO } from '@/lib/forms/domain';
 import { recommendTrainingSplit, buildRoutineBlueprint } from '@/lib/goal-scheduling';
@@ -250,9 +249,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
   const [latestBodyFat, setLatestBodyFat] = useState<number | null>(null);
   // Sleep and water are asked in Lifestyle and Nutrition. A new goal's
-  // readiness answers start from them rather than asking a second time. The
-  // Interview owns occupation, barriers and motivation; sleep, smoking,
-  // alcohol and screen time stay with Lifestyle, water with Nutrition.
+  // readiness answers start from them rather than asking a second time.
   const [habits, setHabits] = useState<Partial<LifestyleAnswers>>({});
   const [baseline, setBaseline] = useState<BaselineInfo>(EMPTY_BASELINE);
   const [context, setContext] = useState<ClientContext>(EMPTY_CONTEXT);
@@ -286,9 +283,9 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       const parqHistory = parqRow.past_history ?? {};
       const interviews = Array.isArray(interviewRes?.data) ? interviewRes.data : [];
       const interview = (interviews.find((i) => i.status === 'completed') ?? interviews[0]) as ClientInterview | undefined;
-      // Sleep, smoking, alcohol and screen time belong to the
+      // Sleep, smoking, alcohol, occupation and screen time belong to the
       // Lifestyle assessment; meal timing to Nutrition. The Interview is
-      // qualitative history and must not be a second source for those.
+      // qualitative history and must not be a second source.
       const sleep = numberOrNull(lifestyleRow.sleep_duration_hours);
       const water = numberOrNull(nutritionRow.water_intake_liters);
       setHabits({
@@ -298,16 +295,10 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
-      const interviewChallenges = [
-        ...challengeLabels(interview?.training_challenges ?? []),
-        ...(interview?.challenge_other ? [interview.challenge_other] : []),
-      ];
       setClientDefaults({
         workout_experience_level: stringOrNull(c.workout_experience_level),
         sessions_per_week: numberOrNull(c.sessions_per_week),
         lifestyle_training_days: numberOrNull(interview?.lifestyle_training_days),
-        interviewChallenges,
-        interviewMotivation: interview?.motivation ?? null,
       });
 
       const latest = Array.isArray(assessRes?.data) ? assessRes.data[0] : null;
@@ -355,7 +346,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       });
 
       setContext({
-        occupation: stringOrNull(interview?.occupation_type) ?? stringOrNull(lifestyleRow.occupation_type),
+        occupation: stringOrNull(lifestyleRow.occupation_type),
         sittingHours: numberOrNull(interview?.lifestyle_sitting_hours) ?? numberOrNull(parqHistory.daily_sitting_hours),
         screenTime: stringOrNull(lifestyleRow.screen_time_bracket),
         sleepHours: sleep,

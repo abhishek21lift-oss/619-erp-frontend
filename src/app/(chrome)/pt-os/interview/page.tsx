@@ -12,11 +12,10 @@
 //
 // ── What this screen owns ───────────────────────────────────────────────────
 //
-// Four sections: Work, Training background, Motivation & barriers, Trainer
-// summary — the ten agreed questions. Earlier answers the form no longer asks
-// (meal regularity, training days, availability, the client's own words) are
-// read-only history on the completed record; they are never written by this
-// form.
+// Four sections: Work & lifestyle, Training background, Training challenges,
+// Interview summary. Occupation, screen time and activity are read-only here
+// because the Lifestyle Assessment owns them (a single source per fact); the
+// rest is written by this form.
 //
 // A saved completed interview is readable, and editable — correcting a typo or
 // adding what the client mentioned on the way out should not mean starting a
@@ -31,10 +30,10 @@ import { CheckCircle2, Clock3, Loader2, MessagesSquare, Pencil, Plus, User } fro
 import Guard from '@/components/Guard';
 import { Button, HeroChip, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
-import { InterviewSection } from '@/components/pt-os/interview/InterviewSection';
+import { InterviewSection, SourceFactsCard, type LifestyleFacts } from '@/components/pt-os/interview/InterviewSection';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 import {
-  EMPTY_ANSWERS as EMPTY, INTERVIEW_FIELDS, INTERVIEW_SECTIONS, LEGACY_ANSWERS,
+  EMPTY_ANSWERS as EMPTY, INTERVIEW_FIELDS, INTERVIEW_SECTIONS,
   answersFrom, answeredCount, controlAnswered, isControlVisible, sectionAnswered, challengeLabels,
   type Answers, type InterviewControl, type InterviewField,
 } from '@/components/pt-os/interview/questions';
@@ -69,6 +68,8 @@ function InterviewForm({ clientId }: { clientId: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [clientName, setClientName] = useState('');
+  const [lifestyle, setLifestyle] = useState<LifestyleFacts | null>(null);
+  const [lifestyleFailed, setLifestyleFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState<ClientInterview | null>(null);
   const [mode, setMode] = useState<Mode>('edit');
@@ -87,6 +88,7 @@ function InterviewForm({ clientId }: { clientId: string }) {
   // v2: the answer shape gained arrays (training_challenges); an old v1 draft
   // is discarded rather than merged into it.
   const draftKey = `client-interview-draft.v2:${clientId}`;
+  const occupationType = String(lifestyle?.occupation_type ?? '');
 
   const initial = useMemo(
     () => answersFrom(current as unknown as Record<string, unknown> | null),
@@ -103,12 +105,24 @@ function InterviewForm({ clientId }: { clientId: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const [clientRes, listRes] = await Promise.all([
+        // A missing Lifestyle Assessment must not stop the interview being
+        // recorded; the read-only block says "not recorded". A FAILED read is
+        // not the same thing, so it is logged and shown as unavailable rather
+        // than as an empty assessment.
+        const lifestyleRead = api.progress.lifestyleAssessments.list({ client_id: clientId })
+          .catch((err: unknown) => { console.warn('[interview] lifestyle facts unavailable', err); return null; });
+
+        const [clientRes, listRes, lifestyleRes] = await Promise.all([
           api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
           api.pt.interviews.list(clientId),
+          lifestyleRead,
         ]);
         if (cancelled) return;
         setClientName(String(clientRes?.data?.name ?? 'Client'));
+
+        setLifestyleFailed(lifestyleRes === null);
+        const lifestyleRows = (lifestyleRes?.data ?? []) as LifestyleFacts[];
+        setLifestyle(lifestyleRows[0] ?? null);
 
         // Resume an unfinished interview; otherwise show the newest one. A
         // completed interview opens as a summary and can be edited from there.
@@ -136,7 +150,7 @@ function InterviewForm({ clientId }: { clientId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
-  const progress = answeredCount(answers);
+  const progress = answeredCount(answers, occupationType);
   const percent = progress.total ? (progress.answered / progress.total) * 100 : 0;
 
   const setField = (field: InterviewField, value: string | string[]) => {
@@ -164,15 +178,9 @@ function InterviewForm({ clientId }: { clientId: string }) {
     }
 
     // A conditional answer that no longer applies is cleared, not orphaned.
-    // A legacy row can hold a detail with no occupation_type (the old screen
-    // keyed it off the Lifestyle occupation); never delete that history when
-    // no occupation is chosen now.
-    const wasOther = savedRef.current.occupation_type === 'other';
-    if (
-      savedRef.current.occupation_other_details
-      && answers.occupation_type !== 'other'
-      && (wasOther || answers.occupation_type)
-    ) {
+    // Only when the source fact is known: with no Lifestyle row, a legacy
+    // value is left exactly as the record holds it.
+    if (occupationType && occupationType !== 'other' && savedRef.current.occupation_other_details) {
       body.occupation_other_details = '';
     }
     if (!answers.training_challenges.includes('other') && savedRef.current.challenge_other) {
@@ -269,6 +277,9 @@ function InterviewForm({ clientId }: { clientId: string }) {
           clientId={clientId}
           current={current}
           answers={answers}
+          lifestyle={lifestyle}
+          lifestyleUnavailable={lifestyleFailed}
+          occupationType={occupationType}
           answered={progress.answered}
           starting={saving === 'new'}
           onEdit={() => setMode('edit')}
@@ -277,13 +288,14 @@ function InterviewForm({ clientId }: { clientId: string }) {
         />
       ) : (
         <>
-          <SectionNav answers={answers} />
+          <SectionNav answers={answers} occupationType={occupationType} />
 
           <form id="interview-form" className="mx-auto w-full max-w-3xl space-y-3 pb-32"
             onSubmit={(e) => { e.preventDefault(); save(current?.status === 'completed' ? 'changes' : 'completed'); }}>
+            <SourceFactsCard clientId={clientId} lifestyle={lifestyle} unavailable={lifestyleFailed} />
             {INTERVIEW_SECTIONS.map((section, i) => (
               <InterviewSection key={section.id} section={section} index={i} answers={answers}
-                onChange={setField} />
+                occupationType={occupationType} onChange={setField} />
             ))}
           </form>
 
@@ -324,13 +336,13 @@ function InterviewForm({ clientId }: { clientId: string }) {
 }
 
 /** The section anchors, with how much of each section is answered. */
-function SectionNav({ answers }: { answers: Answers }) {
+function SectionNav({ answers, occupationType }: { answers: Answers; occupationType: string }) {
   return (
     <nav aria-label="Interview sections" className="mx-auto w-full max-w-3xl">
       <ul className="flex gap-2 overflow-x-auto pb-0.5">
         {INTERVIEW_SECTIONS.map((section) => {
           const Icon = section.icon;
-          const progress = sectionAnswered(section, answers);
+          const progress = sectionAnswered(section, answers, occupationType);
           return (
             <li key={section.id} className="shrink-0">
               <a href={`#section-${section.id}`}
@@ -352,11 +364,14 @@ function SectionNav({ answers }: { answers: Answers }) {
 
 /** The completed interview as a record: what was asked, and what was said. */
 function InterviewSummary({
-  clientId, current, answers, answered, starting, onEdit, onStartNew, onBack,
+  clientId, current, answers, lifestyle, lifestyleUnavailable, occupationType, answered, starting, onEdit, onStartNew, onBack,
 }: {
   clientId: string;
   current: ClientInterview;
   answers: Answers;
+  lifestyle: LifestyleFacts | null;
+  lifestyleUnavailable: boolean;
+  occupationType: string;
   answered: number;
   starting: boolean;
   onEdit: () => void;
@@ -382,10 +397,12 @@ function InterviewSummary({
         </div>
       </div>
 
+      <SourceFactsCard clientId={clientId} lifestyle={lifestyle} unavailable={lifestyleUnavailable} />
+
       {INTERVIEW_SECTIONS.map((section, i) => {
         const Icon = section.icon;
         const controls = section.controls.filter(
-          (control) => isControlVisible(control, answers) || controlAnswered(answers[control.key]),
+          (control) => isControlVisible(control, answers, occupationType) || controlAnswered(answers[control.key]),
         );
         return (
           <section key={section.id} aria-labelledby={`summary-${section.id}`}
@@ -427,30 +444,6 @@ function InterviewSummary({
         );
       })}
 
-      {LEGACY_ANSWERS.some(({ key }) => controlAnswered(answers[key])) && (
-        <section aria-labelledby="summary-earlier"
-          className="rounded-[20px] p-4 sm:p-5"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <h2 id="summary-earlier" className="text-[16px] font-[780] tracking-[-0.015em]"
-            style={{ color: 'var(--text-primary)' }}>
-            Earlier interview answers
-          </h2>
-          <dl className="mt-3 divide-y" style={{ borderColor: 'var(--border)' }}>
-            {LEGACY_ANSWERS.filter(({ key }) => controlAnswered(answers[key])).map(({ key, label }) => (
-              <div key={key} className="py-2.5 first:pt-0 last:pb-0">
-                <dt className="text-[10.5px] font-[760] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
-                  {label}
-                </dt>
-                <dd className="mt-0.5 text-[13.5px] leading-relaxed whitespace-pre-line"
-                  style={{ color: 'var(--text-primary)' }}>
-                  {answers[key]}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-
       <div className="flex flex-wrap items-center gap-2.5 pt-1">
         <Button type="button" onClick={onEdit} iconLeft={<Pencil size={14} aria-hidden />}
           style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}>
@@ -487,7 +480,7 @@ function when(iso: string | null): string {
   return date.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-/** The page's own shape while the client loads: hero and sections. */
+/** The page's own shape while the client loads: hero, source facts, sections. */
 function InterviewSkeleton() {
   const block = (h: string, r = 'rounded-[20px]') => (
     <div className={`${h} ${r} animate-pulse`} style={{ background: 'var(--bg-subtle)' }} />

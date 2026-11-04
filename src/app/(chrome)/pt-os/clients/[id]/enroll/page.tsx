@@ -1067,7 +1067,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <SearchableSelect
-                      label="Current Training Level" allowCustom={false}
+                      label="Workout Experience" allowCustom={false}
                       value={form.workoutExperienceLevel}
                       onChange={(v) => set('workoutExperienceLevel', v)}
                       options={WORKOUT_EXPERIENCE_OPTIONS}
@@ -1193,7 +1193,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   { label: 'Weekly Commitment', val: availability.commitment },
                   { label: 'Estimated Sessions', val: estimatedSessions || '—' },
                   { label: 'Training Mode', val: form.trainingMode || '—' },
-                  { label: 'Current Training Level', val: WORKOUT_EXPERIENCE_OPTIONS.find((o) => o.value === form.workoutExperienceLevel)?.label || '—' },
+                  { label: 'Workout Experience', val: WORKOUT_EXPERIENCE_OPTIONS.find((o) => o.value === form.workoutExperienceLevel)?.label || '—' },
                   { label: 'Equipment', val: EQUIPMENT_OPTIONS.find((o) => o.value === form.equipment)?.label || '—' },
                 ].map((r) => (
                   <div key={r.label}>

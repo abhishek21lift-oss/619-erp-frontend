@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import GoalStepCard from './GoalStepCard';
+import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
 import { indigo, gray } from '@/lib/palette';
 import type { BarrierPlan } from '@/lib/goal-plan';
 import type { GoalFormData } from './types';
@@ -49,27 +50,15 @@ export function StepChallenges({ form, set, step, error }: StepChallengesProps) 
     set('barrierPlans', next);
   };
 
-  const iconFor = (challenge: string) =>
-    CHALLENGE_OPTIONS.find((o) => o.value === challenge)?.icon ?? <HelpCircle size={14} />;
-
   return (
     <GoalStepCard icon={HelpCircle} title="Challenges & Barriers" step={step} hint="what gets in the way, and the plan for it">
       <div className="space-y-7">
         <div>
           <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Biggest Challenge</p>
-          <p className="mb-3 text-[12px]" style={{ color: gray[500] }}>Recorded in the Client Interview. Write the plan for each one here.</p>
-          {challenges.length === 0 ? (
-            <p className="text-[13px]" style={{ color: gray[500] }}>No barriers were recorded in the Client Interview.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {challenges.map((c) => (
-                <span key={c} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-[600]"
-                  style={{ background: gray[50], border: `1px solid ${gray[200]}`, color: indigo[700] }}>
-                  {iconFor(c)}{c}
-                </span>
-              ))}
-            </div>
-          )}
+          <MultiSelectChips value={form.biggestChallenges} onChange={(v) => set('biggestChallenges', v)} options={CHALLENGE_OPTIONS} />
+          <div className="mt-3 max-w-sm">
+            <FloatInput label="Other" maxLength={200} value={form.challengeOther} onChange={(v) => set('challengeOther', v)} />
+          </div>
           {error && <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
         </div>
 

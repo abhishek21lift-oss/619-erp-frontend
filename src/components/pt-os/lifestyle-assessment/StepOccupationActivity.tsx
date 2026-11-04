@@ -5,13 +5,21 @@ import { Briefcase } from 'lucide-react';
 import { classifyActivity } from '@/lib/lifestyle-calculations';
 import { stepLabel } from './types';
 import type { LifestyleFormData } from './types';
-import type { DailyStepsBracket, OccupationType } from '@/lib/lifestyle-calculations';
+import type { DailyStepsBracket } from '@/lib/lifestyle-calculations';
 
-const OCCUPATION_LABELS: Record<OccupationType, string> = {
-  desk_job: 'Desk Job', active_job: 'Active Job', physical_labor: 'Physical Labor',
-  student: 'Student', homemaker: 'Homemaker', driver: 'Driver', healthcare: 'Healthcare',
-  police: 'Police', fitness_professional: 'Fitness Professional', retired: 'Retired', other: 'Other',
-};
+const OCCUPATIONS: { value: LifestyleFormData['occupationType']; label: string; icon: string }[] = [
+  { value: 'desk_job', label: 'Desk Job', icon: '💻' },
+  { value: 'active_job', label: 'Active Job', icon: '🏃' },
+  { value: 'physical_labor', label: 'Physical Labor', icon: '🏗️' },
+  { value: 'student', label: 'Student', icon: '🎓' },
+  { value: 'homemaker', label: 'Homemaker', icon: '🏠' },
+  { value: 'driver', label: 'Driver', icon: '🚚' },
+  { value: 'healthcare', label: 'Healthcare', icon: '⚕️' },
+  { value: 'police', label: 'Police', icon: '👮' },
+  { value: 'fitness_professional', label: 'Fitness Professional', icon: '🏋️' },
+  { value: 'retired', label: 'Retired', icon: '👴' },
+  { value: 'other', label: 'Other', icon: '➕' },
+];
 
 const STEPS_BRACKETS: { value: DailyStepsBracket; label: string }[] = [
   { value: '<3000', label: '<3,000' },
@@ -25,16 +33,13 @@ interface StepOccupationActivityProps {
   form: LifestyleFormData;
   set: <K extends keyof LifestyleFormData>(key: K, val: LifestyleFormData[K]) => void;
   error?: string;
-  occupationType: OccupationType | '';
-  occupationSource: 'interview' | 'lifestyle' | null;
 }
 
-export function StepOccupationActivity({ form, set, error, occupationType, occupationSource }: StepOccupationActivityProps) {
+export function StepOccupationActivity({ form, set, error }: StepOccupationActivityProps) {
   const { level, score } = useMemo(
-    () => classifyActivity(form.dailyStepsBracket || null, occupationType || null),
-    [form.dailyStepsBracket, occupationType],
+    () => classifyActivity(form.dailyStepsBracket || null, form.occupationType || null),
+    [form.dailyStepsBracket, form.occupationType],
   );
-  const occupationLabel = occupationType ? (OCCUPATION_LABELS[occupationType] ?? occupationType) : '';
 
   return (
     <div className="space-y-7">
@@ -43,19 +48,34 @@ export function StepOccupationActivity({ form, set, error, occupationType, occup
             <Briefcase size={20} color="#FFBB94" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Activity</h2>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Occupation &amp; Activity</h2>
             <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">{stepLabel('occupationActivity')} — daily movement, at work and on foot.</p>
           </div>
         </div>
 
-        <p className="text-[13px] leading-[1.5] text-[color:var(--text-muted)]">
-          Occupation: <strong className="text-[color:var(--text-primary)]">{occupationLabel || 'Not recorded'}</strong>
-          {occupationSource === 'lifestyle'
-            ? ' — from this assessment\'s earlier answer; the Client Interview will own it once answered.'
-            : occupationSource === 'interview'
-              ? ' — recorded in the Client Interview.'
-              : ' — not yet recorded. Add it in the Client Interview.'}
-        </p>
+        <div>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Occupation Type</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {OCCUPATIONS.map((o) => {
+              const selected = form.occupationType === o.value;
+              return (
+                <button
+                  key={o.value} type="button"
+                  onClick={() => set('occupationType', o.value)}
+                  className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
+                  style={{
+                    background: selected ? 'rgba(163,55,87,0.06)' : 'var(--bg-subtle)',
+                    border: selected ? '2px solid #A33757' : '2px solid var(--border)',
+                    boxShadow: selected ? '0 4px 16px rgba(163,55,87,0.18)' : 'none',
+                  }}
+                >
+                  <span className="text-[20px]">{o.icon}</span>
+                  <span className="text-[11.5px] font-[700]" style={{ color: selected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div>
           <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Daily Steps</p>
