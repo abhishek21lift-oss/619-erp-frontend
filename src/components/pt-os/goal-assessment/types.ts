@@ -136,6 +136,7 @@ export interface FormErrors {
   schedule?: string;
   milestones?: string;
   assessmentReview?: string;
+  agreement?: string;
 }
 
 /**
@@ -183,13 +184,12 @@ export const STEPS = [
   { id: 2, key: 'smartGoal', label: 'SMART Goal' },
   { id: 3, key: 'measureTarget', label: 'Measure & Target' },
   { id: 4, key: 'deadline', label: 'Deadline' },
-  { id: 5, key: 'priority', label: 'Priority & Agreement' },
-  { id: 6, key: 'motivation', label: 'Motivation & Confidence' },
-  { id: 7, key: 'challenges', label: 'Challenges & Barriers' },
-  { id: 8, key: 'lifestyle', label: 'Lifestyle & Routine' },
-  { id: 9, key: 'schedule', label: 'Training Availability' },
-  { id: 10, key: 'milestones', label: 'Time Horizons' },
-  { id: 11, key: 'assessmentReview', label: 'Assessment & Review' },
+  { id: 5, key: 'milestones', label: 'Time Horizons' },
+  { id: 6, key: 'priority', label: 'Priority' },
+  { id: 7, key: 'motivation', label: 'Motivation & Confidence' },
+  { id: 8, key: 'challenges', label: 'Challenges & Barriers' },
+  { id: 9, key: 'lifestyle', label: 'Lifestyle & Routine' },
+  { id: 10, key: 'schedule', label: 'Training Availability' },
 ] as const;
 
 export const LAST_STEP = STEPS[STEPS.length - 1].id;

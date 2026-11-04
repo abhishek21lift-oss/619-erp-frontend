@@ -36,6 +36,7 @@ import StepLifestyle from '@/components/pt-os/goal-assessment/StepLifestyle';
 import StepSchedule from '@/components/pt-os/goal-assessment/StepSchedule';
 import StepMilestones from '@/components/pt-os/goal-assessment/StepMilestones';
 import StepAssessmentReview from '@/components/pt-os/goal-assessment/StepAssessmentReview';
+import ReviewSignOff from '@/components/pt-os/goal-assessment/ReviewSignOff';
 import TrainingSchedulePreview from '@/components/pt-os/goal-assessment/TrainingSchedulePreview';
 import MilestoneTracker from '@/components/pt-os/goal-assessment/MilestoneTracker';
 import GoalAnalysisDashboard from '@/components/pt-os/goal-assessment/GoalAnalysisDashboard';
@@ -43,7 +44,7 @@ import GoalSummaryCard from '@/components/pt-os/goal-assessment/GoalSummaryCard'
 import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
 import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
-import BaselineScreeningCard, { parqBaselineState } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
+import { parqBaselineState } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import type { BaselineMetric, BaselineSource } from '@/components/pt-os/goal-assessment/BaselineScreeningCard';
 import { errorMessage } from '@/lib/forms/errors';
 import { todayISO } from '@/lib/forms/domain';
@@ -74,7 +75,7 @@ function periodWeeks(value: string, fallback: number): number {
 function validateMeasure(form: GoalFormData, currentWeight: number | null, currentBodyFat: number | null): string | undefined {
   const metric = form.targetMetric;
   if (!metric) {
-    if (!form.successMetric.trim()) return 'Choose what will be measured, or write a success metric in the SMART step.';
+    if (!form.successMetric.trim()) return 'Choose what will be measured, or write a success metric.';
     return undefined;
   }
   if (metric === 'weight') {
@@ -120,17 +121,7 @@ function validateStep(id: StepId, form: GoalFormData, today: string, currentWeig
   // A past target date used to be accepted, and the whole analysis then came
   // back blank without a word.
   if (id === 4 && form.targetDate < today) return 'The target date must be today or later.';
-  if (id === 5 && !form.priorityGoal) return 'Please select a top priority.';
-  if (id === 5 && !form.clientAgreed) return 'Confirm that the client has seen this goal and agrees with it.';
-  if (id === 7) {
-    const missing = selectedChallenges(form).find((c) => !form.barrierPlans.find((p) => p.challenge === c && p.plan.trim()));
-    if (missing) return `Write a plan for "${missing}", or remove it from the challenges.`;
-  }
-  if (id === 9) {
-    if (!form.trainingDays) return 'Please choose training days.';
-    if (!form.sessionMinutes) return 'Please choose a session length.';
-  }
-  if (id === 10) {
+  if (id === 5) {
     if (!form.milestones.length) return 'Add at least one milestone, or accept the suggested ones.';
     const horizons = [
       { type: 'short_term', label: 'short-term' },
@@ -138,10 +129,18 @@ function validateStep(id: StepId, form: GoalFormData, today: string, currentWeig
       { type: 'long_term', label: 'long-term' },
     ] as const;
     const missing = horizons.find((h) => !form.milestones.some((m) => m.type === h.type));
-    if (missing) return `Add a ${missing.label} milestone — K11 needs all three horizons.`;
+    if (missing) return `Add a ${missing.label} milestone — all three horizons are required.`;
     return validateMilestones(form.milestones, today, form.targetDate || null);
   }
-  if (id === 11 && form.reviewDate && form.reviewDate < today) return 'The review date must be today or later.';
+  if (id === 6 && !form.priorityGoal) return 'Please select a top priority.';
+  if (id === 8) {
+    const missing = selectedChallenges(form).find((c) => !form.barrierPlans.find((p) => p.challenge === c && p.plan.trim()));
+    if (missing) return `Write a plan for "${missing}", or remove it from the challenges.`;
+  }
+  if (id === 10) {
+    if (!form.trainingDays) return 'Please choose training days.';
+    if (!form.sessionMinutes) return 'Please choose a session length.';
+  }
   return undefined;
 }
 
@@ -620,6 +619,21 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
       toast.error(allErrors[firstInvalid.key]!);
       return;
     }
+
+    // The review date and the client's agreement live on the review screen,
+    // which is no longer a wizard step, so they are checked here.
+    const reviewDateError = form.reviewDate && form.reviewDate < today
+      ? 'The review date must be today or later.'
+      : undefined;
+    const agreementError = form.clientAgreed
+      ? undefined
+      : 'Confirm that the client has seen this goal and agrees with it.';
+    if (reviewDateError || agreementError) {
+      setErrors({ ...allErrors, assessmentReview: reviewDateError, agreement: agreementError });
+      toast.error(reviewDateError || agreementError!);
+      return;
+    }
+
     setSaving(true);
     try {
       const challenges = selectedChallenges(form);
@@ -799,19 +813,12 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
               />
             )}
             {step === 4 && <StepDeadline form={form} set={set} step={step} error={errors.deadline} />}
-            {step === 5 && <StepPriority form={form} set={set} step={step} error={errors.priority} />}
-            {step === 6 && <StepMotivationCommitment form={form} set={set} step={step} />}
-            {step === 7 && <StepChallenges form={form} set={set} step={step} error={errors.challenges} />}
-            {step === 8 && <StepLifestyle form={form} set={set} step={step} context={context} clientId={clientId} error={errors.lifestyle} />}
-            {step === 9 && <StepSchedule form={form} set={set} step={step} />}
-            {step === 10 && <StepMilestones form={form} set={set} step={step} today={today} error={errors.milestones} />}
-            {step === 11 && (
-              <StepAssessmentReview
-                form={form} set={set} step={step}
-                sources={baselineSources} metrics={baselineMetrics}
-                retest={retest} clientId={clientId} error={errors.assessmentReview}
-              />
-            )}
+            {step === 5 && <StepMilestones form={form} set={set} step={step} today={today} error={errors.milestones} />}
+            {step === 6 && <StepPriority form={form} set={set} step={step} error={errors.priority} />}
+            {step === 7 && <StepMotivationCommitment form={form} set={set} step={step} />}
+            {step === 8 && <StepChallenges form={form} set={set} step={step} error={errors.challenges} />}
+            {step === 9 && <StepLifestyle form={form} set={set} step={step} context={context} clientId={clientId} error={errors.lifestyle} />}
+            {step === 10 && <StepSchedule form={form} set={set} step={step} />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
@@ -844,9 +851,14 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
               milestones={form.milestones}
               reviewDate={form.reviewDate}
             />
-            <BaselineScreeningCard sources={baselineSources} metrics={baselineMetrics} />
+            <StepAssessmentReview
+              form={form} set={set}
+              sources={baselineSources} metrics={baselineMetrics}
+              retest={retest} clientId={clientId} error={errors.assessmentReview}
+            />
             <TrainingSchedulePreview trainingDays={form.trainingDays} goal={form.goalType} experience={form.experienceLevel} preferredDays={form.preferredDays} />
             <MilestoneTracker startDate={today} targetDate={form.targetDate || null} milestones={form.milestones} />
+            <ReviewSignOff form={form} set={set} error={errors.agreement} />
           </m.div>
         )}
       </div>

@@ -46,8 +46,8 @@ export function parqBaselineState(
  * row carries the same client_id the wizard was opened with, so opening one
  * cannot silently switch to another client.
  *
- * `step` and `children` let the Assessment & Review wizard step use this as
- * its own card, with the re-test date underneath the readings.
+ * `step` and `children` let the Assessment & Review card render inside the
+ * wizard or on the final review screen, with the re-test date underneath.
  */
 export function BaselineScreeningCard({
   sources, metrics = [], step, children,

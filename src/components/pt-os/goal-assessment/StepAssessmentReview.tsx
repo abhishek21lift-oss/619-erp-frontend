@@ -11,7 +11,8 @@ import type { GoalFormData, RetestInfo } from './types';
 interface StepAssessmentReviewProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
-  step: number;
+  /** Omitted on the review screen — it is no longer a wizard step. */
+  step?: number;
   sources: BaselineSource[];
   metrics: BaselineMetric[];
   retest: RetestInfo;
@@ -70,7 +71,7 @@ export function StepAssessmentReview({
           />
         </div>
         <p className="mt-2 text-[11.5px]" style={{ color: gray[500] }}>
-          Saved as this goal&apos;s review date. K11 schedules re-testing every 4–6 months.
+          Saved as this goal&apos;s review date. Re-testing is scheduled every 4–6 months.
         </p>
       </div>
 

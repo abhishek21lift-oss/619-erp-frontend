@@ -113,7 +113,7 @@ const KNOWN = [
   // so a missing module cannot block the goal. Only the re-test fallback is
   // the bare `null` shape this ratchet pins; the interview fallback is an
   // object literal and does not match.
-  'app/(chrome)/pt-os/goals/page.tsx:279',
+  'app/(chrome)/pt-os/goals/page.tsx:278',
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
   // 442 -> 436: the side-tab stripe removal deleted the six-line category
   // colour table above this site. File set and per-file count unchanged.
