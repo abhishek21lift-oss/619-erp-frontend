@@ -26,7 +26,14 @@ export const campaigns = {
   update: (id: string, data: Record<string, unknown>) =>
     http<{ message: string; campaign: unknown }>(`/api/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => http<{ message: string }>(`/api/campaigns/${id}`, { method: 'DELETE' }),
-  stats: () => http<{ active: number; total_sent: number; conversions: number; conv_rate: number }>('/api/campaigns/stats'),
+  stats: () => http<{
+    active: number;
+    total_sent: number;
+    /** Added after the first release of this route; absent on an older API. */
+    total_opened?: number;
+    conversions: number;
+    conv_rate: number;
+  }>('/api/campaigns/stats'),
 };
 
 // ── Feedback ───────────────────────────────────────────────────
@@ -39,7 +46,12 @@ export const feedback = {
   resolve: (id: string) =>
     http<{ message: string }>(`/api/feedback/${id}/resolve`, { method: 'POST' }),
   stats: () =>
-    http<{ avg_rating: number; total: number; positive: number; open: number; nps: number }>('/api/feedback/stats'),
+    http<{
+      avg_rating: number; total: number; positive: number;
+      /** rating = 3; absent on an API older than the sentiment donut. */
+      neutral?: number;
+      negative: number; open: number; nps: number;
+    }>('/api/feedback/stats'),
 };
 
 // ── Communication (send notification) ───────────────────────────

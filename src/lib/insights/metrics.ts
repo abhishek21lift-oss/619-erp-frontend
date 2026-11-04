@@ -154,3 +154,22 @@ export function expiryBuckets(m: Pick<RenewalMetric, 'expiring_7d' | 'expiring_3
   const week = Math.max(0, num(m.expiring_7d));
   return { week, rest: Math.max(0, num(m.expiring_30d) - week) };
 }
+
+export interface WeeklyAdherencePoint { week: string; pct: number }
+
+/** Oldest-first adherence points from weekly check-in rows. A row without a
+ *  percentage is a gap, not 0% — the chart would otherwise claim a failed
+ *  week nobody recorded. */
+export function adherenceTrend(
+  rows: { week_start_date?: unknown; adherence_pct?: number | string | null }[],
+): WeeklyAdherencePoint[] {
+  const points: WeeklyAdherencePoint[] = [];
+  for (const row of rows) {
+    const week = String(row.week_start_date ?? '').slice(0, 10);
+    const raw = row.adherence_pct;
+    if (!week || raw == null || raw === '') continue;
+    const pct = Number(raw);
+    if (Number.isFinite(pct)) points.push({ week, pct });
+  }
+  return points.sort((a, b) => a.week.localeCompare(b.week));
+}

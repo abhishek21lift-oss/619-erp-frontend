@@ -10,9 +10,11 @@ import { Button, PageHero } from '@/components/ui';
 import {
   ChoiceChips, DateFieldControl, FormErrorBanner, NumberField, SelectField, TextAreaField,
 } from '@/components/ui/form';
-import { PremiumAreaChart } from '@/components/visualizations';
+import { PremiumAreaChart, PremiumBarChart, semantic } from '@/components/visualizations';
 import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
 import { mondayYmd } from '@/lib/attendance-view';
+import { fmtDayMonth } from '@/lib/format';
+import { adherenceTrend } from '@/lib/insights/metrics';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   WEEKLY_CHECKIN_MOOD_OPTIONS, blankWeeklyCheckin, toWeeklyCheckinPayload,
@@ -64,8 +66,12 @@ export default function WeeklyCheckinPage() {
   const clients = useAsync<Client[]>(() => api.pt.clients().then(r => r.data as Client[]), []);
   const checkins = useAsync(() => api.progress.weeklyCheckins.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
   // One typed view of the check-in rows, reused everywhere below instead of
-  // an `any[]` cast at each call site.
-  const checkinRows = (checkins.data ?? []) as CheckinRow[];
+  // an `any[]` cast at each call site. Memoised so both trends below keep a
+  // stable dependency instead of re-running on every render.
+  const checkinRows = useMemo(
+    () => (checkins.data ?? []) as CheckinRow[],
+    [checkins.data],
+  );
 
   // Oldest-first, real weight readings only — a check-in logged without a
   // weight (mood/sleep only) contributes nothing to this trend rather than a
@@ -76,6 +82,16 @@ export default function WeeklyCheckinPage() {
       .sort((a, b) => String(a.week_start_date).localeCompare(String(b.week_start_date)))
       .map((c) => ({ week: String(c.week_start_date), weight: c.weight }));
   }, [checkinRows]);
+
+  // A check-in without an adherence figure is a gap, not a failed week.
+  const adherence = useMemo(
+    () => adherenceTrend(checkinRows).map((p) => ({
+      label: fmtDayMonth(p.week),
+      pct: p.pct,
+      color: p.pct >= 80 ? semantic.success : p.pct >= 60 ? semantic.warning : semantic.danger,
+    })),
+    [checkinRows],
+  );
 
   const pageError = clients.error || checkins.error;
 
@@ -345,6 +361,19 @@ export default function WeeklyCheckinPage() {
                 every client's check-ins, and a weight trend across different
                 people is not a trend. Needs two real readings for a line to
                 describe a direction. */}
+            {clientId && adherence.length >= 2 && (
+              <PremiumBarChart
+                data={adherence}
+                xKey="label"
+                bars={[{ key: 'pct', label: 'Adherence', color: semantic.info, colorKey: 'color' }]}
+                showLegend={false}
+                title="Adherence trend"
+                subtitle={`Last ${adherence.length} check-ins with a recorded percentage`}
+                height={160}
+                className="mb-5"
+                ariaLabel={`Adherence by week: ${adherence.map((p) => `${p.label} ${p.pct}%`).join(', ')}.`}
+              />
+            )}
             {clientId && weightTrend.length >= 2 && (
               <PremiumAreaChart
                 data={weightTrend}
@@ -359,7 +388,7 @@ export default function WeeklyCheckinPage() {
                 <div key={c.id} className="rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                   <div className="flex justify-between mb-2">
                     <span className="text-[12px] font-semibold" style={{ color: 'var(--text-muted)' }}>Week of {String(c.week_start_date)}</span>
-                    {!!c.adherence_pct && (
+                    {c.adherence_pct != null && (
                       <span className="text-[11px] font-bold" style={{ color: c.adherence_pct >= 80 ? '#10b981' : c.adherence_pct >= 60 ? '#f59e0b' : '#ef4444' }}>
                         {c.adherence_pct}%
                       </span>

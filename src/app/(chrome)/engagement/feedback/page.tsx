@@ -1,14 +1,27 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { PremiumDonutChart, semantic, series as chartSeries } from '@/components/visualizations';
 import { Star, MessageSquare, ThumbsUp, ThumbsDown, Clock, CheckCircle2, User, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { FormField, SelectInput, TextInput } from '@/components/ui/form';
 
 interface Feedback { id: string; member: string; trainer?: string; rating: number; category: string; message: string; status: 'open' | 'resolved' | 'in_progress'; date: string; sentiment: 'positive' | 'neutral' | 'negative'; }
+
+/** Server counts over every row — the list endpoint caps at 50. */
+interface FeedbackStats {
+  avg_rating: number;
+  total: number;
+  positive: number;
+  /** Server count for rating = 3; absent on an older API. */
+  neutral?: number;
+  negative: number;
+  open: number;
+  nps: number;
+}
 
 const CATS = ['All', 'Trainer', 'Facility', 'Equipment', 'Overall', 'Timing', 'Billing', 'Other'];
 
@@ -28,6 +41,8 @@ export default function FeedbackPage() { return <Guard role="trainer"><FeedbackC
 function FeedbackContent() {
   const { toast } = useToast();
   const [items, setItems] = useState<Feedback[]>([]);
+  const [stats, setStats] = useState<FeedbackStats | null>(null);
+  const [statsFailed, setStatsFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cat, setCat] = useState('All');
@@ -36,12 +51,39 @@ function FeedbackContent() {
   const [reply, setReply] = useState('');
   const [resolving, setResolving] = useState<string | null>(null);
 
-  async function load() {
+  /**
+   * Refresh the totals behind the KPIs and the donut.
+   *
+   * A failure clears them and raises `statsFailed`, which the donut renders
+   * as an error. It never throws: it runs beside the list load and after a
+   * resolve, and neither should be reported as failed because a count could
+   * not be refreshed.
+   */
+  const loadStats = useCallback(async () => {
+    try {
+      setStats(await api.feedback.stats());
+      setStatsFailed(false);
+    } catch {
+      setStats(null);
+      setStatsFailed(true);
+    }
+  }, []);
+
+  const load = useCallback(async () => {
     setLoading(true); setError(null);
-    try { const data = await api.feedback.list() as Feedback[]; setItems(Array.isArray(data) ? data : []); }
+    try {
+      // The list may be capped; the totals behind the KPIs and the donut
+      // never are. A stats failure leaves the list usable and the figures
+      // blank rather than quietly deriving them from the 50 rows on screen.
+      const [data] = await Promise.all([
+        api.feedback.list() as Promise<Feedback[]>,
+        loadStats(),
+      ]);
+      setItems(Array.isArray(data) ? data : []);
+    }
     catch (err: any) { setError(err?.message || 'Failed to load feedback'); }
     finally { setLoading(false); }
-  }
+  }, [loadStats]);
 
   async function handleResolve(id: string) {
     setResolving(id);
@@ -49,6 +91,8 @@ function FeedbackContent() {
       await api.feedback.resolve(id);
       setItems(p => p.map(f => f.id === id ? { ...f, status: 'resolved' as const } : f));
       setShowReply(null); setReply('');
+      // Resolving changes the open count and the sentiment denominator.
+      await loadStats();
       toast.success('Feedback resolved');
     } catch (err: any) { toast.error(err?.message || 'Failed to resolve feedback'); }
     finally { setResolving(null); }
@@ -63,13 +107,34 @@ function FeedbackContent() {
     } catch (err: any) { toast.error(err?.message || 'Failed to send reply'); }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = items.filter(f => (cat === 'All' || f.category === cat) && (statusF === 'all' || f.status === statusF));
-  const avgRating = items.length ? (items.reduce((s, f) => s + f.rating, 0) / items.length).toFixed(1) : '0';
-  const positive = items.filter(f => f.sentiment === 'positive').length;
-  const open = items.filter(f => f.status === 'open').length;
-  const nps = items.length ? Math.round(((positive - items.filter(f => f.sentiment === 'negative').length) / items.length) * 100) : 0;
+  const total = stats ? Number(stats.total) : null;
+  const positive = stats ? Number(stats.positive) : null;
+  const negative = stats ? Number(stats.negative) : null;
+  // A row can be filed without a rating, so `total` is not the sum of the
+  // three sentiment buckets. Prefer the server's own neutral count; only an
+  // older API without it falls back to the subtraction.
+  const neutral = stats
+    ? (stats.neutral != null
+        ? Number(stats.neutral)
+        : Math.max(0, (total ?? 0) - (positive ?? 0) - (negative ?? 0)))
+    : 0;
+  const avgRating = stats?.avg_rating != null ? Number(stats.avg_rating).toFixed(1) : '—';
+  const open = stats ? Number(stats.open) : null;
+  const nps = stats ? Math.round(Number(stats.nps)) : null;
+
+  // The server buckets ratings the same way the list does: 4–5 positive,
+  // 3 neutral, 1–2 negative. A row filed without a rating belongs to none of
+  // the three, which is why neutral is not the remainder of `total`.
+  const sentiment = stats
+    ? [
+        { name: 'Positive', value: positive ?? 0, color: semantic.success },
+        { name: 'Neutral', value: neutral, color: chartSeries[6] },
+        { name: 'Negative', value: negative ?? 0, color: semantic.danger },
+      ]
+    : [];
 
   function stars(n: number) { return Array.from({ length: 5 }, (_, i) => i < n ? '★' : '☆').join(''); }
   function statusColor(s: string) { return s === 'resolved' ? '#10b981' : s === 'in_progress' ? '#d97706' : '#F59E0B'; }
@@ -92,7 +157,7 @@ function FeedbackContent() {
       <m.div variants={containerVariants} initial="hidden" animate="visible"
         className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {KPIS.map((k, i) => {
-          const vals = [avgRating, items.length, positive, open, nps];
+          const vals = [avgRating, total ?? '—', positive ?? '—', open ?? '—', nps ?? '—'];
           const suffixes = [' ⭐', '', '', '', '%'];
           return (
             <m.div key={k.label} variants={itemVariants}
@@ -103,6 +168,24 @@ function FeedbackContent() {
           );
         })}
       </m.div>
+
+      <PremiumDonutChart
+        data={sentiment}
+        centerValue={nps ?? undefined}
+        centerLabel="NPS"
+        title="Sentiment mix"
+        subtitle={total != null ? `Sentiment across all ${total} feedback ${total === 1 ? 'entry' : 'entries'}` : 'Positive, neutral and negative ratings'}
+        height={260}
+        className="mt-4"
+        loading={loading && !stats}
+        error={!loading && statsFailed ? 'Feedback totals could not be loaded.' : null}
+        onRetry={() => { void load(); }}
+        emptyTitle="No feedback yet"
+        emptyDescription="Sentiment appears once a member rates a session."
+        ariaLabel={stats
+          ? `Feedback sentiment across ${total ?? 0} entries: ${positive ?? 0} positive, ${neutral} neutral, ${negative ?? 0} negative.`
+          : 'Feedback sentiment'}
+      />
 
       {/* ── FILTERS ── */}
       <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}

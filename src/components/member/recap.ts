@@ -41,6 +41,11 @@ export function previousMonthOf(month: string): string {
   return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
 }
 
+/** The server's Monday-first weekday counts as chart rows. */
+export function weekdayBars(weekdays: number[]): { day: string; sessions: number }[] {
+  return WEEKDAYS.map((day, i) => ({ day: day.slice(0, 3), sessions: Number(weekdays[i]) || 0 }));
+}
+
 /** The weekday trained most, or null when no day stands out (a tie, or nothing). */
 export function favouriteDay(weekdays: number[]): string | null {
   const max = Math.max(0, ...weekdays);

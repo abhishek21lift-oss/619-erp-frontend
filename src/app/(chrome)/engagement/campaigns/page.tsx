@@ -33,6 +33,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
+import { PremiumBarChart, semantic, series as chartSeries } from '@/components/visualizations';
 import {
   TextField, SelectField, DateFieldControl, FormErrorBanner,
 } from '@/components/ui/form';
@@ -54,7 +55,14 @@ interface Campaign {
 }
 
 /** What the server counts, over the whole table rather than the loaded page. */
-interface CampaignStats { active: number; total_sent: number; conversions: number; conv_rate: number }
+interface CampaignStats {
+  active: number;
+  total_sent: number;
+  /** Optional while an older API instance is still serving the stats route. */
+  total_opened?: number;
+  conversions: number;
+  conv_rate: number;
+}
 
 const KPIS = [
   { label: 'Active', color: '#10b981', icon: <TrendingUp size={18} />, bg: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))' },
@@ -155,6 +163,18 @@ function CampaignContent() {
     ? [stats.active, stats.total_sent, stats.conversions, `${stats.conv_rate}%`]
     : ['—', '—', '—', '—'];
 
+  // Stage counts, not a cumulative funnel: the server has no per-recipient
+  // history, so this draws where every campaign stands today.
+  const funnel = stats
+    ? [
+        { stage: 'Sent', people: Number(stats.total_sent) || 0, color: semantic.info },
+        ...(stats.total_opened != null
+          ? [{ stage: 'Opened', people: Number(stats.total_opened) || 0, color: chartSeries[3] }]
+          : []),
+        { stage: 'Converted', people: Number(stats.conversions) || 0, color: semantic.success },
+      ]
+    : [];
+
   return (
     <PageContainer>
       <PageHero
@@ -195,6 +215,25 @@ function CampaignContent() {
           </m.div>
         ))}
       </m.div>
+
+      <PremiumBarChart
+        data={funnel}
+        xKey="stage"
+        bars={[{ key: 'people', label: 'People', color: semantic.info, colorKey: 'color' }]}
+        showLegend={false}
+        title="Campaign funnel"
+        subtitle="Sent → opened → converted across every campaign"
+        height={240}
+        className="mt-4"
+        loading={loading && !stats}
+        error={!loading && !stats ? 'Campaign totals could not be loaded.' : null}
+        onRetry={() => { void refreshStats(); }}
+        emptyTitle="No campaigns yet"
+        emptyDescription="Create a campaign to see sends, opens and conversions here."
+        ariaLabel={stats
+          ? `Campaign funnel: ${Number(stats.total_sent) || 0} sent, ${stats.total_opened != null ? `${Number(stats.total_opened) || 0} opened, ` : ''}${Number(stats.conversions) || 0} converted.`
+          : 'Campaign funnel'}
+      />
 
       {/* ── CREATE FORM ── */}
       {showForm && (
