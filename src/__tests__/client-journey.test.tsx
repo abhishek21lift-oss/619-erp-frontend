@@ -169,7 +169,7 @@ describe('the screens that end a step point at the next one', () => {
     const src = read('interview/page.tsx');
     expect(src).toMatch(/current="interview"/);
     expect(src).not.toMatch(/stepHref\('assessment', clientId\)/);
-    expect(src).toMatch(/client-interview-draft\.v2:\$\{clientId\}/);
+    expect(src).toMatch(/client-interview-draft\.v\d+:\$\{clientId\}/);
     expect('client-interview-draft.v2:c1').toMatch(/-draft\.v\d+:/);
   });
 

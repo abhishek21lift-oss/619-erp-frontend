@@ -63,6 +63,23 @@ export interface ClientInterview {
   training_challenges?: string[] | null;
   challenge_other?: string | null;
   important_client_statements?: string | null;
+  // Selection-based answers (migration 264). The server validates every key;
+  // these types keep the screen from offering a value it cannot store.
+  occupation_title?: string | null;
+  work_type?: 'desk' | 'on_feet' | 'physical' | 'mixed' | 'shifts' | 'field' | 'other' | null;
+  work_hours_band?: 'under_4' | '4_6' | '6_8' | '8_10' | '10_plus' | 'varies' | null;
+  daily_activity_level?: 'mostly_seated' | 'light' | 'moderately_active' | 'very_active' | null;
+  training_duration?: 'none' | 'under_3_months' | '3_6_months' | '6_12_months' | '1_2_years' | '2_plus_years' | null;
+  sports_played?: string[] | null;
+  previous_activities?: string[] | null;
+  exercise_preferences?: string[] | null;
+  fitness_goals?: string[] | null;
+  motivation_factors?: string[] | null;
+  client_attitude?: 'motivated' | 'neutral' | 'anxious' | 'resistant' | null;
+  confidence_level?: 'low' | 'medium' | 'high' | null;
+  commitment_level?: 'low' | 'moderate' | 'high' | null;
+  coaching_preference?: 'strict' | 'supportive' | 'balanced' | null;
+  initial_training_level?: 'beginner' | 'intermediate' | 'advanced' | null;
 }
 
 export const STEP_LABEL: Record<JourneyStepKey, string> = {
