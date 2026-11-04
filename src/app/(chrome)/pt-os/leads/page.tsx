@@ -374,7 +374,9 @@ export default function LeadsPage() {
 
             {/* Whole-pipeline counts, independent of search and status filters.
                 The list endpoint returns every lead, so these are exact; the
-                chart is the same data the KPI row above already trusts. */}
+                chart is the same data the KPI row above already trusts.
+                shortcut: counts come from the full list because /leads is
+                uncapped. If it ever paginates, move the counts server-side. */}
             <PremiumBarChart
               data={counts.total > 0
                 ? [
