@@ -30,7 +30,7 @@ export interface LifestyleFormData {
   // Step 3 — Water
   waterIntakeLiters: string;
 
-  // Step 4 — Occupation & Activity
+  // Step 3 — Activity
   // Saved/legacy snapshot only — no longer edited here; the Client Interview owns it.
   occupationType: OccupationType | '';
   dailyStepsBracket: DailyStepsBracket | '';

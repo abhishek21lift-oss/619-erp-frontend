@@ -44,6 +44,10 @@ describe('the lifestyle wizard asks each question once', () => {
   it('reads the interview occupation for the live score', () => {
     expect(page).toMatch(/api\.pt\.interviews\.list/);
     expect(page).toMatch(/interviewOccupation/);
+    expect(page).toMatch(/const effectiveOccupation = interviewOccupation \|\| form\.occupationType \|\| ''/);
+    const step = read('components/pt-os/lifestyle-assessment/StepOccupationActivity.tsx');
+    expect(step).toMatch(/occupationSource === 'lifestyle'/);
+    expect(step).toMatch(/not yet recorded\. Add it in the Client Interview/);
   });
 
   it('names the step Activity', () => {

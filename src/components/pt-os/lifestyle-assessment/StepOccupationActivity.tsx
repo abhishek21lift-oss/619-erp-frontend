@@ -34,7 +34,7 @@ export function StepOccupationActivity({ form, set, error, occupationType, occup
     () => classifyActivity(form.dailyStepsBracket || null, occupationType || null),
     [form.dailyStepsBracket, occupationType],
   );
-  const occupationLabel = occupationType ? OCCUPATION_LABELS[occupationType] : '';
+  const occupationLabel = occupationType ? (OCCUPATION_LABELS[occupationType] ?? occupationType) : '';
 
   return (
     <div className="space-y-7">
@@ -52,7 +52,9 @@ export function StepOccupationActivity({ form, set, error, occupationType, occup
           Occupation: <strong className="text-[color:var(--text-primary)]">{occupationLabel || 'Not recorded'}</strong>
           {occupationSource === 'lifestyle'
             ? ' — from this assessment\'s earlier answer; the Client Interview will own it once answered.'
-            : ' — recorded in the Client Interview.'}
+            : occupationSource === 'interview'
+              ? ' — recorded in the Client Interview.'
+              : ' — not yet recorded. Add it in the Client Interview.'}
         </p>
 
         <div>

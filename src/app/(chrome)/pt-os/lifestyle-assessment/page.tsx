@@ -161,6 +161,7 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
         breakfastHabit: (latestNutrition.breakfast_regularity as LifestyleFormData['breakfastHabit']) || '',
         lateNightEating: typeof latestNutrition.late_night_eating === 'boolean' ? latestNutrition.late_night_eating : null,
       } : null);
+      // The interviews endpoint returns newest first; a completed one wins.
       const interviews = Array.isArray(interviewRes?.data) ? interviewRes.data : [];
       const interview = interviews.find((i) => i.status === 'completed') ?? interviews[0];
       setInterviewOccupation((interview?.occupation_type as LifestyleFormData['occupationType']) || '');
