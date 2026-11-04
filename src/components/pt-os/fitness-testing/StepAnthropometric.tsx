@@ -73,19 +73,21 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
         subtitle="Step 2 of 7 — body measurements."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Height (cm)" numeric="decimal" value={form.heightCm} onChange={(v) => set('heightCm', v)} />
-        <FloatInput label="Weight (kg)" numeric="decimal" value={form.weight} onChange={(v) => set('weight', v)} />
-        <FloatInput label="BMI" value={bmi != null ? String(bmi) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Neck (cm)" numeric="decimal" value={form.neckCm} onChange={(v) => set('neckCm', v)} />
-        <FloatInput label="Waist Narrowest (cm)" numeric="decimal" value={form.waistCm} onChange={(v) => set('waistCm', v)} />
-        <FloatInput label="Waist Iliac (cm)" numeric="decimal" value={form.waistIliacCm} onChange={(v) => set('waistIliacCm', v)} />
-        <FloatInput label="Hip (cm)" numeric="decimal" value={form.hipsCm} onChange={(v) => set('hipsCm', v)} />
-        <FloatInput label="Waist-Hip Ratio" value={whr != null ? String(whr) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Chest (cm)" numeric="decimal" value={form.chestCm} onChange={(v) => set('chestCm', v)} />
+      <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FloatInput label="Height (cm)" numeric="decimal" value={form.heightCm} onChange={(v) => set('heightCm', v)} />
+          <FloatInput label="Weight (kg)" numeric="decimal" value={form.weight} onChange={(v) => set('weight', v)} />
+          <FloatInput label="BMI" value={bmi != null ? String(bmi) : ''} onChange={() => {}} disabled />
+          <FloatInput label="Neck (cm)" numeric="decimal" value={form.neckCm} onChange={(v) => set('neckCm', v)} />
+          <FloatInput label="Waist Narrowest (cm)" numeric="decimal" value={form.waistCm} onChange={(v) => set('waistCm', v)} />
+          <FloatInput label="Waist Iliac (cm)" numeric="decimal" value={form.waistIliacCm} onChange={(v) => set('waistIliacCm', v)} />
+          <FloatInput label="Hip (cm)" numeric="decimal" value={form.hipsCm} onChange={(v) => set('hipsCm', v)} />
+          <FloatInput label="Waist-Hip Ratio" value={whr != null ? String(whr) : ''} onChange={() => {}} disabled />
+          <FloatInput label="Chest (cm)" numeric="decimal" value={form.chestCm} onChange={(v) => set('chestCm', v)} />
+        </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-5 rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
         <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Limbs (Right / Left)</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <FloatInput label="Right Arm (cm)" numeric="decimal" value={form.armRightCm} onChange={(v) => set('armRightCm', v)} />
