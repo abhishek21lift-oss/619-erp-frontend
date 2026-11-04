@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
-import { Check, ChevronDown, Plus, X } from 'lucide-react';
+import { Check, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
 import { openWithKeyboard } from '@/lib/search-field-focus';
 
@@ -29,14 +29,11 @@ interface SearchableSelectProps {
    *  the accessible name and the closed-state placeholder ("Select …"), so a
    *  screen reader and an empty field both still say what it is. */
   hideLabel?: boolean;
-  /** Shows a "Clear selection" action once a value is set. */
-  allowClear?: boolean;
 }
 
 /** A closed dropdown with an in-list filter input, and an optional freeform fallback. */
 export function SearchableSelect({
   label, value, onChange, options, placeholder, error, required, allowCustom = true, hideLabel = false,
-  allowClear = false,
 }: SearchableSelectProps) {
   const normalized: SearchableSelectOption[] = options.map((o) =>
     typeof o === 'string' ? { value: o, label: o } : o,
@@ -155,16 +152,6 @@ export function SearchableSelect({
               className="max-h-56 overflow-y-auto overscroll-contain p-1"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
-              {allowClear && value && (
-                <button
-                  type="button"
-                  onClick={() => { onChange(''); setOpen(false); setQuery(''); }}
-                  className="flex w-full items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
-                  style={{ color: 'rgb(100,116,139)' }}
-                >
-                  <X size={12} aria-hidden /> Clear selection
-                </button>
-              )}
               {filtered.map((opt) => (
                 <button
                   key={opt.value} type="button"
