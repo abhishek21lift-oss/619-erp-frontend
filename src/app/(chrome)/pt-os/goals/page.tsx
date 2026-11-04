@@ -19,6 +19,7 @@ import {
 import type { GoalMetric } from '@/lib/goal-calculations';
 import {
   STEPS, LAST_STEP, GOAL_TYPE_META, PRIORITY_META, initGoalFormForClient, n,
+  secondaryGoalsPayload, validateSecondaryGoals,
 } from '@/components/pt-os/goal-assessment/types';
 import { formFromGoalRow, k11MeasureFor } from '@/components/pt-os/goal-assessment/form-from-row';
 import type { CoachingBlock, K11Block } from '@/components/pt-os/goal-assessment/form-from-row';
@@ -111,6 +112,7 @@ function validateStep(id: StepId, form: GoalFormData, today: string, currentWeig
   if (id === 1) {
     if (!form.goalType) return 'Please select a primary goal.';
     if (form.goalType === 'custom' && !form.goalName.trim()) return 'Please name the custom goal.';
+    return validateSecondaryGoals(form.secondaryGoals, today);
   }
   // The statement used to be collected for custom goals only, so a standard
   // goal was stored with no description at all.
@@ -244,6 +246,10 @@ const numberOrNull = (v: unknown): number | null => {
 };
 const stringOrNull = (v: unknown): string | null => (v == null || v === '' ? null : String(v));
 const stringList = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String(x)) : []);
+/** Enrolment stores preferred days as "Mon, Wed"; the API may also return an array. */
+const splitList = (v: unknown): string[] => (Array.isArray(v)
+  ? v.map((x) => String(x)).filter(Boolean)
+  : typeof v === 'string' ? v.split(',').map((x) => x.trim()).filter(Boolean) : []);
 
 function GoalsHub({ clientId, toast }: GoalsHubProps) {
   const [clientName, setClientName] = useState('');
@@ -308,6 +314,9 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         lifestyle_training_days: numberOrNull(interview?.lifestyle_training_days),
         interviewChallenges,
         interviewMotivation: interview?.motivation ?? null,
+        session_minutes: numberOrNull(c.session_minutes),
+        preferred_training_days: splitList(c.preferred_training_days),
+        preferred_workout_time: stringOrNull(c.preferred_workout_time),
       });
 
       const latest = Array.isArray(assessRes?.data) ? assessRes.data[0] : null;
@@ -514,7 +523,17 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
     const futureOrBlank = (date: string | null) => (date && date >= today ? date : '');
     if (editingGoal) {
       const fromRow = formFromGoalRow(editingGoal);
-      return { ...fromRow, reviewDate: futureOrBlank(fromRow.reviewDate) || futureOrBlank(retest.date) };
+      // Motivation is read-only on the Motivation step and owned by the
+      // Interview, so show the interview's words rather than a copy the old
+      // wizard may have saved on the goal itself.
+      const interviewMotivation = typeof clientDefaults.interviewMotivation === 'string'
+        ? clientDefaults.interviewMotivation.trim()
+        : '';
+      return {
+        ...fromRow,
+        motivationReason: interviewMotivation || fromRow.motivationReason,
+        reviewDate: futureOrBlank(fromRow.reviewDate) || futureOrBlank(retest.date),
+      };
     }
     const fresh = initGoalFormForClient(clientDefaults);
     return { ...fresh, lifestyle: { ...fresh.lifestyle, ...habits }, reviewDate: futureOrBlank(retest.date) };
@@ -523,7 +542,6 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
   const [form, setForm] = useState<GoalFormData>(initial);
   const [errors, setErrors] = useState<FormErrors>({});
   const [step, setStep] = useState<StepId>(1);
-  const [reviewMode, setReviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const initFormRef = useRef<GoalFormData>(initial);
 
@@ -595,12 +613,17 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
     const err = validateStep(step, form, today, currentWeight, currentBodyFat);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
-    if (step === LAST_STEP) { setReviewMode(true); return; }
-    setStep((s) => (s + 1) as StepId);
+    if (step < LAST_STEP) setStep((s) => (s + 1) as StepId);
+  };
+
+  // The rail may jump backwards freely; the one forward slot goes through
+  // handleNext so a click cannot skip the current step's validation.
+  const handleStepClick = (id: StepId) => {
+    if (id === step + 1) { handleNext(); return; }
+    if (id <= step) setStep(id);
   };
 
   const handleBack = () => {
-    if (reviewMode) { setReviewMode(false); return; }
     if (step > 1) { setStep((s) => (s - 1) as StepId); return; }
     if (isDirty && !window.confirm('Discard unsaved changes?')) return;
     onDone(false);
@@ -623,14 +646,15 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
     const firstInvalid = STEPS.find((s) => allErrors[s.key]);
     if (firstInvalid) {
       setErrors(allErrors);
-      setReviewMode(false);
       setStep(firstInvalid.id);
       toast.error(allErrors[firstInvalid.key]!);
       return;
     }
 
-    // The review date and the client's agreement live on the review screen,
-    // which is no longer a wizard step, so they are checked here.
+    // The review date and the client's agreement live on the final step. They
+    // are checked here rather than in validateStep because the generic loop
+    // stops at the first field error, and these two are reported in place on
+    // that step rather than by jumping to it.
     const reviewDateError = form.reviewDate && form.reviewDate < today
       ? 'The review date must be today or later.'
       : undefined;
@@ -678,6 +702,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
         training_days_per_week: n(form.trainingDays) ?? null,
         preferred_training_days: form.preferredDays.length ? form.preferredDays : null,
         review_date: form.reviewDate || null,
+        secondary_goals: secondaryGoalsPayload(form.secondaryGoals),
       };
 
       // Schedule, routine blueprint and milestones are computed client-side
@@ -798,20 +823,20 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
   return (
     <PageContainer>
       <PageHero
+        compact
         icon={<Target size={18} />}
         title={goalId ? 'Edit Goal' : 'New Goal'}
+        subtitle={clientName ? `${clientName} · Goal setting` : undefined}
+      />
 
-      >
-        {/* No Cancel action here — the sticky footer's Back button already
-            exits the wizard at step 1 with the same discard-confirm guard,
-            so a second escape hatch in the hero was redundant chrome. */}
-        {!reviewMode && <StepperTimeline steps={STEPS} current={step} onStep={setStep} />}
-      </PageHero>
+      <div className="mx-auto max-w-3xl space-y-4">
+        <div className="rounded-[22px] px-4 py-3.5 sm:px-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <StepperTimeline steps={STEPS} current={step} onStep={handleStepClick} variant="progress" tone="light" />
+        </div>
 
-      <div className="mx-auto max-w-3xl space-y-5">
-        {!reviewMode ? (
+        {step < LAST_STEP ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            {step === 1 && <StepPrimaryGoal form={form} set={set} step={step} error={errors.primaryGoal} />}
+            {step === 1 && <StepPrimaryGoal form={form} set={set} step={step} today={today} error={errors.primaryGoal} />}
             {step === 2 && <StepSmartGoal form={form} set={set} step={step} error={errors.smartGoal} />}
             {step === 3 && (
               <StepMeasureTarget
@@ -821,23 +846,22 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
                 error={errors.measureTarget}
               />
             )}
-            {step === 4 && <StepDeadline form={form} set={set} step={step} error={errors.deadline} />}
+            {step === 4 && <StepDeadline form={form} set={set} step={step} today={today} error={errors.deadline} />}
             {step === 5 && <StepMilestones form={form} set={set} step={step} today={today} error={errors.milestones} />}
             {step === 6 && <StepPriority form={form} set={set} step={step} error={errors.priority} />}
-            {step === 7 && <StepMotivationCommitment form={form} set={set} step={step} />}
+            {step === 7 && <StepMotivationCommitment form={form} set={set} step={step} clientId={clientId} />}
             {step === 8 && <StepChallenges form={form} set={set} step={step} error={errors.challenges} />}
             {step === 9 && <StepLifestyle form={form} set={set} step={step} context={context} clientId={clientId} error={errors.lifestyle} />}
-            {step === 10 && <StepSchedule form={form} set={set} step={step} />}
+            {step === 10 && <StepSchedule form={form} set={set} step={step} clientId={clientId} availability={clientDefaults} />}
           </m.div>
         ) : (
-          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-4">
             <GoalAnalysisDashboard
               difficulty={analysis.difficulty} estimatedDurationWeeks={analysis.estimatedWeeks}
               recommendedPtDurationMonths={analysis.recommendedMonths} requiredWeeklyRate={analysis.requiredRate}
               safeWeeklyRate={analysis.safeRate} riskFactors={analysis.riskFactors} metric={analysis.metric}
               rateUnit={analysis.metric === 'body_fat' ? '%/wk' : analysis.metric === 'lift' ? `${measure?.unit || 'kg'}/wk` : 'kg/wk'}
             />
-            {form.targetDate && <GoalTimeline targetDate={form.targetDate} />}
             <GoalSummaryCard
               primaryGoalLabel={form.goalType === 'custom' ? (form.goalName || 'Custom Goal') : labelFor(GOAL_TYPE_META, form.goalType)}
               statement={form.goalDescription}
@@ -852,6 +876,7 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
               confidenceLevel={n(form.confidenceLevel) ?? 0}
               commitmentLevel={n(form.commitmentLevel) ?? 0}
               barriers={barrierPayload(form.barrierPlans)}
+              secondaryGoals={secondaryGoalsPayload(form.secondaryGoals) ?? []}
               availability={{
                 commitment: `${form.trainingDays || '—'} day${form.trainingDays === '1' ? '' : 's'} × ${form.sessionMinutes || '—'} min · ${formatWeeklyCommitment(commitmentMinutes)}`,
                 preferredDays: form.preferredDays,
@@ -860,14 +885,15 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
               milestones={form.milestones}
               reviewDate={form.reviewDate}
             />
+            <ReviewSignOff form={form} set={set} step={step} error={errors.agreement} />
             <StepAssessmentReview
               form={form} set={set}
               sources={baselineSources} metrics={baselineMetrics}
               retest={retest} clientId={clientId} error={errors.assessmentReview}
             />
+            {form.targetDate && <GoalTimeline targetDate={form.targetDate} />}
             <TrainingSchedulePreview trainingDays={form.trainingDays} goal={form.goalType} experience={form.experienceLevel} preferredDays={form.preferredDays} />
             <MilestoneTracker startDate={today} targetDate={form.targetDate || null} milestones={form.milestones} />
-            <ReviewSignOff form={form} set={set} error={errors.agreement} />
           </m.div>
         )}
       </div>
@@ -877,13 +903,13 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
           <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={handleSaveDraft}>Save Draft</Button>
-            {!reviewMode ? (
+            {step < LAST_STEP ? (
               <Button
                 iconLeft={<ArrowRight size={14} />}
                 onClick={handleNext}
                 style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
-                {step === LAST_STEP ? 'Review' : 'Next'}
+                Next
               </Button>
             ) : (
               <Button

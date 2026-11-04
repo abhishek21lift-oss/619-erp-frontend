@@ -6,7 +6,7 @@
 
 import { barrierPlansFor } from '@/lib/goal-plan';
 import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
-import { initGoalForm } from './types';
+import { initGoalForm, secondaryGoalsFromRow } from './types';
 import type { GoalFormData } from './types';
 
 /**
@@ -135,6 +135,7 @@ export function formFromGoalRow(row: Record<string, unknown>): GoalFormData {
     biggestChallenges: challenges,
     challengeOther: '',
     barrierPlans: barrierPlansFor(challenges, Array.isArray(coaching.barrier_plans) ? coaching.barrier_plans : []),
+    secondaryGoals: secondaryGoalsFromRow(row.secondary_goals),
     lifestyle: { ...fresh.lifestyle, ...lifestyleRaw },
     startingWeightManual: row.starting_weight != null ? String(row.starting_weight) : '',
     startingBodyFatManual: row.starting_body_fat_pct != null ? String(row.starting_body_fat_pct) : '',

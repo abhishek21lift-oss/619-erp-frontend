@@ -1,6 +1,7 @@
 'use client';
 
 import { Flag, MapPin } from 'lucide-react';
+import { indigo, tint } from '@/lib/palette';
 
 interface GoalTimelineProps {
   targetDate: string;
@@ -25,11 +26,11 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
 
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
+      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#A33757,#FFBB94)' }} />
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Flag size={20} color="#FFBB94" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: tint(indigo[500], 0.10), border: `1px solid ${tint(indigo[500], 0.18)}` }}>
+            <Flag size={20} color={indigo[600]} />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Timeline</h2>
@@ -45,8 +46,8 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
                   <div
                     className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
                     style={{
-                      background: i === milestones.length - 1 ? '#A33757' : i === 0 ? '#0f172a' : 'var(--bg-subtle)',
-                      color: i === milestones.length - 1 || i === 0 ? '#fff' : 'var(--text-muted)',
+                      background: i === milestones.length - 1 ? '#A33757' : i === 0 ? tint(indigo[500], 0.12) : 'var(--bg-subtle)',
+                      color: i === milestones.length - 1 ? '#fff' : i === 0 ? indigo[700] : 'var(--text-muted)',
                     }}
                   >
                     {i === milestones.length - 1 ? <Flag size={15} /> : <MapPin size={14} />}

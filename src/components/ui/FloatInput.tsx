@@ -81,6 +81,9 @@ interface FloatInputProps {
   onChange: (v: string) => void;
   onBlur?: () => void;
   placeholder?: string;
+  /** Native bounds, meaningful for `type="date"` and numeric fields. */
+  min?: string;
+  max?: string;
   suffix?: React.ReactNode;
   prefix?: React.ReactNode;
   required?: boolean;
@@ -166,6 +169,8 @@ export function FloatInput({
   onChange,
   onBlur,
   placeholder,
+  min,
+  max,
   suffix,
   prefix,
   required,
@@ -253,6 +258,8 @@ export function FloatInput({
               inputMode={renderedInputMode}
               value={value}
               placeholder={placeholder}
+              min={min}
+              max={max}
               onChange={handleChange}
               onBlur={onBlur}
               disabled={disabled}

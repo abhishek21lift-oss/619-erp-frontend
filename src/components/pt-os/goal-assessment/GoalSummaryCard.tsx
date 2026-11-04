@@ -1,10 +1,11 @@
 'use client';
 
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Target } from 'lucide-react';
 import GoalStepCard from './GoalStepCard';
 import { indigo, gray, tint } from '@/lib/palette';
 import { formatGoalMeasure } from '@/lib/goal-plan';
 import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
+import type { SecondaryGoalPayload } from './types';
 
 export interface SummaryAvailability {
   /** "3 days × 60 min · 3 h/week". */
@@ -30,6 +31,7 @@ interface GoalSummaryCardProps {
   confidenceLevel: number;
   commitmentLevel: number;
   barriers: BarrierPlan[];
+  secondaryGoals: SecondaryGoalPayload[];
   availability: SummaryAvailability;
   milestones: GoalMilestone[];
   reviewDate: string;
@@ -40,7 +42,7 @@ export function GoalSummaryCard({
   currentWeight, targetWeight, currentBodyFat, targetBodyFat,
   targetDate, priorityLabel, clientAgreed, clientExpectation,
   motivationLevel, confidenceLevel, commitmentLevel,
-  barriers, availability, milestones, reviewDate,
+  barriers, secondaryGoals, availability, milestones, reviewDate,
 }: GoalSummaryCardProps) {
   const weightDiff = currentWeight != null && targetWeight != null ? Math.round((targetWeight - currentWeight) * 10) / 10 : null;
   const measureLabel = formatGoalMeasure(measure);
@@ -109,6 +111,25 @@ export function GoalSummaryCard({
               <li key={b.challenge} className="rounded-[12px] px-4 py-2.5" style={{ background: gray[50] }}>
                 <p className="text-[12.5px] font-[760]" style={{ color: gray[800] }}>{b.challenge}</p>
                 <p className="text-[12px]" style={{ color: gray[600] }}>{b.plan}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {secondaryGoals.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Secondary Fitness Goals</p>
+          <ul className="space-y-2">
+            {secondaryGoals.map((goal) => (
+              <li key={goal.id} className="rounded-[12px] px-4 py-2.5" style={{ background: gray[50] }}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="flex items-center gap-1.5 text-[12.5px] font-[760]" style={{ color: gray[800] }}>
+                    <Target size={12} style={{ color: indigo[600] }} /> {goal.title}
+                  </p>
+                  {goal.target_date && <span className="text-[11.5px] font-[600]" style={{ color: gray[500] }}>{goal.target_date}</span>}
+                </div>
+                {goal.description && <p className="mt-0.5 text-[12px]" style={{ color: gray[600] }}>{goal.description}</p>}
               </li>
             ))}
           </ul>

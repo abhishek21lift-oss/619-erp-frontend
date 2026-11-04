@@ -1,10 +1,10 @@
 'use client';
 
-import { Flame, Frown, Laugh, Meh, Smile } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, Flame, Frown, Laugh, Meh, Smile } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
 import { Slider } from '@/components/ui';
-import { amber, emerald, gray, red } from '@/lib/palette';
+import { amber, emerald, gray, indigo, red, tint } from '@/lib/palette';
 import GoalStepCard from './GoalStepCard';
 import type { GoalFormData } from './types';
 
@@ -35,9 +35,10 @@ interface StepMotivationCommitmentProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
   step: number;
+  clientId: string;
 }
 
-export function StepMotivationCommitment({ form, set, step }: StepMotivationCommitmentProps) {
+export function StepMotivationCommitment({ form, set, step, clientId }: StepMotivationCommitmentProps) {
   const motivation = parseInt(form.motivationLevel, 10) || 1;
   const commitment = parseInt(form.commitmentLevel, 10) || 1;
   // Confidence is asked separately from motivation on purpose: a client can
@@ -46,22 +47,44 @@ export function StepMotivationCommitment({ form, set, step }: StepMotivationComm
   const confidence = parseInt(form.confidenceLevel, 10) || 1;
 
   const gap = motivation - confidence;
+  const interviewHref = `/pt-os/interview?client_id=${encodeURIComponent(clientId)}`;
 
   return (
     <GoalStepCard icon={Flame} title="Motivation & Confidence" step={step} hint="how ready is this client, really?">
       <div className="space-y-8">
-        <FloatInput
-          label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}
-          value={form.motivationReason} onChange={(v) => set('motivationReason', v)}
-          placeholder="Wedding, competition, health, confidence, doctor recommendation, lifestyle, vacation..."
-        />
+        {/* Motivation is owned by the Client Interview. Asking it again here
+            created two answers to one question, and the later copy always won. */}
+        <div className="rounded-[18px] p-5" style={{ background: gray[50], border: `1px solid ${gray[200]}` }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px]"
+                style={{ background: tint(indigo[500], 0.10), color: indigo[700] }}
+              >
+                <Flame size={15} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-[760] uppercase tracking-[0.14em]" style={{ color: gray[500] }}>
+                  Why they want this
+                </p>
+                <p className="text-[11.5px] font-[600]" style={{ color: gray[500] }}>
+                  From the Client Interview · read-only
+                </p>
+              </div>
+            </div>
+            <Link
+              href={interviewHref}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700] transition-colors"
+              style={{ background: 'var(--bg-card)', border: `1px solid ${gray[200]}`, color: indigo[700] }}
+            >
+              Edit in Client Interview <ArrowUpRight size={12} />
+            </Link>
+          </div>
 
-        <div>
-          <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>
-            Why they want this (from the Client Interview)
-          </p>
-          <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: gray[800] }}>
-            {form.motivationReason || 'Not recorded in the Client Interview.'}
+          <p className="mt-3.5 text-[13.5px] leading-relaxed" style={{ color: gray[800] }}>
+            {form.motivationReason
+              ? `“${form.motivationReason}”`
+              : 'Not recorded yet. Capture the client’s own words in the Client Interview so the plan can refer back to them.'}
           </p>
         </div>
 

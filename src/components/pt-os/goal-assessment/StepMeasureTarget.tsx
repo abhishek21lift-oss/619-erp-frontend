@@ -167,20 +167,23 @@ export function StepMeasureTarget({
         )}
 
         {gap != null && metric && (
-          <div className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
+          <div
+            className="rounded-[18px] p-5"
+            style={{ background: `linear-gradient(160deg, ${indigo[50]} 0%, ${indigo[100]} 100%)`, border: `1px solid ${tint(indigo[500], 0.16)}` }}
+          >
             <div className="flex flex-wrap items-center justify-center gap-4 text-center">
               <div>
-                <p className="text-[10px] font-[600] uppercase tracking-wider text-white/40">Current</p>
-                <p className="text-[20px] font-[800] text-white">{current} {unit}</p>
+                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Current</p>
+                <p className="mt-0.5 text-[20px] font-[840] tracking-[-0.02em]" style={{ color: gray[900] }}>{current} {unit}</p>
               </div>
-              {gap < 0 ? <ArrowDown size={18} color="#852E4E" /> : gap > 0 ? <ArrowUp size={18} color="#852E4E" /> : null}
+              {gap < 0 ? <ArrowDown size={18} color={indigo[600]} /> : gap > 0 ? <ArrowUp size={18} color={indigo[600]} /> : null}
               <div>
-                <p className="text-[10px] font-[600] uppercase tracking-wider text-white/40">Target</p>
-                <p className="text-[20px] font-[800] text-white">{target} {unit}</p>
+                <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Target</p>
+                <p className="mt-0.5 text-[20px] font-[840] tracking-[-0.02em]" style={{ color: gray[900] }}>{target} {unit}</p>
               </div>
-              <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(163,55,87,0.15)' }}>
-                <p className="text-[13px] font-[800]" style={{ color: '#852E4E' }}>
-                  {gap === 0 ? 'Maintain' : `Need to change by ${Math.abs(gap)} ${unit}`}
+              <div className="rounded-full px-3 py-1.5" style={{ background: 'var(--bg-card)', border: `1px solid ${tint(indigo[500], 0.22)}` }}>
+                <p className="text-[12.5px] font-[800]" style={{ color: indigo[700] }}>
+                  {gap === 0 ? 'Maintain' : `Change by ${Math.abs(gap)} ${unit}`}
                 </p>
               </div>
             </div>

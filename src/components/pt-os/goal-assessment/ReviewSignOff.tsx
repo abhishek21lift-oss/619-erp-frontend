@@ -9,6 +9,8 @@ import type { GoalFormData } from './types';
 interface ReviewSignOffProps {
   form: GoalFormData;
   set: <K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => void;
+  /** The final wizard step id. */
+  step: number;
   error?: string;
 }
 
@@ -16,9 +18,12 @@ interface ReviewSignOffProps {
  * K11's Relevant, confirmed where the goal is actually reviewed. Asking on the
  * priority step meant the client agreed before seeing the plan.
  */
-export function ReviewSignOff({ form, set, error }: ReviewSignOffProps) {
+export function ReviewSignOff({ form, set, step, error }: ReviewSignOffProps) {
   return (
-    <GoalStepCard icon={ClipboardCheck} title="Client Sign-off" hint="the goal belongs to the client, not only the plan">
+    <GoalStepCard
+      icon={ClipboardCheck} title="Review & Client Sign-off" step={step}
+      hint="check the plan with the client, then save it — the goal belongs to them"
+    >
       <div className="space-y-5">
         <button
           type="button" role="checkbox" aria-checked={form.clientAgreed}

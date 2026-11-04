@@ -5,7 +5,9 @@
 // edit must keep what the blueprint already says.
 
 import { describe, expect, it } from 'vitest';
-import { initGoalFormForClient } from '@/components/pt-os/goal-assessment/types';
+import {
+  initGoalFormForClient, MAX_SECONDARY_GOALS, secondaryGoalsFromRow, secondaryGoalsPayload, validateSecondaryGoals,
+} from '@/components/pt-os/goal-assessment/types';
 import { formFromGoalRow, goalMeasureFromRow, k11MeasureFor } from '@/components/pt-os/goal-assessment/form-from-row';
 
 describe('a new goal starts from the client record', () => {
@@ -121,5 +123,58 @@ describe('reading a saved goal target', () => {
     expect(goalMeasureFromRow({ target_body_fat: 22 }))
       .toEqual({ metric: 'body_fat', current: null, target: 22, unit: '%' });
     expect(goalMeasureFromRow({})).toBeNull();
+  });
+});
+
+describe('secondary fitness goals ride on the primary goal', () => {
+  it('reads saved rows and drops ones without a name', () => {
+    const rows = secondaryGoalsFromRow([
+      { id: 'a', title: ' Run 5k ', goal_type: 'endurance', description: 'Race day', target_date: '2027-01-01T00:00:00.000Z' },
+      { id: 'b', title: '   ' },
+      { title: 'Sleep 7 hours', goal_type: 'not-a-goal' },
+    ]);
+    expect(rows).toEqual([
+      { id: 'a', title: 'Run 5k', goalType: 'endurance', description: 'Race day', targetDate: '2027-01-01' },
+      { id: 'sg-row-2', title: 'Sleep 7 hours', goalType: '', description: '', targetDate: '' },
+    ]);
+  });
+
+  it('caps the list so one record cannot grow without bound', () => {
+    const rows = Array.from({ length: MAX_SECONDARY_GOALS + 3 }, (_, i) => ({ title: `Goal ${i}` }));
+    expect(secondaryGoalsFromRow(rows)).toHaveLength(MAX_SECONDARY_GOALS);
+  });
+
+  it('sends the wire shape and stores an empty list as null', () => {
+    expect(secondaryGoalsPayload([
+      { id: 'a', title: ' Run 5k ', goalType: 'endurance', description: ' Race day ', targetDate: '2027-01-01' },
+      { id: 'b', title: '   ', goalType: '', description: '', targetDate: '' },
+    ])).toEqual([
+      { id: 'a', title: 'Run 5k', goal_type: 'endurance', description: 'Race day', target_date: '2027-01-01' },
+    ]);
+    expect(secondaryGoalsPayload([])).toBeNull();
+  });
+
+  it('accepts an optional list but rejects an unnamed row or a past date', () => {
+    const today = '2026-11-05';
+    expect(validateSecondaryGoals([], today)).toBeUndefined();
+    expect(validateSecondaryGoals([
+      { id: 'a', title: 'Run 5k', goalType: 'endurance', description: '', targetDate: today },
+    ], today)).toBeUndefined();
+    expect(validateSecondaryGoals([
+      { id: 'a', title: ' ', goalType: '', description: '', targetDate: '' },
+    ], today)).toMatch(/name/i);
+    expect(validateSecondaryGoals([
+      { id: 'a', title: 'Run 5k', goalType: '', description: '', targetDate: '2026-11-04' },
+    ], today)).toMatch(/today or later/i);
+  });
+
+  it('restores secondary goals when a saved goal is edited', () => {
+    const form = formFromGoalRow({
+      secondary_goals: [{ id: 'a', title: 'Run 5k', goal_type: 'endurance', target_date: '2027-01-01' }],
+    });
+    expect(form.secondaryGoals).toEqual([
+      { id: 'a', title: 'Run 5k', goalType: 'endurance', description: '', targetDate: '2027-01-01' },
+    ]);
+    expect(formFromGoalRow({}).secondaryGoals).toEqual([]);
   });
 });
