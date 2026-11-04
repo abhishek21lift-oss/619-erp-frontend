@@ -35,6 +35,7 @@ import {
 import {
   journalHeatLevel, journalHeatmap, type JournalHeatDay,
 } from '@/components/member/journal';
+import { ChartDataTable } from '@/components/visualizations';
 import { blue, rgba } from '@/lib/palette';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
@@ -344,6 +345,16 @@ function JournalHeatmap({ days, from, to }: {
           A blank day has no entry. It is not counted as a zero in any average.
         </p>
       </Card>
+      <ChartDataTable
+        title="Journal entries by day"
+        caption={`Journal values filled in each day from ${from} to ${to}; a day without a row has no entry`}
+        columns={[{ header: 'Date' }, { header: 'Journal values' }]}
+        rows={days.filter((day) => day.inRange).map((day) => ({
+          key: day.date,
+          cells: [longDate(day.date) ?? day.date, day.logged ? day.filled : 'No entry'],
+        }))}
+        className="mt-3"
+      />
     </Section>
   );
 }

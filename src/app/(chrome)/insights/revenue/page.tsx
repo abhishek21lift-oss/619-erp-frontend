@@ -29,7 +29,8 @@ import {
   AlertCircle, AlertTriangle, RefreshCw, CalendarRange, BarChart3, Download,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { KpiCard, PremiumBarChart, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { KpiCard, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { PremiumBarChart } from '@/components/visualizations';
 import { useAsync } from '@/lib/use-async';
 import MonthlyTargetHero from '@/components/revenue/MonthlyTargetHero';
 import { fmtMoney } from '@/lib/format';
@@ -452,6 +453,7 @@ function RevenueAnalytics() {
               ]}
               height={260}
               formatValue={fmtCompact}
+              bordered={false}
             />
           )}
         </Panel>

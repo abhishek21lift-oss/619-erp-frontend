@@ -91,14 +91,15 @@ const KNOWN = [
   'app/(chrome)/finance/collected-payments/page.tsx:116',
   'app/(chrome)/finance/dues/page.tsx:96',
   'components/payments/UpiPayScreen.tsx:210',
-  // Line moved 587 -> 592 -> 597 -> 584 -> 572 -> 604 -> 605: the Check-in QR
-  // print popup above gained five lines of escaping plus two imports, the
-  // premium hero pass added a colour note and a card-shadow comment above it,
-  // the unused hero stat helper was removed, the client-profile dedup removed
-  // the unused photo state above it, and the remote-screening card added one
-  // import. The entry itself is unchanged — still one silent catch, still the
-  // same statement.
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:606',
+  // Line moved 587 -> 592 -> 597 -> 584 -> 572 -> 604 -> 605 -> 606: the
+  // Check-in QR print popup above gained five lines of escaping plus two
+  // imports, the premium hero pass added a colour note and a card-shadow
+  // comment above it, the unused hero stat helper was removed, the
+  // client-profile dedup removed the unused photo state above it, the
+  // remote-screening card added one import, and the chart import was split
+  // off the ui barrel. The entry itself is unchanged — still one silent
+  // catch, still the same statement.
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:607',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:129',
   'app/(chrome)/pt-os/diet-plans/page.tsx:187',
   'app/(chrome)/pt-os/diet-plans/page.tsx:188',

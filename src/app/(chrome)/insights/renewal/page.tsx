@@ -5,7 +5,7 @@ import { RefreshCcw, Users, AlertTriangle, CalendarClock, Percent, Clock, UserCh
 import { api } from '@/lib/api';
 import { fmtDate, fmtMoney } from '@/lib/format';
 import { PageContainer, PageHero, KpiCard } from '@/components/ui';
-import { PremiumBarChart, PremiumDonutChart, semantic } from '@/components/visualizations';
+import { ChartDataTable, PremiumBarChart, PremiumDonutChart, semantic } from '@/components/visualizations';
 import { useAsync } from '@/lib/use-async';
 import { CanonicalDateRange, isoDaysAgo, isoToday } from '@/lib/insights/date-range';
 import { fmtRate, renewalSplit, expiryBuckets, type RenewalMetric } from '@/lib/insights/metrics';
@@ -137,6 +137,22 @@ function Inner() {
             : 'Memberships expiring'}
         />
       </div>
+
+      <ChartDataTable
+        title="Renewal and expiry figures"
+        caption="Renewal conversion and packages expiring in the next 30 days"
+        columns={[{ header: 'Metric' }, { header: 'Members' }]}
+        rows={m
+          ? [
+              { key: 'renewed', cells: ['Renewed', split.renewed] },
+              { key: 'lapsed', cells: ['Lapsed', split.lapsed] },
+              { key: 'expiring-7', cells: ['Expiring in 7 days', expiry.week] },
+              { key: 'expiring-30', cells: ['Expiring in days 8–30', expiry.rest] },
+            ]
+          : []}
+        emptyMessage="Renewal figures are unavailable until the selected window loads."
+        className="mb-4"
+      />
 
       <div>
         <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>

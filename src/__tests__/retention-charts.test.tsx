@@ -21,6 +21,7 @@ vi.mock('@/components/visualizations', () => ({
     spies.donut(props);
     return <div data-testid="donut-chart" />;
   },
+  ChartDataTable: () => null,
   // Token names, not hexes: the palette guard scans tests too, and this test
   // cares which token was chosen, not what the token resolves to.
   semantic: { success: 'success', warning: 'warning', danger: 'danger', info: 'info' },

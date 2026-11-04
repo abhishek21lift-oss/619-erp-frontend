@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
-import { PremiumBarChart, semantic, series as chartPalette } from '@/components/visualizations';
+import { ChartDataTable, PremiumBarChart, semantic, series as chartPalette } from '@/components/visualizations';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
 import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
@@ -400,6 +400,24 @@ export default function LeadsPage() {
               emptyTitle="No leads yet"
               emptyDescription="Capture a lead to start the pipeline."
               ariaLabel={`Lead stages: ${byStatus.new ?? 0} new, ${byStatus.contacted ?? 0} contacted, ${byStatus.trial_scheduled ?? 0} trial scheduled, ${byStatus.converted ?? 0} converted, ${byStatus.lost ?? 0} lost.`}
+            />
+
+            <ChartDataTable
+              title="Lead funnel"
+              caption="Every lead counted once by its current stage; stages are not cumulative"
+              columns={[{ header: 'Stage' }, { header: 'Leads' }]}
+              rows={counts.total > 0
+                ? [
+                    { key: 'new', cells: ['New', byStatus.new ?? 0] },
+                    { key: 'contacted', cells: ['Contacted', byStatus.contacted ?? 0] },
+                    { key: 'trial', cells: ['Trial', byStatus.trial_scheduled ?? 0] },
+                    { key: 'converted', cells: ['Converted', byStatus.converted ?? 0] },
+                    { key: 'lost', cells: ['Lost', byStatus.lost ?? 0] },
+                  ]
+                : []}
+              footer={counts.total > 0 ? ['Total', counts.total] : undefined}
+              emptyMessage={leads.data ? 'No leads yet.' : 'The lead list did not come back.'}
+              className="mt-4 sm:mt-5"
             />
 
             {/* Search — full width on a phone, as in the reference. It was

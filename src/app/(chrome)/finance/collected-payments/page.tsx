@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
 import type { PaymentStats } from '@/lib/api/endpoints/money';
 import { Button, KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
-import { PremiumDonutChart } from '@/components/visualizations';
+import { ChartDataTable, PremiumDonutChart } from '@/components/visualizations';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, Inbox,
@@ -253,30 +253,40 @@ function Inner() {
         if (split.length < 2) return null;
         const label = split.map(([name, v]) => `${name} ${fmtINR(Number(v))}`).join(', ');
         return (
-          <div className="mt-3 grid items-center gap-4 lg:grid-cols-2">
-            <PremiumDonutChart
-              data={split.map(([name, v]) => ({ name, value: Number(v), color: METHOD_COLORS[name] }))}
-              title="Collected by method"
-              subtitle="Server totals for the selected period"
-              centerValue={fmtINR(Number(stats.total))}
-              centerLabel="collected"
-              formatValue={fmtINR}
-              height={240}
-              // The chips beside it are the legend, with exact amounts.
-              showLegend={false}
-              ariaLabel={`Collected by method: ${label}`}
-            />
-            <div className="flex flex-wrap gap-2" aria-label="Collected by method">
-              {split.map(([name, v]) => (
-                <span key={name} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-[700]"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <span style={{ color: METHOD_COLORS[name] }}>{METHOD_ICONS[name]}</span>
-                  {name}
-                  <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmtINR(Number(v))}</span>
-                </span>
-              ))}
+          <>
+            <div className="mt-3 grid items-center gap-4 lg:grid-cols-2">
+              <PremiumDonutChart
+                data={split.map(([name, v]) => ({ name, value: Number(v), color: METHOD_COLORS[name] }))}
+                title="Collected by method"
+                subtitle="Server totals for the selected period"
+                centerValue={fmtINR(Number(stats.total))}
+                centerLabel="collected"
+                formatValue={fmtINR}
+                height={240}
+                // The chips beside it are the legend, with exact amounts.
+                showLegend={false}
+                ariaLabel={`Collected by method: ${label}`}
+              />
+              <div className="flex flex-wrap gap-2" aria-label="Collected by method">
+                {split.map(([name, v]) => (
+                  <span key={name} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-[700]"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                    <span style={{ color: METHOD_COLORS[name] }}>{METHOD_ICONS[name]}</span>
+                    {name}
+                    <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmtINR(Number(v))}</span>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+            <ChartDataTable
+              title="Collected by method"
+              caption={`Collected amount by payment method for the selected period; total ${fmtINR(Number(stats.total))}`}
+              columns={[{ header: 'Method' }, { header: 'Collected' }]}
+              rows={split.map(([name, v]) => ({ key: name, cells: [name, fmtINR(Number(v))] }))}
+              footer={['Total', fmtINR(Number(stats.total))]}
+              className="mt-3"
+            />
+          </>
         );
       })()}
 

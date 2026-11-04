@@ -22,7 +22,8 @@ import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import { Loader2, TrendingUp, Trophy, Activity } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { EmptyState, PremiumAreaChart, PremiumBarChart, PageContainer, PageHero } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { PremiumAreaChart, PremiumBarChart } from '@/components/visualizations';
 import AdherencePanel from '@/components/pt-os/analytics/AdherencePanel';
 import MusclePanel from '@/components/pt-os/analytics/MusclePanel';
 import PrTimeline from '@/components/pt-os/analytics/PrTimeline';
@@ -209,6 +210,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
                   bars={[{ key: 'volume', label: 'Volume (kg)', color: VOLUME }]}
                   height={180}
                   formatValue={(v) => `${Math.round(v).toLocaleString('en-IN')} kg`}
+                  bordered={false}
                 />
               )}
             </Panel>
@@ -256,6 +258,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
                   areas={[{ key: 'est_1rm', label: 'Est. 1RM (kg)', color: STRENGTH }]}
                   height={180}
                   formatValue={(v) => `${v.toFixed(1)} kg`}
+                  bordered={false}
                 />
               )}
             </Panel>

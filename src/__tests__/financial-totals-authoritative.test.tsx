@@ -107,6 +107,7 @@ vi.mock('@/components/ui/chart', () => ({
 vi.mock('@/components/visualizations', () => ({
   PremiumBarChart: () => <div data-testid="chart" />,
   PremiumDonutChart: () => <div data-testid="chart" />,
+  ChartDataTable: () => null,
   semantic: { success: '#10B981', warning: '#F59E0B', danger: '#EF4444', info: '#A33757' },
   series: ['#F59E0B', '#A33757'],
 }));

@@ -26,6 +26,8 @@ vi.mock('@/components/Guard', () => ({
 }));
 vi.mock('@/components/visualizations', () => ({
   PremiumAreaChart: () => null,
+  PremiumBarChart: () => null,
+  ChartDataTable: () => null,
 }));
 vi.mock('@/components/pt-os/WeeklyCheckinInsightCard', () => ({
   default: () => null,

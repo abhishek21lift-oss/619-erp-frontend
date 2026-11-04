@@ -10,7 +10,7 @@ import { useToast } from '@/lib/toast';
 import Guard from '@/components/Guard';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { Button, KpiCard, PageContainer, PageHero } from '@/components/ui';
-import { PremiumBarChart, semantic } from '@/components/visualizations';
+import { ChartDataTable, PremiumBarChart, semantic } from '@/components/visualizations';
 import { identity } from '@/lib/palette';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
@@ -354,6 +354,20 @@ export default function InvoicesPage() {
               loading={loading && invoices.length === 0}
               emptyTitle="No invoices yet"
               emptyDescription="Create an invoice to see the value split."
+            />
+          )}
+          {!error && (
+            <ChartDataTable
+              title="Invoice value by status"
+              caption="Paid, pending and overdue invoice value from the server totals"
+              columns={[{ header: 'Status' }, { header: 'Invoice value' }]}
+              rows={[
+                { key: 'paid', cells: ['Paid', fmtCurrency(Number(stats.paid) || 0)] },
+                { key: 'pending', cells: ['Pending', fmtCurrency(Number(stats.pending) || 0)] },
+                { key: 'overdue', cells: ['Overdue', fmtCurrency(Number(stats.overdue) || 0)] },
+              ]}
+              footer={['Total', fmtCurrency((Number(stats.paid) || 0) + (Number(stats.pending) || 0) + (Number(stats.overdue) || 0))]}
+              className="mb-5"
             />
           )}
 

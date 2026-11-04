@@ -46,6 +46,11 @@ export type { PremiumSparklineProps, PremiumSparklineDatum } from './PremiumSpar
 export type { PremiumSeriesSpec } from './primitives';
 export type { PieDatum } from './primitives';
 
+// The accessible equivalent every chart pairs with: same figures in a real
+// table, with caption, column scopes and row headers.
+export { ChartDataTable } from './ChartDataTable';
+export type { ChartDataTableProps, ChartDataTableColumn, ChartDataTableRow } from './ChartDataTable';
+
 // The Premium KPI System — the canonical metric/stat card for the whole app.
 export {
   PremiumMetricCard, PremiumMetricCardStandard,

@@ -35,6 +35,24 @@ export interface LineChartCoreProps {
   yMin?: number | 'auto';
 }
 
+/** Y domain for the line/area chart. Exported so the padding can be tested. */
+export function lineYDomain(
+  data: readonly Record<string, unknown>[],
+  series: readonly PremiumSeriesSpec[],
+  yMin?: number | 'auto',
+): { min: number; max: number | 'auto' } {
+  if (yMin === undefined) return { min: 0, max: 'auto' };
+  if (typeof yMin === 'number') return { min: yMin, max: 'auto' };
+  const values = data.flatMap((row) => series
+    .map((s) => Number(row[s.key]))
+    .filter((v) => Number.isFinite(v)));
+  if (!values.length) return { min: 0, max: 'auto' };
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const pad = (hi - lo || Math.abs(hi) * 0.1 || 1) * 0.15;
+  return { min: lo - pad, max: hi + pad };
+}
+
 /**
  * Shared render internals for PremiumLineChart and PremiumAreaChart — the
  * only difference between the two is `enableArea`, so this is where the
@@ -61,18 +79,7 @@ export function LineChartCore({
   const compact = useIsCompactChart();
   const nivoData = React.useMemo(() => toNivoSeries(data, xKey, series), [data, xKey, series]);
 
-  const yDomain = React.useMemo(() => {
-    if (yMin === undefined) return { min: 0, max: 'auto' as const };
-    if (typeof yMin === 'number') return { min: yMin, max: 'auto' as const };
-    const values = data.flatMap((row) => series
-      .map((s) => Number(row[s.key]))
-      .filter((v) => Number.isFinite(v)));
-    if (!values.length) return { min: 0, max: 'auto' as const };
-    const lo = Math.min(...values);
-    const hi = Math.max(...values);
-    const pad = (hi - lo || Math.abs(hi) * 0.1 || 1) * 0.15;
-    return { min: lo - pad, max: hi + pad };
-  }, [data, series, yMin]);
+  const yDomain = React.useMemo(() => lineYDomain(data, series, yMin), [data, series, yMin]);
 
   const gradient = React.useMemo(
     () => buildGradientFill(
