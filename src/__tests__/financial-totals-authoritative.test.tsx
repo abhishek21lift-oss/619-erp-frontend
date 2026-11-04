@@ -102,6 +102,14 @@ vi.mock('@/components/ui/chart', () => ({
   CHART_COLORS: [],
   useChartConfig: () => ({}),
 }));
+// Dues and payments now render the visualizations-system charts, which measure
+// the viewport; these cases read KPI arithmetic, not chart geometry.
+vi.mock('@/components/visualizations', () => ({
+  PremiumBarChart: () => <div data-testid="chart" />,
+  PremiumDonutChart: () => <div data-testid="chart" />,
+  semantic: { success: '#10B981', warning: '#F59E0B', danger: '#EF4444', info: '#A33757' },
+  series: ['#F59E0B', '#A33757'],
+}));
 
 /** `n` payments of ₹100 each — a capped page of the ledger. */
 const rows = (n: number) =>

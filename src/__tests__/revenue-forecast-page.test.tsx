@@ -6,7 +6,7 @@
 // state that used to look like a forecast of zero.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 const monthly = vi.fn();
 
@@ -20,6 +20,7 @@ vi.mock('@/components/Guard', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('framer-motion', () => ({
+  useReducedMotion: () => true,
   m: new Proxy({}, {
     get: (_t, tag: string) => ({ children, ...rest }: Record<string, unknown>) =>
       React.createElement(tag, rest, children as React.ReactNode),
@@ -38,6 +39,23 @@ vi.mock('@/components/ui', () => ({
 }));
 
 import RevenueForecastPage from '@/app/(chrome)/finance/forecast/page';
+
+beforeAll(() => {
+  // jsdom ships no matchMedia; the chart's responsive hook reads a breakpoint.
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  });
+});
 
 const rows = [
   { month_num: 1, revenue: 100000 },
@@ -99,7 +117,7 @@ describe('<RevenueForecastPage />', () => {
     expect(screen.queryByText('Jan 2026')).toBeNull();
     expect(screen.queryByText('Projected Full Year')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /Retry/ }));
+    fireEvent.click(within(alert).getByRole('button', { name: /Retry/ }));
     await waitFor(() => expect(screen.getAllByText('Jan 2026').length).toBeGreaterThan(0));
     expect(screen.getAllByText('₹3,00,000').length).toBeGreaterThan(0);
   });

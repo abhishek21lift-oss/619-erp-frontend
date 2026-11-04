@@ -28,6 +28,7 @@ vi.mock('@/components/Guard', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('framer-motion', () => ({
+  useReducedMotion: () => true,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   m: new Proxy({}, {
     get: (_t, tag: string) => ({ children, ...rest }: Record<string, unknown>) =>

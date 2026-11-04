@@ -10,6 +10,7 @@ import { useToast } from '@/lib/toast';
 import Guard from '@/components/Guard';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { Button, KpiCard, PageContainer, PageHero } from '@/components/ui';
+import { PremiumBarChart, semantic } from '@/components/visualizations';
 import { identity } from '@/lib/palette';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
@@ -334,6 +335,27 @@ export default function InvoicesPage() {
             <KpiCard label="Pending" value={fmtCurrency(stats.pending)} icon={<Clock size={16} />} accent="amber" />
             <KpiCard label="Overdue" value={fmtCurrency(stats.overdue)} icon={<AlertTriangle size={16} />} accent="rose" />
           </div>
+
+          {/* Invoice value by status — same server totals as the cards above. */}
+          {!error && (
+            <PremiumBarChart
+              data={[
+                { status: 'Paid', value: Number(stats.paid), color: semantic.success },
+                { status: 'Pending', value: Number(stats.pending), color: semantic.warning },
+                { status: 'Overdue', value: Number(stats.overdue), color: semantic.danger },
+              ]}
+              xKey="status"
+              bars={[{ key: 'value', label: 'Invoice value', color: semantic.info, colorKey: 'color' }]}
+              title="Invoice value by status"
+              subtitle="Paid, pending and overdue invoices"
+              height={240}
+              className="mb-5"
+              formatValue={fmtCurrency}
+              loading={loading && invoices.length === 0}
+              emptyTitle="No invoices yet"
+              emptyDescription="Create an invoice to see the value split."
+            />
+          )}
 
           {/* Tabs + Search + New Invoice */}
           <div style={{

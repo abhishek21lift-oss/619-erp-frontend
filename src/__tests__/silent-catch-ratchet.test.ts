@@ -88,8 +88,8 @@ const KNOWN = [
   // correct under the endpoint's own row cap and is documented at each site.
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
-  'app/(chrome)/finance/collected-payments/page.tsx:113',
-  'app/(chrome)/finance/dues/page.tsx:95',
+  'app/(chrome)/finance/collected-payments/page.tsx:116',
+  'app/(chrome)/finance/dues/page.tsx:96',
   'components/payments/UpiPayScreen.tsx:210',
   // Line moved 587 -> 592 -> 597 -> 584 -> 572 -> 604 -> 605: the Check-in QR
   // print popup above gained five lines of escaping plus two imports, the
