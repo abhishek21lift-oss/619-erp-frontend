@@ -204,7 +204,7 @@ export const progress = {
     today: (params?: { date?: string }) =>
       http<{ data: TodayRoster }>(`/api/pt-os/workout-log/today${buildQs(params)}`),
     sessions: {
-      list: (params: { client_id: string; limit?: number; offset?: number }) =>
+      list: (params: { client_id: string; limit?: number; offset?: number; from?: string; to?: string }) =>
         http<{ data: WorkoutSession[] }>(`/api/pt-os/workout-log/sessions${buildQs(params)}`),
       get: (id: string) =>
         http<{ data: WorkoutSessionDetail }>(`/api/pt-os/workout-log/sessions/${id}`),

@@ -912,6 +912,9 @@ export interface WorkoutSession {
   updated_at: string;
   exercise_count?: number;
   completed_set_count?: number;
+  /** Completed set volume (kg × reps) for this session, when the list query
+   *  supplies it. */
+  volume?: number;
 }
 
 export interface WorkoutSessionDetail extends WorkoutSession {

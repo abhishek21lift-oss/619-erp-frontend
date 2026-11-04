@@ -97,6 +97,8 @@ export type OpsData = {
     client_photo: string | null;
     plan_id: string; plan_name: string;
     planned_exercises: number;
+    /** 'HH:MM' saved usual training time, or null when none is set. */
+    start_time: string | null;
   }>;
   /**
    * Clients whose ENROLMENT says they train today.
@@ -1299,6 +1301,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
     unscheduled: ops?.today_unscheduled?.map((u) => ({
       client_id: u.client_id, client_name: u.client_name,
       client_mobile: u.client_mobile, plan_name: u.plan_name,
+      start_time: u.start_time,
     })),
     birthdays,
     studioName,

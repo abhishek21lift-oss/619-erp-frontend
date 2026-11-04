@@ -218,4 +218,43 @@ describe('reaching people', () => {
     });
     expect(out[0].contacts[0].name).toBe('this client');
   });
+
+  it('shows the saved usual time instead of claiming the calendar is full', () => {
+    // "No slot on the calendar" was a static sentence: nothing checked the
+    // calendar, and a programme assignment is not a booking that can occupy a
+    // slot. The roster carries the saved time; the card now states it.
+    const out = build({
+      unscheduled: [{
+        client_id: 'c1', client_name: 'Ajeet', plan_name: 'PPL',
+        client_mobile: '98765 43210', start_time: '07:30',
+      }],
+    });
+    expect(out[0].id).toBe('unbooked');
+    expect(out[0].detail).toContain('7:30 AM');
+    expect(out[0].detail).not.toMatch(/no slot/i);
+  });
+
+  it('says no time is set when none was ever saved', () => {
+    const out = build({
+      unscheduled: [{
+        client_id: 'c1', client_name: 'Ajeet', plan_name: 'PPL',
+        client_mobile: null, start_time: null,
+      }],
+    });
+    expect(out[0].detail).toMatch(/no usual training time is set/i);
+    expect(out[0].detail).not.toMatch(/no slot/i);
+  });
+
+  it('names both the saved times and the clients who have none', () => {
+    const out = build({
+      unscheduled: [
+        { client_id: 'c1', client_name: 'Ajeet', plan_name: 'PPL', start_time: '06:00' },
+        { client_id: 'c2', client_name: 'Priya', plan_name: 'PPL', start_time: '18:15' },
+        { client_id: 'c3', client_name: 'Rahul', plan_name: 'PPL', start_time: null },
+      ],
+    });
+    expect(out[0].detail).toContain('6:00 AM');
+    expect(out[0].detail).toContain('6:15 PM');
+    expect(out[0].detail).toContain('1 with no time set');
+  });
 });
