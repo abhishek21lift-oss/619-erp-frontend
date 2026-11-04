@@ -1,6 +1,8 @@
 'use client';
+
 import { useMemo } from 'react';
-import { Calendar, Clock, Dumbbell } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, Calendar, Clock, Dumbbell, Sparkles } from 'lucide-react';
 import { FormField, SelectInput } from '@/components/ui';
 import GoalStepCard from './GoalStepCard';
 import { indigo, gray, tint } from '@/lib/palette';
@@ -9,13 +11,38 @@ import { SESSION_MINUTES, TIME_OF_DAY_OPTIONS, WEEKDAY_NAMES, formatWeeklyCommit
 import type { TimeOfDay } from '@/lib/goal-plan';
 import type { GoalFormData } from './types';
 
+/** The read-only availability the Enrolment form owns. */
+export interface EnrolmentAvailability {
+  sessions_per_week?: number | string | null;
+  session_minutes?: number | string | null;
+  preferred_training_days?: string[] | string | null;
+  preferred_workout_time?: string | null;
+}
+
 interface StepScheduleProps {
   form: Pick<GoalFormData, 'trainingDays' | 'preferredDays' | 'sessionMinutes' | 'timeOfDay' | 'experienceLevel' | 'equipment' | 'goalType'>;
   set: <K extends 'trainingDays' | 'preferredDays' | 'sessionMinutes' | 'timeOfDay' | 'experienceLevel' | 'equipment'>(key: K, val: GoalFormData[K]) => void;
   step: number;
+  clientId: string;
+  availability?: EnrolmentAvailability;
 }
 
-export default function StepSchedule({ form, set, step }: StepScheduleProps) {
+function daysLabel(value: EnrolmentAvailability['preferred_training_days']): string {
+  const days = Array.isArray(value)
+    ? value
+    : typeof value === 'string' ? value.split(',').map((d) => d.trim()).filter(Boolean) : [];
+  return days.length ? days.join(', ') : 'Not recorded';
+}
+
+function timeLabel(value: string | null | undefined): string {
+  if (!value) return 'Not recorded';
+  const [hours, minutes] = value.split(':').map(Number);
+  if (!Number.isFinite(hours)) return value;
+  return new Date(2000, 0, 1, hours, Number.isFinite(minutes) ? minutes : 0)
+    .toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+}
+
+export default function StepSchedule({ form, set, step, clientId, availability }: StepScheduleProps) {
   const days = trainingDaysFrom(form.trainingDays);
   const schedule = useMemo(
     () => recommendTrainingSplit(form.trainingDays, { goal: form.goalType, experience: form.experienceLevel, preferredDays: form.preferredDays }),
@@ -23,6 +50,12 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
   );
   const blueprint = useMemo(() => buildRoutineBlueprint({ goal: form.goalType, experience: form.experienceLevel, equipment: form.equipment, trainingDays: form.trainingDays, split: schedule.split }), [form, schedule.split]);
   const commitment = formatWeeklyCommitment(weeklyCommitmentMinutes(days, form.sessionMinutes));
+
+  const enrolmentDays = availability?.sessions_per_week;
+  const enrolmentMinutes = availability?.session_minutes;
+  const enrolmentTime = availability?.preferred_workout_time;
+  const hasAvailability = enrolmentDays != null || enrolmentMinutes != null || enrolmentTime != null
+    || daysLabel(availability?.preferred_training_days) !== 'Not recorded';
 
   // Nominating more days than the frequency is not an error — it is a client
   // with flexibility. The newest pick wins, so the plan trains on the days
@@ -35,8 +68,67 @@ export default function StepSchedule({ form, set, step }: StepScheduleProps) {
   };
 
   return (
-    <GoalStepCard icon={Calendar} title="Training Availability" step={step} hint="when the client can actually train">
-      <div className="space-y-6">
+    <GoalStepCard icon={Calendar} title="Training Availability" step={step} hint="what the client can do, then what the plan asks of them">
+      <div className="space-y-7">
+        {/* Availability belongs to Enrolment. The prescription below belongs
+            to this goal, so the two are shown as separate records rather than
+            one editable block that looks like it owns both. */}
+        <section className="rounded-[18px] p-5" style={{ background: gray[50], border: `1px solid ${gray[200]}` }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-[760] uppercase tracking-[0.14em]" style={{ color: indigo[600] }}>
+                Client availability
+              </p>
+              <h3 className="mt-1 text-[15px] font-[800] tracking-[-0.02em]" style={{ color: gray[900] }}>
+                From Enrolment · read-only
+              </h3>
+              <p className="mt-1 max-w-[54ch] text-[12px] leading-relaxed" style={{ color: gray[500] }}>
+                When the client said they can train. The programmed schedule below is the prescription and may differ.
+              </p>
+            </div>
+            <Link
+              href={`/pt-os/clients/${encodeURIComponent(clientId)}/enroll`}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]"
+              style={{ background: 'var(--bg-card)', border: `1px solid ${gray[200]}`, color: indigo[700] }}
+            >
+              Edit in Enrolment <ArrowUpRight size={12} />
+            </Link>
+          </div>
+
+          {hasAvailability ? (
+            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {[
+                { label: 'Days / week', value: enrolmentDays != null ? String(enrolmentDays) : '—' },
+                { label: 'Session', value: enrolmentMinutes != null ? `${enrolmentMinutes} min` : '—' },
+                { label: 'Preferred days', value: daysLabel(availability?.preferred_training_days) },
+                { label: 'Preferred time', value: timeLabel(enrolmentTime) },
+              ].map((row) => (
+                <div key={row.label} className="rounded-[12px] px-3.5 py-2.5" style={{ background: 'var(--bg-card)', border: `1px solid ${gray[200]}` }}>
+                  <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>{row.label}</p>
+                  <p className="mt-0.5 text-[12.5px] font-[760]" style={{ color: gray[800] }}>{row.value}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-[12px] px-4 py-3 text-[12.5px]" style={{ background: 'var(--bg-card)', color: gray[600], border: `1px solid ${gray[200]}` }}>
+              No training availability recorded yet. Set it in Enrolment, or prescribe below from what the client has told you.
+            </p>
+          )}
+        </section>
+
+        <div className="flex items-center gap-2.5">
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-[10px]"
+            style={{ background: tint(indigo[500], 0.10), color: indigo[700] }}
+          >
+            <Sparkles size={15} />
+          </span>
+          <div>
+            <p className="text-[10px] font-[760] uppercase tracking-[0.14em]" style={{ color: indigo[600] }}>Programmed schedule</p>
+            <h3 className="text-[15px] font-[800] tracking-[-0.02em]" style={{ color: gray[900] }}>Prescription for this goal</h3>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Training days / week">
             <SelectInput value={form.trainingDays} onChange={(e) => {

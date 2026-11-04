@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Check, Target } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
-import { emerald, gray, red, tint } from '@/lib/palette';
+import { emerald, gray, indigo, red, tint } from '@/lib/palette';
 import { smartChecklist } from '@/lib/goal-plan';
 import GoalStepCard from './GoalStepCard';
 import type { GoalFormData } from './types';
@@ -46,6 +46,40 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
       }
     >
       <div className="space-y-6">
+        {/* The five letters as a single glance: what is already specific and
+            what the later steps still have to make measurable. */}
+        <div
+          className="rounded-[20px] p-4 sm:p-5"
+          style={{ background: `linear-gradient(160deg, ${indigo[50]} 0%, ${indigo[100]} 100%)`, border: `1px solid ${tint(indigo[500], 0.16)}` }}
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-[10.5px] font-[760] uppercase tracking-[0.14em]" style={{ color: indigo[700] }}>SMART summary</p>
+            <p className="text-[11.5px] font-[700]" style={{ color: done === checklist.length ? emerald[700] : gray[500] }}>
+              {done} of {checklist.length} complete
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {checklist.map((row) => (
+              <div key={row.key} className="text-center">
+                <div
+                  className="mx-auto flex h-9 w-9 items-center justify-center rounded-[12px] text-[13px] font-[840]"
+                  style={{
+                    background: row.done ? 'linear-gradient(150deg, #A33757, #852E4E)' : 'var(--bg-card)',
+                    border: row.done ? '1px solid transparent' : `1px solid ${gray[200]}`,
+                    color: row.done ? '#fff' : gray[400],
+                    boxShadow: row.done ? '0 8px 18px -12px rgba(163,55,87,0.7)' : 'none',
+                  }}
+                >
+                  {row.key}
+                </div>
+                <p className="mt-1.5 truncate text-[10px] font-[700]" style={{ color: row.done ? gray[700] : gray[400] }}>
+                  {row.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <FloatInput
           label={form.goalType === 'custom' ? 'Goal Statement' : 'Goal Statement (SMART)'}
           multiline autoGrow maxLength={2000}

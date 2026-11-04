@@ -17,6 +17,47 @@ export type GoalType =
 export type PriorityGoal = 'fat_loss' | 'muscle_gain' | 'strength' | 'health' | 'performance' | 'lifestyle' | 'endurance' | 'posture' | 'nutrition' | 'recovery';
 
 /**
+ * A secondary fitness goal rides on the primary goal record.
+ *
+ * It is deliberately not a second pt_goals row: one goal per client is the
+ * active one (is_active + deactivateOtherGoals), and member self-service goals
+ * live in member_goals. Storing the list here keeps both rules intact.
+ */
+export interface SecondaryGoalDraft {
+  id: string;
+  title: string;
+  goalType: GoalType | '';
+  description: string;
+  targetDate: string;
+}
+
+/** The wire shape stored in pt_goals.secondary_goals. */
+export interface SecondaryGoalPayload {
+  id: string;
+  title: string;
+  goal_type: GoalType | null;
+  description: string | null;
+  target_date: string | null;
+}
+
+export const MAX_SECONDARY_GOALS = 6;
+
+let secondaryGoalSeq = 0;
+
+export function emptySecondaryGoal(): SecondaryGoalDraft {
+  secondaryGoalSeq += 1;
+  return {
+    // Only created from a click, never during render, so this cannot differ
+    // between the server and client.
+    id: `sg-${Date.now().toString(36)}-${secondaryGoalSeq}`,
+    title: '',
+    goalType: '',
+    description: '',
+    targetDate: '',
+  };
+}
+
+/**
  * The six readiness questions feed `calcLifestyleReadinessScore` and its
  * backend twin — that key list is fixed, so the four daily-routine keys below
  * add context to the plan without silently changing a stored score.
@@ -72,6 +113,9 @@ export interface GoalFormData {
   challengeOther: string;
   /** One mitigation plan per selected challenge. */
   barrierPlans: BarrierPlan[];
+
+  /** Optional extra fitness goals attached to this primary goal record. */
+  secondaryGoals: SecondaryGoalDraft[];
 
   lifestyle: LifestyleAnswers;
 
@@ -137,6 +181,7 @@ export interface FormErrors {
   milestones?: string;
   assessmentReview?: string;
   agreement?: string;
+  review?: string;
 }
 
 /**
@@ -181,19 +226,69 @@ export const PRIORITY_META: { value: PriorityGoal; label: string; icon: LucideIc
 
 export const STEPS = [
   { id: 1, key: 'primaryGoal', label: 'Primary Goal' },
-  { id: 2, key: 'smartGoal', label: 'SMART Goal' },
-  { id: 3, key: 'measureTarget', label: 'Measure & Target' },
+  { id: 2, key: 'smartGoal', label: 'SMART Goal Definition' },
+  { id: 3, key: 'measureTarget', label: 'Measurement & Target' },
   { id: 4, key: 'deadline', label: 'Deadline' },
   { id: 5, key: 'milestones', label: 'Time Horizons' },
-  { id: 6, key: 'priority', label: 'Priority' },
+  { id: 6, key: 'priority', label: 'Goal Priority' },
   { id: 7, key: 'motivation', label: 'Motivation & Confidence' },
   { id: 8, key: 'challenges', label: 'Challenges & Barriers' },
   { id: 9, key: 'lifestyle', label: 'Lifestyle & Routine' },
   { id: 10, key: 'schedule', label: 'Training Availability' },
+  { id: 11, key: 'review', label: 'Review & Client Sign-off' },
 ] as const;
 
 export const LAST_STEP = STEPS[STEPS.length - 1].id;
 export type StepId = typeof STEPS[number]['id'];
+
+const GOAL_TYPE_VALUES = new Set<string>(GOAL_TYPE_META.map((g) => g.value));
+
+/** Read `pt_goals.secondary_goals` into editable rows, dropping junk. */
+export function secondaryGoalsFromRow(value: unknown): SecondaryGoalDraft[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((raw, index) => {
+    if (!raw || typeof raw !== 'object') return [];
+    const row = raw as Record<string, unknown>;
+    const title = typeof row.title === 'string' ? row.title.trim() : '';
+    if (!title) return [];
+    const goalType: GoalType | '' = typeof row.goal_type === 'string' && GOAL_TYPE_VALUES.has(row.goal_type)
+      ? row.goal_type as GoalType
+      : '';
+    return [{
+      id: typeof row.id === 'string' && row.id ? row.id : `sg-row-${index}`,
+      title,
+      goalType,
+      description: typeof row.description === 'string' ? row.description : '',
+      targetDate: typeof row.target_date === 'string' ? row.target_date.slice(0, 10) : '',
+    }];
+  }).slice(0, MAX_SECONDARY_GOALS);
+}
+
+/** The wire shape for the API; an empty list is stored as NULL. */
+export function secondaryGoalsPayload(goals: SecondaryGoalDraft[]): SecondaryGoalPayload[] | null {
+  const rows = goals
+    .filter((g) => g.title.trim())
+    .slice(0, MAX_SECONDARY_GOALS)
+    .map((g) => ({
+      id: g.id,
+      title: g.title.trim(),
+      goal_type: g.goalType || null,
+      description: g.description.trim() || null,
+      target_date: g.targetDate || null,
+    }));
+  return rows.length ? rows : null;
+}
+
+/** Secondary goals are optional, but a row that exists must be complete. */
+export function validateSecondaryGoals(goals: SecondaryGoalDraft[], today: string): string | undefined {
+  for (const g of goals) {
+    if (!g.title.trim()) return 'Give every secondary goal a name, or remove the empty row.';
+    if (g.targetDate && g.targetDate < today) {
+      return `The target date for "${g.title.trim()}" must be today or later.`;
+    }
+  }
+  return undefined;
+}
 
 /** The client columns Enrollment writes and a new goal should start from. */
 export interface GoalClientDefaults {
@@ -203,6 +298,13 @@ export interface GoalClientDefaults {
   lifestyle_training_days?: number | string | null;
   interviewChallenges?: string[] | null;
   interviewMotivation?: string | null;
+
+  // Read-only client availability from Enrolment. Goal Step 10 shows this
+  // beside the programmed schedule so availability and prescription cannot be
+  // mistaken for each other.
+  session_minutes?: number | string | null;
+  preferred_training_days?: string[] | null;
+  preferred_workout_time?: string | null;
 }
 
 /**
@@ -253,6 +355,7 @@ export function initGoalForm(): GoalFormData {
     clientAgreed: false, clientExpectation: '',
     motivationLevel: '7', confidenceLevel: '7', commitmentLevel: '7', motivationReason: '',
     biggestChallenges: [], challengeOther: '', barrierPlans: [],
+    secondaryGoals: [],
     lifestyle: {
       can_train_4_6_days: null, meal_prep_possible: null, sleep_7_8_hours: null,
       drink_enough_water: null, family_support: null, medical_restrictions: null,
