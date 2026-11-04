@@ -164,7 +164,15 @@ function InterviewForm({ clientId }: { clientId: string }) {
     }
 
     // A conditional answer that no longer applies is cleared, not orphaned.
-    if (answers.occupation_type && answers.occupation_type !== 'other' && savedRef.current.occupation_other_details) {
+    // A legacy row can hold a detail with no occupation_type (the old screen
+    // keyed it off the Lifestyle occupation); never delete that history when
+    // no occupation is chosen now.
+    const wasOther = savedRef.current.occupation_type === 'other';
+    if (
+      savedRef.current.occupation_other_details
+      && answers.occupation_type !== 'other'
+      && (wasOther || answers.occupation_type)
+    ) {
       body.occupation_other_details = '';
     }
     if (!answers.training_challenges.includes('other') && savedRef.current.challenge_other) {

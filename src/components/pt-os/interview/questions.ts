@@ -4,8 +4,8 @@
 //
 // The Interview owns all ten questions: work, training background, barriers
 // and readiness, and the trainer's summary. A small set of earlier answers
-// (meal regularity, training days, availability, and the client's own words
-// in their own words) are no longer asked; where one survives, it is read-only
+// (meal regularity, training days, availability, and the client's own words)
+// are no longer asked; where one survives, it is read-only
 // history under "Earlier interview answers", never a control.
 //
 // ── Values are canonical, labels are for people ────────────────────────────

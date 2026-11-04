@@ -311,6 +311,50 @@ describe('<InterviewPage />', () => {
     });
   });
 
+  it('clears the occupation detail when the trainer moves away from Other', async () => {
+    mockInterviews = [{
+      id: 'iv-4', status: 'draft', updated_at: '2026-10-26T10:00:00Z',
+      occupation_type: 'other', occupation_other_details: 'Long-haul driver',
+      job_details: 'Driver',
+    }];
+    render(<InterviewPage />);
+    await clientHeading();
+
+    expect(select('What is your occupation?').value).toBe('other');
+    expect(textField('Describe their occupation').value).toBe('Long-haul driver');
+    fireEvent.change(select('What is your occupation?'), { target: { value: '' } });
+    expect(screen.queryByLabelText('Describe their occupation')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+    expect(mockUpdate.mock.calls[0][1]).toEqual({
+      occupation_type: '',
+      occupation_other_details: '',
+      status: 'draft',
+    });
+  });
+
+  it('keeps a legacy occupation detail when no occupation is chosen', async () => {
+    // The old screen keyed the detail off the Lifestyle occupation, so a
+    // legacy row may hold it with no occupation_type at all.
+    mockInterviews = [{
+      id: 'iv-legacy', status: 'draft', updated_at: '2026-09-01T10:00:00Z',
+      occupation_other_details: 'Long-haul driver',
+      job_details: 'Driver',
+    }];
+    render(<InterviewPage />);
+    await clientHeading();
+
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Long-haul driver, nights' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+    const body = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    expect(body).toEqual({ job_details: 'Long-haul driver, nights', status: 'draft' });
+    expect(body).not.toHaveProperty('occupation_other_details');
+    expect(body).not.toHaveProperty('occupation_type');
+  });
+
   it('opens a completed interview as a record with the trainer\'s summary apart from the earlier answers', async () => {
     mockInterviews = [{
       id: 'iv-1', status: 'completed', completed_at: '2026-10-22T09:00:00Z', updated_at: '2026-10-22T09:00:00Z',
