@@ -1,22 +1,37 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   Plus, Search, List as ListIcon, Calendar as CalendarIcon,
   History, Loader2, AlertCircle, ChevronLeft, ChevronRight, Dumbbell,
-  TrendingUp, Flame, CheckCircle2, Clock, Sparkles,
+  TrendingUp, Flame, CheckCircle2, Clock, Sparkles, Activity,
+  Timer, Trophy, Percent, CalendarDays,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PremiumAreaChart, PremiumBarChart, PullToRefresh, FormField, SelectInput } from '@/components/ui';
+import {
+  Button, Dialog, DialogContent, DialogHeader, DialogTitle,
+  PullToRefresh, FormField, SelectInput, EmptyState, TextInput,
+} from '@/components/ui';
+import {
+  PremiumAreaChart, PremiumBarChart, PremiumDonutChart, PremiumLineChart,
+} from '@/components/visualizations';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
-import type { WorkoutSession, WorkoutProgressPoint, WorkoutVolumePoint, WorkoutAssignment, WorkoutAssignmentDetail } from '@/lib/api';
+import type {
+  WorkoutSession, WorkoutProgressPoint, WorkoutAssignment,
+  WorkoutAssignmentDetail, TrainingAnalytics,
+} from '@/lib/api';
+import {
+  computeWorkoutAnalytics, muscleDistribution, rangeForPreset,
+  dayKey, addDays, type DateRange, type HeatmapDay, type RangePreset,
+} from '@/lib/workout-log-analytics';
 import { screeningBlockOf } from '@/lib/screeningBlock';
 import { useToast } from '@/lib/toast';
-import { fmtDate } from '@/lib/format';
+import { fmtDate, fmtDayMonth } from '@/lib/format';
+import { indigo } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -24,6 +39,15 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 type ViewMode = 'list' | 'calendar' | 'timeline';
 
 const QUICK_EXERCISES = ['Bench Press', 'Squat', 'Deadlift'];
+
+const RANGE_PRESETS: Array<{ id: RangePreset; label: string }> = [
+  { id: '7d', label: '7D' },
+  { id: '30d', label: '30D' },
+  { id: '90d', label: '90D' },
+  { id: '6mo', label: '6M' },
+  { id: '1y', label: '1Y' },
+  { id: 'custom', label: 'Custom' },
+];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -43,6 +67,13 @@ function statusStyle(status: string) {
   return { label: 'In Progress', bg: 'rgba(245,158,11,0.12)', color: '#d97706' };
 }
 
+/** 12,345 -> 12.3k. Chart axes need a short number, not a full one. */
+function compact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}m`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(Math.round(n));
+}
+
 export default function WorkoutLogPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return <Guard><WorkoutLogHub clientId={id} /></Guard>;
@@ -53,6 +84,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   const { toast } = useToast();
 
   const [clientName, setClientName] = useState('');
+  // Recent history (latest 100), so changing the analytics range never takes
+  // away the session you came here to open.
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -70,8 +103,21 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   const [chartExercise, setChartExercise] = useState('Bench Press');
   const [chartSearch, setChartSearch] = useState('');
   const [progressData, setProgressData] = useState<WorkoutProgressPoint[]>([]);
-  const [volumeData, setVolumeData] = useState<WorkoutVolumePoint[]>([]);
-  const [volumeGroupBy, setVolumeGroupBy] = useState<'week' | 'month'>('week');
+
+  const [rangePreset, setRangePreset] = useState<RangePreset>('90d');
+  const [customFrom, setCustomFrom] = useState(() => addDays(dayKey(new Date()), -29));
+  const [customTo, setCustomTo] = useState(() => dayKey(new Date()));
+  const [rangeSessions, setRangeSessions] = useState<WorkoutSession[]>([]);
+  const [rangeLoading, setRangeLoading] = useState(true);
+  const [rangeError, setRangeError] = useState('');
+  const [trainingStats, setTrainingStats] = useState<TrainingAnalytics | null>(null);
+  const [statsError, setStatsError] = useState('');
+  const rangeRequest = useRef(0);
+
+  const range = useMemo<DateRange>(
+    () => rangeForPreset(rangePreset, dayKey(new Date()), { from: customFrom, to: customTo }),
+    [rangePreset, customFrom, customTo],
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -104,14 +150,41 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const loadVolume = useCallback(async () => {
+  /** One range, one sessions read. The analytics read is optional: losing it
+   *  costs the muscle/PR panels, not the session stats measured above. */
+  const loadRange = useCallback(async () => {
+    const request = ++rangeRequest.current;
+    setRangeLoading(true);
+    setRangeError('');
+    setStatsError('');
     try {
-      const res = await api.progress.workoutLog.volumeSummary({ client_id: clientId, group_by: volumeGroupBy });
-      setVolumeData(res?.data ?? []);
-    } catch { /* non-fatal */ }
-  }, [clientId, volumeGroupBy]);
+      const days = Math.round(
+        (Date.parse(`${range.to}T12:00:00Z`) - Date.parse(`${range.from}T12:00:00Z`)) / 86400000,
+      ) + 1;
+      const weeks = Math.min(Math.max(Math.ceil(days / 7), 1), 52);
+      const [sessionsRes, statsResult] = await Promise.all([
+        api.progress.workoutLog.sessions.list({
+          client_id: clientId, limit: 400, from: range.from, to: range.to,
+        }),
+        api.progress.workoutLog.analytics({ client_id: clientId, weeks, as_of: range.to })
+          .then(
+            (res) => ({ ok: true as const, data: res?.data ?? null }),
+            (cause: unknown) => ({ ok: false as const, cause }),
+          ),
+      ]);
+      if (request !== rangeRequest.current) return;
+      setRangeSessions(sessionsRes?.data ?? []);
+      if (statsResult.ok) setTrainingStats(statsResult.data);
+      else setStatsError(errorMessage(statsResult.cause, 'Muscle and record breakdown unavailable.'));
+    } catch (err: unknown) {
+      if (request !== rangeRequest.current) return;
+      setRangeError(errorMessage(err, 'Failed to load this range.'));
+    } finally {
+      if (request === rangeRequest.current) setRangeLoading(false);
+    }
+  }, [clientId, range.from, range.to]);
 
-  useEffect(() => { loadVolume(); }, [loadVolume]);
+  useEffect(() => { loadRange(); }, [loadRange]);
 
   const loadProgress = useCallback(async () => {
     if (!chartExercise) { setProgressData([]); return; }
@@ -124,8 +197,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   useEffect(() => { loadProgress(); }, [loadProgress]);
 
   const refreshAll = useCallback(async () => {
-    await Promise.all([loadData(), loadVolume(), loadProgress()]);
-  }, [loadData, loadVolume, loadProgress]);
+    await Promise.all([loadData(), loadRange(), loadProgress()]);
+  }, [loadData, loadRange, loadProgress]);
 
   const createSession = async (opts: { workout_day?: string; freestyle?: boolean } = {}) => {
     setCreating(true);
@@ -172,24 +245,6 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
     return Array.from(set);
   }, [sessions]);
 
-  const stats = useMemo(() => {
-    const now = new Date();
-    // Abandoned logs are left out of every count (training audit T-1): they
-    // were 14 of Ajeet's "22 sessions" — open logs with nothing done, from
-    // days that had passed.
-    const real = sessions.filter((s) => s.status !== 'abandoned');
-    const thisMonth = real.filter((s) => {
-      const d = new Date(s.session_date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).length;
-    return {
-      total: real.length,
-      completed: real.filter((s) => s.status === 'completed').length,
-      thisMonth,
-      progress: activeAssignment?.progress_pct ?? 0,
-    };
-  }, [sessions, activeAssignment]);
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return sessions.filter((s) => {
@@ -210,6 +265,44 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
     return map;
   }, [sessions]);
 
+  const analytics = useMemo(
+    () => computeWorkoutAnalytics(rangeSessions, trainingStats?.prs ?? [], range),
+    [rangeSessions, trainingStats, range],
+  );
+
+  const muscles = useMemo(
+    () => muscleDistribution(trainingStats?.muscles ?? []),
+    [trainingStats],
+  );
+
+  const weekly = useMemo(() => analytics.weeks.map((w) => ({
+    week: fmtDayMonth(w.week_start),
+    Sessions: w.sessions,
+    Completed: w.completed,
+    Volume: Math.round(w.volume),
+    Duration: w.avg_duration,
+  })), [analytics.weeks]);
+
+  const durationWeeks = useMemo(
+    () => weekly.filter((w) => w.Duration != null),
+    [weekly],
+  );
+
+  const chartProgress = useMemo(
+    () => progressData.filter((p) => {
+      const day = String(p.session_date).slice(0, 10);
+      return day >= range.from && day <= range.to;
+    }),
+    [progressData, range.from, range.to],
+  );
+
+  const rangeDays = useMemo(
+    () => Math.round(
+      (Date.parse(`${range.to}T12:00:00Z`) - Date.parse(`${range.from}T12:00:00Z`)) / 86400000,
+    ) + 1,
+    [range.from, range.to],
+  );
+
   const calendarList = selectedDay ? (sessionsByDay.get(selectedDay) ?? []) : filtered;
 
   if (loading) {
@@ -224,6 +317,25 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
       </div>
     );
   }
+
+  const primaryKpis: Array<{
+    label: string; value: number | null; suffix?: string; icon: React.ReactNode;
+    color: string; spotColor: string;
+  }> = [
+    { label: 'Sessions', value: analytics.total, icon: <Dumbbell size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+    { label: 'Completion', value: analytics.completion_pct, suffix: '%', icon: <Percent size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
+    { label: 'Total Volume', value: analytics.total_volume, suffix: ' kg', icon: <Flame size={14} />, color: '#ef4444', spotColor: 'rgba(239,68,68,0.12)' },
+    { label: 'Avg Duration', value: analytics.avg_duration, suffix: ' min', icon: <Timer size={14} />, color: indigo[450], spotColor: 'rgba(220,88,109,0.12)' },
+    { label: 'Week Streak', value: analytics.week_streak, suffix: analytics.week_streak === 1 ? ' wk' : ' wks', icon: <TrendingUp size={14} />, color: '#852E4E', spotColor: 'rgba(163,55,87,0.12)' },
+    { label: 'PRs', value: statsError ? null : analytics.pr_count, icon: <Trophy size={14} />, color: indigo[700], spotColor: 'rgba(107,36,64,0.12)' },
+  ];
+
+  const secondaryKpis = [
+    { label: 'Completed', value: analytics.completed },
+    { label: 'Avg Volume', value: analytics.avg_volume, suffix: ' kg' },
+    { label: 'Sets Done', value: analytics.completed_sets },
+    { label: 'Active Days', value: analytics.active_days },
+  ];
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
@@ -241,10 +353,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               `overflow-hidden` clip to that layer as a RECTANGLE — so the blob's
               square corner paints outside the rounded corner. Reported on iOS
               against the client profile card, which had the identical pattern.
-              A gradient needs no filter, so nothing is promoted and the clip holds.
-              240px, and the averaged colour for each two-tone blob, were fitted
-              against the old rendering by pixel comparison: 0.99/255 mean
-              difference, where two offset radials per blob scored 2.10. */}
+              A gradient needs no filter, so nothing is promoted and the clip holds. */}
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -278,29 +387,169 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             </Button>
           </div>
 
-          {/* ── KPI cards ── */}
           <m.div variants={containerVariants} initial="hidden" animate="visible"
-            className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {[
-              { label: 'Total Sessions', value: stats.total, icon: <Dumbbell size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-              { label: 'Completed', value: stats.completed, icon: <CheckCircle2 size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-              { label: 'This Month', value: stats.thisMonth, icon: <CalendarIcon size={14} />, color: '#852E4E', spotColor: 'rgba(163,55,87,0.12)' },
-              { label: 'Plan Progress', value: stats.progress, suffix: '%', icon: <TrendingUp size={14} />, color: '#852E4E', spotColor: 'rgba(163,55,87,0.12)' },
-            ].map((s) => (
+            className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
+            {primaryKpis.map((s) => (
               <m.div key={s.label} variants={itemVariants}>
                 <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)', lineHeight: 1.3 }}>{s.label}</span>
                     <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                    <AnimatedCounter value={s.value} suffix={s.suffix} />
+                  <div className="truncate" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                    {s.value == null
+                      ? <span style={{ color: 'var(--text-disabled)' }}>—</span>
+                      : <AnimatedCounter value={s.value} suffix={s.suffix} />}
                   </div>
                 </SpotlightCard>
               </m.div>
             ))}
           </m.div>
         </m.div>
+
+        {/* ── Range filter ── */}
+        <div className="rounded-[20px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={15} style={{ color: '#F59E0B' }} />
+              <h2 className="text-[13px] font-[760] text-gray-900">Analytics range</h2>
+            </div>
+            <div role="group" aria-label="Analytics range" className="flex flex-wrap gap-1.5">
+              {RANGE_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setRangePreset(p.id)}
+                  aria-pressed={rangePreset === p.id}
+                  className="min-h-9 rounded-full px-3 py-1.5 text-[11.5px] font-[750] transition"
+                  style={{
+                    background: rangePreset === p.id ? '#0f172a' : 'var(--bg-subtle)',
+                    color: rangePreset === p.id ? '#fff' : 'var(--text-secondary)',
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {rangePreset === 'custom' && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <FormField label="From">
+                <TextInput
+                  type="date" value={customFrom} max={customTo}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                />
+              </FormField>
+              <FormField label="To">
+                <TextInput
+                  type="date" value={customTo} min={customFrom} max={dayKey(new Date())}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                />
+              </FormField>
+            </div>
+          )}
+
+          <p className="mt-2 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+            {fmtDate(range.from)} → {fmtDate(range.to)}
+            {rangeSessions.length >= 400 && ' · Showing the latest 400 sessions in this range'}
+            {rangeDays > 364 && ' · Muscle and PR panels cover the latest 52 weeks'}
+          </p>
+        </div>
+
+        {/* ── Analytics ── */}
+        {rangeLoading ? (
+          <div className="flex min-h-[240px] items-center justify-center rounded-[20px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <Loader2 size={24} className="animate-spin" style={{ color: '#F59E0B' }} />
+          </div>
+        ) : rangeError ? (
+          <div role="alert" className="flex items-start gap-2 rounded-[20px] border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold">Could not load this range</p>
+              <p className="mt-1 text-red-600">{rangeError}</p>
+            </div>
+            <Button variant="outline" onClick={loadRange}>Retry</Button>
+          </div>
+        ) : analytics.total === 0 ? (
+          <div className="rounded-[20px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <EmptyState
+              icon={<Activity size={20} />}
+              title="No sessions in this range"
+              description="Nothing was logged between these dates. Widen the range, or start a session — the recent history below is unaffected."
+              action={<Button iconLeft={<Plus size={14} />} onClick={handleNewSession}>New Session</Button>}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Secondary measured totals. These are the four numbers that are
+                too specific for the hero cards but too useful to hide. */}
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {secondaryKpis.map((s) => (
+                <div key={s.label} className="rounded-[16px] px-4 py-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <p className="text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>{s.label}</p>
+                  <p className="mt-1.5 text-[19px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+                    {s.value == null ? '—' : <AnimatedCounter value={s.value} suffix={s.suffix} />}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <PremiumAreaChart
+                data={weekly}
+                xKey="week"
+                areas={[{ key: 'Volume', label: 'Volume (kg)', color: '#F59E0B' }]}
+                title="Training volume"
+                subtitle={`Completed set volume by week · ${fmtDate(range.from)} → ${fmtDate(range.to)}`}
+                height={220}
+                formatValue={(v) => `${compact(v)} kg`}
+                emptyTitle="No volume logged in this range"
+                emptyDescription="Log a weighted set to see the weekly load."
+              />
+
+              <PremiumBarChart
+                data={weekly}
+                xKey="week"
+                bars={[
+                  { key: 'Sessions', label: 'Sessions', color: '#A33757' },
+                  { key: 'Completed', label: 'Completed', color: '#10B981' },
+                ]}
+                title="Sessions by week"
+                subtitle="Logged sessions, completed or still open"
+                height={220}
+                emptyTitle="No sessions in this range"
+                emptyDescription="The calendar above shows what the log contains."
+              />
+
+              <PremiumDonutChart
+                data={muscles}
+                title="Sets by muscle"
+                subtitle="Completed working sets in the analytics window"
+                centerLabel="hard sets"
+                formatValue={(v) => `${Math.round(v)} sets`}
+                height={240}
+                error={statsError || null}
+                onRetry={loadRange}
+                emptyTitle="No muscle data yet"
+                emptyDescription="Sets appear here once they are linked to a library exercise."
+              />
+
+              <PremiumLineChart
+                data={durationWeeks}
+                xKey="week"
+                lines={[{ key: 'Duration', label: 'Avg duration (min)', color: indigo[500] }]}
+                title="Session duration"
+                subtitle="Average logged duration per week"
+                height={240}
+                formatValue={(v) => `${Math.round(v)} min`}
+                emptyTitle="Not enough durations yet"
+                emptyDescription="A trend needs two weeks with a saved session duration."
+              />
+            </div>
+
+            <CalendarHeatmapPanel days={analytics.heatmap} range={range} />
+          </>
+        )}
 
         {/* ── Active Plan ── */}
         {activeAssignment && (
@@ -324,11 +573,11 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           </button>
         )}
 
-        {/* ── Progress Charts ── */}
+        {/* ── Exercise progress ── */}
         <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp size={15} style={{ color: '#F59E0B' }} />
-            <h3 className="text-[13px] font-[760] text-gray-900">Progress</h3>
+            <h3 className="text-[13px] font-[760] text-gray-900">Exercise Progress</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {QUICK_EXERCISES.map((ex) => (
@@ -346,43 +595,18 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', width: 160 }}
             />
           </div>
-          {progressData.length === 0 ? (
-            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>No logged sets for {chartExercise} yet.</p>
+          {chartProgress.length === 0 ? (
+            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>No logged sets for {chartExercise} in this range.</p>
           ) : (
             <PremiumAreaChart
-              data={progressData.map((p) => ({ date: fmtDate(p.session_date), 'Est. 1RM': p.est_1rm ?? 0, 'Best Weight': p.best_weight }))}
+              data={chartProgress.map((p) => ({ date: fmtDate(p.session_date), 'Est. 1RM': p.est_1rm ?? 0, 'Best Weight': p.best_weight }))}
               xKey="date"
               areas={[
                 { key: 'Est. 1RM', label: 'Est. 1RM (kg)', color: '#F59E0B' },
                 { key: 'Best Weight', label: 'Best Weight (kg)', color: '#A33757' },
               ]}
               height={220}
-            />
-          )}
-
-          <div className="mt-6 flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Flame size={14} style={{ color: '#ef4444' }} />
-              <h4 className="text-[12.5px] font-[700] text-gray-900">Training Volume</h4>
-            </div>
-            <div className="flex gap-1.5">
-              {(['week', 'month'] as const).map((g) => (
-                <button key={g} onClick={() => setVolumeGroupBy(g)}
-                  className="rounded-full px-2.5 py-1 text-[10.5px] font-[700] capitalize transition"
-                  style={{ background: volumeGroupBy === g ? '#0f172a' : 'var(--bg-subtle)', color: volumeGroupBy === g ? '#fff' : '#64748b' }}>
-                  {g}ly
-                </button>
-              ))}
-            </div>
-          </div>
-          {volumeData.length === 0 ? (
-            <p className="py-6 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>No volume logged yet.</p>
-          ) : (
-            <PremiumBarChart
-              data={volumeData.map((v) => ({ period: fmtDate(v.period), Volume: Math.round(v.volume) }))}
-              xKey="period"
-              bars={[{ key: 'Volume', label: 'Volume (kg)', color: '#F59E0B' }]}
-              height={180}
+              bordered={false}
             />
           )}
         </div>
@@ -401,6 +625,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 { id: 'timeline', icon: History },
               ] as const).map(({ id: v, icon: Icon }) => (
                 <button key={v} onClick={() => { setView(v); setSelectedDay(null); }}
+                  aria-label={`${v} view`} aria-pressed={view === v}
                   className="flex h-11 w-11 items-center justify-center rounded-[10px] transition"
                   style={{ background: view === v ? '#0f172a' : 'var(--bg-subtle)', color: view === v ? '#fff' : '#64748b' }}>
                   <Icon size={14} />
@@ -473,6 +698,96 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   );
 }
 
+// ── Calendar heatmap ────────────────────────────────────────────────────────
+//
+// A year of training at a glance. Built from the same week buckets as the
+// charts, so a day the heatmap calls trained is a day the session list has.
+// Columns are Monday–Sunday, matching weekBuckets, and the padding days of the
+// first/last week are rendered but never counted.
+
+function CalendarHeatmapPanel({ days, range }: { days: HeatmapDay[]; range: DateRange }) {
+  const weeks = useMemo(() => {
+    const out: HeatmapDay[][] = [];
+    for (let i = 0; i < days.length; i += 7) out.push(days.slice(i, i + 7));
+    return out;
+  }, [days]);
+
+  const maxVolume = Math.max(0, ...days.map((d) => d.volume));
+  const maxSessions = Math.max(0, ...days.map((d) => d.sessions));
+  const scale = maxVolume > 0 ? maxVolume : maxSessions;
+  const tones = [
+    'var(--bg-subtle)',
+    'rgba(245,158,11,0.16)',
+    'rgba(245,158,11,0.32)',
+    'rgba(245,158,11,0.55)',
+    'rgba(245,158,11,0.82)',
+    '#F59E0B',
+  ];
+  const toneFor = (day: HeatmapDay) => {
+    if (day.sessions === 0) return 0;
+    const ratio = scale > 0 ? (maxVolume > 0 ? day.volume / scale : day.sessions / scale) : 0;
+    return Math.max(1, Math.min(5, Math.ceil(ratio * 5)));
+  };
+  const today = dayKey(new Date());
+
+  return (
+    <section
+      className="rounded-[20px] p-5"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}
+      aria-label="Training calendar heatmap"
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <CalendarIcon size={15} style={{ color: '#F59E0B' }} />
+          <h3 className="text-[13px] font-[760] text-gray-900">Training Calendar</h3>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-[650]" style={{ color: 'var(--text-disabled)' }}>
+          Less
+          {tones.map((t, i) => (
+            <span key={i} className="h-2.5 w-2.5 rounded-[3px]" style={{ background: t, border: '1px solid var(--border)' }} />
+          ))}
+          More
+        </div>
+      </div>
+      <div className="overflow-x-auto pb-1">
+        <div className="flex min-w-max gap-[3px]">
+          {weeks.map((week) => (
+            <div key={week[0].date} className="flex flex-col gap-[3px]">
+              {week.map((day) => {
+                const tone = toneFor(day);
+                return (
+                  <span
+                    key={day.date}
+                    role="img"
+                    aria-label={day.in_range
+                      ? `${fmtDate(day.date)}: ${day.sessions} ${day.sessions === 1 ? 'session' : 'sessions'}${day.volume > 0 ? `, ${Math.round(day.volume)} kg` : ''}`
+                      : undefined}
+                    aria-hidden={!day.in_range}
+                    title={day.in_range
+                      ? `${fmtDate(day.date)} · ${day.sessions} ${day.sessions === 1 ? 'session' : 'sessions'}${day.volume > 0 ? ` · ${Math.round(day.volume)} kg` : ''}`
+                      : undefined}
+                    className="h-3 w-3 rounded-[3px] sm:h-3.5 sm:w-3.5"
+                    style={{
+                      background: day.in_range ? tones[tone] : 'transparent',
+                      border: day.date === today && day.in_range
+                        ? '1.5px solid #0f172a'
+                        : '1px solid var(--border)',
+                      opacity: day.in_range ? 1 : 0.35,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-2 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
+        {fmtDate(range.from)} → {fmtDate(range.to)} · {days.filter((d) => d.in_range).length} days
+      </p>
+    </section>
+  );
+}
+
 function SessionList({ sessions, clientId, router }: { sessions: WorkoutSession[]; clientId: string; router: ReturnType<typeof useRouter> }) {
   if (sessions.length === 0) {
     return <p className="py-10 text-center text-[13px] font-[600]" style={{ color: 'var(--text-disabled)' }}>No sessions found.</p>;
@@ -495,6 +810,7 @@ function SessionList({ sessions, clientId, router }: { sessions: WorkoutSession[
               </p>
             </div>
             <div className="flex flex-shrink-0 items-center gap-3 text-[11px] font-[650]" style={{ color: '#94a3b8' }}>
+              {s.duration_minutes ? <span>{s.duration_minutes} min</span> : null}
               {s.exercise_count != null && <span>{s.exercise_count} ex</span>}
               {s.completed_set_count != null && <span>{s.completed_set_count} sets</span>}
             </div>
@@ -527,6 +843,7 @@ function SessionTimeline({ sessions, clientId, router }: { sessions: WorkoutSess
               <p className="mt-0.5 truncate text-[11.5px] text-slate-500">
                 {[s.program_name, s.workout_day].filter(Boolean).join(' · ') || 'Freestyle session'}
                 {s.completed_set_count != null ? ` · ${s.completed_set_count} sets` : ''}
+                {s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
               </p>
             </button>
           </div>
@@ -550,7 +867,7 @@ function CalendarView({
   const firstDay = new Date(year, monthIdx, 1);
   const startWeekday = firstDay.getDay();
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = dayKey(new Date());
 
   const cells: (string | null)[] = [];
   for (let i = 0; i < startWeekday; i++) cells.push(null);
@@ -561,11 +878,11 @@ function CalendarView({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setMonth(new Date(year, monthIdx - 1, 1))} className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+        <button onClick={() => setMonth(new Date(year, monthIdx - 1, 1))} aria-label="Previous month" className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
           <ChevronLeft size={14} />
         </button>
         <p className="text-[13px] font-[760] text-gray-900">{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-        <button onClick={() => setMonth(new Date(year, monthIdx + 1, 1))} className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+        <button onClick={() => setMonth(new Date(year, monthIdx + 1, 1))} aria-label="Next month" className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
           <ChevronRight size={14} />
         </button>
       </div>
