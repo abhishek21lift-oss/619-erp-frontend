@@ -283,6 +283,18 @@ export const JUSTIFIED = {
       'inputMode="numeric" — a scroll wheel over it cannot change the value.',
   },
 
+  'src/components/pt-os/interview/InterviewControls.tsx': {
+    allow: 2,
+    reason:
+      'The duration <select> and the optional note <textarea> are rendered ' +
+      'through local field wrappers (SelectControl and TextControl) that take ' +
+      'the label and hint ids from InterviewControlField and wire ' +
+      'aria-labelledby and aria-describedby, with maxLength and rows passed ' +
+      'through. Both answers are optional and saved as a diff, so there is no ' +
+      'error state for FormField to own; every counted answer in the file is ' +
+      'a button with aria-pressed.',
+  },
+
   'src/components/pt-os/analytics/LandmarkEditor.tsx': {
     allow: 1,
     reason:
