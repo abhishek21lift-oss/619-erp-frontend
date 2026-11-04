@@ -140,3 +140,17 @@ export const num = (v: string | number | null | undefined): number => {
   const n = Number(v ?? 0);
   return Number.isFinite(n) ? n : 0;
 };
+
+/** The two halves of the renewal cohort, clamped so a bad payload cannot draw
+ *  a negative slice. */
+export function renewalSplit(m: Pick<RenewalMetric, 'expired_cohort' | 'renewed_of_cohort'>) {
+  const renewed = Math.max(0, num(m.renewed_of_cohort));
+  return { renewed, lapsed: Math.max(0, num(m.expired_cohort) - renewed) };
+}
+
+/** The 30-day expiry snapshot split into this week and the rest. expiring_30d
+ *  already includes expiring_7d, so the second bucket is the difference. */
+export function expiryBuckets(m: Pick<RenewalMetric, 'expiring_7d' | 'expiring_30d'>) {
+  const week = Math.max(0, num(m.expiring_7d));
+  return { week, rest: Math.max(0, num(m.expiring_30d) - week) };
+}

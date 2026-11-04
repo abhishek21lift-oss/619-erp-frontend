@@ -5,9 +5,10 @@ import { RefreshCcw, Users, AlertTriangle, CalendarClock, Percent, Clock, UserCh
 import { api } from '@/lib/api';
 import { fmtDate, fmtMoney } from '@/lib/format';
 import { PageContainer, PageHero, KpiCard } from '@/components/ui';
+import { PremiumBarChart, PremiumDonutChart, semantic } from '@/components/visualizations';
 import { useAsync } from '@/lib/use-async';
 import { CanonicalDateRange, isoDaysAgo, isoToday } from '@/lib/insights/date-range';
-import { fmtRate, type RenewalMetric } from '@/lib/insights/metrics';
+import { fmtRate, renewalSplit, expiryBuckets, type RenewalMetric } from '@/lib/insights/metrics';
 
 const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.08em' };
 const td = { padding: '12px 16px', fontSize: 12 };
@@ -43,6 +44,14 @@ function Inner() {
   const loading = renewals.loading || rows.loading;
   const error = renewals.error?.message || rows.error?.message || '';
   const upcoming = useMemo(() => [...(rows.data ?? [])].sort((a, b) => a.days_left - b.days_left), [rows.data]);
+
+  // Both charts read the server snapshot for the whole studio, never the
+  // 100-row pipeline table below (which is capped and always 30 days).
+  const split = m ? renewalSplit(m) : { renewed: 0, lapsed: 0 };
+  const expiry = m ? expiryBuckets(m) : { week: 0, rest: 0 };
+  const chartLoading = renewals.loading && !m;
+  const chartError = !m ? (renewals.error?.message ?? null) : null;
+  const retryCharts = () => { void refetchRenewals(); };
 
   return (
     <PageContainer>
@@ -81,6 +90,53 @@ function Inner() {
           {m.renewal_revenue > 0 && <> · {fmtMoney(m.renewal_revenue)} renewal revenue</>} · {m.active} active / {m.expired} expired now.
         </div>
       )}
+
+      <div className="my-4 grid gap-3 lg:grid-cols-2">
+        <PremiumDonutChart
+          data={[
+            { name: 'Renewed', value: split.renewed, color: semantic.success },
+            { name: 'Lapsed', value: split.lapsed, color: semantic.danger },
+          ]}
+          centerValue={m ? fmtRate(m.renewal_rate) : undefined}
+          centerLabel="renewal rate"
+          title="Renewal conversion"
+          subtitle={m
+            ? `${split.renewed} of ${m.expired_cohort} expired packages renewed in the selected window`
+            : 'Expired packages in the selected window'}
+          height={260}
+          loading={chartLoading}
+          error={chartError}
+          onRetry={retryCharts}
+          emptyTitle="No expiries in this window"
+          emptyDescription="Renewal rate is undefined until a package expires — it is not 0%."
+          ariaLabel={m
+            ? `Renewal conversion: ${split.renewed} of ${m.expired_cohort} expired packages renewed, ${split.lapsed} lapsed.`
+            : 'Renewal conversion'}
+        />
+
+        <PremiumBarChart
+          data={m && m.expiring_30d > 0
+            ? [
+                { bucket: 'Next 7 days', members: expiry.week, color: semantic.danger },
+                { bucket: 'Days 8–30', members: expiry.rest, color: semantic.warning },
+              ]
+            : []}
+          xKey="bucket"
+          bars={[{ key: 'members', label: 'Members', color: semantic.info, colorKey: 'color' }]}
+          showLegend={false}
+          title="Memberships expiring"
+          subtitle="Active packages ending in the next 30 days"
+          height={260}
+          loading={chartLoading}
+          error={chartError}
+          onRetry={retryCharts}
+          emptyTitle="Nothing expiring in 30 days"
+          emptyDescription="No active package ends before the window closes."
+          ariaLabel={m
+            ? `Memberships expiring: ${expiry.week} in the next 7 days, ${expiry.rest} in days 8 to 30.`
+            : 'Memberships expiring'}
+        />
+      </div>
 
       <div>
         <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>
