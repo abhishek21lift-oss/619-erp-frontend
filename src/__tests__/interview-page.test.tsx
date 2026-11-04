@@ -1,29 +1,30 @@
-// The Client Interview, as four conversation sections (2026-11-01).
+// The Client Interview, as four conversation sections (2026-11-04).
 //
-// The screen asks work & lifestyle, training background, training challenges and
-// an interview summary. Occupation, screen time and activity are read-only here
-// because the Lifestyle Assessment owns them; showing an editable second copy
-// is how two answers start to disagree.
+// The screen asks the ten agreed intake questions: occupation, sitting hours,
+// training background, barriers and readiness, and the trainer's summary. Four
+// older answers (meal regularity, training days, availability, and the client's
+// own words) are no longer asked — they remain as read-only history under
+// "Earlier interview answers" on the completed record.
 //
 // What these tests protect:
-//   · the four sections, in order, and the conditional fields inside them;
+//   · the ten questions, in the four sections, in order, and the conditional
+//     fields inside them;
 //   · progress that counts only what is on screen;
 //   · a save that writes only what changed, so legacy columns this form does
 //     not ask survive;
 //   · a completed interview that can be corrected in place, and a "start new"
 //     that keeps the old record;
-//   · the client's words and the trainer's summary staying labelled apart.
+//   · earlier answers staying labelled apart from the trainer's summary.
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { INTERVIEW_SECTIONS } from '@/components/pt-os/interview/questions';
+import { INTERVIEW_QUESTIONS, INTERVIEW_SECTIONS } from '@/components/pt-os/interview/questions';
 
 const mockPush = vi.fn();
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
 const mockToast = { info: vi.fn(), error: vi.fn(), success: vi.fn() };
 let mockInterviews: unknown[] = [];
-let mockLifestyle: unknown[] = [];
 let mockRestore: () => Record<string, unknown> | null = () => null;
 
 vi.mock('next/navigation', () => ({
@@ -59,11 +60,6 @@ vi.mock('@/lib/api', () => ({
         update: (...a: unknown[]) => mockUpdate(...a),
       },
     },
-    progress: {
-      lifestyleAssessments: {
-        list: async () => ({ data: mockLifestyle }),
-      },
-    },
   },
 }));
 
@@ -81,7 +77,6 @@ const clientHeading = () => screen.findByText("Mina Rao's Interview");
 
 beforeEach(() => {
   mockInterviews = [];
-  mockLifestyle = [];
   mockRestore = () => null;
   mockPush.mockReset();
   mockToast.info.mockReset();
@@ -92,89 +87,82 @@ beforeEach(() => {
 });
 
 describe('<InterviewPage />', () => {
-  it('asks four sections, in order, under the read-only work profile', async () => {
+  it('asks exactly the ten agreed questions', () => {
+    expect(INTERVIEW_QUESTIONS.map((q) => q.label)).toEqual([
+      'What is your occupation?',
+      'What type of work do you do?',
+      'How many hours do you spend sitting at work?',
+      'What is your previous workout experience?',
+      'Have you participated in any sports?',
+      'What type of physical activities have you performed previously?',
+      'What are your exercise preferences?',
+      'What are your biggest barriers to exercise?',
+      'What motivates you to start training?',
+      'How ready are you to start a fitness programme? (1–10)',
+    ]);
+  });
+
+  it('asks four sections, in order', async () => {
     render(<InterviewPage />);
     await clientHeading();
 
     expect(INTERVIEW_SECTIONS).toHaveLength(4);
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent))
-      .toEqual(['Work profile', ...INTERVIEW_SECTIONS.map((s) => s.prompt)]);
+      .toEqual(INTERVIEW_SECTIONS.map((s) => s.prompt));
+    expect(INTERVIEW_SECTIONS.map((s) => s.label))
+      .toEqual(['Work', 'Training background', 'Motivation & barriers', 'Trainer summary']);
 
     // The anchor nav names the same four sections, so a long form has a way
     // back to the one being answered.
     const nav = screen.getByRole('navigation', { name: 'Interview sections' });
     expect(within(nav).getAllByRole('link').map((a) => a.textContent?.replace(/\d+\/\d+$/, '').trim()))
-      .toEqual(INTERVIEW_SECTIONS.map((s) => s.label));
+      .toEqual(['Work', 'Training background', 'Motivation & barriers', 'Trainer summary']);
   }, 20_000);
 
-  it('shows the Lifestyle Assessment facts read-only, with the way to change them', async () => {
-    mockLifestyle = [{
-      occupation_type: 'desk_job',
-      screen_time_bracket: '6_8',
-      daily_steps_bracket: '5000_8000',
-    }];
-    render(<InterviewPage />);
-    await clientHeading();
-
-    const source = screen.getByRole('region', { name: 'Work profile' });
-    expect(within(source).getByText('Desk job')).toBeTruthy();
-    expect(within(source).getByText('6 – 8 hours')).toBeTruthy();
-    expect(within(source).getByText('Moderately Active')).toBeTruthy();
-    expect(within(source).getByRole('link', { name: /edit/i }).getAttribute('href'))
-      .toBe('/pt-os/lifestyle-assessment?client_id=c1');
-    // Read-only means exactly that: there is no Occupation or Screen time control.
-    expect(screen.queryByLabelText('Occupation')).toBeNull();
-    expect(screen.queryByLabelText('Screen time')).toBeNull();
-  });
-
-  it('starts at 0 of 12 visible answers and cannot complete an empty interview', async () => {
+  it('starts at 0 of 10 visible answers and cannot complete an empty interview', async () => {
     render(<InterviewPage />);
     await clientHeading();
 
     const bar = screen.getByRole('progressbar', { name: 'Interview progress' });
     expect(bar.getAttribute('aria-valuenow')).toBe('0');
-    // 13 stored fields, but the occupation detail is conditional and hidden
-    // until the Lifestyle Assessment says "other", and the challenge detail
-    // until the Other chip is chosen.
-    expect(bar.getAttribute('aria-valuemax')).toBe('12');
+    // The occupation detail and the trainer's summary are on the form but not
+    // counted; the challenge detail counts only while the Other chip is chosen.
+    expect(bar.getAttribute('aria-valuemax')).toBe('10');
     expect(screen.getByText(/client interview · step 4/i)).toBeTruthy();
 
     const complete = screen.getByRole('button', { name: 'Complete interview' }) as HTMLButtonElement;
     expect(complete.disabled).toBe(true);
 
-    fireEvent.change(textField('Job details'), { target: { value: 'Warehouse team lead' } });
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Warehouse team lead' } });
     expect(answeredCount()).toBe('1');
     expect(complete.disabled).toBe(false);
   });
 
-  it('counts a section as answered only when every visible question in it is', async () => {
+  it('counts a section as answered only when every counted question in it is', async () => {
     render(<InterviewPage />);
     await clientHeading();
 
-    const work = screen.getByRole('region', { name: 'How does their week look?' });
+    const work = screen.getByRole('region', { name: 'What do they do all day?' });
     expect(within(work).queryByText('Answered')).toBeNull();
 
-    fireEvent.change(textField('Job details'), { target: { value: 'Warehouse team lead' } });
-    fireEvent.change(select('Sitting hours'), { target: { value: '5' } });
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Warehouse team lead' } });
+    expect(within(work).getByText('1/3')).toBeTruthy();
     expect(within(work).queryByText('Answered')).toBeNull();
-    expect(within(work).getByText('2/3')).toBeTruthy();
 
-    fireEvent.change(select('Meal regularity'), { target: { value: 'irregular' } });
+    fireEvent.change(select('What is your occupation?'), { target: { value: 'desk_job' } });
+    fireEvent.change(select('How many hours do you spend sitting at work?'), { target: { value: '5' } });
     expect(within(work).getByText('Answered')).toBeTruthy();
   });
 
-  it('shows the occupation detail only when the Lifestyle Assessment says Other', async () => {
-    const first = render(<InterviewPage />);
-    await clientHeading();
-    expect(screen.queryByLabelText('Describe their occupation')).toBeNull();
-    first.unmount();
-
-    mockLifestyle = [{ occupation_type: 'other' }];
+  it('shows the occupation detail only when Other is chosen, without counting it', async () => {
     render(<InterviewPage />);
     await clientHeading();
+    expect(screen.queryByLabelText('Describe their occupation')).toBeNull();
+
+    fireEvent.change(select('What is your occupation?'), { target: { value: 'other' } });
     expect(textField('Describe their occupation')).toBeTruthy();
-    // The conditional field is now part of the total, not a free extra.
-    expect(screen.getByRole('progressbar', { name: 'Interview progress' }).getAttribute('aria-valuemax')).toBe('13');
+    // The detail is not one of the ten counted questions.
+    expect(screen.getByRole('progressbar', { name: 'Interview progress' }).getAttribute('aria-valuemax')).toBe('10');
   });
 
   it('reveals the "what else" box only after the Other barrier is chosen', async () => {
@@ -182,7 +170,7 @@ describe('<InterviewPage />', () => {
     await clientHeading();
     expect(screen.queryByLabelText('What else gets in the way?')).toBeNull();
 
-    const barriers = screen.getByRole('group', { name: 'Barriers they named' });
+    const barriers = screen.getByRole('group', { name: 'What are your biggest barriers to exercise?' });
     fireEvent.click(within(barriers).getByRole('button', { name: 'Other' }));
     expect(textField('What else gets in the way?')).toBeTruthy();
   });
@@ -191,22 +179,23 @@ describe('<InterviewPage />', () => {
     // lifestyle_sitting_hours is NUMERIC(4,1): a stored 7 arrives as '7.0'.
     mockInterviews = [{
       id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z',
-      lifestyle_sitting_hours: '7.0', lifestyle_meal_regularity: 'irregular',
-      training_history: 'Two years of home workouts',
+      lifestyle_sitting_hours: '7.0', previous_workout_experience: 'beginner',
+      job_details: 'Two years of home workouts',
     }];
     render(<InterviewPage />);
     await clientHeading();
 
-    expect(select('Sitting hours').value).toBe('7');
-    expect(select('Meal regularity').value).toBe('irregular');
+    expect(select('How many hours do you spend sitting at work?').value).toBe('7');
+    expect(select('What is your previous workout experience?').value).toBe('beginner');
+    expect(textField('What type of work do you do?').value).toBe('Two years of home workouts');
     expect(answeredCount()).toBe('3');
 
-    fireEvent.change(select('Meal regularity'), { target: { value: 'regular' } });
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Three years of home workouts' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
     expect(mockUpdate.mock.calls[0][0]).toBe('iv-9');
-    expect(mockUpdate.mock.calls[0][1]).toEqual({ lifestyle_meal_regularity: 'regular', status: 'draft' });
+    expect(mockUpdate.mock.calls[0][1]).toEqual({ job_details: 'Three years of home workouts', status: 'draft' });
   });
 
   it('does nothing when Save draft is pressed with no changes', async () => {
@@ -219,8 +208,15 @@ describe('<InterviewPage />', () => {
     expect(mockToast.info).toHaveBeenCalledWith('Nothing to save yet.');
   });
 
-  it('completes a draft that is already answered, without needing an edit to send', async () => {
+  it('will not complete on the trainer\'s note alone, but completes an answered draft without an edit', async () => {
+    // The note is not one of the counted questions, so it alone cannot complete.
     mockInterviews = [{ id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z', notes: 'Knees flare on lunges' }];
+    const first = render(<InterviewPage />);
+    await clientHeading();
+    expect((screen.getByRole('button', { name: 'Complete interview' }) as HTMLButtonElement).disabled).toBe(true);
+    first.unmount();
+
+    mockInterviews = [{ id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z', job_details: 'Warehouse team lead' }];
     mockUpdate.mockImplementation(async (_id: string, body: Record<string, unknown>) => ({ data: { id: 'iv-9', status: 'completed', ...body } }));
     render(<InterviewPage />);
     await clientHeading();
@@ -234,17 +230,17 @@ describe('<InterviewPage />', () => {
     render(<InterviewPage />);
     await clientHeading();
 
-    fireEvent.change(textField('Job details'), { target: { value: 'Warehouse team lead, rotating shifts' } });
-    fireEvent.change(select('Meal regularity'), { target: { value: 'irregular' } });
-    fireEvent.change(select('Previous experience'), { target: { value: 'intermediate' } });
+    fireEvent.change(select('What is your occupation?'), { target: { value: 'desk_job' } });
+    fireEvent.change(select('How ready are you to start a fitness programme? (1–10)'), { target: { value: '8' } });
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Warehouse team lead, rotating shifts' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete interview' }));
 
     expect(await screen.findByText('Interview completed')).toBeTruthy();
     expect(mockCreate.mock.calls[0][0]).toBe('c1');
     expect(mockCreate.mock.calls[0][1]).toEqual({
+      occupation_type: 'desk_job',
+      programme_readiness: '8',
       job_details: 'Warehouse team lead, rotating shifts',
-      lifestyle_meal_regularity: 'irregular',
-      previous_workout_experience: 'intermediate',
       status: 'completed',
     });
 
@@ -261,13 +257,34 @@ describe('<InterviewPage />', () => {
     render(<InterviewPage />);
     await clientHeading();
 
-    fireEvent.change(textField('Job details'), { target: { value: 'Desk work, eight hours' } });
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Desk work, eight hours' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
     const body = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
     expect(body).toEqual({ job_details: 'Desk work, eight hours', status: 'draft' });
     for (const old of ['lifestyle_occupation', 'lifestyle_sleep_hours', 'lifestyle_meal_regularity', 'pain_and_injuries']) {
+      expect(body).not.toHaveProperty(old);
+    }
+  });
+
+  it('never sends the four earlier answers when only a current answer changed', async () => {
+    mockInterviews = [{
+      id: 'iv-legacy', status: 'draft', updated_at: '2026-09-01T10:00:00Z',
+      lifestyle_meal_regularity: 'irregular', lifestyle_training_days: 3,
+      availability: 'Weekday mornings', important_client_statements: '"Keep going."',
+      job_details: 'Desk work, eight hours',
+    }];
+    render(<InterviewPage />);
+    await clientHeading();
+
+    fireEvent.change(textField('What type of work do you do?'), { target: { value: 'Desk work, ten hours' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+    const body = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
+    expect(body).toEqual({ job_details: 'Desk work, ten hours', status: 'draft' });
+    for (const old of ['lifestyle_meal_regularity', 'lifestyle_training_days', 'availability', 'important_client_statements']) {
       expect(body).not.toHaveProperty(old);
     }
   });
@@ -281,7 +298,7 @@ describe('<InterviewPage />', () => {
     await clientHeading();
 
     expect(textField('What else gets in the way?').value).toBe('Gym closes before I finish work');
-    const barriers = screen.getByRole('group', { name: 'Barriers they named' });
+    const barriers = screen.getByRole('group', { name: 'What are your biggest barriers to exercise?' });
     fireEvent.click(within(barriers).getByRole('button', { name: 'Other' }));
     expect(screen.queryByLabelText('What else gets in the way?')).toBeNull();
 
@@ -294,11 +311,13 @@ describe('<InterviewPage />', () => {
     });
   });
 
-  it('opens a completed interview as a record that keeps the client\'s words and the trainer\'s apart', async () => {
+  it('opens a completed interview as a record with the trainer\'s summary apart from the earlier answers', async () => {
     mockInterviews = [{
       id: 'iv-1', status: 'completed', completed_at: '2026-10-22T09:00:00Z', updated_at: '2026-10-22T09:00:00Z',
       previous_workout_experience: 'beginner',
       training_challenges: ['time', 'gym_access'],
+      lifestyle_meal_regularity: 'regular', lifestyle_training_days: 3,
+      availability: 'Weekday mornings',
       important_client_statements: '"I want to keep up with my kids."',
       notes: 'Knees flare on deep lunges — keep range short.',
     }];
@@ -306,17 +325,24 @@ describe('<InterviewPage />', () => {
 
     expect(await screen.findByText('Interview completed')).toBeTruthy();
     expect(screen.getByText('Time, Gym access')).toBeTruthy();
-    expect(screen.getByText('"I want to keep up with my kids."')).toBeTruthy();
+
+    const earlier = screen.getByRole('heading', { name: 'Earlier interview answers' }).closest('section')!;
+    expect(within(earlier).getByText('When they could train')).toBeTruthy();
+    expect(within(earlier).getByText('Weekday mornings')).toBeTruthy();
+    expect(within(earlier).getByText("In the client's words")).toBeTruthy();
+    expect(within(earlier).getByText('"I want to keep up with my kids."')).toBeTruthy();
+    expect(within(earlier).queryByText('Not recorded')).toBeNull();
 
     const summary = screen.getByRole('heading', { name: 'What should the team remember?' }).closest('section')!;
-    expect(within(summary).getByText('In their words')).toBeTruthy();
     expect(within(summary).getByText('Trainer summary')).toBeTruthy();
     expect(within(summary).getByText('Knees flare on deep lunges — keep range short.')).toBeTruthy();
+    expect(within(summary).queryByText('In their words')).toBeNull();
   });
 
   it('edits a completed interview in place, and cancel leaves the record alone', async () => {
     mockInterviews = [{
       id: 'iv-1', status: 'completed', completed_at: '2026-10-22T09:00:00Z', updated_at: '2026-10-22T09:00:00Z',
+      job_details: 'Warehouse team lead',
       notes: 'Knees flare on deep lunges',
     }];
     mockUpdate.mockImplementation(async (_id: string, body: Record<string, unknown>) => ({ data: { id: 'iv-1', status: 'completed', ...body } }));
@@ -365,12 +391,12 @@ describe('<InterviewPage />', () => {
     render(<InterviewPage />);
     await clientHeading();
 
-    await waitFor(() => expect(textField('Job details').value).toBe('Unsaved draft answer'));
+    await waitFor(() => expect(textField('What type of work do you do?').value).toBe('Unsaved draft answer'));
     expect(mockToast.info).toHaveBeenCalledWith('Restored your unsaved draft.');
   });
 
   it('stores every canonical challenge key the server accepts', () => {
-    const chips = INTERVIEW_SECTIONS.find((s) => s.id === 'challenges')!.controls[0];
+    const chips = INTERVIEW_SECTIONS.find((s) => s.id === 'barriers')!.controls[0];
     expect(chips.kind).toBe('chips');
     if (chips.kind !== 'chips') return;
     expect(chips.options.map((o) => o.value)).toEqual([
