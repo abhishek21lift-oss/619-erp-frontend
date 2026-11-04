@@ -40,7 +40,6 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
     : null;
   const status = STATUS_STYLE[calcAchievementStatus(completion, days, totalDays)];
   const measureLabel = formatGoalMeasure(goalMeasureFromRow(goal));
-  const secondaryCount = Array.isArray(goal.secondary_goals) ? goal.secondary_goals.length : 0;
   const reviewDate = goal.review_date ? String(goal.review_date).slice(0, 10) : null;
 
   return (
@@ -94,11 +93,6 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
           {!!measureLabel && (
             <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'rgba(163,55,87,0.08)', color: '#852E4E' }}>
               {measureLabel}
-            </span>
-          )}
-          {secondaryCount > 0 && (
-            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              +{secondaryCount} secondary
             </span>
           )}
           <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: status.bg, color: status.color }}>

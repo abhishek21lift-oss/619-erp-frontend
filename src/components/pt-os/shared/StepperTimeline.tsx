@@ -17,18 +17,12 @@ interface StepperTimelineProps<Id extends number> {
   /** The surface the stepper sits on. The studio wizards are dark; the public
    *  signing page is the same light stage as the marketing site. */
   tone?: 'dark' | 'light';
-  /**
-   * `timeline` is the numbered-circle bar. `progress` is the compact light
-   * treatment for long wizards: one labelled progress rail instead of eleven
-   * circles that no longer fit a phone.
-   */
-  variant?: 'timeline' | 'progress';
 }
 
 /** Numbered circles with animated fill bars, click-to-jump when a step is
  *  reachable (`step.id <= current + 1`). Every assessment wizard passes its
  *  own `steps` list rather than keeping a near-identical wrapper. */
-export function StepperTimeline<Id extends number>({ steps, current, onStep, tone = 'dark', variant = 'timeline' }: StepperTimelineProps<Id>) {
+export function StepperTimeline<Id extends number>({ steps, current, onStep, tone = 'dark' }: StepperTimelineProps<Id>) {
   const light = tone === 'light';
   // Reachability is computed by array *position*, not raw numeric id — a
   // caller (e.g. PAR-Q) may pass a `steps` list with gaps in `id` when a
@@ -38,60 +32,11 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep, ton
 
   // On a phone a 7- or 8-step bar is wider than the screen, and the steps
   // past the edge used to sit there cut off. The current step is scrolled
-  // into view whenever it changes. Declared before the progress variant
-  // returns, because a hook cannot sit behind a branch.
+  // into view whenever it changes.
   const activeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     activeRef.current?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }, [current]);
-
-  if (variant === 'progress') {
-    const currentStep = currentIndex > -1 ? steps[currentIndex] : null;
-    return (
-      <div className="w-full">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-[10px] font-[760] uppercase tracking-[0.16em]" style={{ color: semantic.muted }}>
-            Step {Math.max(currentIndex + 1, 1)} of {steps.length}
-          </p>
-          <p className="min-w-0 truncate text-[12.5px] font-[760]" style={{ color: semantic.ink }}>
-            {currentStep?.label}
-          </p>
-        </div>
-        <div className="mt-2.5 flex items-center gap-1" aria-label="Goal plan progress">
-          {steps.map((s, i) => {
-            const done = currentIndex > -1 && i < currentIndex;
-            const active = current === s.id;
-            const reachable = currentIndex === -1 || i <= currentIndex + 1;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                aria-label={`Step ${i + 1}: ${s.label}${done ? ' (complete)' : ''}`}
-                aria-current={active ? 'step' : undefined}
-                disabled={!reachable}
-                onClick={() => { if (reachable) onStep(s.id); }}
-                className="flex h-6 flex-1 items-center"
-                style={{ cursor: reachable ? 'pointer' : 'default' }}
-              >
-                <span
-                  className="h-2 w-full rounded-full transition-all duration-300"
-                  style={{
-                    minWidth: 3,
-                    background: done
-                      ? 'linear-gradient(90deg, #A33757, #852E4E)'
-                      : active
-                        ? '#FB9590'
-                        : 'var(--bg-subtle)',
-                    boxShadow: active ? '0 0 0 3px rgba(163,55,87,0.12)' : 'none',
-                  }}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto pb-1">
