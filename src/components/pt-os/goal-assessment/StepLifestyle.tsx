@@ -138,7 +138,7 @@ export function StepLifestyle({ form, set, step, context, clientId, error }: Ste
             <div>
               <p className="text-[13px] font-[760]" style={{ color: gray[800] }}>Client context</p>
               <p className="mt-1 text-[12px]" style={{ color: gray[500] }}>
-                K11 lifestyle screening, read from the records that already own it.
+                Lifestyle screening, read from the records that already own it.
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5">

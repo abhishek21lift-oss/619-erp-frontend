@@ -53,12 +53,6 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
           placeholder="Lose 6 kg of fat by 20 December, training three mornings a week at the studio."
         />
 
-        <FloatInput
-          label="Success metric" maxLength={200}
-          value={form.successMetric} onChange={(v) => set('successMetric', v)}
-          placeholder="e.g. 78 kg at 18% body fat, or 5 strict pull-ups"
-        />
-
         <div className="rounded-[18px] p-4" style={{ background: gray[50], border: `1px solid ${gray[200]}` }}>
           <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>SMART Check</p>
           <ul className="space-y-2">
@@ -73,7 +67,7 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
                     : <span className="text-[10.5px] font-[800]" style={{ color: gray[600] }}>{row.key}</span>}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[12.5px] font-[700]" style={{ color: row.done ? gray[700] : red[600] }}>
+                  <p className="text-[12.5px] font-[700]" style={{ color: row.done ? gray[700] : row.key === 'S' ? red[600] : gray[500] }}>
                     {row.label}
                   </p>
                   {!row.done && <p className="text-[11.5px]" style={{ color: gray[500] }}>{row.detail}</p>}
@@ -84,7 +78,7 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
           {/* Targets, priority and deadline live in later steps; saying so
               beats an amber tick that looks like a problem on step 2. */}
           <p className="mt-3 text-[11.5px]" style={{ color: gray[400] }}>
-            Measurable, Achievable and Time-bound complete as you fill in the target, priority and deadline in the next steps.
+            Measurable, Achievable and Time-bound complete as you fill in the measure and deadline in the next steps; Relevant completes when the client agrees at the final review.
           </p>
         </div>
 

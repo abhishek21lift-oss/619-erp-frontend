@@ -53,12 +53,6 @@ export function StepChallenges({ form, set, step, error }: StepChallengesProps) 
   return (
     <GoalStepCard icon={HelpCircle} title="Challenges & Barriers" step={step} hint="what gets in the way, and the plan for it">
       <div className="space-y-7">
-        <FloatInput
-          label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}
-          value={form.motivationReason} onChange={(v) => set('motivationReason', v)}
-          placeholder="Wedding, competition, health, confidence, doctor recommendation, lifestyle, vacation..."
-        />
-
         <div>
           <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Biggest Challenge</p>
           <MultiSelectChips value={form.biggestChallenges} onChange={(v) => set('biggestChallenges', v)} options={CHALLENGE_OPTIONS} />

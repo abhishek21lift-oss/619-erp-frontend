@@ -60,7 +60,7 @@ export function StepMeasureTarget({
   return (
     <GoalStepCard
       icon={Target} title="Measure & Target" step={step}
-      hint="K11 measurable — the number this goal is judged by"
+      hint="Measurable — the number this goal is judged by"
     >
       <div className="space-y-6">
         <div>
@@ -141,9 +141,23 @@ export function StepMeasureTarget({
 
         {!metric && (
           <div className="rounded-[14px] px-4 py-3 text-[12.5px]" style={{ background: gray[50], color: gray[600] }}>
-            Pick one measure. If this goal genuinely has no number, write a success metric in the SMART step instead.
+            Pick one measure. If this goal genuinely has no number, write a success metric instead.
           </div>
         )}
+
+        <div>
+          <FloatInput
+            label={metric ? 'Success metric (optional)' : 'Success metric'}
+            maxLength={200}
+            value={form.successMetric} onChange={(v) => set('successMetric', v)}
+            placeholder="e.g. 78 kg at 18% body fat, or 5 strict pull-ups"
+          />
+          <p className="mt-1.5 text-[11.5px]" style={{ color: gray[500] }}>
+            {metric
+              ? 'Optional plain-language check the client will judge success by.'
+              : 'Required when no measure is chosen above.'}
+          </p>
+        </div>
 
         {directionWarning(form.goalType, gap) && (
           <p className="rounded-[12px] px-3.5 py-2.5 text-[12.5px] font-[600]" role="status"

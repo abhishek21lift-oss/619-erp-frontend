@@ -39,7 +39,7 @@ export function StepMilestones({ form, set, step, today, error }: StepMilestones
   };
 
   return (
-    <GoalStepCard icon={CalendarRange} title="Time Horizons" step={step} hint="K11 short, medium and long-term checkpoints"
+    <GoalStepCard icon={CalendarRange} title="Time Horizons" step={step} hint="Short, medium and long-term checkpoints"
       badge={
         <span className="rounded-full px-3 py-1.5 text-[11.5px] font-[760]" style={{ background: gray[100], color: gray[600] }}>
           {form.milestones.length} set
@@ -53,7 +53,7 @@ export function StepMilestones({ form, set, step, today, error }: StepMilestones
 
         {form.milestones.length === 0 && !showSuggestions && (
           <p className="text-[12.5px]" style={{ color: gray[500] }}>
-            K11 breaks the goal into three horizons. Accept the suggested checkpoints, or add one per tier.
+            The goal is split into three horizons. Accept the suggested checkpoints, or add one per tier.
           </p>
         )}
 
