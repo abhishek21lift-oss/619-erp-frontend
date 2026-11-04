@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { PremiumDonutChart, semantic } from '@/components/visualizations';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { DuesItem, DuesSummary } from '@/lib/api';
@@ -123,6 +124,16 @@ function Inner() {
     : filtered.filter((d) => Number(d.balance_amount || 0) >= RISK_HIGH).length;
   const medRisk  = summary ? summary.medium_risk_count
     : filtered.filter((d) => { const a = Number(d.balance_amount || 0); return a >= RISK_MEDIUM && a < RISK_HIGH; }).length;
+  // Derived, not filtered: the summary returns the two named bands and the
+  // population, so the remainder is Low. Clamped in case the bands ever ship
+  // out of sync with the population count.
+  const lowRisk = summary ? Math.max(0, summary.debtor_count - summary.high_risk_count - summary.medium_risk_count) : 0;
+
+  const riskData = summary ? [
+    { name: 'High risk', value: summary.high_risk_count, color: semantic.danger },
+    { name: 'Medium', value: summary.medium_risk_count, color: semantic.warning },
+    { name: 'Low', value: lowRisk, color: semantic.success },
+  ] : [];
 
   return (
     <PullToRefresh onRefresh={fetchDues}>
@@ -171,7 +182,28 @@ function Inner() {
           />
         </div>
 
-      {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
+      <PremiumDonutChart
+        data={riskData}
+        title="Debtors by risk band"
+        subtitle={summary
+          ? `${summary.debtor_count} member${summary.debtor_count === 1 ? '' : 's'} owe · centre is total outstanding`
+          : 'Balance bands across every debtor'}
+        centerValue={summary ? fmt(total) : undefined}
+        centerLabel="outstanding"
+        formatValue={(v) => `${Math.round(v)} debtor${Math.round(v) === 1 ? '' : 's'}`}
+        height={260}
+        className="mb-4"
+        loading={loading && !summary}
+        error={!loading && !summary ? (error || 'Summary unavailable') : null}
+        onRetry={fetchDues}
+        emptyTitle="No pending dues"
+        emptyDescription="Every member is up to date."
+        ariaLabel={summary
+          ? `Debtors by risk band: ${summary.high_risk_count} high, ${summary.medium_risk_count} medium, ${lowRisk} low; total outstanding ${fmt(total)}`
+          : 'Debtors by risk band'}
+      />
+
+      {error && summary && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
 
       {/* ── Search ── */}
       <div style={{ background: 'var(--bg-card)', borderRadius: 18, border: '1px solid var(--border)', padding: '14px 18px', marginBottom: 16, boxShadow: 'var(--shadow-xs)' }}>

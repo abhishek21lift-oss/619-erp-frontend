@@ -26,6 +26,7 @@ import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero, KpiCard } from '@/components/ui';
 import { api } from '@/lib/api';
+import { PremiumBarChart, semantic, series as chartPalette } from '@/components/visualizations';
 import { TrendingUp, CalendarRange, BarChart3, Target, RefreshCw } from 'lucide-react';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -91,6 +92,14 @@ function Inner() {
   const ytdAvg = realisedTotal / Math.max(currentMonth + 1, 1);
   // A failed first load must not render ₹0 as if it were a real forecast.
   const unavailable = !!error && monthly.length === 0;
+
+  // Stacked, not grouped: a month is actual or forecast, never both, so
+  // grouping would draw a zero-width placeholder beside every real bar.
+  const chartData = series.map((m) => ({
+    month: m.month,
+    actual: m.actual ? m.revenue : 0,
+    forecast: m.forecast ?? 0,
+  }));
 
   return (
     <PageContainer>
@@ -176,6 +185,28 @@ function Inner() {
           loading={loading && monthly.length === 0}
         />
       </div>
+
+      <PremiumBarChart
+        data={chartData}
+        xKey="month"
+        bars={[
+          { key: 'actual', label: 'Actual / MTD', color: semantic.success },
+          ...(forecastMonths > 0 ? [{ key: 'forecast', label: 'Forecast', color: chartPalette[1] }] : []),
+        ]}
+        groupMode="stacked"
+        title="Actual vs forecast"
+        subtitle={forecastMonths > 0
+          ? `Completed payments by month · ${remainingLabel} projected at 3-month average +5%`
+          : 'Completed payments by month · year complete'}
+        height={260}
+        className="mb-4"
+        formatValue={fmt}
+        loading={loading && monthly.length === 0}
+        error={unavailable ? error : null}
+        onRetry={() => setRetryKey((k) => k + 1)}
+        emptyTitle="No revenue recorded yet"
+        emptyDescription="Completed payments will appear here month by month."
+      />
 
       {/* ── Forecast Table ── */}
       <div style={{ background: 'var(--bg-card)', borderRadius: 20, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>

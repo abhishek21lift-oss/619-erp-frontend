@@ -9,12 +9,14 @@ import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
 import type { PaymentStats } from '@/lib/api/endpoints/money';
 import { Button, KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { PremiumDonutChart } from '@/components/visualizations';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, Inbox,
   Layers, IndianRupee, List, TrendingUp,
 } from 'lucide-react';
 import { errorMessage } from '@/lib/forms/errors';
+import { mint } from '@/lib/palette';
 import { todayISO } from '@/lib/forms/domain';
 
 /**
@@ -45,10 +47,11 @@ const METHOD_ICONS: Record<string, React.ReactNode> = {
   Bank: <Receipt size={14} />,
 };
 
+// Distinct hues: a donut cannot separate two methods that share one.
 const METHOD_COLORS: Record<string, string> = {
   UPI: '#A33757',
   Cash: '#10b981',
-  Card: '#A33757',
+  Card: mint[500],
   Bank: '#f59e0b',
 };
 
@@ -248,16 +251,31 @@ function Inner() {
           .filter(([, v]) => Number(v) > 0);
         // One method is just the total again; a split needs two.
         if (split.length < 2) return null;
+        const label = split.map(([name, v]) => `${name} ${fmtINR(Number(v))}`).join(', ');
         return (
-          <div className="mt-3 flex flex-wrap gap-2" aria-label="Collected by method">
-            {split.map(([name, v]) => (
-              <span key={name} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-[700]"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                <span style={{ color: METHOD_COLORS[name] }}>{METHOD_ICONS[name]}</span>
-                {name}
-                <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmtINR(Number(v))}</span>
-              </span>
-            ))}
+          <div className="mt-3 grid items-center gap-4 lg:grid-cols-2">
+            <PremiumDonutChart
+              data={split.map(([name, v]) => ({ name, value: Number(v), color: METHOD_COLORS[name] }))}
+              title="Collected by method"
+              subtitle="Server totals for the selected period"
+              centerValue={fmtINR(Number(stats.total))}
+              centerLabel="collected"
+              formatValue={fmtINR}
+              height={240}
+              // The chips beside it are the legend, with exact amounts.
+              showLegend={false}
+              ariaLabel={`Collected by method: ${label}`}
+            />
+            <div className="flex flex-wrap gap-2" aria-label="Collected by method">
+              {split.map(([name, v]) => (
+                <span key={name} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-[700]"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  <span style={{ color: METHOD_COLORS[name] }}>{METHOD_ICONS[name]}</span>
+                  {name}
+                  <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{fmtINR(Number(v))}</span>
+                </span>
+              ))}
+            </div>
           </div>
         );
       })()}
