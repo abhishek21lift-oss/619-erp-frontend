@@ -47,6 +47,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
     unscheduled: ops?.today_unscheduled?.map((u) => ({
       client_id: u.client_id, client_name: u.client_name,
       client_mobile: u.client_mobile, plan_name: u.plan_name,
+      start_time: u.start_time,
     })),
     birthdays,
     studioName,

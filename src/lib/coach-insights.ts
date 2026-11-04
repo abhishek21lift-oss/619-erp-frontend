@@ -63,6 +63,8 @@ export interface CoachDue {
 export interface CoachUnscheduled {
   client_id: string; client_name: string | null; plan_name: string;
   client_mobile?: string | null;
+  /** 'HH:MM' saved as the client's usual training time, or null if unset. */
+  start_time?: string | null;
 }
 
 export interface CoachBirthday {
@@ -89,6 +91,17 @@ function money(n: number): string {
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
+
+/** '07:30' -> '7:30 AM'. Null when the value is not a real clock time. */
+function clockLabel(hhmm?: string | null): string | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(hhmm ?? '');
+  if (!match) return null;
+  const hours = Number(match[1]);
+  if (hours > 23) return null;
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 === 0 ? 12 : hours % 12;
+  return `${hour12}:${match[2]} ${suffix}`;
+}
 
 /**
  * Every insight worth surfacing, most urgent first.
@@ -170,12 +183,25 @@ export function buildCoachInsights(input: CoachInput): CoachInsight[] {
 
   // ── Due to train today, nothing booked ──────────────────────────────────
   if (unscheduled.length > 0) {
+    // These clients are "unbooked" because no pt_sessions row exists — not
+    // because the calendar has no room. A programme assignment is not a
+    // booking and does not conflict with one. The saved usual time is the
+    // honest thing to show; "no slot on the calendar" was a claim nothing
+    // checked, and it hid the time the client actually arrives.
+    const times = unscheduled
+      .map((u) => clockLabel(u.start_time))
+      .filter((t): t is string => t !== null);
+    const withoutTime = unscheduled.length - times.length;
+    const shownTimes = times.slice(0, 3).join(', ');
+    const detail = times.length === 0
+      ? 'Their programme says today, but no usual training time is set on their profile.'
+      : `Their programme says today. ${times.length === 1 ? 'Saved time' : 'Saved times'}: ${shownTimes}${times.length > 3 ? ` +${times.length - 3} more` : ''}${withoutTime > 0 ? ` · ${withoutTime} with no time set` : ''}.`;
     out.push({
       id: 'unbooked',
       urgency: 'warning',
       count: unscheduled.length,
       title: `${unscheduled.length} ${plural(unscheduled.length, 'client')} due to train, unbooked`,
-      detail: 'Their programme says today, but there is no slot on the calendar.',
+      detail,
       href: '/pt-os/schedule-session',
       // This used to be `contacts: []` with a note that today_unscheduled
       // carried no mobile. It carried none because nobody had selected the
