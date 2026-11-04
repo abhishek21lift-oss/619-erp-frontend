@@ -208,7 +208,7 @@ test.describe('Client interview and journey', () => {
     // The trainer's summary and the client's own words appear under their own
     // headings, not merged into one "notes" block.
     const summary = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What should the team remember?' }) });
-    await expect(summary.getByText('Trainer summary')).toBeVisible();
+    await expect(summary.getByText('Trainer summary', { exact: true })).toBeVisible();
     await expect(summary.getByText('Knees flare on deep lunges')).toBeVisible();
     const earlier = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Earlier interview answers' }) });
     await expect(earlier.getByText("In the client's words")).toBeVisible();
