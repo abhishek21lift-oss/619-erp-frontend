@@ -11,10 +11,10 @@ import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session
  * API (registration is client-create.ui.spec's journey); everything under test
  * is done through the screens, and every outcome is read back from the API.
  *
- * The interview is four sections since 2026-11-01: work & lifestyle, training
- * background, training challenges, and a summary. Occupation, screen time and
- * activity live on the Lifestyle Assessment, which owns those columns; this
- * form shows them read-only and never writes a second copy.
+ * The interview is four sections since 2026-11-04: work, training background,
+ * motivation & barriers, and the trainer's summary. It owns all ten intake
+ * questions; the Lifestyle Assessment reads the occupation from here and Goal
+ * Setting reads the barriers and motivation from here.
  *
  * What the controls store is the canonical value, not the label: a sitting
  * band is stored as its midpoint, and a barrier is its key ('time'), not
@@ -25,9 +25,14 @@ import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session
 type Interview = {
   id: string;
   status: string;
+  occupation_type: string | null;
   job_details: string | null;
   training_history: string | null;
   previous_workout_experience: string | null;
+  sports_participation: string | null;
+  preferences: string | null;
+  motivation: string | null;
+  programme_readiness: number | string | null;
   training_challenges: string[] | null;
   challenge_other: string | null;
   important_client_statements: string | null;
@@ -81,23 +86,30 @@ test.describe('Client interview and journey', () => {
     await expect(page.getByRole('button', { name: /Complete PAR-Q/ })).toBeVisible();
   });
 
-  test('the interview stores canonical answers and completing continues to the server\'s next step', async ({ page }) => {
+  test('the interview stores the ten intake answers and completing continues to the server\'s next step', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const sitting = page.getByLabel('Sitting hours');
-    await expect(sitting).toBeVisible({ timeout: 25_000 });
+    const occupation = page.getByLabel('What is your occupation?');
+    await expect(occupation).toBeVisible({ timeout: 25_000 });
 
-    // A label is never what gets stored: "6 – 8 hours" is 7, "Frequently
-    // skipped" is inconsistent, "Intermediate" is intermediate.
-    await sitting.selectOption('7');
-    await page.getByLabel('Meal regularity').selectOption('inconsistent');
-    await page.getByLabel('Days a week they can train').selectOption('4');
-    await page.getByLabel('Previous experience').selectOption('intermediate');
-    await page.getByLabel('Job details').fill('Warehouse team lead, rotating shifts, on feet most of the day');
+    // A label is never what gets stored: "6 – 8 hours" is 7, a barrier is its
+    // key ('time'), and readiness is the number the client gave.
+    await occupation.selectOption('desk_job');
+    await page.getByLabel('What type of work do you do?')
+      .fill('Warehouse team lead, rotating shifts, on feet most of the day');
+    await page.getByLabel('How many hours do you spend sitting at work?').selectOption('7');
+    await page.getByLabel('What is your previous workout experience?').selectOption('intermediate');
+    await page.getByLabel('Have you participated in any sports?').selectOption('previously');
+    await page.getByLabel('What type of physical activities have you performed previously?')
+      .fill('Played football at college; nothing for two years.');
+    await page.getByLabel('What are your exercise preferences?')
+      .fill('Likes free weights, hates running');
 
     // The barrier chips store their canonical keys.
     await page.getByRole('button', { name: 'Time', exact: true }).click();
     await page.getByRole('button', { name: 'Other', exact: true }).click();
     await page.getByLabel('What else gets in the way?').fill('The gym closes before the shift ends');
+    await page.getByLabel('What motivates you to start training?').fill('Keep up with the kids');
+    await page.getByLabel('How ready are you to start a fitness programme? (1–10)').selectOption('8');
 
     await page.getByRole('button', { name: 'Complete interview' }).click();
 
@@ -110,15 +122,20 @@ test.describe('Client interview and journey', () => {
     const [row] = await interviews();
     expect(row.status).toBe('completed');
     expect(row.completed_at).toBeTruthy();
-    expect(Number(row.lifestyle_sitting_hours)).toBe(7);
-    expect(row.lifestyle_meal_regularity).toBe('inconsistent');
-    expect(Number(row.lifestyle_training_days)).toBe(4);
-    expect(row.previous_workout_experience).toBe('intermediate');
+    expect(row.occupation_type).toBe('desk_job');
     expect(row.job_details).toBe('Warehouse team lead, rotating shifts, on feet most of the day');
+    expect(Number(row.lifestyle_sitting_hours)).toBe(7);
+    expect(row.previous_workout_experience).toBe('intermediate');
+    expect(row.sports_participation).toBe('previously');
+    expect(row.training_history).toBe('Played football at college; nothing for two years.');
+    expect(row.preferences).toBe('Likes free weights, hates running');
     expect(row.training_challenges?.sort()).toEqual(['other', 'time']);
     expect(row.challenge_other).toBe('The gym closes before the shift ends');
-    // A question this form did not ask stays empty, not blank-written.
-    expect(row.training_history).toBeNull();
+    expect(row.motivation).toBe('Keep up with the kids');
+    expect(Number(row.programme_readiness)).toBe(8);
+    // Questions this form no longer asks stay empty, not blank-written.
+    expect(row.lifestyle_meal_regularity).toBeNull();
+    expect(row.lifestyle_training_days).toBeNull();
 
     const journey = (await apiGet<{ data: Journey }>(`/api/pt-os/clients/${clientId}/journey`, token)).data;
     expect(journey.steps.find((s) => s.key === 'interview')?.state).toBe('done');
@@ -132,35 +149,41 @@ test.describe('Client interview and journey', () => {
   });
 
   test('a draft is saved, resumed on reload, and completed without erasing older answers', async ({ page }) => {
-    // An interview that predates this form: a free-text answer already saved.
+    // An interview that predates this form: legacy free-text answers already saved.
     const seeded = await apiPost<{ data: { id: string } }>(
       `/api/pt-os/clients/${clientId}/interviews`, token,
-      { training_history: 'Played football at college; nothing for two years.', status: 'draft' },
+      {
+        training_history: 'Played football at college; nothing for two years.',
+        lifestyle_meal_regularity: 'irregular',
+        status: 'draft',
+      },
     );
     expect(seeded.status, JSON.stringify(seeded.body)).toBe(201);
 
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const meal = page.getByLabel('Meal regularity');
-    await expect(meal).toBeVisible({ timeout: 25_000 });
-    await meal.selectOption('irregular');
+    const occupation = page.getByLabel('What is your occupation?');
+    await expect(occupation).toBeVisible({ timeout: 25_000 });
+    await occupation.selectOption('active_job');
     await page.getByRole('button', { name: 'Save draft' }).click();
     await expect.poll(async () => (await interviews())[0]?.status, { timeout: 15_000 }).toBe('draft');
 
-    // Still the only interview, and the old free-text answer survived a save
-    // from the new form.
+    // Still the only interview, and the old answers survived a save from the
+    // new form — including one the form no longer asks.
     let rows = await interviews();
     expect(rows).toHaveLength(1);
+    expect(rows[0].occupation_type).toBe('active_job');
     expect(rows[0].lifestyle_meal_regularity).toBe('irregular');
     expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
 
     await page.reload();
-    await expect(page.getByLabel('Meal regularity')).toHaveValue('irregular', { timeout: 25_000 });
+    await expect(page.getByLabel('What is your occupation?')).toHaveValue('active_job', { timeout: 25_000 });
     await page.getByRole('button', { name: 'Complete interview' }).click();
     await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     rows = await interviews();
     expect(rows, 'the draft was completed, not duplicated').toHaveLength(1);
     expect(rows[0].status).toBe('completed');
+    expect(rows[0].lifestyle_meal_regularity).toBe('irregular');
     expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
   });
 
@@ -177,14 +200,19 @@ test.describe('Client interview and journey', () => {
 
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
     await expect(page.getByLabel('Trainer summary')).toHaveValue('Knees flare on deep lunges', { timeout: 25_000 });
+    // The summary is not a counted question, so one real answer is needed.
+    await page.getByLabel('What is your occupation?').selectOption('desk_job');
     await page.getByRole('button', { name: 'Complete interview' }).click();
     await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
-    // The client's words and the trainer's summary are shown under their own
-    // labels, not merged into one "notes" block.
+    // The trainer's summary and the client's own words appear under their own
+    // headings, not merged into one "notes" block.
     const summary = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What should the team remember?' }) });
-    await expect(summary.getByText('In their words')).toBeVisible();
     await expect(summary.getByText('Trainer summary')).toBeVisible();
+    await expect(summary.getByText('Knees flare on deep lunges')).toBeVisible();
+    const earlier = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Earlier interview answers' }) });
+    await expect(earlier.getByText("In the client's words")).toBeVisible();
+    await expect(earlier.getByText('"I want to keep up with my kids."')).toBeVisible();
 
     await page.getByRole('button', { name: 'Edit answers' }).click();
     await page.getByLabel('Trainer summary').fill('Knees flare on deep lunges; use a box.');
@@ -207,7 +235,7 @@ test.describe('Client interview and journey', () => {
 
   test('an empty interview cannot be completed', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    await expect(page.getByLabel('Sitting hours')).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByLabel('What is your occupation?')).toBeVisible({ timeout: 25_000 });
     await expect(page.getByRole('button', { name: 'Complete interview' })).toBeDisabled();
     expect(await interviews()).toHaveLength(0);
   });
