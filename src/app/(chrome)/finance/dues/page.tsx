@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
-import { PremiumDonutChart, semantic } from '@/components/visualizations';
+import { ChartDataTable, PremiumDonutChart, semantic } from '@/components/visualizations';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { DuesItem, DuesSummary } from '@/lib/api';
@@ -201,6 +201,16 @@ function Inner() {
         ariaLabel={summary
           ? `Debtors by risk band: ${summary.high_risk_count} high, ${summary.medium_risk_count} medium, ${lowRisk} low; total outstanding ${fmt(total)}`
           : 'Debtors by risk band'}
+      />
+
+      <ChartDataTable
+        title="Debtors by risk band"
+        caption={`Debtor count in each balance band; total outstanding ${fmt(total)}`}
+        columns={[{ header: 'Risk band' }, { header: 'Debtors' }]}
+        rows={riskData.map((band) => ({ key: band.name, cells: [band.name, band.value] }))}
+        footer={summary ? ['Total', summary.debtor_count] : undefined}
+        emptyMessage="Risk bands are unavailable until the dues summary loads."
+        className="mb-4"
       />
 
       {error && summary && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}

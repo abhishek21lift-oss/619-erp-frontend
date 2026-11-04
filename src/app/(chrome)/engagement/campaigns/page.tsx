@@ -33,7 +33,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
-import { PremiumBarChart, semantic, series as chartSeries } from '@/components/visualizations';
+import { ChartDataTable, PremiumBarChart, semantic, series as chartSeries } from '@/components/visualizations';
 import {
   TextField, SelectField, DateFieldControl, FormErrorBanner,
 } from '@/components/ui/form';
@@ -233,6 +233,15 @@ function CampaignContent() {
         ariaLabel={stats
           ? `Campaign funnel: ${Number(stats.total_sent) || 0} sent, ${stats.total_opened != null ? `${Number(stats.total_opened) || 0} opened, ` : ''}${Number(stats.conversions) || 0} converted.`
           : 'Campaign funnel'}
+      />
+
+      <ChartDataTable
+        title="Campaign funnel"
+        caption="People counted at each campaign stage; stages are current states, not a cumulative conversion"
+        columns={[{ header: 'Stage' }, { header: 'People' }]}
+        rows={funnel.map((stage) => ({ key: stage.stage, cells: [stage.stage, stage.people] }))}
+        emptyMessage={stats ? 'No campaigns yet.' : 'Campaign totals could not be loaded.'}
+        className="mt-4"
       />
 
       {/* ── CREATE FORM ── */}

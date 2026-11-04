@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
-import { PremiumBarChart, semantic } from '@/components/visualizations';
+import { ChartDataTable, PremiumBarChart, semantic } from '@/components/visualizations';
 import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -149,6 +149,18 @@ function OffersContent() {
         emptyTitle="No offers yet"
         emptyDescription="Create an offer to start tracking its redemptions."
         ariaLabel={`Redemptions by offer: ${redemptions.map(r => `${r.offer} ${r.redemptions}`).join(', ') || 'none'}.`}
+      />
+
+      <ChartDataTable
+        title="Redemptions by offer"
+        caption={offers.length > 8
+          ? `Top 8 of ${offers.length} offers by redemptions`
+          : `Redemptions across ${offers.length} offers`}
+        columns={[{ header: 'Offer' }, { header: 'Redemptions' }]}
+        rows={redemptions.map((row) => ({ key: row.offer, cells: [row.offer, row.redemptions] }))}
+        footer={offers.length > 0 ? ['Total', totalUsed] : undefined}
+        emptyMessage="No offers yet."
+        className="mt-4"
       />
 
       {/* ── CREATE FORM ── */}

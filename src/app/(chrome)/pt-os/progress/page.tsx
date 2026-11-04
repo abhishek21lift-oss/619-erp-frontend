@@ -21,8 +21,9 @@ import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
 import {
-  Button, Card, EmptyState, PageContainer, PageHero, PremiumAreaChart, Skeleton,
+  Button, Card, EmptyState, PageContainer, PageHero, Skeleton,
 } from '@/components/ui';
+import { PremiumAreaChart } from '@/components/visualizations';
 import { indigo, emerald, gray } from '@/lib/palette';
 import { DateFieldControl, SelectField, TextAreaField, useStandaloneField } from '@/components/ui/form';
 import { api } from '@/lib/api';
@@ -1003,7 +1004,7 @@ function AnalyticsSection({ data, days, setDays }: { data: HubData; days: number
           {sleepPoints.length < 2 ? <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>At least two sleep entries draw the trend.</p> : (
             <PremiumAreaChart data={sleepPoints} xKey="date"
               areas={[{ key: 'sleep', label: 'Sleep (h)', color: '#852E4E' }]} height={190}
-              formatValue={(v) => `${v}h`} />
+              formatValue={(v) => `${v}h`} bordered={false} />
           )}
           <div className="mt-2 flex flex-wrap gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             <span>
@@ -1019,7 +1020,7 @@ function AnalyticsSection({ data, days, setDays }: { data: HubData; days: number
           {stepPoints.length < 2 ? <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>At least two step entries draw the trend.</p> : (
             <PremiumAreaChart data={stepPoints} xKey="date"
               areas={[{ key: 'steps', label: 'Steps', color: '#10b981' }]} height={190}
-              formatValue={(v) => v.toLocaleString()} />
+              formatValue={(v) => v.toLocaleString()} bordered={false} />
           )}
           <p className="mt-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             Step target: {data.preferences.step_target == null ? 'not set' : data.preferences.step_target.toLocaleString()}.

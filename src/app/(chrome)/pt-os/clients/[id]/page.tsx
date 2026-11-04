@@ -22,7 +22,8 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
-import { PremiumAreaChart, Button, cardSurfaceGlow, FormField, TextArea } from '@/components/ui';
+import { Button, cardSurfaceGlow, FormField, TextArea } from '@/components/ui';
+import { PremiumAreaChart } from '@/components/visualizations';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
 import ClientSnapshot, { normaliseSnapshot, type SnapshotState } from '@/components/pt-os/ClientSnapshot';
@@ -916,6 +917,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         height={110}
                         formatValue={(v) => `${v} kg`}
                         yMin="auto"
+                        bordered={false}
                       />
                       {/* The chart's own accessible name says "six points";
                           these are the readings a screen reader cannot hover. */}

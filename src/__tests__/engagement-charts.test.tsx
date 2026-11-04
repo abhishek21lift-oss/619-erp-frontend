@@ -141,7 +141,7 @@ describe('feedback sentiment', () => {
       { name: 'Negative', value: 20, color: expect.any(String) },
     ]));
     expect(lastDonut().centerValue).toBe(68);
-    expect(await screen.findByText('220')).toBeTruthy();
+    expect(await screen.findAllByText('220')).not.toHaveLength(0);
     expect(screen.queryByText('50')).toBeNull();
   });
 

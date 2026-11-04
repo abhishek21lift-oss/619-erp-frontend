@@ -236,10 +236,14 @@ function Inner() {
             {/* Desktop table */}
             <div className="hidden sm:block" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <caption className="sr-only">
+                  {year} revenue by month: actual, month to date or forecast, and each month against the
+                  year-to-date average.
+                </caption>
                 <thead>
                   <tr style={{ background: 'var(--bg-subtle)' }}>
                     {['Month', 'Type', 'Amount', 'vs YTD avg'].map((h) => (
-                      <th key={h} style={{ padding: '14px 20px', textAlign: h === 'Amount' ? 'right' : 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} scope="col" style={{ padding: '14px 20px', textAlign: h === 'Amount' ? 'right' : 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -254,7 +258,7 @@ function Inner() {
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
                       >
-                        <td style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>{m.month} {year}</td>
+                        <th scope="row" style={{ padding: '14px 20px', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)' }}>{m.month} {year}</th>
                         <td style={{ padding: '14px 20px' }}>
                           {isMtd ? (
                             <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: 'var(--amber-50)', color: 'var(--amber-700)', border: '1px solid var(--amber-200)', whiteSpace: 'nowrap' }}>Month to date</span>

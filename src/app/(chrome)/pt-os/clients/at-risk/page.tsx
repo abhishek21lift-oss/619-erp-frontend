@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { AlertTriangle, RotateCw, Sparkles } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, Disclosure, PageContainer, PageHero, Skeleton } from '@/components/ui';
-import { PremiumBarChart, band as chartBand } from '@/components/visualizations';
+import { ChartDataTable, PremiumBarChart, band as chartBand } from '@/components/visualizations';
 import ChurnRow from '@/components/pt-os/ChurnRow';
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
@@ -216,6 +216,22 @@ export default function AtRiskClientsPage() {
                 height={240}
                 className="mt-4"
                 ariaLabel={`Risk bands: ${result.bands.critical ?? 0} critical, ${result.bands.high ?? 0} high, ${result.bands.medium ?? 0} medium, ${result.bands.low ?? 0} low.`}
+              />
+            )}
+
+            {result.flagged > 0 && (
+              <ChartDataTable
+                title="Clients by risk band"
+                caption={`${result.flagged} flagged clients of ${result.assessed} assessed, by risk band`}
+                columns={[{ header: 'Risk band' }, { header: 'Clients' }]}
+                rows={[
+                  { key: 'critical', cells: ['Critical', result.bands.critical ?? 0] },
+                  { key: 'high', cells: ['High', result.bands.high ?? 0] },
+                  { key: 'medium', cells: ['Medium', result.bands.medium ?? 0] },
+                  { key: 'low', cells: ['Low', result.bands.low ?? 0] },
+                ]}
+                footer={['Flagged', result.flagged]}
+                className="mt-4"
               />
             )}
 

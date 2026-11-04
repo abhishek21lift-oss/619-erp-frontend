@@ -3,27 +3,27 @@
 // pin the padding and the unchanged zero-based default.
 
 import { describe, expect, it } from 'vitest';
-import { areaYDomain } from '@/components/ui/chart';
+import { lineYDomain } from '@/components/visualizations/primitives/LineChartCore';
 
 const rows = [{ d: '1 Aug', weight: 78 }, { d: '20 Oct', weight: 72 }];
 const areas = [{ key: 'weight', label: 'Weight (kg)' }];
 
-describe('areaYDomain', () => {
+describe('lineYDomain', () => {
   it('keeps the zero floor when no yMin is asked for', () => {
-    expect(areaYDomain(rows, areas)).toEqual([0, 'auto']);
+    expect(lineYDomain(rows, areas)).toEqual({ min: 0, max: 'auto' });
   });
 
   it('pads an auto domain so the signal fills most of the plot', () => {
-    const [lo, hi] = areaYDomain(rows, areas, 'auto');
-    expect(lo).toBeCloseTo(71.1, 5);
-    expect(hi).toBeCloseTo(78.9, 5);
+    const domain = lineYDomain(rows, areas, 'auto');
+    expect(domain.min).toBeCloseTo(71.1, 5);
+    expect(domain.max).toBeCloseTo(78.9, 5);
   });
 
   it('honours an explicit floor', () => {
-    expect(areaYDomain(rows, areas, 60)).toEqual([60, 'auto']);
+    expect(lineYDomain(rows, areas, 60)).toEqual({ min: 60, max: 'auto' });
   });
 
   it('falls back to zero when there are no numbers to measure', () => {
-    expect(areaYDomain([{ d: 'x', weight: 'n/a' }], areas, 'auto')).toEqual([0, 'auto']);
+    expect(lineYDomain([{ d: 'x', weight: 'n/a' }], areas, 'auto')).toEqual({ min: 0, max: 'auto' });
   });
 });

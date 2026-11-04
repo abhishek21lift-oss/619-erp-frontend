@@ -104,16 +104,10 @@ export {
   ChartLegendContent,
   CHART_COLORS,
   useChartConfig,
-  PremiumBarChart,
-  PremiumAreaChart,
 } from './chart';
 export type {
   ChartConfig,
   ChartColor,
-  PremiumBarChartProps,
-  PremiumAreaChartProps,
-  PremiumBarEntry,
-  PremiumAreaEntry,
 } from './chart';
 
 export { PageHero, PageContainer, HeroButton, HeroChip } from './PageHero';

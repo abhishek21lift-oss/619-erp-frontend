@@ -10,7 +10,7 @@ import { Button, PageHero } from '@/components/ui';
 import {
   ChoiceChips, DateFieldControl, FormErrorBanner, NumberField, SelectField, TextAreaField,
 } from '@/components/ui/form';
-import { PremiumAreaChart, PremiumBarChart, semantic } from '@/components/visualizations';
+import { ChartDataTable, PremiumAreaChart, PremiumBarChart, semantic } from '@/components/visualizations';
 import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
 import { mondayYmd } from '@/lib/attendance-view';
 import { fmtDayMonth } from '@/lib/format';
@@ -380,6 +380,30 @@ export default function WeeklyCheckinPage() {
                 xKey="week"
                 areas={[{ key: 'weight', label: 'Weight (kg)' }]}
                 height={160}
+                className="mb-5"
+              />
+            )}
+            {clientId && (adherence.length >= 2 || weightTrend.length >= 2) && (
+              <ChartDataTable
+                title="Weekly check-in values"
+                caption="Recorded adherence and weight by check-in week; a missing value is a gap, not zero"
+                columns={[
+                  { header: 'Week' },
+                  { header: 'Adherence' },
+                  { header: 'Weight' },
+                ]}
+                rows={checkinRows
+                  .filter((c) => c.adherence_pct != null || (typeof c.weight === 'number' && Number.isFinite(c.weight)))
+                  .slice()
+                  .sort((a, b) => String(a.week_start_date).localeCompare(String(b.week_start_date)))
+                  .map((c) => ({
+                    key: c.id,
+                    cells: [
+                      fmtDayMonth(String(c.week_start_date)),
+                      c.adherence_pct != null ? `${c.adherence_pct}%` : '—',
+                      typeof c.weight === 'number' && Number.isFinite(c.weight) ? `${c.weight} kg` : '—',
+                    ],
+                  }))}
                 className="mb-5"
               />
             )}

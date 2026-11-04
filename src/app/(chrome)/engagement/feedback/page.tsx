@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
-import { PremiumDonutChart, semantic, series as chartSeries } from '@/components/visualizations';
+import { ChartDataTable, PremiumDonutChart, semantic, series as chartSeries } from '@/components/visualizations';
 import { Star, MessageSquare, ThumbsUp, ThumbsDown, Clock, CheckCircle2, User, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -185,6 +185,22 @@ function FeedbackContent() {
         ariaLabel={stats
           ? `Feedback sentiment across ${total ?? 0} entries: ${positive ?? 0} positive, ${neutral} neutral, ${negative ?? 0} negative.`
           : 'Feedback sentiment'}
+      />
+
+      <ChartDataTable
+        title="Sentiment breakdown"
+        caption={`Feedback sentiment across ${total ?? 0} entries`}
+        columns={[{ header: 'Sentiment' }, { header: 'Entries' }]}
+        rows={stats
+          ? [
+              { key: 'positive', cells: ['Positive', positive ?? 0] },
+              { key: 'neutral', cells: ['Neutral', neutral] },
+              { key: 'negative', cells: ['Negative', negative ?? 0] },
+            ]
+          : []}
+        footer={stats ? ['Total', total ?? 0] : undefined}
+        emptyMessage={statsFailed ? 'Feedback totals could not be loaded.' : 'No feedback yet.'}
+        className="mt-4"
       />
 
       {/* ── FILTERS ── */}

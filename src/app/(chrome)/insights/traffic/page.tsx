@@ -5,7 +5,8 @@ import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3 } from 'lucide-
 import { api } from '@/lib/api';
 import { isCheckIn } from '@/lib/checkin';
 import { scrollIndexIntoCentre } from '@/lib/chart-scroll';
-import { PageContainer, PageHero, KpiCard, PremiumBarChart } from '@/components/ui';
+import { PageContainer, PageHero, KpiCard } from '@/components/ui';
+import { PremiumBarChart } from '@/components/visualizations';
 import { useAsync } from '@/lib/use-async';
 import { CanonicalDateRange } from '@/lib/insights/date-range';
 import type { AttendanceMetric } from '@/lib/insights/metrics';
@@ -247,6 +248,7 @@ function Inner() {
               xKey="day"
               bars={[{ key: 'count', label: 'Check-ins', color: '#10b981' }]}
               height={220}
+              bordered={false}
             />
           )}
         </div>
