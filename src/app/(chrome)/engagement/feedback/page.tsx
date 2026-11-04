@@ -198,7 +198,6 @@ function FeedbackContent() {
               { key: 'negative', cells: ['Negative', negative ?? 0] },
             ]
           : []}
-        footer={stats ? ['Total', total ?? 0] : undefined}
         emptyMessage={statsFailed ? 'Feedback totals could not be loaded.' : 'No feedback yet.'}
         className="mt-4"
       />

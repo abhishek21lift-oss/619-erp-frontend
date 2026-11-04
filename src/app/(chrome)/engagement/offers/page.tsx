@@ -158,7 +158,7 @@ function OffersContent() {
           : `Redemptions across ${offers.length} offers`}
         columns={[{ header: 'Offer' }, { header: 'Redemptions' }]}
         rows={redemptions.map((row) => ({ key: row.offer, cells: [row.offer, row.redemptions] }))}
-        footer={offers.length > 0 ? ['Total', totalUsed] : undefined}
+        footer={offers.length > 0 ? ['All offers', totalUsed] : undefined}
         emptyMessage="No offers yet."
         className="mt-4"
       />
