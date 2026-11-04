@@ -39,7 +39,7 @@ import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility'
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from '@/components/pt-os/fitness-testing/flexibility/protocol-content';
 import { buildFlexibilityPayload, formTest, legacyMobilityScore } from '@/lib/flexibility-protocol';
 import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessAnthropometric } from '@/components/pt-os/fitness-testing/FitnessDashboard';
-import { ScreeningStatusCard, ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningStatusCard';
+import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
 import { bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
@@ -214,9 +214,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [lastSaved, setLastSaved] = useState<Record<string, unknown> | null>(null);
-  // Server-computed screening snapshot embedded in GET /api/pt-os/clients/:id
-  // (screeningSummary). Read-only here: the card renders it, never recomputes.
-  const [screening, setScreening] = useState<unknown>(null);
   // screening_warnings returned with a successful save. Toast behavior is
   // unchanged; these also render inline so they are not lost.
   const [saveWarnings, setSaveWarnings] = useState<string[]>([]);
@@ -254,7 +251,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       // read from the latest Lifestyle assessment, which stopped asking it —
       // so every beginner was made to do two 1RM tests.
       setExperienceLevel(String(c.workout_experience_level ?? ''));
-      setScreening(c.screening ?? null);
 
       const existingTrainerId = String(c.trainer_id ?? '');
       const existingTrainerName = String(c.trainer_name ?? '');
@@ -671,7 +667,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">
-        <ScreeningStatusCard screening={screening} clientId={clientId} />
         {lastSaved ? (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
             <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(16,185,129,0.04))', border: '1px solid rgba(16,185,129,0.25)' }}>
