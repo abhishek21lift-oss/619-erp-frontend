@@ -55,6 +55,9 @@ export interface ClientInterview {
   // The redesigned interview's own fields (migration 254). `notes` is the
   // trainer's summary; every other field here is what the client said.
   job_details?: string | null;
+  occupation_type?: string | null;
+  sports_participation?: 'never' | 'previously' | 'currently' | null;
+  programme_readiness?: number | null;
   occupation_other_details?: string | null;
   previous_workout_experience?: 'never' | 'beginner' | 'intermediate' | 'advanced' | null;
   training_challenges?: string[] | null;

@@ -2,15 +2,11 @@
 //
 // ── Who owns what ──────────────────────────────────────────────────────────
 //
-// Occupation type, screen time and activity level belong to the Lifestyle
-// Assessment (docs/specs/CLIENT-ASSESSMENT-TARGET-ARCHITECTURE.md). This screen
-// shows them read-only with a link back; it never writes a second copy.
-//
-// The Interview owns the conversation: work detail, training history,
-// training challenges, availability, motivation, preferences, the client's own
-// words, and the trainer's summary. Sitting hours, meal regularity and
-// training days stay here as the three quick screens the target architecture
-// assigns to this step.
+// The Interview owns all ten questions: work, training background, barriers
+// and readiness, and the trainer's summary. A small set of earlier answers
+// (meal regularity, training days, availability, and the client's own words)
+// are no longer asked; where one survives, it is read-only
+// history under "Earlier interview answers", never a control.
 //
 // ── Values are canonical, labels are for people ────────────────────────────
 //
@@ -20,24 +16,26 @@
 // honest number a band contains.
 //
 //   sitting hours   <2 → 1 · 2–4 → 3 · 4–6 → 5 · 6–8 → 7 · 8+ → 9
-//   training days   0 · 1 · 2 · 3 · 4 · 5 · 6 · 7
 //
 // ── Progress is what is on the screen ──────────────────────────────────────
 //
 // A conditional field (occupation detail, challenge detail) counts only while
-// it is visible. A progress bar that promises a field the trainer cannot see
-// is lying about how much is left.
+// it is visible; a field with `counted: false` (occupation detail, challenge
+// detail, trainer's summary) never counts. A progress bar that promises a
+// field the trainer cannot see is lying about how much is left.
 
 import type { LucideIcon } from 'lucide-react';
 import { Briefcase, Dumbbell, Flag, NotebookPen } from 'lucide-react';
 
 /** The fields the form edits. Everything is a string except the chip list. */
 export const TEXT_FIELDS = [
+  'occupation_type',
   'job_details',
   'occupation_other_details',
   'lifestyle_sitting_hours',
   'lifestyle_meal_regularity',
   'previous_workout_experience',
+  'sports_participation',
   'training_history',
   'lifestyle_training_days',
   'availability',
@@ -45,6 +43,7 @@ export const TEXT_FIELDS = [
   'important_client_statements',
   'motivation',
   'preferences',
+  'programme_readiness',
   'notes',
 ] as const;
 
@@ -69,6 +68,8 @@ interface ControlBase {
   label: string;
   hint: string;
   showWhen?: InterviewCondition;
+  /** Defaults to counted. A formatting/detail field set false never counts. */
+  counted?: boolean;
 }
 
 export type InterviewControl =
@@ -96,16 +97,30 @@ const SITTING: readonly InterviewOption[] = [
   { value: '9', label: '8+ hours' },
 ];
 
-const TRAINING_DAYS: readonly InterviewOption[] = [
-  { value: '0', label: 'None right now' },
-  { value: '1', label: '1 day a week' },
-  { value: '2', label: '2 days a week' },
-  { value: '3', label: '3 days a week' },
-  { value: '4', label: '4 days a week' },
-  { value: '5', label: '5 days a week' },
-  { value: '6', label: '6 days a week' },
-  { value: '7', label: '7 days a week' },
+const OCCUPATION: readonly InterviewOption[] = [
+  { value: 'desk_job', label: 'Desk Job' },
+  { value: 'active_job', label: 'Active Job' },
+  { value: 'physical_labor', label: 'Physical Labor' },
+  { value: 'student', label: 'Student' },
+  { value: 'homemaker', label: 'Homemaker' },
+  { value: 'driver', label: 'Driver' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'police', label: 'Police' },
+  { value: 'fitness_professional', label: 'Fitness Professional' },
+  { value: 'retired', label: 'Retired' },
+  { value: 'other', label: 'Other' },
 ];
+
+const SPORTS: readonly InterviewOption[] = [
+  { value: 'never', label: 'Never' },
+  { value: 'previously', label: 'Yes, previously' },
+  { value: 'currently', label: 'Yes, currently' },
+];
+
+const READINESS: readonly InterviewOption[] = Array.from({ length: 10 }, (_, i) => ({
+  value: String(i + 1),
+  label: String(i + 1),
+}));
 
 const EXPERIENCE: readonly InterviewOption[] = [
   { value: 'never', label: 'Never trained' },
@@ -132,91 +147,79 @@ const CHALLENGES: readonly InterviewOption[] = [
 export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
   {
     id: 'work',
-    label: 'Work & lifestyle',
-    prompt: 'How does their week look?',
+    label: 'Work',
+    prompt: 'What do they do all day?',
     icon: Briefcase,
     controls: [
       {
+        key: 'occupation_type',
+        kind: 'select',
+        label: 'What is your occupation?',
+        hint: 'Pick the closest one.',
+        options: OCCUPATION,
+      },
+      {
         key: 'job_details',
         kind: 'text',
-        label: 'Job details',
-        hint: 'Role, shift pattern, hours on their feet.',
+        label: 'What type of work do you do?',
+        hint: 'Their role, shift pattern, and how many hours they are on their feet.',
         placeholder: 'e.g. Warehouse team lead, rotating shifts, on feet most of the day',
         rows: 3,
         maxLength: 2000,
       },
       {
-        key: 'occupation_other_details',
-        kind: 'text',
-        label: 'Describe their occupation',
-        hint: 'The Lifestyle Assessment records their occupation as Other.',
-        placeholder: 'What do they do?',
-        rows: 2,
-        maxLength: 500,
-        showWhen: 'occupationOther',
-      },
-      {
         key: 'lifestyle_sitting_hours',
         kind: 'select',
-        label: 'Sitting hours',
+        label: 'How many hours do you spend sitting at work?',
         hint: 'A work-day average is close enough.',
         options: SITTING,
       },
       {
-        key: 'lifestyle_meal_regularity',
-        kind: 'select',
-        label: 'Meal regularity',
-        hint: 'How often meals land at roughly the same time.',
-        options: [
-          { value: 'regular', label: 'Mostly regular' },
-          { value: 'irregular', label: 'Irregular' },
-          { value: 'inconsistent', label: 'Frequently skipped' },
-        ],
+        key: 'occupation_other_details',
+        kind: 'text',
+        label: 'Describe their occupation',
+        hint: 'In a few words, what do they do.',
+        placeholder: 'What do they do?',
+        rows: 2,
+        maxLength: 500,
+        showWhen: 'occupationOther',
+        counted: false,
       },
     ],
   },
   {
     id: 'training',
     label: 'Training background',
-    prompt: 'What training are they bringing with them?',
+    prompt: 'What are they bringing with them?',
     icon: Dumbbell,
     controls: [
       {
         key: 'previous_workout_experience',
         kind: 'select',
-        label: 'Previous experience',
+        label: 'What is your previous workout experience?',
         hint: 'Their history at intake — not their current programme level.',
         options: EXPERIENCE,
       },
       {
+        key: 'sports_participation',
+        kind: 'select',
+        label: 'Have you participated in any sports?',
+        hint: 'Any sport, at any level.',
+        options: SPORTS,
+      },
+      {
         key: 'training_history',
         kind: 'text',
-        label: 'Training history',
+        label: 'What type of physical activities have you performed previously?',
         hint: 'What they have done, for how long, and how it went.',
         placeholder: 'e.g. Two years of home workouts, then a long break',
         rows: 3,
         maxLength: 2000,
       },
       {
-        key: 'lifestyle_training_days',
-        kind: 'select',
-        label: 'Days a week they can train',
-        hint: 'Realistic sessions, not best-case ones.',
-        options: TRAINING_DAYS,
-      },
-      {
-        key: 'availability',
-        kind: 'text',
-        label: 'When they can train',
-        hint: 'Days, times, or constraints worth knowing.',
-        placeholder: 'e.g. Weekday mornings before 9, not Sundays',
-        rows: 2,
-        maxLength: 1000,
-      },
-      {
         key: 'preferences',
         kind: 'text',
-        label: 'What they enjoy or avoid',
+        label: 'What are your exercise preferences?',
         hint: 'Exercises, styles, and anything they will not do.',
         placeholder: 'e.g. Likes free weights, hates running',
         rows: 2,
@@ -225,15 +228,15 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
     ],
   },
   {
-    id: 'challenges',
-    label: 'Training challenges',
-    prompt: 'What gets in the way?',
+    id: 'barriers',
+    label: 'Motivation & barriers',
+    prompt: 'What gets in the way, and what pulls them forward?',
     icon: Flag,
     controls: [
       {
         key: 'training_challenges',
         kind: 'chips',
-        label: 'Barriers they named',
+        label: 'What are your biggest barriers to exercise?',
         hint: 'Choose everything they mentioned. Missing is unknown, not none.',
         options: CHALLENGES,
       },
@@ -246,33 +249,32 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         rows: 2,
         maxLength: 500,
         showWhen: 'challengeOther',
-      },
-    ],
-  },
-  {
-    id: 'summary',
-    label: 'Interview summary',
-    prompt: 'What should the team remember?',
-    icon: NotebookPen,
-    controls: [
-      {
-        key: 'important_client_statements',
-        kind: 'text',
-        label: 'In their words',
-        hint: 'Something they said that changes how you coach them. Quoted, not paraphrased.',
-        placeholder: '"I want to keep up with my kids without getting winded."',
-        rows: 2,
-        maxLength: 2000,
+        counted: false,
       },
       {
         key: 'motivation',
         kind: 'text',
-        label: 'Why now?',
+        label: 'What motivates you to start training?',
         hint: 'What brought them in today.',
         placeholder: 'e.g. Wedding in six months, doctor advised exercise',
         rows: 2,
         maxLength: 2000,
       },
+      {
+        key: 'programme_readiness',
+        kind: 'select',
+        label: 'How ready are you to start a fitness programme? (1–10)',
+        hint: 'Their own number, in their words.',
+        options: READINESS,
+      },
+    ],
+  },
+  {
+    id: 'summary',
+    label: 'Trainer summary',
+    prompt: 'What should the team remember?',
+    icon: NotebookPen,
+    controls: [
       {
         key: 'notes',
         kind: 'text',
@@ -281,6 +283,7 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         placeholder: 'What the next trainer needs to know.',
         rows: 4,
         maxLength: 2000,
+        counted: false,
       },
     ],
   },
@@ -289,6 +292,19 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
 /** Every field the save may write, in screen order. */
 export const INTERVIEW_FIELDS: readonly InterviewField[] = INTERVIEW_SECTIONS
   .flatMap((section) => section.controls.map((control) => control.key));
+
+/** The ten counted questions, in screen order. */
+export const INTERVIEW_QUESTIONS: readonly InterviewControl[] = INTERVIEW_SECTIONS
+  .flatMap((section) => section.controls)
+  .filter((control) => control.counted !== false);
+
+/** Older answers the form no longer asks, shown as history only. */
+export const LEGACY_ANSWERS: readonly { key: TextField; label: string }[] = [
+  { key: 'lifestyle_meal_regularity', label: 'Meal regularity' },
+  { key: 'lifestyle_training_days', label: 'Days a week they could train' },
+  { key: 'availability', label: 'When they could train' },
+  { key: 'important_client_statements', label: "In the client's words" },
+];
 
 
 /** '' is "not answered" for text; [] is "not answered" for the chip list. */
@@ -299,9 +315,8 @@ export function controlAnswered(value: string | string[]): boolean {
 export function isControlVisible(
   control: InterviewControl,
   answers: Answers,
-  occupationType: string,
 ): boolean {
-  if (control.showWhen === 'occupationOther') return occupationType === 'other';
+  if (control.showWhen === 'occupationOther') return answers.occupation_type === 'other';
   if (control.showWhen === 'challengeOther') return answers.training_challenges.includes('other');
   return true;
 }
@@ -309,17 +324,17 @@ export function isControlVisible(
 export function visibleControls(
   section: InterviewSection,
   answers: Answers,
-  occupationType: string,
 ): InterviewControl[] {
-  return section.controls.filter((control) => isControlVisible(control, answers, occupationType));
+  return section.controls.filter((control) => isControlVisible(control, answers));
 }
 
 /** Answered controls out of the ones currently on screen. */
-export function answeredCount(answers: Answers, occupationType = ''): { answered: number; total: number } {
+export function answeredCount(answers: Answers): { answered: number; total: number } {
   let answered = 0;
   let total = 0;
   for (const section of INTERVIEW_SECTIONS) {
-    for (const control of visibleControls(section, answers, occupationType)) {
+    for (const control of visibleControls(section, answers)) {
+      if (control.counted === false) continue;
       total += 1;
       if (controlAnswered(answers[control.key])) answered += 1;
     }
@@ -330,9 +345,9 @@ export function answeredCount(answers: Answers, occupationType = ''): { answered
 export function sectionAnswered(
   section: InterviewSection,
   answers: Answers,
-  occupationType = '',
 ): { answered: number; total: number } {
-  const controls = visibleControls(section, answers, occupationType);
+  const controls = visibleControls(section, answers)
+    .filter((control) => control.counted !== false);
   return {
     answered: controls.filter((c) => controlAnswered(answers[c.key])).length,
     total: controls.length,

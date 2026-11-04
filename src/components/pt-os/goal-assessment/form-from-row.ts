@@ -6,11 +6,8 @@
 
 import { barrierPlansFor } from '@/lib/goal-plan';
 import type { BarrierPlan, GoalMeasure, GoalMilestone } from '@/lib/goal-plan';
-import { CHALLENGE_OPTIONS } from './StepChallenges';
 import { initGoalForm } from './types';
 import type { GoalFormData } from './types';
-
-const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
 
 /**
  * The coaching block rides on routine_blueprint, which is written and read by
@@ -135,8 +132,8 @@ export function formFromGoalRow(row: Record<string, unknown>): GoalFormData {
     confidenceLevel: coaching.confidence_level != null ? String(coaching.confidence_level) : '7',
     commitmentLevel: row.commitment_level != null ? String(row.commitment_level) : '7',
     motivationReason: String(row.motivation_reason ?? ''),
-    biggestChallenges: challenges.filter((c) => CHALLENGE_VALUES.has(c)),
-    challengeOther: challenges.find((c) => !CHALLENGE_VALUES.has(c)) || '',
+    biggestChallenges: challenges,
+    challengeOther: '',
     barrierPlans: barrierPlansFor(challenges, Array.isArray(coaching.barrier_plans) ? coaching.barrier_plans : []),
     lifestyle: { ...fresh.lifestyle, ...lifestyleRaw },
     startingWeightManual: row.starting_weight != null ? String(row.starting_weight) : '',

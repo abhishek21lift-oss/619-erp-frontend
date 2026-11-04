@@ -30,7 +30,8 @@ export interface LifestyleFormData {
   // Step 3 — Water
   waterIntakeLiters: string;
 
-  // Step 4 — Occupation & Activity
+  // Step 3 — Activity
+  // Saved/legacy snapshot only — no longer edited here; the Client Interview owns it.
   occupationType: OccupationType | '';
   dailyStepsBracket: DailyStepsBracket | '';
 
@@ -86,7 +87,7 @@ export interface FormErrors {
 export const STEPS = [
   { id: 1, key: 'sleep', label: 'Sleep' },
   { id: 2, key: 'stress', label: 'Stress' },
-  { id: 3, key: 'occupationActivity', label: 'Occupation & Activity' },
+  { id: 3, key: 'occupationActivity', label: 'Activity' },
   { id: 4, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
   { id: 5, key: 'additionalFactors', label: 'Additional Factors' },
 ] as const;

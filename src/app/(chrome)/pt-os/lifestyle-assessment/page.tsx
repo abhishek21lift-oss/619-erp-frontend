@@ -10,6 +10,7 @@ import Guard from '@/components/Guard';
 import { Button, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
+import type { ClientInterview } from '@/lib/journey';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import {
@@ -40,7 +41,6 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(id: StepId, form: LifestyleFormData): string | undefined {
   if (id === 1) return assessmentDateIssue(form.assessmentDate);
-  if (id === 3 && !form.occupationType) return 'Please select an occupation type.';
   if (id === 4 && !form.smokingStatus) return 'Please select a smoking status.';
   if (id === 4 && !form.alcoholStatus) return 'Please select an alcohol status.';
   if (id === 4) {
@@ -138,15 +138,17 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
   // Water and meals are asked in Nutrition; this wizard scores them from the
   // latest Nutrition assessment (as the API does on save).
   const [nutritionHabits, setNutritionHabits] = useState<NutritionHabits | null>(null);
+  const [interviewOccupation, setInterviewOccupation] = useState<LifestyleFormData['occupationType']>('');
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, listRes, nutritionRes] = await Promise.all([
+      const [clientRes, listRes, nutritionRes, interviewRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.lifestyleAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
         api.progress.nutritionAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.pt.interviews.list(clientId).catch(() => ({ data: [] as ClientInterview[] })),
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
@@ -159,6 +161,10 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
         breakfastHabit: (latestNutrition.breakfast_regularity as LifestyleFormData['breakfastHabit']) || '',
         lateNightEating: typeof latestNutrition.late_night_eating === 'boolean' ? latestNutrition.late_night_eating : null,
       } : null);
+      // The interviews endpoint returns newest first; a completed one wins.
+      const interviews = Array.isArray(interviewRes?.data) ? interviewRes.data : [];
+      const interview = interviews.find((i) => i.status === 'completed') ?? interviews[0];
+      setInterviewOccupation((interview?.occupation_type as LifestyleFormData['occupationType']) || '');
     } catch (err: unknown) {
       setLoadError(errorMessage(err, 'Failed to load client.'));
     } finally {
@@ -173,7 +179,7 @@ function LifestyleHub({ clientId, toast }: LifestyleHubProps) {
 
   if (view === 'wizard') {
     const editing = editingId ? assessments.find((a) => String(a.id) === editingId) : null;
-    return <LifestyleWizard clientId={clientId} clientName={clientName} editing={editing || null} nutritionHabits={nutritionHabits} toast={toast} onDone={closeWizard} />;
+    return <LifestyleWizard clientId={clientId} clientName={clientName} editing={editing || null} nutritionHabits={nutritionHabits} interviewOccupation={interviewOccupation} toast={toast} onDone={closeWizard} />;
   }
 
   return (
@@ -204,11 +210,12 @@ interface LifestyleWizardProps {
   clientName: string;
   editing: Record<string, unknown> | null;
   nutritionHabits: NutritionHabits | null;
+  interviewOccupation: LifestyleFormData['occupationType'];
   toast: ReturnType<typeof useToast>['toast'];
   onDone: (refresh: boolean) => void;
 }
 
-function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast, onDone }: LifestyleWizardProps) {
+function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, interviewOccupation, toast, onDone }: LifestyleWizardProps) {
   const assessmentId = editing ? String(editing.id) : null;
   const initial = useMemo(() => (editing ? formFromRow(editing) : initLifestyleForm()), [editing]);
 
@@ -242,6 +249,8 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
     setForm((prev) => ({ ...prev, [key]: val }));
   }, []);
 
+  const effectiveOccupation = interviewOccupation || form.occupationType || '';
+
   const analysis = useMemo(() => {
     const sleep = classifySleep(n(form.sleepDurationHours), n(form.sleepQuality));
     const stressScore = calcStressScore(n(form.stressLevel));
@@ -261,7 +270,7 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
     // the record ends up showing. Pass the absence through.
     const habits = withNutrition(form, nutritionHabits);
     const hydration = classifyHydration(n(habits.waterIntakeLiters));
-    const activity = classifyActivity(form.dailyStepsBracket || null, form.occupationType || null);
+    const activity = classifyActivity(form.dailyStepsBracket || null, effectiveOccupation || null);
     const nutritionScore = calcNutritionScore(n(habits.mealFrequency), habits.breakfastHabit || null, habits.lateNightEating);
     const recoveryScore = calcRecoveryScore(sleep.score, stressScore, n(form.energyLevel), form.recoveryQuality || null);
     const sedentaryRisk = classifyRisk(activity.score);
@@ -281,7 +290,7 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
       sleepScore: sleep.score, stressScore, hydrationScore: hydration.score, activityScore: activity.score,
       nutritionScore, recoveryScore, sedentaryRisk, recoveryRisk, habitRiskScore, riskFactors, lifestyleScore, lifestyleReadiness,
     };
-  }, [form, nutritionHabits]);
+  }, [form, nutritionHabits, effectiveOccupation]);
 
   const handleNext = () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
@@ -296,7 +305,8 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
   // The stepper's own click handler lets a click jump one step
   // ahead of `current`, and this used to be wired straight to `setStep`,
   // bypassing handleNext()'s validateStep() call — a user could click past
-  // Occupation & Activity without selecting an occupation type. The one
+  // the assessment date on step 1 or the smoking/alcohol answers on step 4
+  // without them being filled in. The one
   // forward jump the timeline can ever offer is exactly `step + 1` (ids here
   // have no gaps), so route it through handleNext() instead of duplicating
   // its validation. Any other click is backward (or the current step) and
@@ -334,7 +344,6 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
         wake_time: form.wakeTime || null,
         sleep_quality: n(form.sleepQuality) ?? null,
         stress_level: n(form.stressLevel) ?? null,
-        occupation_type: form.occupationType || null,
         daily_steps_bracket: form.dailyStepsBracket || null,
         smoking_status: form.smokingStatus || null,
         cigarettes_per_day: form.smokingStatus && form.smokingStatus !== 'never' ? n(form.cigarettesPerDay) ?? null : null,
@@ -386,7 +395,13 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
               </div>
             )}
             {step === 2 && <StepStress form={form} set={set} />}
-            {step === 3 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
+            {step === 3 && (
+              <StepOccupationActivity
+                form={form} set={set} error={errors.occupationActivity}
+                occupationType={effectiveOccupation}
+                occupationSource={interviewOccupation ? 'interview' : form.occupationType ? 'lifestyle' : null}
+              />
+            )}
             {step === 4 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
             {step === 5 && <StepAdditionalFactors form={form} set={set} />}
           </m.div>
