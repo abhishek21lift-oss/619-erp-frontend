@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { AlertTriangle, RotateCw, Sparkles } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, Disclosure, PageContainer, PageHero, Skeleton } from '@/components/ui';
+import { PremiumBarChart, band as chartBand } from '@/components/visualizations';
 import ChurnRow from '@/components/pt-os/ChurnRow';
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
@@ -196,6 +197,27 @@ export default function AtRiskClientsPage() {
                 </div>
               )}
             </section>
+
+            {/* Same server sweep that fills the summary: counts, never a
+                re-score of the visible rows. */}
+            {result.flagged > 0 && (
+              <PremiumBarChart
+                data={[
+                  { band: 'Critical', clients: result.bands.critical ?? 0, color: chartBand.worst },
+                  { band: 'High', clients: result.bands.high ?? 0, color: chartBand.poor },
+                  { band: 'Medium', clients: result.bands.medium ?? 0, color: chartBand.mid },
+                  { band: 'Low', clients: result.bands.low ?? 0, color: chartBand.good },
+                ]}
+                xKey="band"
+                bars={[{ key: 'clients', label: 'Clients', color: chartBand.mid, colorKey: 'color' }]}
+                showLegend={false}
+                title="Clients by risk band"
+                subtitle={`${result.flagged} flagged of ${result.assessed} assessed`}
+                height={240}
+                className="mt-4"
+                ariaLabel={`Risk bands: ${result.bands.critical ?? 0} critical, ${result.bands.high ?? 0} high, ${result.bands.medium ?? 0} medium, ${result.bands.low ?? 0} low.`}
+              />
+            )}
 
             {rows.length === 0 ? (
               <div

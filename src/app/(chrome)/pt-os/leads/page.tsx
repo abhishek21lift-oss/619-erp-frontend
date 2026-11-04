@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { PremiumBarChart, semantic, series as chartPalette } from '@/components/visualizations';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
 import type { LeadFormState } from '@/components/pt-os/leads/LeadFormFields';
@@ -212,6 +213,14 @@ export default function LeadsPage() {
     };
   }, [leads.data]);
 
+  // One pass for the chart. Status is the lead's current state, not a history,
+  // so these are stage counts — not a cumulative conversion funnel.
+  const byStatus = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const l of leads.data?.data ?? []) out[l.status] = (out[l.status] ?? 0) + 1;
+    return out;
+  }, [leads.data]);
+
   const handleSave = async () => {
     if (!editingId) return;
     if (!form.name.trim()) { toast.error('Name is required.'); return; }
@@ -352,6 +361,47 @@ export default function LeadsPage() {
               ))}
             </div>
 
+            {leads.error && (
+              <div
+                role="alert"
+                className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3 text-[12.5px]"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#b91c1c' }}
+              >
+                <span className="flex-1">The lead list did not come back — this is unknown, not empty.</span>
+                <Button size="sm" variant="secondary" onClick={() => { void leads.refetch(); }}>Retry</Button>
+              </div>
+            )}
+
+            {/* Whole-pipeline counts, independent of search and status filters.
+                The list endpoint returns every lead, so these are exact; the
+                chart is the same data the KPI row above already trusts.
+                shortcut: counts come from the full list because /leads is
+                uncapped. If it ever paginates, move the counts server-side. */}
+            <PremiumBarChart
+              data={counts.total > 0
+                ? [
+                    { stage: 'New', leads: byStatus.new ?? 0, color: semantic.info },
+                    { stage: 'Contacted', leads: byStatus.contacted ?? 0, color: chartPalette[0] },
+                    { stage: 'Trial', leads: byStatus.trial_scheduled ?? 0, color: chartPalette[3] },
+                    { stage: 'Converted', leads: byStatus.converted ?? 0, color: semantic.success },
+                    { stage: 'Lost', leads: byStatus.lost ?? 0, color: chartPalette[6] },
+                  ]
+                : []}
+              xKey="stage"
+              bars={[{ key: 'leads', label: 'Leads', color: semantic.info, colorKey: 'color' }]}
+              showLegend={false}
+              title="Lead funnel"
+              subtitle="Every lead by current stage — states, not cumulative conversion"
+              height={240}
+              className="mt-4 sm:mt-5"
+              loading={leads.loading && !leads.data}
+              error={!leads.data ? (leads.error?.message ?? null) : null}
+              onRetry={() => { void leads.refetch(); }}
+              emptyTitle="No leads yet"
+              emptyDescription="Capture a lead to start the pipeline."
+              ariaLabel={`Lead stages: ${byStatus.new ?? 0} new, ${byStatus.contacted ?? 0} contacted, ${byStatus.trial_scheduled ?? 0} trial scheduled, ${byStatus.converted ?? 0} converted, ${byStatus.lost ?? 0} lost.`}
+            />
+
             {/* Search — full width on a phone, as in the reference. It was
                 capped at `sm:max-w-sm` and shared a row with the filters; the
                 reference stacks them, which is also what stops the filter pills
@@ -400,7 +450,7 @@ export default function LeadsPage() {
               </div>
             )}
 
-            {!leads.loading && filtered.length === 0 && (
+            {!leads.loading && !leads.error && filtered.length === 0 && (
               <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                 <EmptyState
                   icon={<UserSearch size={22} />}
