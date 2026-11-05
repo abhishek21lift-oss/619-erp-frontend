@@ -20,8 +20,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
-  Bell, CalendarRange, Camera, ChevronRight, ClipboardCheck, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, Medal,
-  MessageCircle, RefreshCw, Receipt, Target, Trophy, UserRound, Dumbbell, Video,
+  Bell, CalendarRange, Camera, ChevronRight, ClipboardCheck, Clock, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, MapPin, Medal,
+  MessageCircle, Phone, RefreshCw, Receipt, Target, Trophy, UserRound, Dumbbell, Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -163,6 +163,7 @@ function ProfileBody() {
         <MembershipCard plan={plan} profile={profile} sessions={sessions} />
       )}
       {coach && <CoachCard coach={coach} delay={0.08} />}
+      {profile && <StudioCard profile={profile} delay={0.1} />}
 
       {GROUPS.map((g, i) => (
         <m.section key={g.title}
@@ -339,6 +340,39 @@ const num = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 const inr = (v: unknown) => '₹' + num(v).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+/**
+ * What the studio published: a phone number, an address, opening hours.
+ * Whole rows only — a published studio should read as a card, not as three
+ * labels with two blanks. Omitted entirely when the studio published nothing.
+ */
+function StudioCard({ profile, delay }: { profile: MeProfile; delay: number }) {
+  const rows: [LucideIcon, string][] = [
+    [Phone, profile.studio_phone ?? ''],
+    [MapPin, profile.studio_address ?? ''],
+    [Clock, profile.studio_hours ?? ''],
+  ].filter(([, v]) => v) as [LucideIcon, string][];
+  if (rows.length === 0) return null;
+
+  return (
+    <m.section aria-label="Studio contact" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: EASE, delay }} className="mb-4">
+      <div className="rounded-[18px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <p className="mb-2 text-[11px] font-[780] uppercase tracking-[0.12em]" style={{ color: MC.muted }}>
+          {profile.studio_name ?? 'Your studio'}
+        </p>
+        <ul className="space-y-2">
+          {rows.map(([Icon, value], i) => (
+            <li key={i} className="flex items-start gap-2.5 text-[13px]" style={{ color: MC.ink }}>
+              <Icon size={15} className="mt-0.5 shrink-0" style={{ color: MC.muted }} aria-hidden />
+              {Icon === Phone ? <a href={`tel:${value}`} style={{ color: MC.primary }}>{value}</a> : <span>{value}</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </m.section>
+  );
+}
 
 /**
  * Plan, end date and what is still owed — the one thing the hero's ring does

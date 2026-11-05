@@ -13,7 +13,7 @@ import {
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
-  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images, ChevronRight, QrCode,
+  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images, ChevronRight, QrCode, Building2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useTheme } from '@/components/ThemeProvider';
@@ -33,6 +33,7 @@ import { tones, tabTones, gradient, type ToneName } from '@/components/profile/p
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { useFounder } from '@/lib/use-founder';
 import { PortfolioSkeleton } from '@/components/profile/PortfolioSection';
+import StudioDetailsCard from '@/components/profile/StudioDetailsCard';
 
 /**
  * The gallery is the heaviest thing on this page — a media grid, an upload
@@ -1520,6 +1521,13 @@ function ProfilePageInner() {
                       <FloatInput tone="brand" upperLifted label="Location" value={location} onChange={setLocation} />
                       <FloatInput tone="brand" upperLifted label="Bio" value={bio} onChange={setBio} multiline />
                     </div>
+                  </GlassCard>
+                </FadeUp>
+
+                <FadeUp>
+                  <GlassCard className="p-6" tone="mint">
+                    <SectionHeader tone="mint" icon={<Building2 size={15} />} title="Studio details" />
+                    <StudioDetailsCard />
                   </GlassCard>
                 </FadeUp>
 

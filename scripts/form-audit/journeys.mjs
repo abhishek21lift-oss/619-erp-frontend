@@ -84,6 +84,9 @@ export const JOURNEYS = {
   'e2e/member-pause.ui.spec.ts': [
     'src/components/member/MemberPauseCard.tsx',
   ],
+  'e2e/studio-details.ui.spec.ts': [
+    'src/components/profile/StudioDetailsCard.tsx',
+  ],
   'e2e/progress-policy.ui.spec.ts': [
     'src/app/(chrome)/pt-os/progress/page.tsx',
   ],

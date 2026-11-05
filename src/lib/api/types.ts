@@ -36,6 +36,16 @@ export type User = {
 };
 
 // Types matching the /api/profile/* contract exactly (src/routes/profile.js).
+/** The studio's own contact details (GET/PUT /api/profile/studio). */
+export type StudioContact = {
+  name: string;
+  phone: string | null;
+  address: string | null;
+  hours: string | null;
+};
+
+export type StudioContactInput = Pick<StudioContact, 'phone' | 'address' | 'hours'>;
+
 export interface ProfileMe {
   id: string;
   name: string;
@@ -3356,6 +3366,10 @@ export type MeProfile = {
   trainer_specialization: string | null;
   studio_name: string | null;
   studio_logo: string | null;
+  /** What the studio published for members; any of them may be null. */
+  studio_phone: string | null;
+  studio_address: string | null;
+  studio_hours: string | null;
 };
 
 /**
