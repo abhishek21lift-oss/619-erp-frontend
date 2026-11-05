@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Fingerprint, ShieldCheck, ShieldAlert, Users, Activity, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero } from '@/components/ui';
+import { Button, PageActions, PageHero } from '@/components/ui';
 import type { StudioPasskeyStats, StudioPasskeyCredential, StudioPasskeyAuditLog } from '@/lib/api/endpoints/auth';
 
 // The studio's passkeys — the trainer's own and their members' — with revoke
@@ -137,18 +137,17 @@ function BiometricInner() {
       <PageHero
         icon={<Fingerprint size={20} />}
         title="Biometric Security"
-
-        actions={
-          <HeroButton
-            variant="glass"
-            onClick={loadAll}
-            disabled={loading}
-            icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
-          >
-            Refresh
-          </HeroButton>
-        }
       />
+      <PageActions>
+        <Button
+          variant="secondary"
+          onClick={loadAll}
+          disabled={loading}
+          iconLeft={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
+        >
+          Refresh
+        </Button>
+      </PageActions>
 
       {/* Error */}
       {error && (

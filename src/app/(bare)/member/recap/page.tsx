@@ -106,7 +106,14 @@ function RecapBody() {
               : 'Pick another month above, or start this month strong from the Workout tab.'} />
         ) : (
           <>
-            <Hero recap={recap} onPlay={() => setPlaying(true)} />
+            <Hero recap={recap} />
+            {/* Play opens the story. It is a page action, so it sits under the
+                hero with every other page's actions. */}
+            <button type="button" onClick={() => setPlaying(true)}
+              className="mb-4 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] text-[14px] font-[800] text-white transition-transform active:scale-[0.99]"
+              style={{ background: MC.primaryDeep, boxShadow: `0 12px 26px -14px ${rgba(palette.blue[700], 0.75)}` }}>
+              <Play size={16} fill="currentColor" aria-hidden /> Play my recap
+            </button>
             <Details recap={recap} />
           </>
         )}
@@ -117,7 +124,7 @@ function RecapBody() {
   );
 }
 
-function Hero({ recap, onPlay }: { recap: MeRecap; onPlay: () => void }) {
+function Hero({ recap }: { recap: MeRecap }) {
   const stats = headlineStats(recap);
   return (
     <m.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE }}
@@ -141,12 +148,6 @@ function Hero({ recap, onPlay }: { recap: MeRecap; onPlay: () => void }) {
           </div>
         ))}
       </div>
-
-      <button type="button" onClick={onPlay}
-        className="relative mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[800]"
-        style={{ background: '#fff', color: palette.gray[900] }}>
-        <Play size={16} fill="currentColor" aria-hidden /> Play my recap
-      </button>
     </m.section>
   );
 }

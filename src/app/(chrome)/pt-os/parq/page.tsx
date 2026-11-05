@@ -8,7 +8,7 @@ import {
   History, CheckCircle2, Download, Printer, Mail,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import type { ParqForm, ParqFormDetail, ParqDocument } from '@/lib/api';
@@ -154,15 +154,13 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
       <PageHero
         icon={<ShieldCheck size={20} />}
         title={`${clientName}'s PAR-Q`}
-
-        actions={
-          <button type="button" onClick={() => openWizard(null)}
-            className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-            style={{ background: '#fff', color: '#0F172A' }}>
-            <Plus size={16} /> New Screening
-          </button>
-        }
       />
+      <PageActions>
+        <Button onClick={() => openWizard(null)} iconLeft={<Plus size={16} />}>
+          New Screening
+        </Button>
+      </PageActions>
+
 
       <div className="mx-auto w-full max-w-3xl space-y-3">
         {latest && (

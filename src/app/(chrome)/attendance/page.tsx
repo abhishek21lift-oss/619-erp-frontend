@@ -42,7 +42,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import {
-  PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageContainer, PageHero, SearchField,
+  PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button, PageActions, PageContainer, PageHero, SearchField,
 } from '@/components/ui';
 import { api, Client, Attendance } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
@@ -347,6 +347,7 @@ function AttendanceHero({ date, today, setDate, summary, loading, onManualEntry,
 }) {
   const isToday = date === today;
   return (
+    <>
     <PageHero
       title="Attendance"
 
@@ -414,14 +415,20 @@ function AttendanceHero({ date, today, setDate, summary, loading, onManualEntry,
             </button>
           )}
         </div>
-
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <GlassAction label="Manual" icon={<Plus size={16} />} onClick={onManualEntry} />
-          <GlassAction label="Export" icon={<Download size={16} />} onClick={onExport} />
-          <GlassAction label="Trends" icon={<BarChart3 size={16} />} onClick={onGenerateReport} />
-        </div>
       </div>
     </PageHero>
+    <PageActions className="mt-3">
+      <Button onClick={onManualEntry} iconLeft={<Plus size={16} />}>
+        Manual
+      </Button>
+      <Button variant="secondary" onClick={onExport} iconLeft={<Download size={16} />}>
+        Export
+      </Button>
+      <Button variant="secondary" onClick={onGenerateReport} iconLeft={<BarChart3 size={16} />}>
+        Trends
+      </Button>
+    </PageActions>
+    </>
   );
 }
 
@@ -454,16 +461,6 @@ function RateRing({ rate, checkedIn, total, loading }: { rate: number; checkedIn
         <span className="text-[22px] font-[850] leading-none tabular-nums tracking-[-0.03em]">{loading ? '—' : `${rate}%`}</span>
       </div>
     </div>
-  );
-}
-
-function GlassAction({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick}
-      className="flex h-11 items-center justify-center gap-1.5 rounded-full text-[13px] font-[750] transition-transform active:scale-95"
-      style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
-      {icon}{label}
-    </button>
   );
 }
 

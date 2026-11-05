@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { hasPtTerm } from '@/lib/pt-term';
-import { Button, DonutChart, HeroButton, HeroChip, PageHero } from '@/components/ui';
+import { Button, DonutChart, HeroChip, PageActions, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 interface PtSubscriptionTerm {
@@ -158,30 +158,9 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
         ) : client ? (
           <div className="mx-auto max-w-screen-xl pt-1 pb-6">
             <PageHero
-              className="mb-5"
+              className="mb-3"
               icon={<Layers size={20} />}
               title={client.name}
-
-              actions={
-                <div className="flex gap-2">
-                  <HeroButton variant="glass" className="flex-1 sm:flex-none" icon={<ArrowLeft size={14} />}
-                    onClick={() => router.push(`/pt-os/clients/${id}`)}>
-                    Profile
-                  </HeroButton>
-                  {/* Renew only continues a term; a client without one is enrolled. */}
-                  {hasPtTerm(client) ? (
-                    <HeroButton className="flex-1 sm:flex-none" icon={<Repeat size={14} />}
-                      onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
-                      Renew PT
-                    </HeroButton>
-                  ) : (
-                    <HeroButton className="flex-1 sm:flex-none" icon={<UserPlus size={14} />}
-                      onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}>
-                      Enroll in PT
-                    </HeroButton>
-                  )}
-                </div>
-              }
             >
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={client.status} days_left={client.days_left} />
@@ -189,6 +168,24 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
                 {client.package_type && <HeroChip icon={<Dumbbell size={12} />}>{client.package_type}</HeroChip>}
               </div>
             </PageHero>
+            <PageActions className="mb-5">
+              <Button variant="secondary" iconLeft={<ArrowLeft size={14} />}
+                onClick={() => router.push(`/pt-os/clients/${id}`)}>
+                Profile
+              </Button>
+              {/* Renew only continues a term; a client without one is enrolled. */}
+              {hasPtTerm(client) ? (
+                <Button iconLeft={<Repeat size={14} />}
+                  onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
+                  Renew PT
+                </Button>
+              ) : (
+                <Button iconLeft={<UserPlus size={14} />}
+                  onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}>
+                  Enroll in PT
+                </Button>
+              )}
+            </PageActions>
 
             {/* ── Summary Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

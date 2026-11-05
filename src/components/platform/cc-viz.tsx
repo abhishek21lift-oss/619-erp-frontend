@@ -37,13 +37,12 @@ export const inrCompact = (n: number) => `₹${compact(n)}`;
 
 // ── Hero ────────────────────────────────────────────────────────────────────
 
-export function CcHero({ tone, eyebrow, title, subtitle, icon, actions, children }: {
+export function CcHero({ tone, eyebrow, title, subtitle, icon, children }: {
   tone: Tone;
   eyebrow: string;
   title: string;
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
-  actions?: React.ReactNode;
   /** A row of hero stats under the title. */
   children?: React.ReactNode;
 }) {
@@ -68,7 +67,6 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, actions, children
             {subtitle && <p className="mt-1.5 max-w-[720px] text-[12.5px] leading-5 text-white/80">{subtitle}</p>}
           </div>
         </div>
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {children && <div className="relative mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">{children}</div>}
     </section>
@@ -83,19 +81,6 @@ export function CcHeroStat({ label, value, sub }: { label: string; value: React.
       <p className="mt-0.5 truncate text-[22px] font-[850] tabular-nums tracking-[-0.03em]">{value}</p>
       {sub && <p className="truncate text-[11px] text-white/75">{sub}</p>}
     </div>
-  );
-}
-
-/** A button styled for the hero. */
-export function CcHeroButton({ children, onClick, disabled, label }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; label?: string }) {
-  return (
-    <button
-      type="button" onClick={onClick} disabled={disabled} aria-label={label}
-      className="flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-[750] text-white transition-opacity disabled:opacity-60"
-      style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(10px)' }}
-    >
-      {children}
-    </button>
   );
 }
 

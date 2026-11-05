@@ -7,7 +7,7 @@ import {
   RefreshCw, Calendar, Dumbbell,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero } from '@/components/ui';
+import { PageActions, Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 type Session = {
@@ -125,21 +125,17 @@ export default function PTSessionsPage() {
         <PageHero
           icon={<Calendar size={20} />}
           title="Session History"
-
-          actions={
-            <m.button
-              type="button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={loadSessions}
-              aria-label="Refresh sessions"
-              className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
-            >
-              <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
-            </m.button>
-          }
         />
+        <PageActions>
+          <Button
+            variant="secondary"
+            onClick={loadSessions}
+            aria-label="Refresh sessions"
+            iconLeft={<RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />}
+          >
+            Refresh
+          </Button>
+        </PageActions>
 
         {/* Filters */}
         <div className="mb-5 flex flex-col gap-3">

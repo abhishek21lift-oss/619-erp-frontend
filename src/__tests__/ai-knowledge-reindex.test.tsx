@@ -37,12 +37,8 @@ vi.mock('@/components/ui', () => ({
   Button: ({ children, ...rest }: Record<string, unknown>) => <button {...rest}>{children as React.ReactNode}</button>,
   PullToRefresh: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PageContainer: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  PageHero: ({ title, actions }: { title: string; actions?: React.ReactNode }) => (
-    <div>
-      <h1>{title}</h1>
-      {actions}
-    </div>
-  ),
+  PageHero: ({ title }: { title: string }) => <h1>{title}</h1>,
+  PageActions: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 import AiKnowledgeBasePage from '@/app/(chrome)/ai-coach/knowledge/page';

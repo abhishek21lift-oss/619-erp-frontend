@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn, FormField, SelectInput } from '@/components/ui';
+import { Badge, Button, EmptyState, PageActions, PageContainer, PageHero, Skeleton, cn, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -185,19 +185,16 @@ function ExerciseLibrary() {
       <PageHero
         icon={<Dumbbell size={20} />}
         title="Exercise Library"
-
-        actions={canAuthor ? (
-          <HeroButton
-            onClick={openCreate}
-            className="h-[44px] w-full rounded-[14px] sm:w-auto"
-            icon={<Plus size={16} />}
-          >
-            New exercise
-          </HeroButton>
-        ) : undefined}
       >
         <div aria-hidden className="h-[3px] w-full max-w-[560px] rounded-full opacity-90" style={{ background: SPECTRUM_RIBBON }} />
       </PageHero>
+      {canAuthor && (
+        <PageActions>
+          <Button onClick={openCreate} iconLeft={<Plus size={16} />}>
+            New exercise
+          </Button>
+        </PageActions>
+      )}
 
       {/* ── Browse by muscle ───────────────────────────────────── */}
       {regions.length > 0 && (

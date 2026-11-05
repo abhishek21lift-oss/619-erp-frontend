@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { AlertCircle, History, Loader2, Plus } from 'lucide-react';
-import { Button, PageHero } from '@/components/ui';
+import { Button, PageActions, PageHero } from '@/components/ui';
 
 interface AssessmentHistoryHubProps {
   title: string;
@@ -45,12 +45,12 @@ export function AssessmentHistoryHub({
       <PageHero
         icon={icon}
         title={title}
-        actions={
-          <Button iconLeft={<Plus size={14} />} onClick={onNew} style={{ background: '#fff', color: '#0F172A' }}>
-            New Assessment
-          </Button>
-        }
       />
+      <PageActions>
+        <Button iconLeft={<Plus size={14} />} onClick={onNew}>
+          New Assessment
+        </Button>
+      </PageActions>
 
       {sorted.length >= 2 && renderComparison?.(initial, latest)}
 

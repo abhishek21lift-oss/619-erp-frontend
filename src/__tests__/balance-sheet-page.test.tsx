@@ -22,6 +22,7 @@ vi.mock('framer-motion', () => ({
       React.createElement(tag, rest, children as React.ReactNode),
   }),
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/components/ui', () => ({
   PageContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   PageHero: ({ title, children }: { title: string; children?: React.ReactNode }) => (
@@ -31,6 +32,13 @@ vi.mock('@/components/ui', () => ({
     </div>
   ),
   PullToRefresh: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  PageActions: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Button: ({ children, iconLeft, variant, size, loading, fullWidth, iconRight, ...rest }: Record<string, unknown>) => (
+    <button {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+      {iconLeft as React.ReactNode}
+      {children as React.ReactNode}
+    </button>
+  ),
   KpiCard: ({ label, value, hint }: { label: string; value: React.ReactNode; hint?: React.ReactNode }) => (
     <div data-testid={`kpi-${label}`}>
       <span>{value}</span>

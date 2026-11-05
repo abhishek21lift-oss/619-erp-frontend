@@ -26,7 +26,7 @@ import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
-import { Button, HeroButton, PageHero } from '@/components/ui';
+import { Button, PageActions, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
@@ -359,13 +359,12 @@ function SchedulePageContent() {
           <PageHero
             icon={<Calendar size={20} />}
             title="Schedule Session"
-
-            actions={
-              <HeroButton className="w-full sm:w-auto" onClick={() => setShowCreateModal(true)} icon={<Plus size={15} />}>
-                Book Session
-              </HeroButton>
-            }
           />
+          <PageActions className="mt-3">
+            <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus size={15} />}>
+              Book Session
+            </Button>
+          </PageActions>
 
           {/* View Toggles */}
           <div className="mt-4 flex flex-wrap items-center gap-3">

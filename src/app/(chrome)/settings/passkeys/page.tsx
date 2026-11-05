@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useWebAuthn, isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero, FormField, TextInput } from '@/components/ui';
+import { Button, PageActions, PageHero, FormField, TextInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -209,20 +209,20 @@ function PasskeysContent() {
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '4px 0 24px' }}>
 
       <PageHero
-        className="mb-5"
+        className="mb-3"
         icon={<Fingerprint size={20} />}
         title="Passkeys & Biometric Login"
-
-        actions={supported && available && !showForm ? (
-          <HeroButton
-            className="w-full sm:w-auto"
+      />
+      {supported && available && !showForm && (
+        <PageActions className="mb-5">
+          <Button
             onClick={() => { setShowForm(true); setError(''); clearError(); }}
-            icon={<Plus size={15} />}
+            iconLeft={<Plus size={15} />}
           >
             Add New Passkey
-          </HeroButton>
-        ) : undefined}
-      />
+          </Button>
+        </PageActions>
+      )}
 
       {/* Stats bar */}
       {credentials.length > 0 && (

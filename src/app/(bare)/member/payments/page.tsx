@@ -26,7 +26,7 @@ import { api } from '@/lib/api';
 import type { MePayment, UpiHistoryRow } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
-import { PageHeader, EmptyState } from '@/components/ui';
+import { PageHeader, PageActions, EmptyState, Button } from '@/components/ui';
 import { UpiStatusBadge, fmtMoneyExact } from '@/components/payments/upi-shared';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -121,15 +121,16 @@ function Inner() {
     // chrome as the rest of the portal.
     <MemberShell>
       {isMember ? (
-        <PageTitle accent="records" icon={<Receipt size={20} />} title="My payments"
-
-          aside={
-            <button type="button" onClick={() => void load()} aria-label="Refresh payments"
-              className="grid h-10 w-10 place-items-center rounded-full transition-transform active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>
-              <RefreshCw size={16} aria-hidden className={loading ? 'animate-spin' : undefined} />
-            </button>
-          } />
+        <>
+          <PageTitle accent="records" icon={<Receipt size={20} />} title="My payments" />
+          <PageActions className="mb-4">
+            <Button variant="secondary" size="sm" onClick={() => void load()}
+              aria-label="Refresh payments"
+              iconLeft={<RefreshCw size={14} aria-hidden className={loading ? 'animate-spin' : undefined} />}>
+              Refresh
+            </Button>
+          </PageActions>
+        </>
       ) : (
         <PageHeader
           title={isMember ? 'My payments' : 'Member payments'}

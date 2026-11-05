@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { ChartDataTable, PremiumBarChart, semantic } from '@/components/visualizations';
 import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -101,15 +101,14 @@ function OffersContent() {
       <PageHero
         icon={<Tag size={20} />}
         title="Offers & Promotions"
-
-        actions={
-          <button type="button" onClick={()=>{ if (showForm) { setShowForm(false); setEditing(null); } else { openNewOfferForm(); } }}
-            className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            <Plus size={14}/> {showForm?'Cancel':'New Offer'}
-          </button>
-        }
       />
+      <PageActions>
+        <Button variant={showForm ? 'secondary' : 'primary'}
+          onClick={()=>{ if (showForm) { setShowForm(false); setEditing(null); } else { openNewOfferForm(); } }}
+          iconLeft={<Plus size={14} />}>
+          {showForm?'Cancel':'New Offer'}
+        </Button>
+      </PageActions>
 
       {error && <div style={{ borderRadius:14, padding:'14px 20px', background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:600, fontSize:13 }}>{error}</div>}
 

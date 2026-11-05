@@ -110,6 +110,6 @@ export type {
   ChartColor,
 } from './chart';
 
-export { PageHero, PageContainer, HeroButton, HeroChip } from './PageHero';
-export type { PageHeroProps, HeroButtonProps } from './PageHero';
+export { PageHero, PageContainer, PageActions, HeroChip } from './PageHero';
+export type { PageHeroProps } from './PageHero';
 export type { PageAccent } from './pageAccents';
