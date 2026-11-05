@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
   Bell, CalendarRange, Camera, ChevronRight, ClipboardCheck, Clock, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, MapPin, Medal,
-  MessageCircle, Phone, RefreshCw, Receipt, Target, Trophy, UserRound, Dumbbell, Video,
+  MessageCircle, Phone, RefreshCw, Receipt, Star, Target, Trophy, UserRound, Dumbbell, Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -69,6 +69,7 @@ const GROUPS: Group[] = [
       { href: '/member/habits', label: 'Daily journal', sub: 'Sleep, steps, water and recovery', icon: ClipboardCheck },
       { href: '/member/photos', label: 'Progress photos', sub: 'Your photo timeline and before/after', icon: Camera },
       { href: '/member/form-check', label: 'Form check', sub: 'Send a lift for your trainer to review', icon: Video },
+      { href: '/member/feedback', label: 'Session feedback', sub: 'Rate a session and see what you said', icon: Star },
       { href: '/member/recap', label: 'Monthly recap', sub: 'Your month in numbers — and a card to share', icon: CalendarRange },
     ],
   },

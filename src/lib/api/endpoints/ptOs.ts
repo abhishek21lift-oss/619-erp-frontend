@@ -13,6 +13,7 @@ import type {
   TransformationRow,
   ChurnInsight, ChurnRiskResult, ChurnRiskRow,
   FormCheckComment, TrainerFormCheck,
+  SessionFeedback, SessionFeedbackFilters, SessionFeedbackSummary,
 } from '../types';
 import type { ClientInterview, ClientJourney } from '../../journey';
 
@@ -59,6 +60,25 @@ export const pt = {
     http<{ data: TrainerFormCheck }>(`/api/pt-os/form-checks/${encodeURIComponent(id)}/reviewed`, {
       method: 'POST',
     }),
+
+  /**
+   * Session ratings, newest first. Submitted only unless `status` says
+   * otherwise; `flagged` narrows to 3/5 and below. Aggregates live in
+   * feedbackSummary, never computed from this page of rows.
+   */
+  feedback: (params: SessionFeedbackFilters = {}) => {
+    const q: Record<string, string | number> = {};
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null) q[k] = typeof v === 'boolean' ? (v ? '1' : '0') : v;
+    }
+    return http<{ data: SessionFeedback[]; total: number }>(`/api/pt-os/feedback${buildQs(q)}`);
+  },
+  /** Average, rated count, five-star count, distribution and monthly trend. */
+  feedbackSummary: () =>
+    http<{ data: SessionFeedbackSummary }>('/api/pt-os/feedback/summary'),
+  /** One rating, inside the caller's studio. */
+  feedbackOne: (id: string) =>
+    http<{ data: SessionFeedback }>(`/api/pt-os/feedback/${encodeURIComponent(id)}`),
   client: (id: string) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
   /**
