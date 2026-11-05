@@ -110,7 +110,7 @@ export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor,
         <div className="relative min-w-[220px] flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input aria-label="Search clients"
-            type="text" placeholder="Search clients..." value={search}
+            type="text" value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}

@@ -181,7 +181,6 @@ function NContent() {
               {(field) => (
                 <TextField
                   field={field} label="Title" required density="compact"
-                  placeholder="e.g. Your membership expires soon!"
                   maxLength={NOTIFICATION_LIMITS.title} showCount
                   serverError={f.errors.fieldErrors.title}
                 />
@@ -191,7 +190,6 @@ function NContent() {
               {(field) => (
                 <TextAreaField
                   field={field} label="Message" required density="compact" rows={4}
-                  placeholder="Write your notification message…"
                   maxLength={NOTIFICATION_LIMITS.body} showCount
                   serverError={f.errors.fieldErrors.body}
                 />

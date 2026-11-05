@@ -396,7 +396,6 @@ export function ApprovalGateCard({ gate, onDismiss }: { gate: ApprovalGate; onDi
                 autoComplete="new-password"
                 value={gate.secrets[field] ?? ''}
                 onChange={(e) => gate.setSecret(field, e.target.value)}
-                placeholder={field}
                 aria-label={field}
               />
             ))}
@@ -412,7 +411,6 @@ export function ApprovalGateCard({ gate, onDismiss }: { gate: ApprovalGate; onDi
           <TextInput
             value={gate.confirmation}
             onChange={(e) => gate.setConfirmation(e.target.value)}
-            placeholder={plan.operation}
             aria-label={`Type ${plan.operation} to confirm`}
             spellCheck={false}
             autoComplete="off"

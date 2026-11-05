@@ -441,7 +441,7 @@ function Stepper({ label, value, inputMode, disabled, onChange, onMinus, onPlus 
         <Minus size={14} aria-hidden />
       </button>
       <input value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
-        inputMode={inputMode} enterKeyHint="done" aria-label={label} placeholder="–"
+        inputMode={inputMode} enterKeyHint="done" aria-label={label}
         className="h-full w-full min-w-0 bg-transparent text-center text-[16px] font-[800] tabular-nums outline-none disabled:opacity-100"
         style={{ color: MC.ink }} />
       <button type="button" onClick={onPlus} disabled={disabled} aria-label={`${label}: more`}

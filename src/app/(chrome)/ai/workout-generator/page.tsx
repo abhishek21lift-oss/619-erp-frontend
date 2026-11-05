@@ -473,9 +473,9 @@ export default function WorkoutGeneratorPage() {
               still appears on a phone, through inputMode, without the wheel
               over a focused field silently changing a client's weight. */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <NumberField field={ageField} label="Age" density="compact" mode="integer" placeholder="28" suffix="yrs" />
-            <NumberField field={weightField} label="Weight" density="compact" mode="decimal" placeholder="75" suffix="kg" />
-            <NumberField field={heightField} label="Height" density="compact" mode="decimal" placeholder="175" suffix="cm" />
+            <NumberField field={ageField} label="Age" density="compact" mode="integer" suffix="yrs" />
+            <NumberField field={weightField} label="Weight" density="compact" mode="decimal" suffix="kg" />
+            <NumberField field={heightField} label="Height" density="compact" mode="decimal" suffix="cm" />
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -489,7 +489,6 @@ export default function WorkoutGeneratorPage() {
             />
             <SelectField
               field={goalField} label="Fitness Goal" density="compact"
-              placeholderOption="Select a goal"
               options={GOALS.map((g) => ({ value: g, label: labelMap[g] ?? g }))}
             />
             <ChoiceChips
@@ -504,7 +503,6 @@ export default function WorkoutGeneratorPage() {
             <TextField
               field={injuriesField} label="Injuries / Limitations" density="compact"
               className="sm:col-span-2" maxLength={500}
-              placeholder="e.g. lower back pain, bad knees (optional)"
             />
           </div>
 
@@ -524,7 +522,6 @@ export default function WorkoutGeneratorPage() {
               <TextField
                 field={studioEquipmentField} label="Studio equipment" density="compact"
                 className="flex-1" labelHidden
-                placeholder="e.g. barbell, rack, bench, dumbbells, cables"
               />
               <button onClick={saveEquipment} disabled={savingEquipment}
                 className="rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700]"

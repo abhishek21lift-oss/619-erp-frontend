@@ -189,7 +189,6 @@ export function TestScreen({ test, form, patchFlex, derived, onBack, onSaveDraft
                   value={state.unableReason}
                   onChange={(v) => mark({ unableReason: v })}
                   maxLength={500}
-                  placeholder="e.g. recent surgery, pain on positioning"
                 />
               </div>
               <Button variant="outline" size="sm" iconLeft={<ShieldAlert size={13} />} onClick={recordUnable}>

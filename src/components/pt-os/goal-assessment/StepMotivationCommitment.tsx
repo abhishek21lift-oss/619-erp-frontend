@@ -53,7 +53,6 @@ export function StepMotivationCommitment({ form, set, step }: StepMotivationComm
         <FloatInput
           label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}
           value={form.motivationReason} onChange={(v) => set('motivationReason', v)}
-          placeholder="Wedding, competition, health, confidence, doctor recommendation, lifestyle, vacation..."
         />
 
         <div>

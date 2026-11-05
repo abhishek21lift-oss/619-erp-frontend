@@ -77,7 +77,7 @@ function open() {
 }
 
 function nameField() {
-  return screen.getByPlaceholderText(/Upper \/ Lower Split/i);
+  return screen.getByLabelText(/Programme name/i);
 }
 
 beforeEach(() => {

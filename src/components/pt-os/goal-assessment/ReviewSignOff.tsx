@@ -46,7 +46,6 @@ export function ReviewSignOff({ form, set, error }: ReviewSignOffProps) {
           label="What the client expects from this goal (optional)"
           multiline autoGrow maxLength={1000}
           value={form.clientExpectation} onChange={(v) => set('clientExpectation', v)}
-          placeholder="In their own words — the outcome, timeline and effort they expect."
         />
       </div>
     </GoalStepCard>

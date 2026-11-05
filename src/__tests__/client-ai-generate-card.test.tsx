@@ -591,7 +591,7 @@ describe('a diet the context says is not ready', () => {
     expect(diet().disabled).toBe(true);
 
     fireEvent.click(screen.getByText('Add what you know for this generation'));
-    const goal = await screen.findByPlaceholderText('e.g. muscle_gain');
+    const goal = await screen.findByLabelText('Goal');
     fireEvent.change(goal, { target: { value: 'fat_loss' } });
     expect(diet().disabled).toBe(false);
 

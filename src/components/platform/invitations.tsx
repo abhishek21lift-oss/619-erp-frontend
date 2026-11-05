@@ -330,7 +330,6 @@ export default function InvitationsPanel() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search studio, owner or email"
             aria-label="Search invitations"
             className="h-9 w-full rounded-[10px] pl-8 pr-3 text-[12.5px] outline-none"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}

@@ -134,7 +134,6 @@ function Inner() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search member, order number or UTR"
             aria-label="Search payments"
             className="w-full rounded-xl py-2.5 pl-9 pr-3 text-[14px] outline-none"
             style={{
@@ -599,7 +598,6 @@ function ActionDialog({
                     setNote(e.target.value);
                     setFieldErrors((fe) => (fe.note ? { ...fe, note: undefined } : fe));
                   }}
-                  placeholder="e.g. We received ₹9,000, not ₹10,620."
                   className="mt-1.5 w-full resize-none rounded-xl px-3 py-2.5 text-[14px] outline-none"
                   style={{
                     background: 'var(--bg-base)', color: 'var(--text-primary)',
@@ -849,7 +847,6 @@ function NewRequestDialog({
               <>
                 <SearchField
                   label="Search members"
-                  placeholder="Search by name or mobile"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   fieldClassName="mt-1.5"
@@ -907,7 +904,6 @@ function NewRequestDialog({
                   label="Package name"
                   required
                   maxLength={160}
-                  placeholder="Gold — 3 months"
                   serverError={f.errors.fieldErrors.plan_name}
                   className="mt-4"
                 />
@@ -935,7 +931,6 @@ function NewRequestDialog({
                     label="Amount before GST"
                     mode="money"
                     required
-                    placeholder="9000"
                     description="GST is added automatically from your UPI settings."
                     serverError={f.errors.fieldErrors.base_amount}
                   />

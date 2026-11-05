@@ -225,7 +225,6 @@ function SettingsForm({
               field={field}
               label="Your UPI ID (VPA)"
               required
-              placeholder="studio@okhdfcbank"
               description="Exactly as it appears in your UPI app."
               autoComplete="off"
               serverError={f.errors.fieldErrors.upi_id}
@@ -239,7 +238,6 @@ function SettingsForm({
               field={field}
               label="Name shown to the member"
               required
-              placeholder="Abhishek PT Studio"
               maxLength={120}
               showCount
               className="mt-4"
@@ -284,7 +282,6 @@ function SettingsForm({
             <TextField
               field={field}
               label="GSTIN (optional)"
-              placeholder="22AAAAA0000A1Z5"
               className="mt-4"
               autoComplete="off"
               serverError={f.errors.fieldErrors.gst_number}
@@ -300,7 +297,6 @@ function SettingsForm({
               rows={2}
               maxLength={500}
               showCount
-              placeholder="Payments are verified within 2 hours, 7am–9pm."
               className="mt-4"
               serverError={f.errors.fieldErrors.instructions}
             />

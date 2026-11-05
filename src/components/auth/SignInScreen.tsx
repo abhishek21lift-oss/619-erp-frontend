@@ -490,7 +490,6 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-              placeholder="you@studio.com"
               error={emailError}
             />
 
@@ -505,7 +504,6 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
               onBlur={() => { setTouched((t) => ({ ...t, password: true })); setCapsOn(false); }}
               onKeyUp={onPwKey}
               onKeyDown={onPwKey}
-              placeholder="Your password"
               error={passwordError}
               hint={capsOn ? 'Caps Lock is on.' : undefined}
               labelAside={
@@ -541,7 +539,6 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                     maxLength={14}
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9A-Za-z\s-]/g, '').slice(0, 14))}
-                    placeholder="123456"
                     inputRef={mfaRef}
                     hint="Enter the 6-digit code from your authenticator app, or one of your recovery codes."
                   />

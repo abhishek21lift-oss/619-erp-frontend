@@ -243,7 +243,6 @@ function ExerciseLibrary() {
           <input
             value={filters.q}
             onChange={(e) => { setFilter('q', e.target.value); setSeededQ(e.target.value); }}
-            placeholder="Search by name, muscle, equipment…"
             aria-label="Search exercises"
             className="h-12 w-full rounded-2xl border border-slate-200/70 bg-white py-2.5 pl-11 pr-24 text-[14px] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-slate-400 focus:border-[rgba(163,55,87,0.5)] focus:shadow-[0_0_0_4px_rgba(163,55,87,0.12)] dark:border-white/10 dark:bg-white/[0.05] dark:placeholder:text-white/30"
           />

@@ -316,7 +316,7 @@ export default function TrainerFormChecksPage() {
                   <form onSubmit={addComment} className="mt-3 space-y-2">
                     <div className="flex items-end gap-2">
                       <div className="w-[124px]">
-                        <NumberField field={atField} label="At second" mode="integer" min={0} placeholder="0" />
+                        <NumberField field={atField} label="At second" mode="integer" min={0} />
                       </div>
                       <Button type="button" size="sm" variant="ghost" onClick={useCurrentTime}>
                         Use current time
@@ -332,7 +332,6 @@ export default function TrainerFormChecksPage() {
                       rows={2}
                       maxLength={1000}
                       showCount
-                      placeholder="e.g. Right knee tracks in on the way up."
                     />
                     <Button type="submit" size="sm" disabled={saving || !comment.trim()}
                       iconLeft={saving ? <Loader2 size={13} className="animate-spin" /> : <MessageSquarePlus size={13} />}>

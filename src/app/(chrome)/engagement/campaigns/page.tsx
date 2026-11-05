@@ -261,7 +261,7 @@ function CampaignContent() {
                 {(field) => (
                   <TextField
                     field={field} label="Campaign Name" required density="compact"
-                    placeholder="e.g. Summer Fitness Drive" maxLength={160}
+                    maxLength={160}
                     serverError={f.errors.fieldErrors.name}
                   />
                 )}
@@ -270,7 +270,7 @@ function CampaignContent() {
                 {(field) => (
                   <TextField
                     field={field} label="Goal" density="compact"
-                    placeholder="e.g. Increase renewals by 20%" maxLength={300}
+                    maxLength={300}
                     serverError={f.errors.fieldErrors.goal}
                   />
                 )}
@@ -288,7 +288,7 @@ function CampaignContent() {
                 {(field) => (
                   <TextField
                     field={field} label="Target Audience" density="compact"
-                    placeholder="e.g. Expiring This Month" maxLength={160}
+                    maxLength={160}
                     serverError={f.errors.fieldErrors.audience}
                   />
                 )}

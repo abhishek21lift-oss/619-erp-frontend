@@ -54,7 +54,6 @@ type FieldSpec = {
   /** `decimal` keeps the numeric keypad but allows 62.5 and 8.5. */
   mode?: 'numeric' | 'decimal' | 'text';
   suffix?: string;
-  placeholder?: string;
   /** Shown in the collapsed summary row. */
   primary?: boolean;
 };
@@ -104,7 +103,7 @@ const PRIMARY: Record<TrackingKind, AnySpec[]> = {
   ],
 };
 const ADVANCED_ALL: FieldSpec[] = [
-  { key: 'tempo',       label: 'Tempo',    mode: 'text',    placeholder: '3-1-2-0' },
+  { key: 'tempo',       label: 'Tempo',    mode: 'text' },
   { key: 'rpe',         label: 'RPE',      mode: 'decimal' },
   // `rpe` is the 1-10 scale; `rir` is the coach's own scale. Both are kept
   // because collapsing them lost which one the programme actually asked for.
@@ -115,7 +114,7 @@ const ADVANCED_ALL: FieldSpec[] = [
   // value was the whole-plan PUT, which the builder does not use. A free-text
   // letter rather than a picker — exercises sharing a value are performed
   // together, and "A"/"B" is what a coach writes on the sheet.
-  { key: 'superset_group', label: 'Superset', mode: 'text', placeholder: 'A' },
+  { key: 'superset_group', label: 'Superset', mode: 'text' },
 ];
 
 /**
@@ -904,7 +903,7 @@ function InlineField({
             if (e.key === 'Escape') { setDraft(lastCommitted.current); e.currentTarget.blur(); }
           }}
           inputMode={spec.mode === 'text' ? 'text' : spec.mode === 'decimal' ? 'decimal' : 'numeric'}
-          placeholder={spec.placeholder ?? '—'}
+          placeholder="—"
           className="h-[44px] w-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-1.5 text-center text-[14px] font-[700]"
           style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)' }}
         />
@@ -963,7 +962,6 @@ function NotesField({
           onCommit({ notes: v === '' ? null : v });
         }}
         rows={1}
-        placeholder="Coach notes…"
         className="min-h-[44px] w-full resize-none overflow-hidden rounded-none px-1 py-2.5 text-[13px]"
         style={{ ...inputStyle, border: 'none', borderBottom: '1px solid var(--border)' }}
       />

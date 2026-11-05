@@ -541,7 +541,6 @@ export function UtrForm({
                     f.clearFieldError('utr');
                   }}
                   onBlur={field.handleBlur}
-                  placeholder="12 to 16 digits"
                   className="rounded-xl font-mono tracking-[0.02em]"
                   style={{ height: 52, background: 'var(--bg-base)', fontSize: 16 }}
                 />
@@ -630,7 +629,6 @@ export function UtrForm({
                     f.clearFieldError('notes');
                   }}
                   onBlur={field.handleBlur}
-                  placeholder="Anything the studio should know"
                   className="resize-none rounded-xl"
                   style={{ background: 'var(--bg-base)', fontSize: 14 }}
                 />

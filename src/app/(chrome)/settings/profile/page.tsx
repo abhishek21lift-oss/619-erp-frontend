@@ -302,7 +302,6 @@ function CertificateRow({ cert, index, issues, saved, onChange, onRemove }: {
               field={name}
               label="Certification"
               density="compact"
-              placeholder="Certification name"
               maxLength={PROFILE_LIMITS.certificationName}
             />
             {meta && (
@@ -332,12 +331,10 @@ function CertificateRow({ cert, index, issues, saved, onChange, onRemove }: {
 
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <TextField
-            field={issuer} label="Issuing body" density="compact"
-            placeholder="NASM, ACE, K11…" maxLength={PROFILE_LIMITS.certificationIssuer}
+            field={issuer} label="Issuing body" density="compact" maxLength={PROFILE_LIMITS.certificationIssuer}
           />
           <TextField
-            field={credentialId} label="Credential ID" density="compact"
-            placeholder="Optional" maxLength={PROFILE_LIMITS.credentialId}
+            field={credentialId} label="Credential ID" density="compact" maxLength={PROFILE_LIMITS.credentialId}
           />
           <DateFieldControl field={issuedOn} label="Issued" density="compact" />
           <DateFieldControl field={expiresOn} label="Expires" density="compact" />
@@ -400,7 +397,6 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
             if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
           }}
           onBlur={() => commit(draft)}
-          placeholder="Add a specialisation and press Enter"
           className="rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560]"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
         />

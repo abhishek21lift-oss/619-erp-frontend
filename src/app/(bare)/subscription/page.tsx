@@ -919,7 +919,6 @@ function SubscriptionScreen() {
                   value={couponCode}
                   onChange={(e) => { setCouponCode(e.target.value); setCoupon(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
-                  placeholder="Coupon code"
                   aria-label="Coupon code"
                   // The verdict below was on screen and silent: no association,
                   // no live region. Someone pressed Apply, a sentence appeared,

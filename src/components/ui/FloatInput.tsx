@@ -80,7 +80,6 @@ interface FloatInputProps {
   value: string;
   onChange: (v: string) => void;
   onBlur?: () => void;
-  placeholder?: string;
   suffix?: React.ReactNode;
   prefix?: React.ReactNode;
   required?: boolean;
@@ -165,7 +164,6 @@ export function FloatInput({
   value,
   onChange,
   onBlur,
-  placeholder,
   suffix,
   prefix,
   required,
@@ -238,7 +236,6 @@ export function FloatInput({
               ref={textareaRef}
               rows={autoGrow ? 1 : rows}
               value={value}
-              placeholder={placeholder}
               onChange={handleChange}
               onBlur={onBlur}
               disabled={disabled}
@@ -252,7 +249,6 @@ export function FloatInput({
               type={renderedType}
               inputMode={renderedInputMode}
               value={value}
-              placeholder={placeholder}
               onChange={handleChange}
               onBlur={onBlur}
               disabled={disabled}

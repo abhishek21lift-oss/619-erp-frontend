@@ -403,7 +403,6 @@ export default function LiveLogs() {
           <input aria-label="Filter by message"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter by message…"
             className="w-full bg-transparent text-[11.5px] outline-none"
             style={{ color: 'var(--text-primary)' }}
           />

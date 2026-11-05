@@ -98,7 +98,6 @@ export default function ForgotPasswordPage() {
                   type="email"
                   autoComplete="email"
                   focusOnMount
-                  placeholder="you@studio.com"
                   icon={<Mail size={18} />}
                   serverError={f.errors.fieldErrors.email}
                 />

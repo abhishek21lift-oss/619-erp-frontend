@@ -312,7 +312,6 @@ export function CouponForm({ plans, initial, onCreated }: {
               field={field}
               label="Code"
               required
-              placeholder="LAUNCH20"
               serverError={f.errors.fieldErrors.code}
             />
           )}
@@ -323,7 +322,6 @@ export function CouponForm({ plans, initial, onCreated }: {
             <TextField
               field={field}
               label="Description"
-              placeholder="Launch promotion"
               serverError={f.errors.fieldErrors.description}
             />
           )}
@@ -351,7 +349,6 @@ export function CouponForm({ plans, initial, onCreated }: {
                   required
                   mode={type === 'percent' ? 'percent' : 'money'}
                   suffix={type === 'percent' ? '%' : '₹'}
-                  placeholder={type === 'percent' ? '20' : '500'}
                   serverError={f.errors.fieldErrors.discountValue}
                 />
               )}
@@ -372,7 +369,6 @@ export function CouponForm({ plans, initial, onCreated }: {
                     label="Max discount"
                     mode="money"
                     suffix="₹"
-                    placeholder="2000"
                     serverError={f.errors.fieldErrors.maxDiscount}
                   />
                 )}
@@ -387,7 +383,6 @@ export function CouponForm({ plans, initial, onCreated }: {
               field={field}
               label="Total uses"
               mode="integer"
-              placeholder="20"
               description="Leave blank for unlimited"
               serverError={f.errors.fieldErrors.maxRedemptions}
             />

@@ -127,7 +127,6 @@ function TextControl({
       field={field}
       label={control.label}
       description={control.hint}
-      placeholder={control.placeholder}
       rows={control.rows ?? 3}
       maxLength={control.maxLength}
       showCount={Boolean(control.maxLength)}
@@ -149,7 +148,6 @@ function SelectControl({
       label={control.label}
       description={control.hint}
       options={control.options}
-      placeholderOption="Not provided"
     />
   );
 }

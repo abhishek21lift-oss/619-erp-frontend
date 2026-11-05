@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
-  FormField, TextInput, TextArea, SelectInput, SearchField, TextFieldRow,
+  FormField, TextInput, TextArea, SelectInput, SearchField, TextFieldRow, SelectField,
 } from '@/components/ui/form';
 
 describe('the name', () => {
@@ -212,14 +212,38 @@ describe('SearchField', () => {
   });
 
   it('keeps its name after the user types', () => {
-    render(<SearchField label="Search clients" placeholder="Search clients…" />);
+    render(<SearchField label="Search clients" />);
     fireEvent.change(screen.getByLabelText('Search clients'), { target: { value: 'ana' } });
     expect(screen.getByLabelText('Search clients')).toHaveValue('ana');
   });
 
-  it('defaults the placeholder to the label', () => {
+  it('renders no placeholder', () => {
     render(<SearchField label="Search invoices" />);
-    expect(screen.getByLabelText('Search invoices')).toHaveAttribute('placeholder', 'Search invoices');
+    expect(screen.getByLabelText('Search invoices')).not.toHaveAttribute('placeholder');
+  });
+});
+
+describe('SelectField', () => {
+  it('leaves an unset select blank, with no instructional first option', () => {
+    const field = {
+      name: 'plan',
+      state: { value: '', meta: { errors: [], isTouched: false } },
+      handleChange: () => {},
+      handleBlur: () => {},
+    };
+    render(
+      <SelectField
+        field={field}
+        label="Plan"
+        required
+        options={[{ value: 'gold', label: 'Gold' }]}
+      />,
+    );
+    const select = screen.getByLabelText('Plan');
+    const empty = select.querySelector('option[value=""]');
+    expect(select).toBeRequired();
+    expect(empty).not.toBeNull();
+    expect(empty?.textContent).toBe('');
   });
 });
 

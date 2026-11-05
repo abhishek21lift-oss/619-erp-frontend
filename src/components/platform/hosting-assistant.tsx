@@ -84,7 +84,6 @@ export function HostingAssistant() {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(question); }
             }}
             rows={3}
-            placeholder="Is the staging site's SSL about to expire?"
             aria-label="Ask the operations assistant"
           />
           <div className="flex flex-wrap items-center gap-2">

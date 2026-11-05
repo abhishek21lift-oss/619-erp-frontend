@@ -263,7 +263,6 @@ export function SignaturePad({ label, value, onChange, onClear, aspectRatio = 3,
           type="text"
           value={typedName}
           disabled={disabled}
-          placeholder="Or type your full name to sign"
           onChange={(e) => setTypedName(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

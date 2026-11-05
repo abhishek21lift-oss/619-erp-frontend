@@ -210,7 +210,6 @@ function Inner() {
                   <TextInput
                     value={action}
                     onChange={(e) => { setAction(e.target.value); setOffset(0); }}
-                    placeholder="e.g. client.create, payment.delete"
                     className="h-10 rounded-[10px] px-2.5 text-[12.5px]"
                     style={selectStyle}
                   />
@@ -219,7 +218,6 @@ function Inner() {
                   <TextInput
                     value={entityType}
                     onChange={(e) => { setEntityType(e.target.value); setOffset(0); }}
-                    placeholder="e.g. pt_client, pt_payment, pt_trainer"
                     className="h-10 rounded-[10px] px-2.5 text-[12.5px]"
                     style={selectStyle}
                   />

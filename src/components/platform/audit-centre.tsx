@@ -242,7 +242,6 @@ export default function AuditCentre() {
       <div className="flex flex-wrap items-center gap-2">
         <SearchField
           label="Search the audit log"
-          placeholder="Search actor, action, studio…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="h-10 rounded-[11px] pr-3 text-[12.5px]"

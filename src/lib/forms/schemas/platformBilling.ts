@@ -195,25 +195,24 @@ export type PlatformBillingState = {
 export const BILLING_TEXT_FIELDS: ReadonlyArray<{
   key: keyof Omit<PlatformBillingState, 'gst_percent' | 'prices_include_gst'>;
   label: string;
-  placeholder?: string;
   description?: string;
   wide?: boolean;
 }> = [
-  { key: 'legal_name', label: 'Registered name', placeholder: 'MY PT STUDIO PRIVATE LIMITED', wide: true },
-  { key: 'gstin', label: 'GSTIN', placeholder: '27AAACM1234A1Z5' },
-  { key: 'pan', label: 'PAN', placeholder: 'AAACM1234A' },
+  { key: 'legal_name', label: 'Registered name', wide: true },
+  { key: 'gstin', label: 'GSTIN' },
+  { key: 'pan', label: 'PAN' },
   { key: 'address_line1', label: 'Address line 1', wide: true },
   { key: 'address_line2', label: 'Address line 2', wide: true },
   { key: 'city', label: 'City' },
   { key: 'state', label: 'State' },
   {
-    key: 'state_code', label: 'GST state code', placeholder: '27',
+    key: 'state_code', label: 'GST state code',
     description: 'Decides CGST+SGST vs IGST',
   },
   { key: 'postal_code', label: 'PIN' },
   { key: 'email', label: 'Billing email' },
   { key: 'phone', label: 'Phone' },
-  { key: 'invoice_prefix', label: 'Invoice prefix', placeholder: 'MPT' },
+  { key: 'invoice_prefix', label: 'Invoice prefix' },
   { key: 'invoice_notes', label: 'Invoice footer note', wide: true },
 ];
 

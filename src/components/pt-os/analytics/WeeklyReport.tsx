@@ -131,7 +131,6 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder="What you want them to take from this week…"
           className="min-h-[66px]"
         />
       </FormField>

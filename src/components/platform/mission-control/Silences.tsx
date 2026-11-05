@@ -172,7 +172,6 @@ export const Silences: React.FC<{ cards: string[] }> = ({ cards }) => {
                 required
                 minLength={3}
                 maxLength={200}
-                placeholder="Redis upgrade, expected restart"
                 className="h-10 rounded-[8px] px-2 text-[11.5px]"
                 style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
               />

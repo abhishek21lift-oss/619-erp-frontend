@@ -255,7 +255,7 @@ function AutoContent() {
               {(field) => (
                 <TextField
                   field={field} label="Rule name" required density="compact"
-                  placeholder="e.g. Welcome Message" maxLength={120}
+                  maxLength={120}
                   serverError={f.errors.fieldErrors.name}
                 />
               )}
@@ -301,7 +301,6 @@ function AutoContent() {
                 <TextAreaField
                   field={field} label="Message" required density="compact" rows={3}
                   maxLength={TEMPLATE_MAX_LENGTH} showCount
-                  placeholder={`Hi {{name}}, …`}
                   description={
                     availableVars.length > 1
                       ? `Available for this trigger: ${availableVars.map(v => `{{${v}}}`).join(', ')}`
@@ -335,7 +334,6 @@ function AutoContent() {
                 <NumberField
                   field={field} label="Delay" required density="compact" mode="integer"
                   min={0} max={MAX_DELAY_MINUTES} suffix="min"
-                  placeholder="0"
                   description="0 sends immediately. A week is the most this can be held for."
                   serverError={f.errors.fieldErrors.delay_minutes}
                 />

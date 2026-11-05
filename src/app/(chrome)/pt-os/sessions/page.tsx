@@ -143,7 +143,6 @@ export default function PTSessionsPage() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" strokeWidth={1.5} />
             <input aria-label="Search by client name or mobile"
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by client name or mobile..."
               className="w-full h-11 rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-4 text-[13px] text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:border-[#A33757]/30 focus:shadow-[0_0_0_3px_rgba(163,55,87,0.06)]"
             />
           </div>

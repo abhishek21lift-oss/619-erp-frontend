@@ -182,7 +182,7 @@ export function StudiosTab() {
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-[160px] flex-1">
-          <SearchField label="Search studios" placeholder="Search studios…"
+          <SearchField label="Search studios"
             value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="relative shrink-0">
@@ -659,13 +659,11 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
             <TextInput
               type="text" inputMode="numeric"
               value={days} onChange={(e) => setDays(clampNumericText(e.target.value, 'integer'))}
-              placeholder="14"
             />
           </FormField>
           <FormField label="Reason" labelHidden className="min-w-[120px] flex-1">
             <TextInput
               value={reason} onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason (optional)"
             />
           </FormField>
           <button
@@ -690,7 +688,6 @@ export function StudioOperatorPanel({ org, onChanged }: { org: Organization; onC
           <TextArea
             value={notes}
             onChange={(e) => { setNotes(e.target.value); setDirty(true); }}
-            placeholder={notesLoaded ? 'Operator-only context — never shown to the studio.' : 'Loading…'}
             rows={3}
           />
         </FormField>
@@ -884,15 +881,15 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
 
   const set = (k: keyof OrgBillingProfile, v: string) => { setForm((f) => (f ? { ...f, [k]: v } : f)); setDirty(true); };
 
-  const FIELDS: { key: keyof OrgBillingProfile; label: string; placeholder?: string; wide?: boolean }[] = [
-    { key: 'billing_name', label: 'Registered name', placeholder: 'Iron House Fitness LLP', wide: true },
-    { key: 'billing_gstin', label: 'GSTIN', placeholder: '27AAAAA0000A1Z5' },
+  const FIELDS: { key: keyof OrgBillingProfile; label: string; wide?: boolean }[] = [
+    { key: 'billing_name', label: 'Registered name', wide: true },
+    { key: 'billing_gstin', label: 'GSTIN' },
     { key: 'billing_email', label: 'Billing email' },
     { key: 'billing_address_line1', label: 'Address line 1', wide: true },
     { key: 'billing_address_line2', label: 'Address line 2', wide: true },
     { key: 'billing_city', label: 'City' },
     { key: 'billing_state', label: 'State' },
-    { key: 'billing_state_code', label: 'GST state code', placeholder: '27' },
+    { key: 'billing_state_code', label: 'GST state code' },
     { key: 'billing_postal_code', label: 'PIN' },
   ];
 
@@ -916,7 +913,6 @@ export function BillingProfileEditor({ orgId }: { orgId: string }) {
                 <TextInput
                   value={(form?.[f.key] as string) ?? ''}
                   onChange={(e) => set(f.key, e.target.value)}
-                  placeholder={form ? f.placeholder : 'Loading…'}
                   disabled={!form}
                 />
               </FormField>

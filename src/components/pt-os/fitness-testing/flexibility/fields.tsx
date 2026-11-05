@@ -175,7 +175,6 @@ export function NotesField({ value, onChange }: { value: string; onChange: (v: s
       maxLength={2000}
       value={value}
       onChange={onChange}
-      placeholder="Anything that affects how this test should be read"
     />
   );
 }

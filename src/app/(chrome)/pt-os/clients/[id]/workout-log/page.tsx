@@ -618,7 +618,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               );
             })}
             <input aria-label="Or search exercise"
-              type="text" placeholder="Or search exercise…" value={chartSearch}
+              type="text" value={chartSearch}
               onChange={(e) => setChartSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && chartSearch.trim()) setChartExercise(chartSearch.trim()); }}
               className="rounded-full px-3 py-1.5 text-[11.5px] outline-none"
@@ -674,7 +674,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               <div className="relative min-w-[180px] flex-1">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
                 <input aria-label="Search by date, exercise, notes"
-                  type="text" placeholder="Search by date, exercise, notes…" value={search}
+                  type="text" value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full rounded-[11px] py-2.5 pl-8 pr-3 text-[12.5px] outline-none transition-colors focus:border-[#A33757]"
                   style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}

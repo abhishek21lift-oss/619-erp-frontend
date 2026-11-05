@@ -185,7 +185,6 @@ function ProgressRoster() {
               <input
                 aria-label="Search clients by name, email or mobile"
                 type="search"
-                placeholder="Search by name, email or mobile…"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
@@ -870,7 +869,7 @@ function CalendarSection({ clientId, data, reload }: { clientId: string; data: H
                 <DateFieldControl field={moveField} label="Move to" min={data.dashboard.today} />
               </div>
               <div>
-                <TextAreaField field={reasonField} label="Reason" rows={2} maxLength={500} placeholder="Travel, illness, schedule change…" />
+                <TextAreaField field={reasonField} label="Reason" rows={2} maxLength={500} />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">

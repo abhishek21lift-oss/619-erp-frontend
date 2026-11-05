@@ -571,7 +571,6 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
                     type="url"
                     required
                     autoComplete="url"
-                    placeholder="https://www.youtube.com/watch?v=…"
                     serverError={errors.fieldErrors.external_url}
                   />
                 )}
@@ -586,7 +585,6 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
                     label="Title (optional)"
                     maxLength={120}
                     showCount
-                    placeholder="12-week transformation"
                     serverError={errors.fieldErrors.title}
                   />
                 )}
@@ -599,7 +597,6 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
                     maxLength={400}
                     showCount
                     rows={2}
-                    placeholder="What this shows, and over what period"
                     serverError={errors.fieldErrors.caption}
                   />
                 )}

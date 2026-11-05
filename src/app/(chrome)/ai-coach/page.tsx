@@ -549,7 +549,6 @@ export default function AiCoachPage() {
                 }}
                 rows={1}
                 aria-label="Ask anything"
-                placeholder="Ask anything…"
                 className="flex-1 resize-none rounded-[14px] px-3.5 py-2.5 text-[13px] outline-none"
                 style={{
                   background: 'var(--bg-subtle)',
@@ -706,7 +705,6 @@ function ConversationRail(props: RailProps) {
           <input aria-label="Search chats"
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search chats"
             className="min-w-0 flex-1 bg-transparent text-[12px] outline-none"
             style={{ color: 'var(--text-primary)' }}
           />
@@ -892,7 +890,6 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
               autoFocus
               value={query}
               onChange={(e) => onQuery(e.target.value)}
-              placeholder="Search clients…"
               className="mb-1 w-full rounded-[9px] px-2.5 py-2 text-[12px] outline-none"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             />

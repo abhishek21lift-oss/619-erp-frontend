@@ -70,7 +70,6 @@ export type ChatThreadProps = {
   send: (body: string) => Promise<ChatMessage>;
   /** Shown when the thread is empty. */
   empty: React.ReactNode;
-  placeholder?: string;
   /** A note above the composer, e.g. "Ravi has no app login yet". */
   notice?: React.ReactNode;
   /** Height of whatever sits under the thread (a bottom tab bar). */
@@ -82,7 +81,7 @@ export type ChatThreadProps = {
 };
 
 export default function ChatThread({
-  me, initial, reload, send, empty, placeholder, notice, bottomOffset = '0px',
+  me, initial, reload, send, empty, notice, bottomOffset = '0px',
   accent = palette.blue[500], peer,
 }: ChatThreadProps) {
   const [messages, setMessages] = useState<Local[]>(initial);
@@ -222,7 +221,7 @@ export default function ChatThread({
 
       <AnimatePresence>{notice && <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{notice}</m.div>}</AnimatePresence>
       <div style={{ paddingBottom: bottomOffset }}>
-        <ChatComposer onSend={submit} placeholder={placeholder} accent={accent} />
+        <ChatComposer onSend={submit} accent={accent} />
       </div>
     </div>
   );

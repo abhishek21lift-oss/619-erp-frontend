@@ -30,7 +30,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowUp, ChevronLeft, Loader2, Mic, MicOff, Sparkles, Square, X,
 } from 'lucide-react';
-import { AI_INPUT_EXAMPLES, actionsForPath, resolveHref, type AiAction } from '@/lib/ai-actions';
+import { actionsForPath, resolveHref, type AiAction } from '@/lib/ai-actions';
 import { AiStreamError, streamAiChat } from '@/lib/ai-stream';
 import { useVoiceInput } from '@/lib/use-voice-input';
 import { api } from '@/lib/api';
@@ -67,7 +67,6 @@ export default function AiCommandCenter({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [recent, setRecent] = useState<AiConversation[]>([]);
-  const [exampleIdx, setExampleIdx] = useState(0);
   // The confirm flow. `plan` is what the operator is being asked to approve;
   // `result` is what actually happened. Both null = the normal grid.
   const [plan, setPlan] = useState<AiActionPlan | null>(null);
@@ -105,13 +104,6 @@ export default function AiCommandCenter({
       .catch(() => { /* history is a nicety; its absence is not an error */ });
     return () => { alive = false; };
   }, [open]);
-
-  /* ── Rotating placeholder ─────────────────────────────────────────── */
-  useEffect(() => {
-    if (!open || reducedMotion || answer !== null) return;
-    const t = setInterval(() => setExampleIdx((i) => (i + 1) % AI_INPUT_EXAMPLES.length), 3600);
-    return () => clearInterval(t);
-  }, [open, reducedMotion, answer]);
 
   /* ── Abandon an in-flight stream when the panel closes ────────────── */
   useEffect(() => {
@@ -331,7 +323,6 @@ export default function AiCommandCenter({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input); }
                   }}
-                  placeholder={voice.listening ? 'Listening…' : `Ask AI anything… ${AI_INPUT_EXAMPLES[exampleIdx]}`}
                   aria-label="Ask AI anything"
                   className="max-h-24 flex-1 resize-none bg-transparent py-1 text-[13px] font-[560] outline-none placeholder:text-[#94a3b8]"
                   style={{ color: '#0f172a' }}

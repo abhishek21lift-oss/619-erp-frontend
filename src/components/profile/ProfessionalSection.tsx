@@ -148,7 +148,6 @@ function GymRow({ gym, index, issues, onChange, onRemove }: {
             label="Gym or studio"
             density="compact"
             className="min-w-0 flex-1"
-            placeholder="Gym or studio"
             maxLength={PROFILE_LIMITS.gymName}
           />
           {current && gym.name && (
@@ -171,7 +170,7 @@ function GymRow({ gym, index, issues, onChange, onRemove }: {
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           <TextField
             field={role} label="Role" density="compact" className="sm:col-span-3"
-            placeholder="Head Coach" maxLength={PROFILE_LIMITS.role}
+            maxLength={PROFILE_LIMITS.role}
           />
           {/* Month inputs, not dates: nobody remembers the day they started a
               job, and a date field people fake to the 1st is worse than a
@@ -357,7 +356,6 @@ export function ProfessionalSection({
         field={designationField}
         label="Designation"
         density="compact"
-        placeholder="Head Coach"
         maxLength={PROFILE_LIMITS.designation}
       />
 

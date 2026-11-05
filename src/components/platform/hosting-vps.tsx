@@ -357,7 +357,6 @@ export function HostingVps({ virtualMachineId, onBack }: { virtualMachineId: num
                 value={templateId}
                 onChange={(e) => setTemplateId(e.target.value.replace(/[^0-9]/g, ''))}
                 inputMode="numeric"
-                placeholder="Template id"
                 aria-label="Template id"
                 className="mt-2"
               />
@@ -365,7 +364,6 @@ export function HostingVps({ virtualMachineId, onBack }: { virtualMachineId: num
                 type="password"
                 value={rootPassword}
                 onChange={(e) => setRootPassword(e.target.value)}
-                placeholder="Root password (optional)"
                 aria-label="Root password"
                 autoComplete="new-password"
                 className="mt-2"
@@ -374,7 +372,6 @@ export function HostingVps({ virtualMachineId, onBack }: { virtualMachineId: num
                 type="password"
                 value={panelPassword}
                 onChange={(e) => setPanelPassword(e.target.value)}
-                placeholder="Panel password (optional)"
                 aria-label="Panel password"
                 autoComplete="new-password"
                 className="mt-2"
@@ -403,7 +400,6 @@ export function HostingVps({ virtualMachineId, onBack }: { virtualMachineId: num
                 type="password"
                 value={recoveryPassword}
                 onChange={(e) => setRecoveryPassword(e.target.value)}
-                placeholder="Root password"
                 aria-label="Recovery root password"
                 autoComplete="new-password"
                 className="mt-2"

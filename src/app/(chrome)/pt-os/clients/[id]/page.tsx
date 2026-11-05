@@ -420,8 +420,7 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
         <div className="space-y-3">
           <FormField label="Coach notes" labelHidden>
             <TextArea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} autoFocus
-              className="resize-none text-[14px] leading-relaxed"
-              placeholder="Injuries, preferences, what worked last session…" />
+              className="resize-none text-[14px] leading-relaxed" />
           </FormField>
           <div className="flex gap-2">
             <button onClick={save} disabled={saving}

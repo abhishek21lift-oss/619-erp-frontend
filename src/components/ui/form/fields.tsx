@@ -69,7 +69,6 @@ export interface BoundFieldProps {
   required?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
-  placeholder?: string;
   /**
    * A server-side error for this field, from `useAppForm`'s `errors.fieldErrors`.
    *
@@ -164,7 +163,6 @@ export function TextField({
   required,
   disabled,
   readOnly,
-  placeholder,
   serverError,
   className,
   reserveMessageSpace,
@@ -213,7 +211,6 @@ export function TextField({
           name={field.name}
           type={type}
           value={value}
-          placeholder={placeholder}
           autoComplete={autoComplete}
           className={trailing ? 'pr-11' : undefined}
           // No `maxLength` on the element even when one is declared: a hard cap
@@ -244,7 +241,6 @@ export function TextAreaField({
   required,
   disabled,
   readOnly,
-  placeholder,
   serverError,
   className,
   reserveMessageSpace,
@@ -286,7 +282,6 @@ export function TextAreaField({
         name={field.name}
         rows={rows}
         value={value}
-        placeholder={placeholder}
         onChange={(e) => field.handleChange(e.target.value)}
         onBlur={field.handleBlur}
       />
@@ -327,7 +322,6 @@ export function NumberField({
   required,
   disabled,
   readOnly,
-  placeholder,
   serverError,
   className,
   reserveMessageSpace,
@@ -366,7 +360,6 @@ export function NumberField({
           type="text"
           inputMode={inputMode}
           value={field.state.value ?? ''}
-          placeholder={placeholder}
           min={min}
           max={max}
           step={step}
@@ -410,8 +403,6 @@ export interface SelectFieldProps<T extends string = string> extends BoundFieldP
    */
   field: FieldLike<T>;
   options: ReadonlyArray<SelectOption & { value: T }> | ReadonlyArray<SelectOption>;
-  /** Shown as a disabled first option when the field has no value yet. */
-  placeholderOption?: string;
 }
 
 export function SelectField<T extends string = string>({
@@ -427,7 +418,6 @@ export function SelectField<T extends string = string>({
   labelHidden,
   density,
   options,
-  placeholderOption,
 }: SelectFieldProps<T>) {
   const error = visibleError(field, serverError);
 
@@ -455,11 +445,7 @@ export function SelectField<T extends string = string>({
         onChange={(e) => field.handleChange(e.target.value as T)}
         onBlur={field.handleBlur}
       >
-        {placeholderOption && (
-          <option value="" disabled>
-            {placeholderOption}
-          </option>
-        )}
+        {!options.some((o) => o.value === '') && <option value="" disabled />}
         {options.map((o) => (
           <option key={o.value} value={o.value} disabled={o.disabled}>
             {o.label}
@@ -816,7 +802,6 @@ export function MonthFieldControl({
         value={field.state.value ?? ''}
         min={min}
         max={max}
-        placeholder="YYYY-MM"
         onChange={(e) => field.handleChange(e.target.value)}
         onBlur={field.handleBlur}
       />

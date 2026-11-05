@@ -118,7 +118,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Expiry Date" type="date" value={mc.expiry_date} onChange={(v) => setMc('expiry_date', v)} />
-          <FloatInput label="Certificate URL" maxLength={1000} value={mc.certificate_url} onChange={(v) => setMc('certificate_url', v)} placeholder="Auto-filled after upload, or paste a link" />
+          <FloatInput label="Certificate URL" maxLength={1000} value={mc.certificate_url} onChange={(v) => setMc('certificate_url', v)} />
         </div>
 
         <div>

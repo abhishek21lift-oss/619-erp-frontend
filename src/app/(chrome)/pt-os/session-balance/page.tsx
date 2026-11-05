@@ -119,7 +119,6 @@ function SessionBalanceInner() {
                     field={field}
                     label="Client"
                     required
-                    placeholderOption="Select client..."
                     options={(clients.data ?? []).map(c => ({ value: c.id, label: c.name }))}
                     serverError={f.errors.fieldErrors.client_id}
                   />
@@ -131,12 +130,9 @@ function SessionBalanceInner() {
                     serverError={f.errors.fieldErrors.total_sessions} />
                 )}
               </form.Field>
-              {/* The example survives as a placeholder because that is what it
-                  always was — a format, not the field's name. */}
               <form.Field name="package_name">
                 {(field) => (
                   <TextField field={field} label="Package name"
-                    placeholder="e.g. 12 PT Sessions"
                     serverError={f.errors.fieldErrors.package_name} />
                 )}
               </form.Field>

@@ -378,7 +378,6 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
                   <input aria-label="Search payments"
                     type="text"
-                    placeholder="Search payments..."
                     value={searchTerm}
                     onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
                     className="w-48 pl-8 pr-3 py-1.5 rounded-[8px] text-[12px] outline-none transition-all"
@@ -817,7 +816,6 @@ function RecordPaymentSheet({
                         <TextField
                           field={field}
                           label="Reference"
-                          placeholder="TXN / UTR"
                           maxLength={64}
                           serverError={f.errors.fieldErrors.payment_ref}
                         />

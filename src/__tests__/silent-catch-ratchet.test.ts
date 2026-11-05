@@ -99,7 +99,7 @@ const KNOWN = [
   // remote-screening card added one import, and the chart import was split
   // off the ui barrel. The entry itself is unchanged — still one silent
   // catch, still the same statement.
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:607',
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:606',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:170',
   'app/(chrome)/pt-os/diet-plans/page.tsx:187',
   'app/(chrome)/pt-os/diet-plans/page.tsx:188',
@@ -124,10 +124,10 @@ const KNOWN = [
   // five lines above each site, then the side-tab stripe removal deleted a
   // three-line comment-plus-property above them. File set and per-file count
   // unchanged — line numbers only.
-  'app/(chrome)/settings/profile/page.tsx:1865',
-  'app/(chrome)/settings/profile/page.tsx:2157',
-  'app/(chrome)/settings/profile/page.tsx:953',
-  'app/(chrome)/settings/profile/page.tsx:954',
+  'app/(chrome)/settings/profile/page.tsx:1861',
+  'app/(chrome)/settings/profile/page.tsx:2153',
+  'app/(chrome)/settings/profile/page.tsx:949',
+  'app/(chrome)/settings/profile/page.tsx:950',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
@@ -149,7 +149,7 @@ const KNOWN = [
   // says it fell back to "the API revision this console was built against".
   // A general outage still surfaces — `hostingerStatus()`/`hostingerVps()` in
   // the same Promise.all rejects into the screen's error state and retry.
-  'components/platform/hosting-centre.tsx:681',
+  'components/platform/hosting-centre.tsx:679',
   'components/platform/hosting-vps.tsx:75',
   'components/pt-os/builder/NewProgrammeForm.tsx:135',
   'components/pt-os/builder/NewProgrammeForm.tsx:138',

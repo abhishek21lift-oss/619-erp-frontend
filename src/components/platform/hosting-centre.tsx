@@ -203,7 +203,6 @@ function CredentialCard({ status, onChanged }: { status: HostingerStatus; onChan
               type="password"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              placeholder="Paste the token from hPanel → Account → API"
               aria-label="Hostinger API token"
               autoComplete="new-password"
               spellCheck={false}
@@ -212,7 +211,6 @@ function CredentialCard({ status, onChanged }: { status: HostingerStatus; onChan
             <TextInput
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="Label (optional) — what this token is for"
               aria-label="Credential label"
             />
           </div>

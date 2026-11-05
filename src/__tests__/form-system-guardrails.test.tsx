@@ -20,7 +20,7 @@ function sources(dir = SRC, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) sources(p, out); continue; }
-    if (/\.tsx$/.test(e.name)) out.push(p);
+    if (/\.(tsx|ts)$/.test(e.name)) out.push(p);
   }
   return out;
 }
@@ -565,5 +565,23 @@ describe('FloatInput — the same contract, on the component 43 files use', () =
       }
     }
     expect(bad, `FloatInput with label="" and no ariaLabel:\n${bad.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('no instructional placeholder text', () => {
+  it('leaves only the neutral empty marker and unit cue', () => {
+    const offenders: string[] = [];
+    const allowed = /placeholder="(—|kg)"/;
+    for (const f of sources()) {
+      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+        if (/\bplaceholder=/.test(line) && !allowed.test(line)) {
+          offenders.push(`${rel(f)}:${i + 1}`);
+        }
+        if (/\bplaceholderOption=/.test(line) || /\bplaceholder\s*:\s*['"`]/.test(line)) {
+          offenders.push(`${rel(f)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders).toEqual([]);
   });
 });

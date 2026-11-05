@@ -214,7 +214,6 @@ function Thread({ id, onBack, onChanged }: { id: string; onBack: () => void; onC
             >
               <TextArea
                 value={body} onChange={(e) => setBody(e.target.value)} rows={3}
-                placeholder={internal ? 'A note for other operators…' : 'Reply to the studio…'}
                 className="rounded-[10px] px-2.5 py-2 text-[12.5px]"
                 style={internal
                   ? { background: 'rgba(245,158,11,0.06)', border: '1px dashed rgba(245,158,11,0.5)', color: 'var(--text-primary)' }

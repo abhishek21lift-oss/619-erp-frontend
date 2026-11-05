@@ -327,11 +327,11 @@ function NewGoalSheet({ initialKind, exercises, onClose, onCreated }: {
           {kind === 'lift' && (
             <form.Field name="exercise">
               {(field) => (exercises.length > 0 ? (
-                <SelectField field={field} label="Exercise" placeholderOption="Choose a lift"
+                <SelectField field={field} label="Exercise"
                   options={exercises.map((x) => ({ value: x, label: x }))}
                   serverError={f.errors.fieldErrors.exercise} />
               ) : (
-                <TextField field={field} label="Exercise" placeholder="e.g. Back squat" maxLength={120}
+                <TextField field={field} label="Exercise" maxLength={120}
                   serverError={f.errors.fieldErrors.exercise} />
               ))}
             </form.Field>
@@ -341,7 +341,6 @@ function NewGoalSheet({ initialKind, exercises, onClose, onCreated }: {
             {(field) => (
               <NumberField field={field} label="Target"
                 mode={kind === 'sessions' ? 'integer' : 'decimal'} suffix={kind === 'sessions' ? 'sessions' : 'kg'}
-                placeholder={kind === 'sessions' ? 'e.g. 20' : kind === 'lift' ? 'e.g. 100' : 'e.g. 72'}
                 serverError={f.errors.fieldErrors.target} />
             )}
           </form.Field>

@@ -310,7 +310,7 @@ export default function SecurityCentre() {
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input
             value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Email, IP or studio…" aria-label="Search sign-in attempts"
+            aria-label="Search sign-in attempts"
             className="h-10 w-full rounded-[11px] pl-9 pr-3 text-[12.5px] outline-none" style={inputStyle}
           />
         </div>

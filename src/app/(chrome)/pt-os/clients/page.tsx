@@ -323,7 +323,7 @@ export default function PtClientsPage() {
                 <div className="relative w-full sm:min-w-[220px] sm:max-w-md sm:flex-1">
                   <Search size={16} aria-hidden className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                   <input aria-label="Search clients or trainers"
-                    type="search" placeholder="Search clients or trainers…"
+                    type="search"
                     value={search} onChange={e => setSearch(e.target.value)}
                     className="h-11 w-full rounded-[13px] pl-10 pr-4 text-[13.5px] font-[500] text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
                     style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}

@@ -93,7 +93,6 @@ function MessagesBody() {
         initial={thread.messages}
         reload={reload}
         send={send}
-        placeholder={`Message ${who.split(' ')[0]}…`}
         empty={
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
             <span className="mb-3 grid h-12 w-12 place-items-center rounded-full"
