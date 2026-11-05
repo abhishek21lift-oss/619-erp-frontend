@@ -1,8 +1,9 @@
-// The cockpit's section order, and what survives when the roster sweep fails.
+// The cockpit's chapter order, and what survives when the roster sweep fails.
 //
-// Order is the design: the day's schedule, then the one thing to do, then the
-// rest of the board, then who to call, then money. A reorder here is a product
-// decision, so it is pinned in one place rather than inferred from source.
+// Order is the design: Today (schedule, the one thing to do, the board), then
+// Money (the month's target and what it earned), then People (the numbers,
+// who to call, the radar). A reorder here is a product decision, so it is
+// pinned in one place rather than inferred from source.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
@@ -61,17 +62,17 @@ describe('cockpit section order', () => {
     signalsMock.mockResolvedValue({ data: SWEEP });
   });
 
-  it('orders the day: schedule, next action, board, who to call, money', async () => {
+  it('orders the chapters: today, money, people', async () => {
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
     await assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
       'AI Coach',
+      'Money',
+      'Key Metrics',
       'Who to call',
       'Progress Radar',
-      'This Month',
-      'Key Metrics',
     ]);
   }, 30_000);
 
