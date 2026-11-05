@@ -78,11 +78,14 @@ export default function LeadFollowupAction() {
 
   return (
     <>
+      {/* The hero is a dark slab, so this trigger is a glass pill, not the
+          rose-on-white ghost it was: `#852E4E` on navy is unreadable. Kept at
+          44px because it is a real touch target, not a hero ornament. */}
       <button
         type="button"
         onClick={() => void propose()}
-        className="inline-flex h-[44px] items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95"
-        style={{ background: 'rgba(163,55,87,0.10)', color: '#852E4E', border: '1px solid rgba(163,55,87,0.22)' }}
+        className="inline-flex h-[44px] items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] text-white transition-transform hover:bg-white/20 active:scale-95"
+        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)' }}
       >
         <Sparkles size={15} /> Draft follow-ups
       </button>

@@ -1,6 +1,6 @@
 /**
- * The trainer app's page accents — one two-stop gradient per section, painted
- * on the shared PageHero.
+ * The trainer app's page tints — one light per section, painted on the shared
+ * PageHero's dark slab.
  *
  * The five palette families still carry every STATE (blue action, emerald
  * success, amber warning, red failure, gray neutral); these hues are page
@@ -8,25 +8,25 @@
  * attendance mesh: its own token file, exempt from the palette scan by
  * path, and confined to PageHero by palette.test.ts.
  *
- * Every `to` stop clears 4:1 against white, so the 12.5px subtitle stays
- * readable across the whole gradient in either theme.
+ * ── What changed, and why it is not a `to` stop any more ───────────────────
  *
- * `brand` is the house rose. PageHero keeps its own literal for the default
- * (client-profile-premium.test.ts pins it); this entry exists so callers can
- * name it without special-casing.
+ * These used to be two-stop gradients painted as full bands. The hero is now
+ * a dark surface lit from above, so a saturated band behind white text would
+ * sit on top of it as a second, brighter object. An accent is a LIGHT here:
+ * `spot` is the translucent colour of the hero's spotlight, `glow` is the
+ * coloured shadow the card casts. Its alpha is already baked in, so the value
+ * drops straight into an `rgba` position — no `color-mix`, which older Safari
+ * cannot parse and would drop the whole background declaration over.
+ *
+ * `brand` is the house rose. The default hero (no accent) uses the hero's own
+ * amber spotlight; naming `brand` asks for the rose light instead.
  */
 export type PageAccent = 'brand' | 'amber' | 'indigo' | 'red' | 'teal';
 
-export const PAGE_ACCENTS: Record<PageAccent, { from: string; to: string; shadow: string }> = {
-  brand:  { from: '#6B2440', to: '#A33757', shadow: 'rgba(107,36,64,0.55)' },
-  amber:  { from: '#B45309', to: '#92400E', shadow: 'rgba(180,83,9,0.5)' },
-  indigo: { from: '#4338CA', to: '#6D28D9', shadow: 'rgba(67,56,202,0.5)' },
-  red:    { from: '#B91C1C', to: '#9F1239', shadow: 'rgba(185,28,28,0.5)' },
-  teal:   { from: '#0F766E', to: '#0E7490', shadow: 'rgba(15,118,110,0.5)' },
+export const PAGE_ACCENTS: Record<PageAccent, { spot: string; glow: string }> = {
+  brand:  { spot: 'rgba(220,88,109,0.55)', glow: 'rgba(220,88,109,0.28)' },
+  amber:  { spot: 'rgba(232,140,18,0.58)', glow: 'rgba(217,119,6,0.30)' },
+  indigo: { spot: 'rgba(129,140,248,0.52)', glow: 'rgba(99,102,241,0.28)' },
+  red:    { spot: 'rgba(248,113,113,0.50)', glow: 'rgba(220,38,38,0.28)' },
+  teal:   { spot: 'rgba(45,212,191,0.44)', glow: 'rgba(20,184,166,0.26)' },
 };
-
-/** `linear-gradient` for a page hero in an accent's colours. */
-export function pageGradient(a: PageAccent): string {
-  const { from, to } = PAGE_ACCENTS[a];
-  return `linear-gradient(135deg, ${from}, ${to})`;
-}

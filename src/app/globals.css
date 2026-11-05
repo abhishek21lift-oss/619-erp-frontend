@@ -2355,3 +2355,110 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 @media (prefers-reduced-motion: reduce) {
   .cc-rise, .cc-grow, .cc-draw { animation: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   HERO DECORATION  —  the shared arrival slab's non-colour layers
+
+   PageHero, the studio dashboard and the client profile paint the same hero.
+   These layers are identical on all three and carry no brand colour, so they
+   live here instead of three times inline; the paint itself is in
+   components/ui/heroTheme.ts.
+
+   The bevel is a 1px gradient ring — bright along the top edge, dark along
+   the bottom. It has to be a mask rather than a border, because a border
+   cannot be lit on one edge and unlit on the other. `border-radius: inherit`
+   keeps it on the card's own corner, and the padding is the ring's width.
+   ════════════════════════════════════════════════════════════════════ */
+.hero-bevel {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.12) 18%, rgba(0,0,0,0.60) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* Film grain. The single biggest cue that separates a lit surface from a flat
+   div; overlay-blended so it lifts the dark base instead of greying it. It
+   needs an isolated parent (`isolate`) or it blends with the page behind. */
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.17;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* The glassy sweep coming in from the top-left corner. Kept faint: it is a
+   reflection on the surface, not a second light source. */
+.hero-spec {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background: linear-gradient(115deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 14%, transparent 32%, transparent 74%, rgba(255,255,255,0.04) 100%);
+}
+
+/* Darkens the corners so the middle reads as the lit part of the surface. */
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(105% 100% at 50% 34%, transparent 34%, rgba(1,3,8,0.82) 100%);
+}
+
+/* The top and bottom hairlines. Warm at the top, warm-into-cool at the
+   bottom, where the two rim lights meet. */
+.hero-hair-t {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,240,212,0.70), transparent);
+}
+.hero-hair-b {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(244,214,176,0.60), rgba(91,192,222,0.35), transparent);
+}
+
+/* A page icon's plate: a lit glass tile rather than a flat tinted square.
+   Its gradient is glass, not brand, so it stays neutral on every accent. */
+.hero-tile {
+  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+  border: 1px solid rgba(255,255,255,0.20);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), 0 10px 22px -10px rgba(0,0,0,0.85);
+  backdrop-filter: blur(6px);
+}
+
+/* The gold coin the dashboard crest sits on. Its gradient is a brand object,
+   so it comes from heroTheme; this is the depth around it. */
+.hero-coin {
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(255,246,228,0.60),
+    0 0 26px 6px rgba(217,119,6,0.22),
+    0 14px 28px -8px rgba(0,0,0,0.90),
+    0 3px 8px rgba(0,0,0,0.60),
+    inset 0 2px 2px rgba(255,255,255,0.80),
+    inset 0 -4px 9px rgba(70,40,12,0.80);
+}
+.hero-coin::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -2px 4px rgba(60,34,10,0.55);
+}

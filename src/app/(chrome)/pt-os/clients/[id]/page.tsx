@@ -691,17 +691,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             <>
               {/* ── HERO ──
                   Who this is, how they stand, and the one action that edits
-                  them. The paint is the house hero — the same navy gradient,
-                  gold and blue light, grid and vignette the dashboard and
-                  every other PageHero page open on — so the page a coach
-                  opens most is not the one that looks like a foreign site.
-                  The light is the house's own too: two blurred discs, behind
-                  the content and inside the hero's overflow-hidden, which is
-                  what keeps a blur from escaping the rounded corner. */}
+                  them. The paint is the house hero — the same lit slab, bevel,
+                  grain and vignette the dashboard and every other PageHero
+                  page open on — so the page a coach opens most is not the one
+                  that looks like a foreign site. The paint itself is imported
+                  from heroTheme, so this file cannot drift from the others. */}
               <m.section
                 initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="relative mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
+                className="relative isolate mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
                 style={{
                   background: `${auroraHero.crown}, ${auroraHero.base}`,
                   boxShadow: auroraHero.shadow,
@@ -709,22 +707,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               >
                 {/* Decoration behind the content, matching the house hero. */}
                 <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-                  {/* The house's two lights, blurred behind the content. */}
-                  <div className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
-                    style={{ background: `radial-gradient(circle, ${auroraHero.glowWarm} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
-                  <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-                    style={{ background: `radial-gradient(circle, ${auroraHero.glowCool} 0%, transparent 70%)`, filter: 'blur(54px)' }} />
-                  <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="cp-grid" width="34" height="34" patternUnits="userSpaceOnUse">
-                        <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#cp-grid)" />
-                  </svg>
-                  <div className="absolute inset-0"
-                    style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
+                  <span className="hero-spec" />
+                  <span className="hero-vignette" />
+                  <span className="hero-grain" />
                 </div>
+                <span aria-hidden className="hero-hair-t" />
+                <span aria-hidden className="hero-hair-b" />
+                <span aria-hidden className="hero-bevel" />
 
                 <div className="relative z-10">
                 <div className="flex items-start gap-4 sm:gap-6">
