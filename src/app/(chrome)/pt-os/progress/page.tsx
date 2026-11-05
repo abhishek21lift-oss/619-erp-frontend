@@ -24,7 +24,7 @@ import {
   Button, Card, EmptyState, PageContainer, PageHero, Skeleton,
 } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
-import { indigo, emerald, gray } from '@/lib/palette';
+import { indigo, emerald } from '@/lib/palette';
 import { DateFieldControl, SelectField, TextAreaField, useStandaloneField } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type {
@@ -45,6 +45,22 @@ const SECTIONS: { key: SectionKey; label: string; icon: LucideIcon }[] = [
   { key: 'analytics', label: 'Habit Analytics', icon: Activity },
   { key: 'insights', label: 'Insights & Alerts', icon: Sparkles },
 ];
+
+/**
+ * One hue per section, used as decoration on its tab. `ink` is the readable
+ * tone for the icon on a light track; every active gradient is dark enough
+ * that white label text clears AA. No semantic colour is borrowed to mean
+ * "this is a tab" — a status stays a status in the panels below.
+ */
+const SECTION_TONE: Record<SectionKey, { from: string; to: string; ink: string }> = {
+  overview: { from: '#A33757', to: '#852E4E', ink: '#A33757' },
+  history: { from: '#B45309', to: '#92400E', ink: '#B45309' },
+  comparison: { from: '#047857', to: '#065F46', ink: '#047857' },
+  calendar: { from: '#117A6A', to: '#0D5C50', ink: '#117A6A' },
+  journal: { from: '#B8521A', to: '#8C3E14', ink: '#B8521A' },
+  analytics: { from: '#852E4E', to: '#6B2440', ink: '#A33757' },
+  insights: { from: '#475569', to: '#334155', ink: '#475569' },
+};
 
 export default function TrainerProgressPage() {
   return (
@@ -113,11 +129,12 @@ function ProgressRoster() {
   return (
     <PageContainer>
       <PageHero
+        compact
         title="Progress Hub"
         subtitle={data
           ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
           : 'Re-tests, daily habits and seven-domain change across every client.'}
-        icon={<LineChart size={20} />}
+        icon={<LineChart size={18} />}
         actions={(
           <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
             {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
@@ -127,7 +144,7 @@ function ProgressRoster() {
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <Stat label="Overdue" value={String(counts?.overdue ?? '—')} hint="Needs a decision"
-          tone={counts?.overdue ? 'warn' : 'neutral'} />
+          tone={counts?.overdue ? 'danger' : 'neutral'} />
         <Stat label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
           tone={counts?.due ? 'warn' : 'neutral'} />
         <Stat label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
@@ -137,7 +154,8 @@ function ProgressRoster() {
           hint="Not scheduled / no baseline" tone="neutral" />
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 rounded-[22px] p-3.5"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input
@@ -150,7 +168,8 @@ function ProgressRoster() {
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by re-test state">
+        <div className="flex flex-wrap gap-1 rounded-[14px] p-1" role="group" aria-label="Filter by re-test state"
+          style={{ background: 'var(--bg-subtle)' }}>
           {ROSTER_FILTERS.map((f) => {
             const active = status === f.key;
             const count = counts
@@ -159,10 +178,10 @@ function ProgressRoster() {
             return (
               <button key={f.key} type="button" aria-pressed={active}
                 onClick={() => { setStatus(f.key); setPage(1); }}
-                className="rounded-full px-3 py-1.5 text-[11px] font-[750] transition-colors"
+                className="min-h-10 rounded-[10px] px-3 py-1.5 text-[11px] font-[750] transition-all"
                 style={active
-                  ? { background: 'var(--brand)', color: '#fff' }
-                  : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                  ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
+                  : { color: 'var(--text-muted)' }}>
                 {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
               </button>
             );
@@ -200,12 +219,16 @@ function ProgressRoster() {
             <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
               {data.clients.map((c) => (
                 <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
-                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
-                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                  className="group flex w-full items-center gap-3 rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_10px_24px_-14px_rgba(15,23,42,0.28)]"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    boxShadow: `var(--shadow-card), inset 3px 0 0 ${STATE_EDGE[c.state.state] ?? '#64748B'}`,
+                  }}>
                   <ClientAvatar name={c.name} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-[13.5px] font-[720]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                      <span className="truncate text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
                       <StatePill state={c.state.state} />
                     </div>
                     <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
@@ -216,7 +239,7 @@ function ProgressRoster() {
                     </p>
                   </div>
                   <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
-                    style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? '#b45309' : 'var(--text-muted)' }}>
+                    style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? 'var(--warning-text)' : 'var(--text-muted)' }}>
                     {c.trainer_name || 'Unassigned'}
                   </span>
                   <ArrowRight size={14} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100"
@@ -298,7 +321,7 @@ function ProgressHub({ clientId }: { clientId: string }) {
   if (failed && !data) {
     return (
       <PageContainer>
-        <PageHero title="Progress Hub" icon={<LineChart size={20} />}
+        <PageHero compact title="Progress Hub" icon={<LineChart size={18} />}
           actions={<Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>} />
         <EmptyState icon={<AlertCircle size={20} />} title="Could not load progress" description={failed}
           action={<Button variant="outline" onClick={() => void load()}>Try again</Button>} />
@@ -310,9 +333,10 @@ function ProgressHub({ clientId }: { clientId: string }) {
   return (
     <PageContainer>
       <PageHero
+        compact
         title="Progress Hub"
         subtitle={`${data.dashboard.period.start_date} to ${data.dashboard.period.end_date} · studio time ${data.dashboard.timezone}`}
-        icon={<LineChart size={20} />}
+        icon={<LineChart size={18} />}
         actions={(
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
@@ -328,7 +352,8 @@ function ProgressHub({ clientId }: { clientId: string }) {
               printed again in the panels below (Data quality, Assessment
               history) and cost ~28px each above the first panel on a phone. */}
           {data.overview.state.state === 'missing_baseline' && (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-[700] text-white/80">
+            <span className="rounded-full px-3 py-1 text-[11px] font-[700]"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
               No baseline — start with the seven-step assessment
             </span>
           )}
@@ -348,15 +373,16 @@ function ProgressHub({ clientId }: { clientId: string }) {
           {SECTIONS.map((s) => {
             const Icon = s.icon;
             const active = tab === s.key;
+            const tone = SECTION_TONE[s.key];
             return (
               <button key={s.key} role="tab" aria-selected={active}
                 onClick={() => setTab(s.key)}
-                className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[720] transition-all"
+                className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[750] transition-all"
                 style={active ? {
-                  background: `linear-gradient(135deg,${indigo[500]},${indigo[700]})`, color: '#fff',
-                  boxShadow: '0 6px 18px rgba(163,55,87,0.28)',
+                  background: `linear-gradient(135deg,${tone.from},${tone.to})`, color: '#fff',
+                  boxShadow: `0 6px 16px -8px ${tone.to}, inset 0 1px 0 rgba(255,255,255,0.22)`,
                 } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                <Icon size={14} /> {s.label}
+                <Icon size={14} style={{ color: active ? '#fff' : tone.ink }} /> {s.label}
               </button>
             );
           })}
@@ -379,12 +405,12 @@ function ProgressHub({ clientId }: { clientId: string }) {
 function LoadingShell() {
   return (
     <PageContainer>
-      <Skeleton className="h-[148px] w-full rounded-[24px]" />
-      <Skeleton className="h-11 w-full rounded-[12px]" />
+      <Skeleton className="h-[64px] w-full rounded-[16px]" />
+      <Skeleton className="h-10 w-full rounded-[12px]" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-[18px]" />)}
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[104px] rounded-[18px]" />)}
       </div>
-      <Skeleton className="h-64 w-full rounded-[18px]" />
+      <Skeleton className="h-56 w-full rounded-[22px]" />
     </PageContainer>
   );
 }
@@ -396,7 +422,7 @@ function Panel({ title, subtitle, children, action }: {
     <Card className="p-0">
       <div className="flex flex-wrap items-start justify-between gap-2 border-b px-4 py-3.5" style={{ borderColor: 'var(--border)' }}>
         <div>
-          <h2 className="text-[14px] font-[790]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+          <h2 className="text-[14px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
           {subtitle && <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
         </div>
         {action}
@@ -406,15 +432,29 @@ function Panel({ title, subtitle, children, action }: {
   );
 }
 
+const STAT_TONE: Record<'brand' | 'success' | 'warn' | 'danger' | 'neutral', { from: string; to: string; value: string }> = {
+  brand: { from: '#A33757', to: '#852E4E', value: 'var(--brand)' },
+  success: { from: '#10B981', to: '#047857', value: 'var(--success-text)' },
+  warn: { from: '#F59E0B', to: '#B45309', value: 'var(--warning-text)' },
+  danger: { from: '#EF4444', to: '#B91C1C', value: 'var(--danger-text)' },
+  neutral: { from: '#94A3B8', to: '#475569', value: 'var(--text-primary)' },
+};
+
 function Stat({ label, value, hint, tone = 'brand' }: {
-  label: string; value: string; hint?: string; tone?: 'brand' | 'success' | 'warn' | 'neutral';
+  label: string; value: string; hint?: string; tone?: 'brand' | 'success' | 'warn' | 'danger' | 'neutral';
 }) {
-  const color = tone === 'success' ? 'var(--success)' : tone === 'warn' ? '#d97706' : tone === 'neutral' ? 'var(--text-primary)' : 'var(--brand)';
+  const t = STAT_TONE[tone];
   return (
-    <div className="rounded-[16px] px-3.5 py-3"
-      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+    <div className="relative overflow-hidden rounded-[18px] px-3.5 py-3"
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        boxShadow: `0 1px 2px rgba(15,23,42,0.04), 0 10px 22px -18px ${t.to}`,
+      }}>
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: `linear-gradient(90deg,${t.from},${t.to})` }} />
       <p className="text-[10.5px] font-[760] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <p className="mt-1 text-[20px] font-[850] tracking-[-0.03em] tabular-nums" style={{ color }}>{value}</p>
+      <p className="mt-1 text-[20px] font-[850] tracking-[-0.03em] tabular-nums" style={{ color: t.value }}>{value}</p>
       {hint && <p className="mt-0.5 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{hint}</p>}
     </div>
   );
@@ -449,6 +489,17 @@ const STATE_STYLE: Record<string, { bg: string; color: string; label: string }> 
   completed: { bg: 'rgba(16,185,129,0.12)', color: '#047857', label: 'Completed' },
 };
 
+/** The left edge of a roster row names the state before any text is read. */
+const STATE_EDGE: Record<string, string> = {
+  missing_baseline: '#EF4444',
+  overdue: '#EF4444',
+  due: '#F59E0B',
+  not_scheduled: '#64748B',
+  upcoming: '#A33757',
+  rescheduled: '#A33757',
+  completed: '#10B981',
+};
+
 function StatePill({ state }: { state: string }) {
   const s = STATE_STYLE[state] || STATE_STYLE.not_scheduled;
   return (
@@ -472,9 +523,9 @@ function OverviewSection({ data, days, setDays }: {
     <div className="space-y-3.5">
       <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
         <div className="relative overflow-hidden rounded-[22px] p-5 text-white"
-          style={{ background: `radial-gradient(120% 160% at 10% 0%, ${indigo[700]} 0%, transparent 55%), linear-gradient(145deg,${gray[900]} 0%,${indigo[900]} 55%,${gray[900]} 100%)`, boxShadow: '0 18px 44px -20px rgba(15,23,42,0.7)' }}>
+          style={{ background: 'linear-gradient(135deg,#6B2440 0%,#A33757 55%,#852E4E 100%)', boxShadow: '0 18px 44px -22px rgba(107,36,64,0.85), inset 0 1px 0 rgba(255,255,255,0.14)' }}>
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full"
-            style={{ background: 'radial-gradient(circle,rgba(252,211,77,0.28),transparent 70%)', filter: 'blur(26px)' }} />
+            style={{ background: 'radial-gradient(circle,rgba(255,187,148,0.42),transparent 70%)', filter: 'blur(26px)' }} />
           <div className="relative flex items-start justify-between gap-3">
             <div>
               <p className="text-[10.5px] font-[760] uppercase tracking-[0.12em] text-white/50">Next fitness re-test</p>
@@ -487,7 +538,9 @@ function OverviewSection({ data, days, setDays }: {
                   : overview.prompt || 'Create the next test from the latest assessment.'}
               </p>
             </div>
-            <StatePill state={overview.state.state} />
+            <span className="shrink-0 rounded-full bg-white/90 p-0.5">
+              <StatePill state={overview.state.state} />
+            </span>
           </div>
           {schedule?.next_reminder && (
             <p className="relative mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-[650] text-white/75">

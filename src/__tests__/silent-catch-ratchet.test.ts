@@ -100,7 +100,7 @@ const KNOWN = [
   // off the ui barrel. The entry itself is unchanged — still one silent
   // catch, still the same statement.
   'app/(chrome)/pt-os/clients/[id]/page.tsx:607',
-  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:129',
+  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:170',
   'app/(chrome)/pt-os/diet-plans/page.tsx:187',
   'app/(chrome)/pt-os/diet-plans/page.tsx:188',
   'app/(chrome)/pt-os/diet-plans/page.tsx:189',
