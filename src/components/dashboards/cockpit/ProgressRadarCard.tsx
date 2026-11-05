@@ -82,9 +82,6 @@ export default function ProgressRadarCard() {
           <h3 className="text-[15px] font-[800] tracking-[-0.015em] sm:text-[16px]" style={{ color: 'var(--text-primary)' }}>
             Progress Radar
           </h3>
-          <p className="text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-            The latest measured test across the roster
-          </p>
         </div>
       </div>
 
@@ -97,9 +94,6 @@ export default function ProgressRadarCard() {
       ) : (
         <div className="mt-3">
           <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>No fitness tests yet</p>
-          <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-            The first assessment puts a baseline on this radar — six categories, measured, not guessed.
-          </p>
           <Link href="/pt-os/assessment"
             className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
