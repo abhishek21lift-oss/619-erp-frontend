@@ -10,6 +10,7 @@ import type { Client } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
+import { newRequestId } from '@/lib/requestId';
 
 type Method = 'Cash' | 'UPI' | 'Card' | 'Bank';
 const METHODS: Method[] = ['Cash', 'UPI', 'Card', 'Bank'];
@@ -45,6 +46,10 @@ export default function RecordPaymentPage() {
 
   const [clients, setClients]         = React.useState<Client[]>([]);
   const [loadingClients, setLoading]  = React.useState(true);
+  // One key per payment attempt. It survives a failed submit (the retry sends
+  // the same value and the server returns the first row) and is replaced only
+  // after a recorded payment, so the next one is a new payment.
+  const requestKey = React.useRef(newRequestId());
   const [selected, setSelected]       = React.useState<Client | null>(null);
   const [pickerOpen, setPickerOpen]   = React.useState(false);
   const [query, setQuery]             = React.useState('');
@@ -101,7 +106,9 @@ export default function RecordPaymentPage() {
         amount:    val,
         method,
         date:      new Date().toISOString().slice(0, 10),
+        idempotency_key: requestKey.current,
       });
+      requestKey.current = newRequestId();
       setDone({ amount: val, name: selected!.name });
       setSelected(null); setAmount(''); setMethod('Cash');
       setTimeout(() => setDone(null), 3000);

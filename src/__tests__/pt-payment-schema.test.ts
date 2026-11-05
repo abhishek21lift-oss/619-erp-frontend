@@ -160,6 +160,12 @@ describe('the payload', () => {
       notes: null,
     });
   });
+
+  it('carries the request id, so a retry cannot record a second payment', () => {
+    const r = ptPaymentSchema.safeParse(base({}));
+    const payload = toPtPaymentPayload(r.data!, { clientId: 'c1', trainerId: null }, 'req-1');
+    expect(payload.idempotency_key).toBe('req-1');
+  });
 });
 
 describe('a fresh form every time (§11)', () => {
