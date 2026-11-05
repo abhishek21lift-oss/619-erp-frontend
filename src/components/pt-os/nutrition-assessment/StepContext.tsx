@@ -83,7 +83,6 @@ export function StepContext({ form, set, clientId, parq, legacyMedicalConditions
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Context</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 8 of 8 — cooking, budget and medical context.</p>
           </div>
         </div>
 

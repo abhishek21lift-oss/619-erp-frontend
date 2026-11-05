@@ -48,7 +48,7 @@ export function StepMotivationCommitment({ form, set, step }: StepMotivationComm
   const gap = motivation - confidence;
 
   return (
-    <GoalStepCard icon={Flame} title="Motivation & Confidence" step={step} hint="how ready is this client, really?">
+    <GoalStepCard icon={Flame} title="Motivation & Confidence" step={step}>
       <div className="space-y-8">
         <FloatInput
           label="Why do you want to achieve this goal?" multiline autoGrow maxLength={2000}

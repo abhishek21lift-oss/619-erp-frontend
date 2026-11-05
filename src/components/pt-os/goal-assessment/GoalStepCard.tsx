@@ -46,9 +46,11 @@ export function GoalStepCard({ icon: Icon, title, hint, step, badge, children }:
             )}
             <div className="min-w-0 flex-1">
               <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">{title}</h2>
-              <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
-                {step ? `Step ${step} of ${LAST_STEP}${hint ? ` — ${hint}` : ''}` : hint}
-              </p>
+              {(step || hint) && (
+                <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">
+                  {step ? `Step ${step} of ${LAST_STEP}${hint ? ` — ${hint}` : ''}` : hint}
+                </p>
+              )}
             </div>
             {badge && <div className="flex-shrink-0">{badge}</div>}
           </header>

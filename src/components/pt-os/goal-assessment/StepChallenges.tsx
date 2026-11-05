@@ -51,7 +51,7 @@ export function StepChallenges({ form, set, step, error }: StepChallengesProps) 
   };
 
   return (
-    <GoalStepCard icon={HelpCircle} title="Challenges & Barriers" step={step} hint="what gets in the way, and the plan for it">
+    <GoalStepCard icon={HelpCircle} title="Challenges & Barriers" step={step}>
       <div className="space-y-7">
         <div>
           <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: gray[500] }}>Biggest Challenge</p>

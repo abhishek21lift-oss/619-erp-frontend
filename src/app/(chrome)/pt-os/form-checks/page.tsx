@@ -124,7 +124,6 @@ export default function TrainerFormChecksPage() {
         <PageHero
           icon={<Video size={20} />}
           title="Form Checks"
-          subtitle="Watch a client's lift and comment at the exact second it needs work."
         />
 
         <div className="mt-5 flex flex-wrap gap-1.5">
@@ -232,9 +231,6 @@ export default function TrainerFormChecksPage() {
                   <Video size={26} className="mx-auto" style={{ color: 'var(--text-muted)' }} />
                   <p className="mt-2 text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>
                     Pick a video from the queue
-                  </p>
-                  <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                    The clip and the client&apos;s note open here.
                   </p>
                 </div>
               </div>

@@ -183,7 +183,6 @@ export function NewProgrammeForm({ presetClientId }: NewProgrammeFormProps) {
       <PageHero
         icon={<Dumbbell size={20} />}
         title="New programme"
-        subtitle="Name it and set its shape — exercises come next."
         actions={
           <button
             type="button"

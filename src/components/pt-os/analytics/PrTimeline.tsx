@@ -34,7 +34,7 @@ export default function PrTimeline({ prs, limit = 12 }: { prs: WorkoutPr[]; limi
 
       {prs.length === 0 ? (
         <p className="py-4 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          No records yet. The first completed set of any exercise sets one.
+          No records yet.
         </p>
       ) : (
         <ol className="flex flex-col gap-2">

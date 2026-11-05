@@ -102,7 +102,7 @@ export default function InterviewSnapshotCard({ clientId }: { clientId: string }
         </dl>
       ) : (
         <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          No interview recorded yet. Work, training history and what gets in the way are all still unknown.
+          No interview recorded yet.
         </p>
       )}
 

@@ -38,7 +38,6 @@ export function MobilityDashboard({ mobilityScore, mobilityCategory, bodyRegions
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-white leading-none">Mobility Dashboard</h2>
-            <p className="text-[13px] text-white/40 mt-1.5">Range of motion across all assessed regions.</p>
           </div>
         </div>
 

@@ -15,7 +15,7 @@ interface StepPriorityProps {
 
 export function StepPriority({ form, set, step, error }: StepPriorityProps) {
   return (
-    <GoalStepCard icon={ListChecks} title="Priority" step={step} hint="what matters most for this client">
+    <GoalStepCard icon={ListChecks} title="Priority" step={step}>
       <div className="space-y-6">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {PRIORITY_META.map((p) => {

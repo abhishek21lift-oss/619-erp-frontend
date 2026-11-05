@@ -730,7 +730,7 @@ function OverviewSection({ data, days, setDays }: {
             </p>
           )}
           {!schedule && overview.assessment_count === 0 && (
-            <p className="relative mt-4 text-[11.5px] text-amber-200/80">No assessment on file. Start with Fitness Testing, then the calendar opens by itself.</p>
+            <p className="relative mt-4 text-[11.5px] text-amber-200/80">No assessment on file. Start with Fitness Testing.</p>
           )}
         </div>
 
@@ -1095,7 +1095,7 @@ function CalendarSection({ clientId, data, reload }: { clientId: string; data: H
         )}
       </Panel>
 
-      <Panel title="Schedule history" subtitle="Every completed, cancelled and moved cycle">
+      <Panel title="Schedule history">
         {data.overview.history.length === 0 ? (
           <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No schedule history yet.</p>
         ) : (

@@ -55,7 +55,6 @@ export function NutritionDashboard({ scores }: NutritionDashboardProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-white leading-none">Nutrition Dashboard</h2>
-            <p className="text-[13px] text-white/40 mt-1.5">Diet quality &amp; nutrition readiness, at a glance.</p>
           </div>
         </div>
 

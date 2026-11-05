@@ -60,7 +60,6 @@ function Inner() {
       <PageHero
         icon={<CalendarClock size={20} color="#fff" />}
         title="Availability"
-        subtitle="The hours clients can book themselves, and how close to a session they can change it."
       />
 
       {availability.loading ? (

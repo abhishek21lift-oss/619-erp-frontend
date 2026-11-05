@@ -111,13 +111,8 @@ export default function WeeklyReport({ clientId, clientName, stats }: WeeklyRepo
           This week&rsquo;s report
         </span>
       </div>
-      <p className="mb-3 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-        Built from this week&rsquo;s logged sessions.
-      </p>
-
       <FormField
         label="A note for your client (optional)"
-        description="AI can draft a starting point from this week’s data — edit it before sending, it’s still your note."
         className="mb-3"
         labelAside={
           <button

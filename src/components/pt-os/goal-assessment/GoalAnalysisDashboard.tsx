@@ -46,7 +46,6 @@ export function GoalAnalysisDashboard({
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-white leading-none">Smart Goal Analysis</h2>
-            <p className="text-[13px] text-white/40 mt-1.5">A realistic read on this plan, not just what was asked for.</p>
           </div>
         </div>
 
