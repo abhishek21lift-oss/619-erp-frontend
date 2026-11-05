@@ -3366,6 +3366,10 @@ export type MeProfile = {
   trainer_specialization: string | null;
   studio_name: string | null;
   studio_logo: string | null;
+  /** What the studio published for members; any of them may be null. */
+  studio_phone: string | null;
+  studio_address: string | null;
+  studio_hours: string | null;
 };
 
 /**

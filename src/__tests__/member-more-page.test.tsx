@@ -55,6 +55,7 @@ const profile = {
   pt_end_date: '2027-03-12', duration_months: 12, status: 'active', trainer_name: null,
   trainer_photo: null, trainer_specialization: null, studio_name: 'Iron House',
   studio_logo: '/uploads/iron.png',
+  studio_phone: null, studio_address: null, studio_hours: null,
 };
 
 const membership = {
@@ -154,5 +155,38 @@ describe('<MemberMorePage /> sessions and payments', () => {
     renderPage();
     const link = await screen.findByRole('link', { name: /Payments/ });
     expect(link.getAttribute('href')).toBe('/member/payments');
+  });
+});
+
+describe('<MemberMorePage /> studio contact', () => {
+  it('shows the phone, address and hours the studio published', async () => {
+    apiMocks.profile.mockResolvedValue({
+      data: {
+        ...profile,
+        studio_phone: '9876543210', studio_address: 'MG Road', studio_hours: 'Mon–Sat 6am–9pm',
+      },
+    });
+    renderPage();
+    const card = await screen.findByRole('region', { name: 'Studio contact' });
+    expect(within(card).getByText('9876543210')).toBeTruthy();
+    expect(within(card).getByText('MG Road')).toBeTruthy();
+    expect(within(card).getByText('Mon–Sat 6am–9pm')).toBeTruthy();
+  });
+
+  it('renders no studio card when nothing is published', async () => {
+    renderPage();
+    await screen.findByRole('region', { name: 'Your membership' });
+    expect(screen.queryByRole('region', { name: 'Studio contact' })).toBeNull();
+  });
+
+  it('drops only the rows that are empty', async () => {
+    apiMocks.profile.mockResolvedValue({
+      data: { ...profile, studio_phone: '9876543210', studio_address: null, studio_hours: null },
+    });
+    renderPage();
+    const card = await screen.findByRole('region', { name: 'Studio contact' });
+    expect(within(card).getByText('9876543210')).toBeTruthy();
+    // One row, not three: an unpublished field must not render as a blank line.
+    expect(within(card).getAllByRole('listitem')).toHaveLength(1);
   });
 });
