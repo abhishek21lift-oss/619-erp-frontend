@@ -42,7 +42,7 @@ describe('Draft with AI', () => {
     fireEvent.click(screen.getByText('Draft with AI'));
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/what you want them to take/i)).toHaveValue(
+      expect(screen.getByLabelText(/A note for your client/i)).toHaveValue(
         'Great consistency this week, keep it up!',
       );
     });
@@ -53,7 +53,7 @@ describe('Draft with AI', () => {
 
   it('a blank note is untouched until the button is pressed', () => {
     render(<WeeklyReport clientId="c1" clientName="Ajeet" stats={STATS} />);
-    expect(screen.getByPlaceholderText(/what you want them to take/i)).toHaveValue('');
+    expect(screen.getByLabelText(/A note for your client/i)).toHaveValue('');
     expect(analyzeProgress).not.toHaveBeenCalled();
   });
 
@@ -64,7 +64,7 @@ describe('Draft with AI', () => {
     fireEvent.click(screen.getByText('Draft with AI'));
     const textarea = await screen.findByDisplayValue('Drafted line.');
     fireEvent.change(textarea, { target: { value: 'My own edited note.' } });
-    expect(screen.getByPlaceholderText(/what you want them to take/i)).toHaveValue('My own edited note.');
+    expect(screen.getByLabelText(/A note for your client/i)).toHaveValue('My own edited note.');
   });
 
   it('reports an error rather than silently leaving the note unchanged', async () => {
@@ -73,7 +73,7 @@ describe('Draft with AI', () => {
 
     fireEvent.click(screen.getByText('Draft with AI'));
     await waitFor(() => expect(toastError).toHaveBeenCalled());
-    expect(screen.getByPlaceholderText(/what you want them to take/i)).toHaveValue('');
+    expect(screen.getByLabelText(/A note for your client/i)).toHaveValue('');
   });
 
   it('an empty motivation message is reported, not silently accepted as a blank draft', async () => {

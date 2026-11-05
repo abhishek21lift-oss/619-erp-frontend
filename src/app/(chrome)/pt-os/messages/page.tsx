@@ -152,7 +152,7 @@ function MessagesContent() {
             <label className="relative block">
               <span className="sr-only">Search conversations</span>
               <Search size={14} aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTED }} />
-              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search"
+              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)}
                 className="h-10 w-full rounded-[12px] pl-8 pr-8 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
                 style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: INK }} />
               {query && (
@@ -329,7 +329,6 @@ function ThreadPane({ clientId, onChanged }: { clientId: string; onChanged: () =
           initial={thread.messages}
           reload={reload}
           send={send}
-          placeholder={`Message ${first}…`}
           notice={thread.client.has_login ? null : (
             <p className="mx-2 mb-1 flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12px] font-[600]"
               style={{ background: 'var(--warning-soft)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' }}>

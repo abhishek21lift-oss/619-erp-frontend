@@ -562,7 +562,6 @@ function MembersPanel({ filtered, loading, total, search, setSearch, statusFilte
       <div className="relative">
         <Search size={16} aria-hidden className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
         <input aria-label="Search members" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder={`Search ${total} member${total === 1 ? '' : 's'}…`}
           className="h-11 w-full rounded-[14px] pl-10 pr-4 text-[14px] outline-none"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
       </div>
@@ -1103,12 +1102,11 @@ function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
               </div>
             ) : (
               <>
-                {/* A search box, so the placeholder stays visible and the
-                    label is hidden — but it is a real associated <label>, so
-                    the name no longer vanishes the moment you type. */}
+                {/* A search box whose input has no visible label — the label
+                    is hidden but still associated, so the control keeps its
+                    name after the user types. */}
                 <SearchField
                   label="Search member"
-                  placeholder="Search member…"
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   fieldClassName="mt-1.5"

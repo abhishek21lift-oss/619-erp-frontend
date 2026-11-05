@@ -176,10 +176,8 @@ export const SelectInput = forwardRef<HTMLSelectElement, NativeSelect>(
 );
 
 export interface SearchFieldProps extends NativeInput {
-  /** The accessible name. Visually hidden — the placeholder is the visible cue. */
+  /** The accessible name. Visually hidden, because the magnifier is the cue. */
   label: string;
-  /** Defaults to the label, so the common case needs one string. */
-  placeholder?: string;
   className?: string;
   fieldClassName?: string;
 }
@@ -187,23 +185,19 @@ export interface SearchFieldProps extends NativeInput {
 /**
  * Search, filter and command inputs.
  *
- * 45 of the app's 105 placeholder-only fields are these, and they were right to
- * look the way they do: a magnifier beside a box reading "Search clients…" is
- * the conventional presentation, and stacking a visible "Search" caption above
- * 45 of them would be a regression for no gain. What was wrong is only that the
- * name vanished the moment you typed. So the label is real and associated, and
- * visually hidden.
+ * The magnifier is the visible cue; the name lives in a real, associated,
+ * visually hidden `<label>`, so it survives typing. No placeholder is
+ * rendered: the label names the control and the empty box stays empty.
  *
  * type="search" so mobile keyboards offer a search key and the control gets the
  * right role.
  */
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(
-  function SearchField({ label, placeholder, className, fieldClassName, style, ...rest }, ref) {
+  function SearchField({ label, className, fieldClassName, style, ...rest }, ref) {
     return (
       <FormField label={label} labelHidden className={fieldClassName}>
         <SearchControl
           ref={ref}
-          placeholder={placeholder ?? label}
           className={className}
           style={style}
           {...rest}

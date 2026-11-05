@@ -207,7 +207,6 @@ export function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClo
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search studios, coupons, or jump to a section…"
             className="flex-1 bg-transparent text-[14px] outline-none"
             style={{ color: 'var(--text-primary)' }}
           />

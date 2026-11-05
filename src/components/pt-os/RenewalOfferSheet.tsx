@@ -172,21 +172,21 @@ function OfferForm({ client, gst, replacing, onSent }: {
 
       <form.Field name="amount" listeners={{ onChange: ({ value }: { value: string }) => setAmount(value) }}>
         {(field) => (
-          <NumberField field={field} label="Price" mode="decimal" suffix="₹" placeholder="e.g. 9000"
+          <NumberField field={field} label="Price" mode="decimal" suffix="₹"
             description={lastTerm} serverError={f.errors.fieldErrors.amount} />
         )}
       </form.Field>
 
       <form.Field name="packageName">
         {(field) => (
-          <TextField field={field} label="Package name (optional)" placeholder="e.g. PT — 3 months" maxLength={120}
+          <TextField field={field} label="Package name (optional)" maxLength={120}
             serverError={f.errors.fieldErrors.packageName} />
         )}
       </form.Field>
 
       <form.Field name="note">
         {(field) => (
-          <TextAreaField field={field} label="Note to the client (optional)" placeholder="e.g. Same price as last time — let's keep going!"
+          <TextAreaField field={field} label="Note to the client (optional)"
             maxLength={500} serverError={f.errors.fieldErrors.note} />
         )}
       </form.Field>

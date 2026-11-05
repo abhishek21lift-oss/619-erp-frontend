@@ -394,14 +394,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <FloatInput label="Emergency Contact Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} error={fieldErrors.emergency_phone} />
               <SearchableSelect
                 label="Relationship"
-                placeholder="Relationship to the emergency contact"
                 value={form.emergency_contact_relationship}
                 onChange={set('emergency_contact_relationship')}
                 options={RELATIONSHIPS}
               />
               <SearchableSelect
                 label="Client Source"
-                placeholder="How did they find us?"
                 value={form.client_source}
                 onChange={set('client_source')}
                 options={CLIENT_SOURCES}
@@ -458,7 +456,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                       <TextInput
                         value={confirmText}
                         onChange={(e) => setConfirmText(e.target.value)}
-                        placeholder={form.name}
                         className="max-w-[320px]"
                         style={{ background: 'var(--bg-card)', border: '1px solid rgba(220,38,38,0.3)' }}
                       />

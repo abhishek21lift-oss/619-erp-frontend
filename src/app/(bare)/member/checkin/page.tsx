@@ -103,13 +103,13 @@ function CheckinForm({ existing, onSaved }: { existing: MeCheckin | null; onSave
           <div className="grid grid-cols-2 gap-3">
             <form.Field name="weight">
               {(field) => (
-                <NumberField field={field} label="Weight" mode="decimal" suffix="kg" placeholder="e.g. 72.5"
+                <NumberField field={field} label="Weight" mode="decimal" suffix="kg"
                   serverError={f.errors.fieldErrors.weight} />
               )}
             </form.Field>
             <form.Field name="sleepHours">
               {(field) => (
-                <NumberField field={field} label="Sleep" mode="decimal" suffix="hrs/night" placeholder="e.g. 7"
+                <NumberField field={field} label="Sleep" mode="decimal" suffix="hrs/night"
                   serverError={f.errors.fieldErrors.sleepHours} />
               )}
             </form.Field>
@@ -126,19 +126,19 @@ function CheckinForm({ existing, onSaved }: { existing: MeCheckin | null; onSave
           <div className="grid grid-cols-3 gap-3">
             <form.Field name="energyLevel">
               {(field) => (
-                <NumberField field={field} label="Energy" mode="integer" placeholder="1–10"
+                <NumberField field={field} label="Energy" mode="integer"
                   serverError={f.errors.fieldErrors.energyLevel} />
               )}
             </form.Field>
             <form.Field name="stressLevel">
               {(field) => (
-                <NumberField field={field} label="Stress" mode="integer" placeholder="1–10"
+                <NumberField field={field} label="Stress" mode="integer"
                   serverError={f.errors.fieldErrors.stressLevel} />
               )}
             </form.Field>
             <form.Field name="sorenessLevel">
               {(field) => (
-                <NumberField field={field} label="Soreness" mode="integer" placeholder="1–10"
+                <NumberField field={field} label="Soreness" mode="integer"
                   serverError={f.errors.fieldErrors.sorenessLevel} />
               )}
             </form.Field>
@@ -146,7 +146,7 @@ function CheckinForm({ existing, onSaved }: { existing: MeCheckin | null; onSave
 
           <form.Field name="waterGlasses">
             {(field) => (
-              <NumberField field={field} label="Water" mode="integer" suffix="glasses/day" placeholder="e.g. 8"
+              <NumberField field={field} label="Water" mode="integer" suffix="glasses/day"
                 serverError={f.errors.fieldErrors.waterGlasses} />
             )}
           </form.Field>
@@ -154,7 +154,6 @@ function CheckinForm({ existing, onSaved }: { existing: MeCheckin | null; onSave
           <form.Field name="notes">
             {(field) => (
               <TextAreaField field={field} label="Notes for your trainer" maxLength={1000}
-                placeholder="Anything they should know — a niggle, a missed session, a win."
                 serverError={f.errors.fieldErrors.notes} />
             )}
           </form.Field>

@@ -522,12 +522,8 @@ function NewClientForm() {
                 error={errors.email}
               />
 
-              {/* The placeholder used to read "e.g. spouse, parent, friend",
-                  which asked for the relationship in the field that wants the
-                  name — the two are separate questions now, so it asks for a
-                  name. */}
               <FloatInput
-                label="Emergency Contact Name" placeholder="e.g. Meera Rao" value={form.emergencyContact}
+                label="Emergency Contact Name" value={form.emergencyContact}
                 onChange={(v) => set('emergencyContact', v)}
               />
 
@@ -540,7 +536,6 @@ function NewClientForm() {
 
               <SearchableSelect
                 label="Relationship"
-                placeholder="Relationship to the emergency contact"
                 required={hasEmergencyContact(form)}
                 value={form.emergencyRelationship}
                 onChange={(v) => { set('emergencyRelationship', v); setErrors((e) => { const n = { ...e }; delete n.emergencyRelationship; return n; }); }}
@@ -551,7 +546,6 @@ function NewClientForm() {
               {/* Closed list — allowCustom off. See CLIENT_SOURCES above. */}
               <SearchableSelect
                 label="Client Source"
-                placeholder="How did they find us?"
                 value={form.clientSource}
                 onChange={(v) => set('clientSource', v)}
                 options={CLIENT_SOURCES}

@@ -338,7 +338,6 @@ export function ExerciseEditor({
                         field={field}
                         label="Exercise name"
                         required
-                        placeholder="e.g. Landmine Squat"
                         maxLength={120}
                         showCount
                         serverError={
@@ -377,7 +376,6 @@ export function ExerciseEditor({
                       field={field}
                       label="Description"
                       rows={2}
-                      placeholder="What is this movement for?"
                       maxLength={1000}
                       serverError={f.errors.fieldErrors.description}
                     />
@@ -393,7 +391,6 @@ export function ExerciseEditor({
                       label="Primary muscle"
                       required
                       options={muscleOptions}
-                      placeholderOption="Select…"
                       serverError={f.errors.fieldErrors.primary_muscle_id}
                     />
                   )}
@@ -404,7 +401,7 @@ export function ExerciseEditor({
                     <SelectField
                       field={field}
                       label="Equipment"
-                      options={[{ value: '', label: 'Select…' }, ...equipmentOptions]}
+                      options={[{ value: '', label: '' }, ...equipmentOptions]}
                       serverError={f.errors.fieldErrors.equipment_id}
                     />
                   )}
@@ -415,7 +412,7 @@ export function ExerciseEditor({
                     <SelectField
                       field={field}
                       label="Category"
-                      options={[{ value: '', label: 'Select…' }, ...categoryOptions]}
+                      options={[{ value: '', label: '' }, ...categoryOptions]}
                       serverError={f.errors.fieldErrors.category_id}
                     />
                   )}
@@ -545,7 +542,6 @@ export function ExerciseEditor({
                       rows={5}
                       maxLength={4000}
                       showCount
-                      placeholder={'Set up with the bar in a landmine attachment.\nBrace, then descend under control.'}
                       serverError={f.errors.fieldErrors.instructions}
                     />
                   )}
@@ -554,16 +550,15 @@ export function ExerciseEditor({
 
               <Fieldset title="Coaching" icon={Lightbulb}>
                 {([
-                  ['coaching_cues', 'Coaching cues', 'Chest tall, knees track over toes'],
-                  ['common_mistakes', 'Common mistakes', 'Heels lifting off the floor'],
-                  ['safety_tips', 'Safety tips', 'Do not round the lower back'],
-                  ['contraindications', 'Contraindications', 'Acute lower-back pain'],
-                ] as const).map(([name, label, placeholder]) => (
+                  ['coaching_cues', 'Coaching cues'],
+                  ['common_mistakes', 'Common mistakes'],
+                  ['safety_tips', 'Safety tips'],
+                  ['contraindications', 'Contraindications'],
+                ] as const).map(([name, label]) => (
                   <form.Field key={name} name={name}>
                     {(field) => (
                       <ListField
                         label={label}
-                        placeholder={placeholder}
                         value={field.state.value}
                         onChange={field.handleChange}
                       />
@@ -576,7 +571,6 @@ export function ExerciseEditor({
                     <TextField
                       field={field}
                       label="Breathing"
-                      placeholder="Inhale down, exhale on the drive up"
                       maxLength={500}
                       serverError={f.errors.fieldErrors.breathing_tips}
                     />
@@ -590,7 +584,6 @@ export function ExerciseEditor({
                     <TextField
                       field={field}
                       label="Sets"
-                      placeholder="3-4"
                       serverError={f.errors.fieldErrors.recommended_sets}
                     />
                   )}
@@ -601,7 +594,6 @@ export function ExerciseEditor({
                     <TextField
                       field={field}
                       label="Reps"
-                      placeholder="8-12"
                       serverError={f.errors.fieldErrors.recommended_reps}
                     />
                   )}
@@ -614,7 +606,6 @@ export function ExerciseEditor({
                       label="Rest"
                       mode="integer"
                       suffix="sec"
-                      placeholder="90"
                       serverError={f.errors.fieldErrors.rest_seconds}
                     />
                   )}
@@ -625,7 +616,6 @@ export function ExerciseEditor({
                     <TextField
                       field={field}
                       label="Tempo"
-                      placeholder="3-1-1-0"
                       serverError={f.errors.fieldErrors.tempo_recommendation}
                     />
                   )}
@@ -834,12 +824,11 @@ function GlassButton({ label, onClick, children }: { label: string; onClick: () 
 
 /** Repeatable single-line list — Enter adds, and empties are never stored. */
 function ListField({
-  label, value, onChange, placeholder,
+  label, value, onChange,
 }: {
   label: string;
   value: string[];
   onChange: (v: string[]) => void;
-  placeholder?: string;
 }) {
   const [draft, setDraft] = React.useState('');
   // Per instance, so four of these on one page do not share an id.
@@ -881,7 +870,6 @@ function ListField({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-          placeholder={placeholder}
           className={inputCls(false)}
         />
         <button
@@ -927,7 +915,6 @@ function TagField({ value, onChange }: { value: string[]; onChange: (v: string[]
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); }
         }}
-        placeholder="Add a tag and press Enter"
         className={cn(inputCls(false), 'mt-2')}
       />
     </div>

@@ -418,7 +418,6 @@ export function ExercisePickerPanel({
             <input
               ref={searchRef}
               type="text" value={search}
-              placeholder={allowCustom ? 'Search, or type a custom name…' : 'Search exercises…'}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search exercises"
               // The right inset clears whatever sits in the gutter: the

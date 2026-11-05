@@ -426,7 +426,6 @@ export default function InvoicesPage() {
                 <input aria-label="Search invoices"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search invoices…"
                   style={{
                     flex: 1,
                     background: 'transparent',
@@ -671,7 +670,6 @@ function CreateInvoiceModal({
               field={field}
               label="Member Name"
               required
-              placeholder="e.g. Rahul Sharma"
               maxLength={160}
               serverError={f.errors.fieldErrors.memberName}
             />
@@ -686,7 +684,6 @@ function CreateInvoiceModal({
               required
               mode="money"
               suffix="₹"
-              placeholder="e.g. 5000"
               serverError={f.errors.fieldErrors.amount}
             />
           )}
@@ -710,7 +707,6 @@ function CreateInvoiceModal({
             <TextField
               field={field}
               label="Description"
-              placeholder="e.g. Monthly membership fee"
               maxLength={500}
               showCount
               serverError={f.errors.fieldErrors.description}

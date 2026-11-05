@@ -315,7 +315,6 @@ function PasskeysContent() {
               <TextInput
                 value={deviceName}
                 onChange={e => setDeviceName(e.target.value)}
-                placeholder="e.g. iPhone 15, MacBook, Work PC…"
                 disabled={registering}
                 // `registering` guarded here as well as on the button: Enter in
                 // this field bypassed the button's disabled state, and a second

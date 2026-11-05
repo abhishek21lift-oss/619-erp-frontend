@@ -219,21 +219,18 @@ function ContactForm({ profile, onSaved }: {
           <form.Field name="mobile">
             {(field) => (
               <TextField field={field} label="Mobile" type="tel" autoComplete="tel-national" required
-                placeholder="10-digit mobile number"
                 serverError={f.errors.fieldErrors.mobile} />
             )}
           </form.Field>
           <form.Field name="whatsapp">
             {(field) => (
               <TextField field={field} label="WhatsApp number" type="tel" autoComplete="tel-national"
-                placeholder="Same as mobile"
                 serverError={f.errors.fieldErrors.whatsapp} />
             )}
           </form.Field>
           <form.Field name="address">
             {(field) => (
               <TextAreaField field={field} label="Address" maxLength={500} rows={3}
-                placeholder="House, street, area, city"
                 serverError={f.errors.fieldErrors.address} />
             )}
           </form.Field>

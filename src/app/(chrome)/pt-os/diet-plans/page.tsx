@@ -615,7 +615,7 @@ function Inner() {
                 ))}
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '5px 12px', border: '1px solid var(--border)' }}>
                   <Search size={13} color="var(--text-disabled)" />
-                  <input aria-label="Search templates" placeholder="Search templates..." value={search} onChange={(e) => setSearch(e.target.value)}
+                  <input aria-label="Search templates" value={search} onChange={(e) => setSearch(e.target.value)}
                     style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, width: 160 }} />
                   {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={12} /></button>}
                 </div>
@@ -934,7 +934,7 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
               </form.Field>
               <form.Field name="serving_size">
                 {(field) => (
-                  <TextField field={field} label="Serving size" placeholder="1 bowl, 100 g…" maxLength={60}
+                  <TextField field={field} label="Serving size" maxLength={60}
                     serverError={f.errors.fieldErrors.serving_size} />
                 )}
               </form.Field>
@@ -1062,7 +1062,7 @@ function AssignTemplateModal({
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 12px', border: '1px solid var(--border)' }}>
               <Search size={14} color="var(--text-disabled)" />
-              <input aria-label="Search clients" autoFocus placeholder="Search clients…" value={search} onChange={(e) => setSearch(e.target.value)}
+              <input aria-label="Search clients" autoFocus value={search} onChange={(e) => setSearch(e.target.value)}
                 style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13 }} />
             </div>
             <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, marginTop: 10 }}>

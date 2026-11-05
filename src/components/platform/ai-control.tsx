@@ -277,7 +277,7 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <FormField label="Default monthly tokens" density="compact" className="w-40">
           <TextInput
-            value={dflt} onChange={(e) => setDflt(e.target.value)} placeholder="unlimited"
+            value={dflt} onChange={(e) => setDflt(e.target.value)}
             inputMode="numeric" className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
         </FormField>
@@ -289,7 +289,7 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
         </FormField>
         <FormField label="Monthly cost budget (₹)" density="compact" className="w-44">
           <TextInput
-            value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="no budget"
+            value={budget} onChange={(e) => setBudget(e.target.value)}
             inputMode="decimal" className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
         </FormField>
@@ -406,7 +406,6 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
                 <TextInput
                   value={draft[tier]}
                   onChange={(e) => setDraft((d) => ({ ...d, [tier]: e.target.value }))}
-                  placeholder={routing.from_env[tier] ?? routing.defaults[tier]}
                   spellCheck={false} autoComplete="off"
                   className="rounded-[10px] px-3 py-2 text-[12.5px]"
                   style={{

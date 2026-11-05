@@ -135,7 +135,6 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <FormField label="Your reply" labelHidden>
               <TextArea
                 value={body} onChange={(e) => setBody(e.target.value)} rows={3}
-                placeholder="Add to this request…"
                 className="resize-y"
               />
             </FormField>
@@ -186,12 +185,11 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: () 
       <div className="space-y-3">
         <FormField label="Subject" density="compact">
           <TextInput value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200}
-            placeholder="Check-ins are failing on the QR scanner" />
+            />
         </FormField>
 
         <FormField label="What is happening?" density="compact">
           <TextArea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={10000}
-            placeholder="Tell us what you were doing and what happened instead."
             className="resize-y" />
         </FormField>
 

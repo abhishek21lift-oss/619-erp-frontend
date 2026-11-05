@@ -24,10 +24,9 @@ export const ABOUT_MINIMUMS = { bio: 80, philosophy: 60 };
  * stops "why am I stuck at 92%" being unanswerable.
  */
 function LongText({
-  label, hint, value, onChange, minimum, rows = 4, maxLength = 2000,
+  label, value, onChange, minimum, rows = 4, maxLength = 2000,
 }: {
   label: string;
-  hint: string;
   value: string;
   onChange: (v: string) => void;
   minimum?: number;
@@ -58,7 +57,6 @@ function LongText({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder={hint}
         className="rounded-xl px-3.5 py-3 text-[13px] font-[500] leading-relaxed"
         style={{
           background: 'var(--bg-subtle)',
@@ -80,11 +78,11 @@ function LongText({
  * moment it is saved.
  */
 export function ChipInput({
-  value, onChange, placeholder, empty, max,
+  value, onChange, label, empty, max,
 }: {
   value: string[];
   onChange: (v: string[]) => void;
-  placeholder: string;
+  label: string;
   empty: string;
   max: number;
 }) {
@@ -122,7 +120,7 @@ export function ChipInput({
           </span>
         ))}
       </div>
-      <FormField label={placeholder} labelHidden>
+      <FormField label={label} labelHidden>
         <TextInput
           value={draft}
           disabled={full}
@@ -137,7 +135,6 @@ export function ChipInput({
             if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
           }}
           onBlur={() => commit(draft)}
-          placeholder={full ? `That is the maximum of ${max}` : placeholder}
           className="rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560] disabled:opacity-60"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
         />
@@ -159,17 +156,14 @@ export function AboutSection({
     <div className="flex flex-col gap-5">
       <LongText
         label="Bio" minimum={ABOUT_MINIMUMS.bio}
-        hint="Who you are and who you coach. A few sentences is plenty."
         value={bio} onChange={(v) => set({ bio: v })}
       />
       <LongText
         label="Coaching philosophy" minimum={ABOUT_MINIMUMS.philosophy}
-        hint="What you believe about training, and how that shows up in a session."
         value={philosophy} onChange={(v) => set({ philosophy: v })}
       />
       <LongText
         label="Training style" rows={3} maxLength={600}
-        hint="How a session with you actually runs."
         value={trainingStyle} onChange={(v) => set({ trainingStyle: v })}
       />
       <div>
@@ -178,7 +172,7 @@ export function AboutSection({
         </span>
         <ChipInput
           value={languages} onChange={(v) => set({ languages: v })} max={15}
-          placeholder="Add a language and press Enter"
+          label="Language"
           empty="None added yet — try “English” or “Hindi”."
         />
       </div>

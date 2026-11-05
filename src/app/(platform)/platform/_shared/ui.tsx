@@ -99,7 +99,7 @@ export function PasswordField({ value, onChange, onGenerate }: { value: string; 
   const { toast } = useToast();
   return (
     <div className="flex gap-2">
-      <TextInput value={value} placeholder="Min 8 characters" onChange={(e) => onChange(e.target.value)} />
+      <TextInput value={value} onChange={(e) => onChange(e.target.value)} />
       <button onClick={onGenerate} title="Generate"
         className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[11px] transition hover:bg-black/5"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}><RefreshCw size={15} /></button>

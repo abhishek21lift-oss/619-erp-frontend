@@ -214,7 +214,6 @@ export function NewProgrammeForm({ presetClientId }: NewProgrammeFormProps) {
                   before={(
                     <SearchField
                       label="Search clients"
-                      placeholder="Search clients…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       // Enter filters; it must not submit a form with no client.
@@ -235,7 +234,6 @@ export function NewProgrammeForm({ presetClientId }: NewProgrammeFormProps) {
                 required
                 maxLength={PROGRAMME_NAME_MAX}
                 showCount
-                placeholder="e.g. Upper / Lower Split"
                 serverError={errors.fieldErrors.name}
                 className="mb-3"
               />

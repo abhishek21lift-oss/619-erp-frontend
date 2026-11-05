@@ -402,7 +402,7 @@ function HabitForm({ date, existing, onSaved }: {
               <form.Field name="sleepHours">
                 {(field) => (
                   <NumberField field={field} label="Duration" mode="decimal" suffix="hours"
-                    placeholder="e.g. 7.5" serverError={f.errors.fieldErrors.sleepHours} />
+                    serverError={f.errors.fieldErrors.sleepHours} />
                 )}
               </form.Field>
               <form.Field name="sleepQuality">
@@ -421,7 +421,7 @@ function HabitForm({ date, existing, onSaved }: {
             </div>
             <form.Field name="steps">
               {(field) => (
-                <NumberField field={field} label="Steps" mode="integer" placeholder="e.g. 8000"
+                <NumberField field={field} label="Steps" mode="integer"
                   serverError={f.errors.fieldErrors.steps} />
               )}
             </form.Field>
@@ -438,7 +438,7 @@ function HabitForm({ date, existing, onSaved }: {
               <form.Field name="waterMl">
                 {(field) => (
                   <NumberField field={field} label="How much" mode="integer" suffix="ml"
-                    placeholder="e.g. 2000" serverError={f.errors.fieldErrors.waterMl} />
+                    serverError={f.errors.fieldErrors.waterMl} />
                 )}
               </form.Field>
               <form.Field name="electrolytes">
@@ -478,7 +478,6 @@ function HabitForm({ date, existing, onSaved }: {
           <form.Field name="notes">
             {(field) => (
               <TextAreaField field={field} label="Notes (optional)" rows={3} maxLength={2000}
-                placeholder="A late meal, a long walk, a niggle — anything that explains the numbers."
                 serverError={f.errors.fieldErrors.notes} />
             )}
           </form.Field>

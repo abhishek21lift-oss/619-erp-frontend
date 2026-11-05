@@ -22,9 +22,8 @@ export const CHAT_MAX = 2000;
 const WARN_AT = 1800;
 const MAX_ROWS_PX = 132;
 
-export default function ChatComposer({ onSend, placeholder = 'Write a message…', accent = palette.blue[500] }: {
+export default function ChatComposer({ onSend, accent = palette.blue[500] }: {
   onSend: (body: string) => void;
-  placeholder?: string;
   /** Colour of the send control — the same accent as the viewer's bubbles. */
   accent?: string;
 }) {
@@ -67,7 +66,6 @@ export default function ChatComposer({ onSend, placeholder = 'Write a message…
           }}
           rows={1}
           aria-label="Message"
-          placeholder={placeholder}
           className="block w-full resize-none rounded-[20px] px-4 py-2.5 text-[14px] leading-[1.4] outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
           style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
         />

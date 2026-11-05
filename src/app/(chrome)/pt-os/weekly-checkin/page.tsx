@@ -172,7 +172,6 @@ export default function WeeklyCheckinPage() {
                     field={field}
                     label="Client"
                     required
-                    placeholderOption="Select client..."
                     options={(clients.data ?? []).map(c => ({ value: c.id, label: c.name }))}
                     serverError={errors.fieldErrors.client_id}
                   />
@@ -197,7 +196,6 @@ export default function WeeklyCheckinPage() {
                       field={field}
                       label="Weight (kg)"
                       mode="decimal"
-                      placeholder="e.g. 72.5"
                       min={20}
                       max={400}
                       serverError={errors.fieldErrors.weight}
@@ -210,7 +208,6 @@ export default function WeeklyCheckinPage() {
                       field={field}
                       label="Sleep (hours)"
                       mode="decimal"
-                      placeholder="e.g. 7.5"
                       min={0}
                       max={24}
                       serverError={errors.fieldErrors.sleep_hours}
@@ -326,7 +323,6 @@ export default function WeeklyCheckinPage() {
                     rows={2}
                     maxLength={2000}
                     showCount
-                    placeholder="How the week went, anything to watch"
                     serverError={errors.fieldErrors.trainer_notes}
                   />
                 )}

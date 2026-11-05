@@ -232,11 +232,11 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
             </SelectInput>
           </FormField>
           <FormField label="Reference / UTR">
-            <TextInput value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
+            <TextInput value={reference} onChange={(e) => setReference(e.target.value)} />
           </FormField>
         </div>
         <FormField label="Notes">
-          <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
+          <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} />
         </FormField>
         {!studio.is_founder && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>If founder slots remain, this studio becomes a Founder Member with this price locked for life.</p>}
         <div className="flex justify-end gap-2 pt-1">
@@ -315,11 +315,11 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
               </SelectInput>
             </FormField>
             <FormField label="Reference / UTR">
-              <TextInput value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
+              <TextInput value={reference} onChange={(e) => setReference(e.target.value)} />
             </FormField>
           </div>
           <FormField label="Notes">
-            <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
+            <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} />
           </FormField>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose}>Cancel</Button>

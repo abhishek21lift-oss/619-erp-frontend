@@ -56,7 +56,7 @@ afterEach(cleanup);
 
 /** Fill the name field and submit. */
 async function fillAndSubmit(name = 'Upper / Lower') {
-  fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), { target: { value: name } });
+  fireEvent.change(screen.getByLabelText(/Programme name/i), { target: { value: name } });
   fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
 }
 

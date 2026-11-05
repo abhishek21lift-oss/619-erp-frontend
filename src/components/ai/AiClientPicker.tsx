@@ -99,7 +99,6 @@ export function AiClientPicker({
             aria-autocomplete="list"
             aria-activedescendant={showMenu && visible[active] ? `${listId}-${visible[active].id}` : undefined}
             type="text"
-            placeholder="Search clients by name…"
             value={selected ? selected.name : query}
             onFocus={() => setOpen(true)}
             onChange={(e) => { setQuery(e.target.value); onSelect(null); setActive(0); setOpen(true); }}

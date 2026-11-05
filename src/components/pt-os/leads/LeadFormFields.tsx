@@ -94,7 +94,6 @@ export function LeadFormFields({
               set('trainer_name', trainers.find((t) => t.id === v)?.name || '');
             }}
             options={trainers.map((t) => ({ value: t.id, label: t.name }))}
-            placeholder="Unassigned"
           />
         </div>
       </FormSection>

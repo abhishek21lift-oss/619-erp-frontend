@@ -172,7 +172,6 @@ export function UsersTab() {
           <input
             className={inputCls}
             style={{ ...inputStyle, paddingLeft: 32 }}
-            placeholder="Search name or email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             aria-label="Search accounts by name or email"

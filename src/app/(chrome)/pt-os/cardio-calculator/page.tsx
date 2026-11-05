@@ -442,7 +442,6 @@ export default function CardioCalculatorPage() {
                   max={120}
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
-                  placeholder="e.g. 40"
                 />
               </FormField>
               <FormField label="Measured max HR (preferred)" error={measuredError ?? undefined}>
@@ -450,7 +449,6 @@ export default function CardioCalculatorPage() {
                   inputMode="numeric"
                   value={measuredMhr}
                   onChange={(e) => setMeasuredMhr(e.target.value)}
-                  placeholder="e.g. 180"
                 />
               </FormField>
               <FormField label="Resting HR" error={rhrError ?? undefined}>
@@ -458,7 +456,6 @@ export default function CardioCalculatorPage() {
                   inputMode="numeric"
                   value={rhr}
                   onChange={(e) => setRhr(e.target.value)}
-                  placeholder="e.g. 60"
                 />
               </FormField>
               <FormField label="Training level">
@@ -565,7 +562,6 @@ export default function CardioCalculatorPage() {
                 <TextInput
                   value={modality}
                   onChange={(e) => setModality(e.target.value)}
-                  placeholder="Running, cycling, elliptical…"
                 />
               </FormField>
               <FormField label="Programme type">

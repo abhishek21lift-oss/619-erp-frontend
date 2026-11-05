@@ -306,7 +306,7 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
               onChange={(e) => setRange((r) => ({ ...r, ends_on: e.target.value }))} />
           </FormField>
           <FormField label="Reason (optional)">
-            <TextInput value={range.reason} placeholder="Travel"
+            <TextInput value={range.reason}
               onChange={(e) => setRange((r) => ({ ...r, reason: e.target.value }))} />
           </FormField>
           <div className="self-end pb-0.5">

@@ -373,7 +373,6 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
                   onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
                   onKeyDown={(e) => { if (e.key === 'Enter' && amountValid) setConfirming(true); }}
                   inputMode="numeric"
-                  placeholder="500000"
                   aria-label={`Revenue target for ${monthLabel()}`}
                   className="min-w-0 flex-1 bg-transparent tabular-nums text-[19px] font-[800] outline-none"
                   style={{ color: 'var(--text-primary)' }}

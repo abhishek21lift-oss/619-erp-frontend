@@ -72,7 +72,7 @@ interface ControlBase {
 }
 
 export type InterviewControl =
-  | (ControlBase & { kind: 'text'; rows?: number; maxLength?: number; placeholder?: string })
+  | (ControlBase & { kind: 'text'; rows?: number; maxLength?: number })
   | (ControlBase & { kind: 'select'; options: readonly InterviewOption[] })
   | (ControlBase & { kind: 'chips'; options: readonly InterviewOption[] });
 
@@ -141,7 +141,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Job details',
         hint: 'Role, shift pattern, hours on their feet.',
-        placeholder: 'e.g. Warehouse team lead, rotating shifts, on feet most of the day',
         rows: 3,
         maxLength: 2000,
       },
@@ -150,7 +149,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Describe their occupation',
         hint: 'The Lifestyle Assessment records their occupation as Other.',
-        placeholder: 'What do they do?',
         rows: 2,
         maxLength: 500,
         showWhen: 'occupationOther',
@@ -193,7 +191,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Training history',
         hint: 'What they have done, for how long, and how it went.',
-        placeholder: 'e.g. Two years of home workouts, then a long break',
         rows: 3,
         maxLength: 2000,
       },
@@ -209,7 +206,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'When they can train',
         hint: 'Days, times, or constraints worth knowing.',
-        placeholder: 'e.g. Weekday mornings before 9, not Sundays',
         rows: 2,
         maxLength: 1000,
       },
@@ -218,7 +214,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What they enjoy or avoid',
         hint: 'Exercises, styles, and anything they will not do.',
-        placeholder: 'e.g. Likes free weights, hates running',
         rows: 2,
         maxLength: 1000,
       },
@@ -242,7 +237,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What else gets in the way?',
         hint: 'The barrier they named that is not on the list.',
-        placeholder: 'Describe it in their words',
         rows: 2,
         maxLength: 500,
         showWhen: 'challengeOther',
@@ -260,7 +254,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'In their words',
         hint: 'Something they said that changes how you coach them. Quoted, not paraphrased.',
-        placeholder: '"I want to keep up with my kids without getting winded."',
         rows: 2,
         maxLength: 2000,
       },
@@ -269,7 +262,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Why now?',
         hint: 'What brought them in today.',
-        placeholder: 'e.g. Wedding in six months, doctor advised exercise',
         rows: 2,
         maxLength: 2000,
       },
@@ -278,7 +270,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Trainer summary',
         hint: 'Your observations, not the client’s answers. This is the only part written by you.',
-        placeholder: 'What the next trainer needs to know.',
         rows: 4,
         maxLength: 2000,
       },

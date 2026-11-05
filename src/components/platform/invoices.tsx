@@ -292,7 +292,6 @@ function SettingsForm({
                 field={field}
                 label={spec.label}
                 required={spec.key === 'legal_name'}
-                placeholder={spec.placeholder}
                 description={spec.description}
                 type={spec.key === 'email' ? 'email' : spec.key === 'phone' ? 'tel' : 'text'}
                 autoComplete="off"
@@ -439,7 +438,6 @@ export default function InvoicesPanel() {
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input
             value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Invoice no., studio, reference…"
             aria-label="Search invoices"
             className="h-10 w-full rounded-[11px] pl-9 pr-3 text-[12.5px] outline-none" style={inputStyle}
           />

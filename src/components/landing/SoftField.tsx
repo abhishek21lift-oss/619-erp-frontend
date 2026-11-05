@@ -161,7 +161,6 @@ export interface SoftTextFieldProps extends SoftFieldProps {
   field: FieldLike<string>;
   type?: 'text' | 'email' | 'tel' | 'password';
   autoComplete?: string;
-  placeholder?: string;
   /**
    * Focus this control on mount.
    *
@@ -190,7 +189,7 @@ export interface SoftTextFieldProps extends SoftFieldProps {
  * the third failure `FormField`'s doc comment lists.
  */
 export function SoftTextField({
-  field, type = 'text', autoComplete, placeholder, focusOnMount, icon, trailing,
+  field, type = 'text', autoComplete, focusOnMount, icon, trailing,
   inputProps, serverError, ...rest
 }: SoftTextFieldProps) {
   const shown = visibleError(field, serverError);
@@ -200,7 +199,6 @@ export function SoftTextField({
       <SoftInput
         type={type}
         autoComplete={autoComplete}
-        placeholder={placeholder}
         icon={icon}
         trailing={trailing}
         value={field.state.value ?? ''}

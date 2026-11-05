@@ -253,7 +253,6 @@ function WAContent() {
                 <Search size={14} className="text-gray-400" />
                 <FormField label="Search members" labelHidden className="min-w-0 flex-1">
                   <TextInput
-                    placeholder="Search members…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="border-none bg-transparent px-0 text-[13px] font-medium"
@@ -392,7 +391,6 @@ function WAContent() {
                     rows={6}
                     value={customMsg}
                     onChange={(e) => setCustomMsg(e.target.value)}
-                    placeholder="Write your custom message. Use {name} for member name, {date} for expiry date, {amount} for balance."
                     className="rounded-[10px] px-3.5 py-3 text-[13px] leading-relaxed"
                   />
                 </FormField>

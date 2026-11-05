@@ -339,7 +339,7 @@ export default function LeadsPage() {
               <Search size={18} aria-hidden className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 aria-label="Search leads"
-                type="search" placeholder="Search leads…" value={search}
+                type="search" value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-[52px] w-full rounded-[15px] pl-11 pr-4 text-[15px] font-[500] outline-none transition-all focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] sm:max-w-md"
                 style={{

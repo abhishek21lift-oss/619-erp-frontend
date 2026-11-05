@@ -82,7 +82,6 @@ export function StepChallenges({ form, set, step, error }: StepChallengesProps) 
                   <FloatInput
                     label="" ariaLabel={`Plan for ${c}`} maxLength={300}
                     value={planFor(c)} onChange={(v) => setPlan(c, v)}
-                    placeholder="e.g. two 30-minute walks on office days"
                   />
                 </div>
               ))}

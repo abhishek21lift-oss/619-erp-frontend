@@ -16,11 +16,11 @@ vi.mock('@/components/ui', () => ({
   FormField: ({ label, error, children }: {
     label: string; error?: string; children: React.ReactNode;
   }) => (
-    <div>
+    <label>
       <span>{label}</span>
       {children}
       {error && <span>{error}</span>}
-    </div>
+    </label>
   ),
   TextInput: (rest: Record<string, unknown>) => <input {...rest} />,
   SelectInput: ({ children, ...rest }: Record<string, unknown>) => (
@@ -30,8 +30,8 @@ vi.mock('@/components/ui', () => ({
 
 import CardioCalculatorPage from '@/app/(chrome)/pt-os/cardio-calculator/page';
 
-const age = () => screen.getByPlaceholderText('e.g. 40');
-const resting = () => screen.getByPlaceholderText('e.g. 60');
+const age = () => screen.getByLabelText('Age (estimate only)');
+const resting = () => screen.getByLabelText('Resting HR');
 
 describe('<CardioCalculatorPage />', () => {
   it('shows no target and cannot save until the client numbers are valid', () => {
@@ -52,7 +52,7 @@ describe('<CardioCalculatorPage />', () => {
 
   it('rejects a measured max HR at or below resting HR', () => {
     render(<CardioCalculatorPage />);
-    fireEvent.change(screen.getByPlaceholderText('e.g. 180'), { target: { value: '50' } });
+    fireEvent.change(screen.getByLabelText('Measured max HR (preferred)'), { target: { value: '50' } });
     fireEvent.change(resting(), { target: { value: '60' } });
 
     expect(screen.getAllByText('Measured max heart rate must be greater than resting heart rate.').length).toBeGreaterThan(0);

@@ -507,7 +507,7 @@ const Inventory: React.FC = () => {
         </div>
         <label className="flex min-w-[160px] flex-1 items-center gap-1.5 rounded-[10px] px-2.5 py-1" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <Search size={12} style={{ color: 'var(--text-tertiary)' }} aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Model or provider"
+          <input value={q} onChange={(e) => setQ(e.target.value)}
             aria-label="Search models" className="w-full bg-transparent text-[11.5px] outline-none" style={{ color: 'var(--text-primary)' }} />
         </label>
         <button type="button" onClick={() => load(true)} disabled={loading} aria-label="Re-read the catalog"

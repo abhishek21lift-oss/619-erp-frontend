@@ -253,7 +253,7 @@ export default function AiKnowledgeBasePage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <FormField label="Title" className="min-w-0">
-                <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP" />
+                <TextInput value={title} onChange={(e) => setTitle(e.target.value)} />
               </FormField>
 
               <div>

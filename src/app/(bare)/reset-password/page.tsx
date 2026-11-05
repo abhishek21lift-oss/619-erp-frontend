@@ -158,7 +158,6 @@ function ResetPasswordForm() {
                 type={show ? 'text' : 'password'}
                 autoComplete="new-password"
                 focusOnMount
-                placeholder={`At least ${MIN_LENGTH} characters`}
                 icon={<Lock size={18} />}
                 serverError={f.errors.fieldErrors.password}
                 trailing={
@@ -183,7 +182,6 @@ function ResetPasswordForm() {
               required
               type={show ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Type it again"
               icon={<Lock size={18} />}
               className="mt-4"
               serverError={f.errors.fieldErrors.confirm}

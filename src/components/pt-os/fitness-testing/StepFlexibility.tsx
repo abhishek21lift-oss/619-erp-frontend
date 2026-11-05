@@ -237,7 +237,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                 multiline
                 autoGrow
                 maxLength={500}
-                placeholder="Why the assessment is being saved without every test"
               />
               <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 Stored as an override on the assessment, with your name and the time.

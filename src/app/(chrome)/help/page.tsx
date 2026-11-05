@@ -47,7 +47,7 @@ export default function HelpPage() {
           style={{ ...lightCard, borderRadius: 16, padding: '4px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <Search size={16} color="#94a3b8" />
           <input aria-label="Search FAQs"
-            type="text" placeholder="Search FAQs…" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
+            type="text" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
             style={{
               flex: 1, border: 'none', padding: '12px 0',
               background: 'transparent', color: 'var(--text-primary)', fontSize: 13,

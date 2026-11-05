@@ -282,39 +282,6 @@ function ResultSkeleton() {
   );
 }
 
-// ── Responsive placeholder ───────────────────────────────────────────────────
-
-/**
- * The field is not one width. Sharing the header with a menu button and four
- * icon buttons leaves it ~277px at 640, 360px at 768 and 420px from 1024 up, so
- * a single placeholder either clips at the bottom of that range or wastes the
- * top of it. Each tier gets the longest wording that actually fits — measured,
- * not guessed. The "(Ctrl + K)" hint only appears where the shortcut is useful
- * AND there is room to say so.
- */
-const PLACEHOLDERS = [
-  { min: 1024, text: 'Search clients by name or mobile… (Ctrl + K)' },
-  // 700, not 768: measured, the field is 337px here with 278px of text room for
-  // a 215px string. At 640 the room drops to 218px — a 3px margin, which is not
-  // a margin at all once a font or a locale shifts.
-  { min: 700, text: 'Search clients by name or mobile…' },
-  { min: 0, text: 'Search clients…' },
-];
-
-function usePlaceholder(): string {
-  // Starts at the widest and corrects on mount. The alternative — reading
-  // window during render — differs between server and client and breaks
-  // hydration.
-  const [width, setWidth] = React.useState(1280);
-  React.useEffect(() => {
-    const measure = () => setWidth(window.innerWidth);
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
-  return (PLACEHOLDERS.find((p) => width >= p.min) ?? PLACEHOLDERS[PLACEHOLDERS.length - 1]).text;
-}
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 interface GlobalSearchProps {
@@ -328,7 +295,6 @@ interface GlobalSearchProps {
 export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const placeholder = usePlaceholder();
   const { user } = useAuth();
   const { features } = useFeatures();
 
@@ -986,7 +952,6 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
             onChange={(e) => { setQuery(e.target.value); setOpen(true); setFocusIdx(-1); }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
-            placeholder={placeholder}
             className={inputChrome}
           />
           {loading && (
@@ -1087,10 +1052,6 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
                       value={query}
                       onChange={(e) => { setQuery(e.target.value); setFocusIdx(-1); }}
                       onKeyDown={onKeyDown}
-                      // Shorter than the desktop placeholder on purpose: there
-                      // is no Ctrl key on a phone, and the full wording clips
-                      // at 390pt once the field is sized to stop iOS zooming.
-                      placeholder="Search by name or mobile…"
                       className="w-full rounded-[14px] py-2.5 pl-9 pr-3 text-[15px] outline-none"
                       style={{
                         background: 'var(--bg-subtle)',

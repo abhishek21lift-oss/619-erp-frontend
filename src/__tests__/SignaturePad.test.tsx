@@ -44,7 +44,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     stubCanvasContext();
     render(<SignaturePad label="Client Signature" onChange={vi.fn()} />);
 
-    expect(screen.getByPlaceholderText(/type your full name to sign/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/type your full name to sign/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^sign$/i })).toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     const onChange = vi.fn();
     render(<SignaturePad label="Client Signature" onChange={onChange} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/type your full name to sign/i), {
+    fireEvent.change(screen.getByLabelText(/type your full name to sign/i), {
       target: { value: 'Riya Sharma' },
     });
     fireEvent.click(screen.getByRole('button', { name: /^sign$/i }));
@@ -67,7 +67,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     const onChange = vi.fn();
     render(<SignaturePad label="Client Signature" onChange={onChange} />);
 
-    const input = screen.getByPlaceholderText(/type your full name to sign/i);
+    const input = screen.getByLabelText(/type your full name to sign/i);
     fireEvent.change(input, { target: { value: 'Riya Sharma' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -78,7 +78,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     stubCanvasContext();
     render(<SignaturePad label="Client Signature" onChange={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/type your full name to sign/i), {
+    fireEvent.change(screen.getByLabelText(/type your full name to sign/i), {
       target: { value: 'Riya Sharma' },
     });
     fireEvent.click(screen.getByRole('button', { name: /^sign$/i }));
@@ -95,7 +95,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     const signButton = screen.getByRole('button', { name: /^sign$/i });
     expect(signButton).toBeDisabled();
 
-    fireEvent.change(screen.getByPlaceholderText(/type your full name to sign/i), {
+    fireEvent.change(screen.getByLabelText(/type your full name to sign/i), {
       target: { value: '   ' },
     });
     expect(signButton).toBeDisabled();
@@ -107,7 +107,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     const onChange = vi.fn();
     render(<SignaturePad label="Client Signature" onChange={onChange} />);
 
-    const input = screen.getByPlaceholderText(/type your full name to sign/i) as HTMLInputElement;
+    const input = screen.getByLabelText(/type your full name to sign/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Riya Sharma' } });
     fireEvent.click(screen.getByRole('button', { name: /^sign$/i }));
     onChange.mockClear();
@@ -122,7 +122,7 @@ describe('SignaturePad — typed-name accessible alternative', () => {
     stubCanvasContext();
     render(<SignaturePad label="Client Signature" onChange={vi.fn()} disabled />);
 
-    expect(screen.getByPlaceholderText(/type your full name to sign/i)).toBeDisabled();
+    expect(screen.getByLabelText(/type your full name to sign/i)).toBeDisabled();
     expect(screen.getByRole('button', { name: /^sign$/i })).toBeDisabled();
   });
 });
