@@ -6,8 +6,8 @@
 
 import { http } from '../../http';
 import type {
-  NotificationPreferences, PortfolioItem, PortfolioKind, ProfileMe, ProfileUpdate, User,
-  UserPreferences,
+  NotificationPreferences, PortfolioItem, PortfolioKind, ProfileMe, ProfileUpdate, StudioContact,
+  StudioContactInput, User, UserPreferences,
 } from '../types';
 
 export const auth = {
@@ -185,6 +185,11 @@ export const profile = {
   },
   removeStudioLogo: () =>
     http<{ logoUrl: null }>('/api/profile/studio-logo', { method: 'DELETE' }),
+
+  /** The studio's contact details — the trainer's to write, shown to members. */
+  studio: () => http<StudioContact>('/api/profile/studio'),
+  updateStudio: (data: StudioContactInput) =>
+    http<StudioContact>('/api/profile/studio', { method: 'PUT', body: JSON.stringify(data) }),
 
   /**
    * Portfolio actions are immediate and per-item, so they never touch the
