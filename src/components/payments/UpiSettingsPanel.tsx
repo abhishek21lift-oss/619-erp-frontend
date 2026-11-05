@@ -111,9 +111,6 @@ export default function UpiSettingsPanel() {
             <p className="text-[13.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
               Verification queue
             </p>
-            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              Approve or reject the references members submit.
-            </p>
           </div>
           <ArrowRight size={17} style={{ color: 'var(--brand)' }} />
         </Link>

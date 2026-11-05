@@ -394,8 +394,7 @@ function PayPanel({
         <p className="mt-4 flex items-start gap-2 rounded-xl p-3 text-[12.5px]"
           style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
           <Info size={15} className="mt-px shrink-0" />
-          Open your UPI app on your phone and scan this code. App buttons are only
-          shown on a phone, where they can actually launch.
+          Open your UPI app on your phone and scan this code.
         </p>
       )}
     </Panel>

@@ -464,7 +464,6 @@ function RevenueAnalytics() {
         {/* ── Table view — the accessible equivalent of the charts above ─ */}
         <Panel
           title="Monthly Breakdown"
-          subtitle="Same figures as the chart, in tabular form"
           icon={<Receipt size={15} />}
         >
           {monthly.error && !monthly.data ? (

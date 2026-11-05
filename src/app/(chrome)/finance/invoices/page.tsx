@@ -347,7 +347,6 @@ export default function InvoicesPage() {
               xKey="status"
               bars={[{ key: 'value', label: 'Invoice value', color: semantic.info, colorKey: 'color' }]}
               title="Invoice value by status"
-              subtitle="Paid, pending and overdue invoices"
               height={240}
               className="mb-5"
               formatValue={fmtCurrency}
