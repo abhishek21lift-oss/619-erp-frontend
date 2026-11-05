@@ -313,7 +313,6 @@ export function CouponForm({ plans, initial, onCreated }: {
               label="Code"
               required
               placeholder="LAUNCH20"
-              description="Letters, numbers, hyphens and underscores"
               serverError={f.errors.fieldErrors.code}
             />
           )}
@@ -374,7 +373,6 @@ export function CouponForm({ plans, initial, onCreated }: {
                     mode="money"
                     suffix="₹"
                     placeholder="2000"
-                    description="Optional ceiling on the percentage"
                     serverError={f.errors.fieldErrors.maxDiscount}
                   />
                 )}

@@ -229,7 +229,7 @@ function SettingsForm({
               label="Your UPI ID (VPA)"
               required
               placeholder="studio@okhdfcbank"
-              description="Exactly as it appears in your UPI app. This is where money arrives."
+              description="Exactly as it appears in your UPI app."
               autoComplete="off"
               serverError={f.errors.fieldErrors.upi_id}
             />
@@ -243,7 +243,6 @@ function SettingsForm({
               label="Name shown to the member"
               required
               placeholder="Abhishek PT Studio"
-              description="Members abandon payments to a name they do not recognise."
               maxLength={120}
               showCount
               className="mt-4"
@@ -264,7 +263,6 @@ function SettingsForm({
                 // cannot appear on a valid invoice — and made a BLANK possible,
                 // which is what silently saved 0%.
                 options={gstOptions(storedGstPercent)}
-                description="0% hides the line entirely. These are the statutory slabs."
                 serverError={f.errors.fieldErrors.gst_percent}
               />
             )}
@@ -278,7 +276,6 @@ function SettingsForm({
                 required
                 mode="integer"
                 suffix="min"
-                description="Minutes, 5 to 1440."
                 serverError={f.errors.fieldErrors.order_ttl_minutes}
               />
             )}
@@ -291,7 +288,6 @@ function SettingsForm({
               field={field}
               label="GSTIN (optional)"
               placeholder="22AAAAA0000A1Z5"
-              description="Printed on receipts when set."
               className="mt-4"
               autoComplete="off"
               serverError={f.errors.fieldErrors.gst_number}
@@ -308,7 +304,6 @@ function SettingsForm({
               maxLength={500}
               showCount
               placeholder="Payments are verified within 2 hours, 7am–9pm."
-              description="Sets expectations — members chase a studio that goes quiet."
               className="mt-4"
               serverError={f.errors.fieldErrors.instructions}
             />

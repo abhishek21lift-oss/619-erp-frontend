@@ -202,7 +202,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 <form.Field name="durationMonths">
                   {(field) => (
                     <NumberField field={field} label="Duration" required mode="integer" suffix="months"
-                      description="1 to 60"
                       serverError={f.errors.fieldErrors.durationMonths} />
                   )}
                 </form.Field>

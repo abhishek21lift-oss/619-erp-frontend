@@ -542,7 +542,6 @@ export default function CardioCalculatorPage() {
               <FormField
                 label="Sessions per week"
                 error={frequencyError ?? undefined}
-                description={`${CARDIO_FREQUENCY_LIMITS.min}–${CARDIO_FREQUENCY_LIMITS.max} accepted; ${K11_FITT_REFERENCE.frequencyPerWeek.min}–${K11_FITT_REFERENCE.frequencyPerWeek.max} is the FITT reference.`}
               >
                 <TextInput
                   inputMode="numeric"
@@ -555,7 +554,6 @@ export default function CardioCalculatorPage() {
               <FormField
                 label="Main-work time (minutes)"
                 error={mainWorkError ?? undefined}
-                description={`${CARDIO_MAIN_WORK_LIMITS.min}–${CARDIO_MAIN_WORK_LIMITS.max} accepted; ${K11_FITT_REFERENCE.mainWorkMinutes.min}–${K11_FITT_REFERENCE.mainWorkMinutes.max} is the FITT reference.`}
               >
                 <TextInput
                   inputMode="numeric"
@@ -565,7 +563,7 @@ export default function CardioCalculatorPage() {
                   onChange={(e) => setMainWork(e.target.value)}
                 />
               </FormField>
-              <FormField label="Modality" description="Free text. Unknown modalities stay unclassified rather than being forced into a category.">
+              <FormField label="Modality">
                 <TextInput
                   value={modality}
                   onChange={(e) => setModality(e.target.value)}
