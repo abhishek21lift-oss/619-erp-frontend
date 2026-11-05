@@ -132,7 +132,9 @@ export function PageHero({ title, subtitle, icon, children, className, compact, 
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-0.5 truncate text-[12.5px]"
+              // Two lines, then ellipsis: `truncate` cut a subtitle mid-word on
+              // a phone, which hid the one sentence explaining the page.
+              <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug"
                 style={{ color: surface || tint ? 'rgba(255,255,255,0.78)' : 'var(--text-muted)' }}>
                 {subtitle}
               </p>
