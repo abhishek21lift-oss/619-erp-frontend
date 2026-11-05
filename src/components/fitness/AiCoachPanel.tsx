@@ -12,7 +12,7 @@ import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { errorMessage } from '@/lib/forms/errors';
+import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
 import { aiWorkoutInputSchema } from '@/lib/forms/schemas/aiGenerator';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
@@ -308,7 +308,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       ].filter(Boolean).join('\n');
       setGenerationResult(summary);
     } catch (err) {
-      setGenerationError(errorMessage(err, 'Failed to generate plan. Please try again.'));
+      setGenerationError(generationErrorMessage(err, 'Failed to generate plan. Please try again.'));
     } finally {
       setIsGenerating(false);
     }
