@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 import SharedClientAvatar from '@/components/pt-os/ClientAvatar';
 import { m } from 'framer-motion';
 import { AlertCircle, ArrowRight, Search, Users } from 'lucide-react';
-import { EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { EmptyState, PageContainer, PageHero, type PageAccent } from '@/components/ui';
 import { BRAND_HERO_GRADIENT, BRAND_HERO_SHADOW, ON_BRAND_BORDER, ON_BRAND_TEXT } from '@/lib/brand';
 import { api } from '@/lib/api';
 
@@ -68,9 +68,11 @@ interface ClientPickerProps {
    *  landing page for /pt-os/clients/[id]/workout-log, which is a path segment
    *  and not a query parameter, so it cannot use the default. */
   hrefFor?: (clientId: string) => string;
+  /** The module's own hero colour, when it has one. Omitted → house rose. */
+  accent?: PageAccent;
 }
 
-export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor }: ClientPickerProps) {
+export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor, accent }: ClientPickerProps) {
   const router = useRouter();
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [search, setSearch] = useState('');
@@ -99,7 +101,7 @@ export default function ClientPicker({ title, subtitle, icon, basePath, hrefFor 
           so every picker sits where the dashboard sits and looks like the rest
           of the app rather than like a banner. The per-length type stepping
           the strip needed is gone with it — the hero wraps. */}
-      <PageHero icon={icon} title={title} subtitle={subtitle} />
+      <PageHero icon={icon} title={title} subtitle={subtitle} accent={accent} />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="relative min-w-[220px] flex-1">

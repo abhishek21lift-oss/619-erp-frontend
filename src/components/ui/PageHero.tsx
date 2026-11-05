@@ -37,6 +37,7 @@
 import * as React from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { cn } from './cn';
+import { PAGE_ACCENTS, pageGradient, type PageAccent } from './pageAccents';
 
 export interface PageHeroProps {
   title: string;
@@ -70,6 +71,13 @@ export interface PageHeroProps {
    */
   surface?: { background: string; shadow: string };
   /**
+   * A section's own two-stop colour for the full or the compact hero, from
+   * components/ui/pageAccents.ts. Omitted (or `brand`) keeps the house rose;
+   * `surface` wins when both are given, because it is the more specific
+   * escape hatch an existing page already relies on.
+   */
+  accent?: PageAccent;
+  /**
    * The arrival treatment: an emerald aurora with concentric rings, a large
    * glass icon tile and the page's actions as pills under the title. Opt-in,
    * so every existing caller keeps the hero it has.
@@ -77,8 +85,12 @@ export interface PageHeroProps {
   showcase?: boolean;
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface, showcase }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface, accent, showcase }: PageHeroProps) {
   const reduce = useReducedMotion();
+  // `surface` outranks `accent`: Attendance already paints through it.
+  const paint = surface ?? (accent && accent !== 'brand'
+    ? { background: pageGradient(accent), shadow: PAGE_ACCENTS[accent].shadow }
+    : null);
 
   if (showcase) {
     return (
@@ -158,27 +170,45 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         initial={reduce ? false : { opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduce ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className={cn('pt-1', className)}
+        className={cn(
+          paint
+            ? 'relative overflow-hidden rounded-[20px] px-4 py-3.5 text-white'
+            : 'pt-1',
+          className,
+        )}
+        style={paint
+          ? { background: paint.background, boxShadow: `0 16px 34px -20px ${paint.shadow}` }
+          : undefined}
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {paint && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.10), transparent 52%)' }}
+          />
+        )}
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             {icon && (
               <span
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white"
-                style={{ background: 'var(--gradient-brand)' }}
+                style={paint
+                  ? { background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)' }
+                  : { background: 'var(--gradient-brand)' }}
               >
                 {icon}
               </span>
             )}
             <div className="min-w-0">
               <h1
-                className="truncate text-[20px] font-[800] leading-tight sm:text-[23px]"
-                style={{ color: 'var(--text-primary)', letterSpacing: '-0.022em' }}
+                className={cn('truncate text-[20px] font-[800] leading-tight sm:text-[23px]', paint && 'text-white')}
+                style={{ ...(paint ? undefined : { color: 'var(--text-primary)' }), letterSpacing: '-0.022em' }}
               >
                 {title}
               </h1>
               {subtitle && (
-                <p className="mt-0.5 truncate text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                <p className="mt-0.5 truncate text-[12.5px]"
+                  style={{ color: paint ? 'rgba(255,255,255,0.78)' : 'var(--text-muted)' }}>
                   {subtitle}
                 </p>
               )}
@@ -186,7 +216,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
           </div>
           {actions && <div className="shrink-0">{actions}</div>}
         </div>
-        {children && <div className="mt-3">{children}</div>}
+        {children && <div className="relative mt-3">{children}</div>}
       </m.div>
     );
   }
@@ -197,9 +227,9 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
       className={cn('relative overflow-hidden rounded-[24px] p-5 sm:rounded-[30px] sm:p-7', className)}
-      style={surface ? {
-        background: surface.background,
-        boxShadow: `0 26px 56px -24px ${surface.shadow}, inset 0 1px 0 rgba(255,255,255,0.14)`,
+      style={paint ? {
+        background: paint.background,
+        boxShadow: `0 26px 56px -24px ${paint.shadow}, inset 0 1px 0 rgba(255,255,255,0.14)`,
       } : {
         background:
           'radial-gradient(130% 150% at 50% -25%, #FB9590 0%, transparent 58%),'
@@ -212,7 +242,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
       {/* Decorative layers, matching the dashboard hero. All non-interactive
           and all behind the content — a hero you cannot read is not a hero. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        {!surface && (
+        {!paint && (
           <>
             <div
               className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
@@ -234,7 +264,7 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         </svg>
         <div
           className="absolute inset-0"
-          style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,${surface ? 0.22 : 0.38}) 100%)` }}
+          style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,${paint ? 0.22 : 0.38}) 100%)` }}
         />
       </div>
 

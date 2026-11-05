@@ -92,7 +92,7 @@ function FormCheckBody() {
     }
   };
 
-  const title = <PageTitle accent="workout" icon={<Video size={20} />} title="Form check"
+  const title = <PageTitle accent="progress" icon={<Video size={20} />} title="Form check"
     sub="Send a lift. Your trainer comments at the exact second." />;
 
   if (failed) return <>{title}<LoadError what="form checks" /></>;

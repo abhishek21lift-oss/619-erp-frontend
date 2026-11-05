@@ -112,3 +112,4 @@ export type {
 
 export { PageHero, PageContainer, HeroButton, HeroChip } from './PageHero';
 export type { PageHeroProps, HeroButtonProps } from './PageHero';
+export type { PageAccent } from './pageAccents';

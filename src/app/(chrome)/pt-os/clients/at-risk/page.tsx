@@ -100,6 +100,7 @@ export default function AtRiskClientsPage() {
       <PageContainer>
         <PageHero
           icon={<AlertTriangle size={20} />}
+          accent="red"
           title="At-risk Clients"
           subtitle="Ranked by who is most likely to leave, with the reason and one next action."
         />
