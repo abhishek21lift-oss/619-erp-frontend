@@ -121,13 +121,20 @@ export function EmptyState({ icon, title, body }: { icon: ReactNode; title: stri
   );
 }
 
-export function LoadError({ what }: { what: string }) {
+export function LoadError({ what, onRetry }: { what: string; onRetry?: () => void }) {
   return (
     <Card className="p-6 text-center">
       <p className="text-[14px] font-[700]" style={{ color: MC.ink }}>We could not load your {what}</p>
       <p className="mt-1.5 text-[12.5px]" style={{ color: MC.muted }}>
         Refresh the page, and tell your trainer if it keeps happening.
       </p>
+      {onRetry && (
+        <button type="button" onClick={onRetry}
+          className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-[12px] px-4 text-[13px] font-[750] text-white transition-transform active:scale-[0.98]"
+          style={{ background: MC.primary }}>
+          Try again
+        </button>
+      )}
     </Card>
   );
 }
