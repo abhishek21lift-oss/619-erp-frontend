@@ -51,10 +51,10 @@ import {
 } from '@/lib/forms/schemas/portfolioUpload';
 import { useAppForm } from '@/lib/forms/useAppForm';
 
-const KINDS: { value: PortfolioKind; label: string; hint: string; icon: React.ReactNode }[] = [
-  { value: 'image', label: 'Photo', hint: 'A single image', icon: <ImageIcon size={14} /> },
-  { value: 'before_after', label: 'Before / After', hint: 'Two images, shown side by side', icon: <GitCompareArrows size={14} /> },
-  { value: 'video_link', label: 'Video', hint: 'A YouTube or Vimeo link, plus a thumbnail', icon: <Play size={14} /> },
+const KINDS: { value: PortfolioKind; label: string; icon: React.ReactNode }[] = [
+  { value: 'image', label: 'Photo', icon: <ImageIcon size={14} /> },
+  { value: 'before_after', label: 'Before / After', icon: <GitCompareArrows size={14} /> },
+  { value: 'video_link', label: 'Video', icon: <Play size={14} /> },
 ];
 
 const MB = (n: number) => `${Math.round(n / (1024 * 1024))}MB`;
@@ -543,9 +543,6 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
                   </button>
                 ))}
               </div>
-              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                {KINDS.find((k) => k.value === kind)?.hint}
-              </p>
             </div>
 
             <div className={kind === 'before_after' ? 'grid grid-cols-2 gap-3' : ''}>
@@ -575,7 +572,6 @@ function UploadDialog({ open, onOpenChange, onCreated, remaining }: {
                     required
                     autoComplete="url"
                     placeholder="https://www.youtube.com/watch?v=…"
-                    description="YouTube or Vimeo. Other hosts are refused."
                     serverError={errors.fieldErrors.external_url}
                   />
                 )}

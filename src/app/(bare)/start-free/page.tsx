@@ -154,23 +154,19 @@ export default function StartFreePage() {
               {...field('full_name')} />
 
             <AuthInput name="business_name" label="Business name" icon={Building2} autoComplete="organization"
-              {...field('business_name')}
-              hint="The name your clients know you by." />
+              {...field('business_name')} />
 
             <AuthInput name="mobile" label="Mobile number" icon={Phone} type="tel" autoComplete="tel"
               inputMode="numeric"
-              {...field('mobile')}
-              hint="10 digits, no country code needed." />
+              {...field('mobile')} />
 
             <AuthInput name="email" label="Email address" icon={Mail} type="email" autoComplete="email"
               inputMode="email" autoCapitalize="none" spellCheck={false}
-              {...field('email')}
-              hint="Where approval and your login go." />
+              {...field('email')} />
 
             <AuthInput name="password" label="Create password" icon={Lock}
               type={showPassword ? 'text' : 'password'} autoComplete="new-password"
               {...field('password')}
-              hint="At least 8 characters. You'll use this to sign in once approved."
               trailing={<RevealButton shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />} />
 
             {serverError && (

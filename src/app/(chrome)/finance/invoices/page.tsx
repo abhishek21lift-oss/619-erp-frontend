@@ -718,7 +718,6 @@ function CreateInvoiceModal({
               field={field}
               label="Description"
               placeholder="e.g. Monthly membership fee"
-              description="Becomes the invoice's line item"
               maxLength={500}
               showCount
               serverError={f.errors.fieldErrors.description}

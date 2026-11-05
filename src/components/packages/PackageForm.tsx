@@ -105,7 +105,6 @@ export function PackageForm({ editing, onCancel, onSaved }: {
         <form.Field name="description">
           {(field) => (
             <TextAreaField field={field} label="Description"
-              description="Shown to members on the package card."
               rows={3} maxLength={1000} showCount
               serverError={f.errors.fieldErrors.description} />
           )}

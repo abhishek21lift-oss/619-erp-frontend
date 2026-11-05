@@ -1,6 +1,6 @@
 // Stops the form landscape drifting back to what the audit found.
 //
-// FORM-SYSTEM.md counted eighteen components that render a control, seventeen
+// docs/audits/FORM-SYSTEM.md counted eighteen components that render a control, seventeen
 // of which skipped the label wiring, and FloatInput implemented three times.
 // The system only helps if the next form uses it, so these are the rules that
 // make not using it visible.
@@ -373,7 +373,7 @@ describe('the five representative migrations', () => {
   // captions that used to live in a placeholder and now live in a label.
   const migrated: [string, string[]][] = [
     ['app/(chrome)/pt-os/weekly-checkin/page.tsx',
-      ['Client', 'Week starting', 'Weight', 'Sleep', 'Water', 'Workouts', 'Adherence', 'Trainer notes']],
+      ['Client', 'Week starting', 'Weight (kg)', 'Sleep (hours)', 'Water (glasses)', 'Workouts (this week)', 'Adherence', 'Trainer notes']],
     ['components/packages/PackageForm.tsx',
       ['Package name', 'Sessions', 'Duration', 'Price', 'Goal type', 'Description']],
     ['app/(chrome)/pt-os/session-balance/page.tsx',
@@ -396,7 +396,7 @@ describe('the five representative migrations', () => {
   it.each(migrated)('%s gives every migrated field a persistent label', (file, labels) => {
     const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
     for (const label of labels) {
-      expect(src, `no label "${label}"`).toMatch(new RegExp(`label="${label}"`));
+      expect(src, `no label "${label}"`).toMatch(new RegExp(`label="${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
     }
   });
 

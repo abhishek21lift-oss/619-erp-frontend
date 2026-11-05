@@ -347,19 +347,19 @@ function Editor({ data, onSaved }: { data: TrainerAvailability; onSaved: () => P
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <FormField label="Session length (min)" description="15–240">
+          <FormField label="Session length (min)">
             <TextInput {...number('slot_minutes')} min={15} max={240} />
           </FormField>
-          <FormField label="Buffer after (min)" description="0–60">
+          <FormField label="Buffer after (min)">
             <TextInput {...number('buffer_minutes')} min={0} max={60} />
           </FormField>
-          <FormField label="Minimum notice (h)" description="0–168">
+          <FormField label="Minimum notice (h)">
             <TextInput {...number('min_notice_hours')} min={0} max={168} />
           </FormField>
-          <FormField label="Book up to (days ahead)" description="1–90">
+          <FormField label="Book up to (days ahead)">
             <TextInput {...number('horizon_days')} min={1} max={90} />
           </FormField>
-          <FormField label="Cancel/reschedule cutoff (h)" description="0–168">
+          <FormField label="Cancel/reschedule cutoff (h)">
             <TextInput {...number('cancel_cutoff_hours')} min={0} max={168} />
           </FormField>
         </div>

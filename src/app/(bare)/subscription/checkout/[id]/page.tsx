@@ -369,7 +369,6 @@ function UtrBlock({
               label="UPI reference number (UTR)"
               required
               placeholder="12 to 16 digits"
-              description="Numbers only."
               maxLength={16}
               showCount
               autoComplete="off"

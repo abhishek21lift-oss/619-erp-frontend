@@ -522,7 +522,6 @@ export function UtrForm({
                 label="UPI reference number (UTR)"
                 required
                 error={error}
-                description={error ? undefined : 'Numbers only.'}
                 className="mt-4"
                 labelAside={
                   <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>

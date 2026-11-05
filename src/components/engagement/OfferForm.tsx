@@ -197,7 +197,6 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
                   field={field}
                   label="Coupon code"
                   placeholder="e.g. SUMMER30"
-                  description="Letters, numbers, hyphens and underscores"
                   serverError={f.errors.fieldErrors.code}
                   className="flex-1 min-w-0"
                 />

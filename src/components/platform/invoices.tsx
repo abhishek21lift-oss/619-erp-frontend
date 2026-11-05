@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAppForm } from '@/lib/forms/useAppForm';
-import { GST_SLABS } from '@/lib/forms/domain';
 import {
   platformBillingSchema, billingToFormValues, toBillingPayload,
   BILLING_TEXT_FIELDS, BILLING_FIELD_HINTS,
@@ -315,7 +314,6 @@ function SettingsForm({
                 required
                 mode="percent"
                 suffix="%"
-                description={`One of ${GST_SLABS.join('%, ')}%`}
                 serverError={f.errors.fieldErrors.gst_percent}
                 className="w-32"
               />

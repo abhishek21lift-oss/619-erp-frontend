@@ -933,7 +933,6 @@ function AddMealModal({ open, onClose, onCreated }: { open: boolean; onClose: ()
               <form.Field name="calories">
                 {(field) => (
                   <NumberField field={field} label="Calories" required mode="integer" suffix="kcal"
-                    description="Per serving"
                     serverError={f.errors.fieldErrors.calories} />
                 )}
               </form.Field>

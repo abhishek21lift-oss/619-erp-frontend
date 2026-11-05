@@ -65,11 +65,6 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
           <FloatInput label="Bone Mass (kg)" numeric="decimal" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
           <div>
             <FloatInput label="BMR (kcal)" numeric="integer" value={form.bmr} onChange={(v) => set('bmr', v)} />
-            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              {suggestedBmr != null
-                ? `Leave blank to auto-suggest ${suggestedBmr} kcal (Mifflin-St Jeor).`
-                : 'Leave blank to auto-suggest via Mifflin-St Jeor.'}
-            </p>
           </div>
           <FloatInput label="Metabolic Age" numeric="integer" value={form.metabolicAge} onChange={(v) => set('metabolicAge', v)} />
         </div>

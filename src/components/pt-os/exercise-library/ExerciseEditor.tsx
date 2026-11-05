@@ -542,7 +542,6 @@ export function ExerciseEditor({
                     <TextAreaField
                       field={field}
                       label="Step-by-step instructions"
-                      description="One step per line"
                       rows={5}
                       maxLength={4000}
                       showCount
@@ -592,7 +591,6 @@ export function ExerciseEditor({
                       field={field}
                       label="Sets"
                       placeholder="3-4"
-                      description="Written the way you say it"
                       serverError={f.errors.fieldErrors.recommended_sets}
                     />
                   )}
@@ -617,7 +615,6 @@ export function ExerciseEditor({
                       mode="integer"
                       suffix="sec"
                       placeholder="90"
-                      description="5 to 1800"
                       serverError={f.errors.fieldErrors.rest_seconds}
                     />
                   )}
