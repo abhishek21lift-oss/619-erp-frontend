@@ -21,12 +21,13 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
+import MemberPauseCard from '@/components/member/MemberPauseCard';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import {
   Card, EASE, LoadError, MC, PageSkeleton, PageTitle, Section, longDate,
 } from '@/components/member/MemberUI';
 import { api } from '@/lib/api';
-import type { MeRenewal } from '@/lib/api';
+import type { MeRenewal, MeRequestState } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 import { palette, rgba } from '@/lib/palette';
 import { daysLeft } from '@/components/member/planDates';
@@ -47,9 +48,14 @@ const inr = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigi
 function RenewBody() {
   const [data, setData] = useState<MeRenewal | null>(null);
   const [failed, setFailed] = useState(false);
+  const [pause, setPause] = useState<MeRequestState | null>(null);
 
   const load = () => api.me.renewal().then((r) => setData(r.data)).catch(() => setFailed(true));
-  useEffect(() => { void load(); }, []);
+  // Its own read: a pause that cannot be loaded must not blank the plan above.
+  const loadPause = () => api.me.pause()
+    .then((r) => setPause(r.data))
+    .catch(() => setPause({ requested_at: null }));
+  useEffect(() => { void load(); void loadPause(); }, []);
 
   const title = <PageTitle accent="plan" icon={<RefreshCw size={20} />} title="Renew" />;
   if (failed) return <>{title}<LoadError what="plan" /></>;
@@ -60,6 +66,7 @@ function RenewBody() {
       {title}
       <PlanStatus plan={data.plan} />
       {data.offer ? <OfferCard offer={data.offer} /> : <AskCard requestedAt={data.requested_at} onSent={load} />}
+      <MemberPauseCard requestedAt={pause?.requested_at ?? null} onSent={loadPause} />
       {data.plan.balance > 0 && (
         <Section title="Also owed">
           <Card className="flex items-center justify-between gap-3 p-4">
