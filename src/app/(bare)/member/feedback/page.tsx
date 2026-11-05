@@ -18,7 +18,7 @@ import MemberShell from '@/components/member/MemberShell';
 import {
   Card, EmptyState, LoadError, MC, PageSkeleton, PageTitle, Section, longDate,
 } from '@/components/member/MemberUI';
-import { Button } from '@/components/ui';
+import { Button, FormField, TextArea } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SessionFeedback, SessionFeedbackInput } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -253,21 +253,14 @@ function FeedbackBody() {
                         </div>
                       </fieldset>
 
-                      <div>
-                        <label htmlFor={`note-${row.id}`} className="mb-1.5 block text-[12px] font-[750]" style={{ color: MC.ink }}>
-                          Anything else? <span className="font-[500]" style={{ color: MC.muted }}>(optional)</span>
-                        </label>
-                        <textarea
-                          id={`note-${row.id}`}
+                      <FormField label="Anything else? (optional)" id={`note-${row.id}`}>
+                        <TextArea
                           value={text}
                           maxLength={2000}
                           rows={3}
                           onChange={(e) => setText(e.target.value)}
-                          placeholder="What worked, what did not, what you want next time."
-                          className="w-full rounded-[12px] px-3 py-2.5 text-[12.5px]"
-                          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: MC.ink }}
                         />
-                      </div>
+                      </FormField>
 
                       <Button className="w-full" onClick={() => void submit(row.id)} disabled={busy}>
                         {busy ? 'Sending…' : 'Send feedback'}
