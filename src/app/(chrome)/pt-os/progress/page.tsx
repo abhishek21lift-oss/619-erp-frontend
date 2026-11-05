@@ -13,15 +13,18 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { m, useReducedMotion } from 'framer-motion';
 import {
-  Activity, AlertCircle, AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList,
-  Flag, HeartPulse, LineChart, Loader2, Ruler, Search, Sparkles, TrendingUp, Users,
+  Activity, AlertCircle, AlertTriangle, ArrowRight, BatteryCharging, CalendarClock, CheckCircle2,
+  ClipboardList, Flag, Flame, Footprints, HeartPulse, LineChart, Loader2, Moon, Ruler, Search,
+  Sparkles, TrendingUp, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
+import { DashboardError } from '@/components/dashboards/primitives';
 import {
-  Button, Card, EmptyState, PageContainer, PageHero, Skeleton,
+  Button, Card, EmptyState, PageContainer, Skeleton,
 } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
 import { indigo, emerald } from '@/lib/palette';
@@ -61,6 +64,125 @@ const SECTION_TONE: Record<SectionKey, { from: string; to: string; ink: string }
   analytics: { from: '#852E4E', to: '#6B2440', ink: '#A33757' },
   insights: { from: '#475569', to: '#334155', ink: '#475569' },
 };
+
+/**
+ * The dashboard's hero, adapted to a report page.
+ *
+ * Same slab, gradient, crest, gold wordmark, orbs, grid and hairlines as
+ * `HeroHeader` in components/dashboards/PtOsDashboard.tsx. The one deliberate
+ * difference: the sheen runs once on arrival instead of looping forever —
+ * this is a utility screen opened repeatedly, not the landing screen.
+ */
+function HubHero({ eyebrow, title, subtitle, icon, actions, children }: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  actions?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  const reduce = useReducedMotion() ?? false;
+  return (
+    <m.div
+      initial={reduce ? false : { opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduce ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
+      className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
+      style={{
+        background:
+          'radial-gradient(130% 150% at 50% -25%, #FB9590 0%, transparent 58%),' +
+          'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)',
+        boxShadow:
+          '0 24px 64px -14px rgba(107,36,64,0.55), 0 8px 26px rgba(163,55,87,0.24),' +
+          'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(255,133,61,0.10)',
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-20 -right-14 h-60 w-60 rounded-full opacity-35"
+          style={{ background: 'radial-gradient(circle, #FF853D 0%, transparent 70%)', filter: 'blur(46px)' }} />
+        <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #20BFA4 0%, transparent 70%)', filter: 'blur(54px)' }} />
+        <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <defs>
+            <pattern id="ph-hero-grid" width="34" height="34" patternUnits="userSpaceOnUse">
+              <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#ph-hero-grid)" />
+        </svg>
+        {!reduce && (
+          <m.div aria-hidden className="absolute top-0 bottom-0 w-1/3"
+            style={{ background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.09), transparent)', transform: 'skewX(-18deg)' }}
+            initial={{ x: '-170%' }} animate={{ x: '280%' }}
+            transition={{ duration: 1.6, ease: 'easeInOut' }} />
+        )}
+        <div className="absolute inset-0"
+          style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center justify-center px-6 py-5 text-center sm:py-7">
+        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full"
+          style={{
+            background: 'radial-gradient(circle at 30% 25%, #6B2440, #0F172A)',
+            border: '1px solid rgba(251,191,36,0.45)',
+            boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
+            color: '#FCD34D',
+          }}>
+          {icon}
+        </div>
+        <p className="mb-1 text-[9.5px] font-[700] uppercase tracking-[0.28em] sm:text-[10.5px]"
+          style={{ color: 'rgba(252,211,77,0.66)' }}>{eyebrow}</p>
+        <h1 className="text-[30px] font-[900] uppercase leading-[0.98] tracking-[0.12em] sm:text-[42px]"
+          style={{
+            background: 'linear-gradient(92deg, #ffffff 0%, #FCD34D 34%, #F59E0B 62%, #FDE68A 82%, #ffffff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.40)) drop-shadow(0 3px 20px rgba(245,158,11,0.48))',
+          }}>{title}</h1>
+        {subtitle && (
+          <p className="mt-2 text-[10px] font-[600] uppercase tracking-[0.18em] sm:text-[11.5px]"
+            style={{ color: 'rgba(255,255,255,0.52)' }}>{subtitle}</p>
+        )}
+        {children && <div className="mt-2">{children}</div>}
+        {actions && <div className="mt-3 flex flex-wrap items-center justify-center gap-2">{actions}</div>}
+      </div>
+
+      <div className="absolute inset-x-0 top-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }} />
+      <div className="absolute inset-x-0 bottom-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(255,187,148,0.5), transparent)' }} />
+    </m.div>
+  );
+}
+
+function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-[750] uppercase tracking-[0.14em]"
+      style={{ color: 'var(--text-muted)' }}>
+      {icon && (
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+          style={{ background: 'var(--bg-subtle)' }} aria-hidden>
+          {icon}
+        </span>
+      )}
+      {children}
+    </p>
+  );
+}
+
+function PageWash() {
+  return (
+    <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }} aria-hidden>
+      <div className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 65% 45% at 10% 0%, color-mix(in srgb, var(--brand) 6%, transparent) 0%, transparent 55%),' +
+            'radial-gradient(ellipse 55% 40% at 90% 90%, color-mix(in srgb, var(--brand) 6%, transparent) 0%, transparent 55%)',
+        }} />
+    </div>
+  );
+}
 
 export default function TrainerProgressPage() {
   return (
@@ -127,144 +249,158 @@ function ProgressRoster() {
   const filtered = Boolean(search.trim()) || status !== 'all';
 
   return (
-    <PageContainer>
-      <PageHero
-        compact
-        title="Progress Hub"
-        subtitle={data
-          ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
-          : 'Re-tests, daily habits and seven-domain change across every client.'}
-        icon={<LineChart size={18} />}
-        actions={(
-          <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
-            {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
-          </Button>
-        )}
-      />
-
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Stat label="Overdue" value={String(counts?.overdue ?? '—')} hint="Needs a decision"
-          tone={counts?.overdue ? 'danger' : 'neutral'} />
-        <Stat label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
-          tone={counts?.due ? 'warn' : 'neutral'} />
-        <Stat label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
-          hint="Scheduled ahead" tone="brand" />
-        <Stat label="No open cycle"
-          value={String((counts?.not_scheduled ?? 0) + (counts?.missing_baseline ?? 0))}
-          hint="Not scheduled / no baseline" tone="neutral" />
-      </div>
-
-      <div className="space-y-2.5 rounded-[22px] p-3.5"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            aria-label="Search clients by name, email or mobile"
-            type="search"
-            placeholder="Search by name, email or mobile…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+    <>
+      <PageWash />
+      <div className="relative" style={{ zIndex: 1 }}>
+        <PageContainer>
+          <HubHero
+            eyebrow="Studio progress"
+            title="Progress Hub"
+            subtitle={data
+              ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
+              : 'Re-tests · habits · seven-domain change'}
+            icon={<LineChart size={18} />}
+            actions={(
+              <Button variant="outline" size="sm"
+                className="!border-white/25 !bg-white/10 !text-white hover:!border-white/40 hover:!bg-white/20"
+                onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
+                {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
+              </Button>
+            )}
           />
-        </div>
-        <div className="flex flex-wrap gap-1 rounded-[14px] p-1" role="group" aria-label="Filter by re-test state"
-          style={{ background: 'var(--bg-subtle)' }}>
-          {ROSTER_FILTERS.map((f) => {
-            const active = status === f.key;
-            const count = counts
-              ? (f.key === 'all' ? counts.total : counts[f.key as keyof ProgressRetestRoster['counts']])
-              : null;
-            return (
-              <button key={f.key} type="button" aria-pressed={active}
-                onClick={() => { setStatus(f.key); setPage(1); }}
-                className="min-h-10 rounded-[10px] px-3 py-1.5 text-[11px] font-[750] transition-all"
-                style={active
-                  ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
-                  : { color: 'var(--text-muted)' }}>
-                {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
-      {failed && data && (
-        <p className="rounded-[12px] px-4 py-2.5 text-[12px]"
-          style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>
-          {failed} — showing the last loaded roster.
-        </p>
-      )}
-
-      {loading && !data && (
-        <div className="space-y-2.5" aria-busy="true" aria-label="Loading clients">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[74px] w-full rounded-[16px]" />)}
-        </div>
-      )}
-
-      {!loading && !data && failed && (
-        <EmptyState icon={<AlertCircle size={20} />} title="Could not load the roster" description={failed}
-          action={<Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>} />
-      )}
-
-      {data && (
-        <>
-          {data.clients.length === 0 ? (
-            <EmptyState icon={<Users size={20} />}
-              title={filtered ? 'No clients match' : 'No clients yet'}
-              description={filtered
-                ? 'Try a different search or re-test state.'
-                : 'Add a client to start tracking assessments and re-tests.'} />
-          ) : (
-            <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
-              {data.clients.map((c) => (
-                <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
-                  className="group flex w-full items-center gap-3 rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_10px_24px_-14px_rgba(15,23,42,0.28)]"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    boxShadow: `var(--shadow-card), inset 3px 0 0 ${STATE_EDGE[c.state.state] ?? '#64748B'}`,
-                  }}>
-                  <ClientAvatar name={c.name} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
-                      <StatePill state={c.state.state} />
-                    </div>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                      {c.assessment_count === 0
-                        ? 'No assessment on file'
-                        : `${c.assessment_count} assessment${c.assessment_count === 1 ? '' : 's'} · latest ${date(c.latest_date)}${c.latest_score == null ? '' : ` · ${Math.round(c.latest_score)}/100`}`}
-                      {c.scheduled_date ? ` · next ${date(c.scheduled_date)} (${timing(c)})` : ` · ${timing(c)}`}
-                    </p>
-                  </div>
-                  <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
-                    style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? 'var(--warning-text)' : 'var(--text-muted)' }}>
-                    {c.trainer_name || 'Unassigned'}
-                  </span>
-                  <ArrowRight size={14} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100"
-                    style={{ color: 'var(--text-disabled)' }} />
-                </button>
-              ))}
+          <div>
+            <SectionLabel icon={<AlertTriangle size={10} />}>Re-test status</SectionLabel>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <Stat variant="kpi" icon={<AlertTriangle size={13} />} label="Overdue" value={String(counts?.overdue ?? '—')} hint="Needs a decision"
+                tone={counts?.overdue ? 'danger' : 'neutral'} delay={0} />
+              <Stat variant="kpi" icon={<CalendarClock size={13} />} label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
+                tone={counts?.due ? 'warn' : 'neutral'} delay={0.05} />
+              <Stat variant="kpi" icon={<TrendingUp size={13} />} label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
+                hint="Scheduled ahead" tone="brand" delay={0.1} />
+              <Stat variant="kpi" icon={<Users size={13} />} label="No open cycle"
+                value={String((counts?.not_scheduled ?? 0) + (counts?.missing_baseline ?? 0))}
+                hint="Not scheduled / no baseline" tone="neutral" delay={0.15} />
             </div>
-          )}
+          </div>
 
-          {data.pages > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                Page {data.page} of {data.pages} · {data.total} client{data.total === 1 ? '' : 's'}
-              </span>
-              <div className="flex gap-1.5">
-                <Button variant="secondary" size="sm" disabled={data.page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
-                <Button variant="secondary" size="sm" disabled={data.page >= data.pages}
-                  onClick={() => setPage((p) => p + 1)}>Next</Button>
+          <div>
+            <SectionLabel icon={<Users size={10} />}>Clients</SectionLabel>
+            <div className="space-y-2.5">
+              <div className="glass-panel space-y-2.5 p-3.5">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+                  <input
+                    aria-label="Search clients by name, email or mobile"
+                    type="search"
+                    placeholder="Search by name, email or mobile…"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1 rounded-[14px] p-1" role="group" aria-label="Filter by re-test state"
+                  style={{ background: 'var(--bg-subtle)' }}>
+                  {ROSTER_FILTERS.map((f) => {
+                    const active = status === f.key;
+                    const count = counts
+                      ? (f.key === 'all' ? counts.total : counts[f.key as keyof ProgressRetestRoster['counts']])
+                      : null;
+                    return (
+                      <button key={f.key} type="button" aria-pressed={active}
+                        onClick={() => { setStatus(f.key); setPage(1); }}
+                        className="min-h-10 rounded-[10px] px-3 py-1.5 text-[11px] font-[750] transition-all"
+                        style={active
+                          ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
+                          : { color: 'var(--text-muted)' }}>
+                        {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {failed && data && (
+                <p className="rounded-[12px] px-4 py-2.5 text-[12px]"
+                  style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>
+                  {failed} — showing the last loaded roster.
+                </p>
+              )}
+
+              {loading && !data && (
+                <div className="space-y-2.5" aria-busy="true" aria-label="Loading clients">
+                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[74px] w-full rounded-[16px]" />)}
+                </div>
+              )}
+
+              {!loading && !data && failed && (
+                <DashboardError onRetry={() => setReloadKey((k) => k + 1)} title="Could not load the roster"
+                  detail={failed} retrying={loading} />
+              )}
+
+              {data && (
+                <>
+                  {data.clients.length === 0 ? (
+                    <EmptyState icon={<Users size={20} />}
+                      title={filtered ? 'No clients match' : 'No clients yet'}
+                      description={filtered
+                        ? 'Try a different search or re-test state.'
+                        : 'Add a client to start tracking assessments and re-tests.'} />
+                  ) : (
+                    <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
+                      {data.clients.map((c) => (
+                        <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
+                          className="group flex w-full items-center gap-3 rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_10px_24px_-14px_rgba(15,23,42,0.28)]"
+                          style={{
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border)',
+                            boxShadow: `var(--shadow-card), inset 3px 0 0 ${STATE_EDGE[c.state.state] ?? '#64748B'}`,
+                          }}>
+                          <ClientAvatar name={c.name} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="truncate text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                              <StatePill state={c.state.state} />
+                            </div>
+                            <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                              {c.assessment_count === 0
+                                ? 'No assessment on file'
+                                : `${c.assessment_count} assessment${c.assessment_count === 1 ? '' : 's'} · latest ${date(c.latest_date)}${c.latest_score == null ? '' : ` · ${Math.round(c.latest_score)}/100`}`}
+                              {c.scheduled_date ? ` · next ${date(c.scheduled_date)} (${timing(c)})` : ` · ${timing(c)}`}
+                            </p>
+                          </div>
+                          <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
+                            style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? 'var(--warning-text)' : 'var(--text-muted)' }}>
+                            {c.trainer_name || 'Unassigned'}
+                          </span>
+                          <ArrowRight size={14} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100"
+                            style={{ color: 'var(--text-disabled)' }} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {data.pages > 1 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                        Page {data.page} of {data.pages} · {data.total} client{data.total === 1 ? '' : 's'}
+                      </span>
+                      <div className="flex gap-1.5">
+                        <Button variant="secondary" size="sm" disabled={data.page <= 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+                        <Button variant="secondary" size="sm" disabled={data.page >= data.pages}
+                          onClick={() => setPage((p) => p + 1)}>Next</Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          )}
-        </>
-      )}
-    </PageContainer>
+          </div>
+        </PageContainer>
+      </div>
+    </>
   );
 }
 
@@ -320,83 +456,94 @@ function ProgressHub({ clientId }: { clientId: string }) {
   if (loading && !data) return <LoadingShell />;
   if (failed && !data) {
     return (
-      <PageContainer>
-        <PageHero compact title="Progress Hub" icon={<LineChart size={18} />}
-          actions={<Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>} />
-        <EmptyState icon={<AlertCircle size={20} />} title="Could not load progress" description={failed}
-          action={<Button variant="outline" onClick={() => void load()}>Try again</Button>} />
-      </PageContainer>
+      <>
+        <PageWash />
+        <div className="relative" style={{ zIndex: 1 }}>
+          <PageContainer>
+            <HubHero eyebrow="Client progress" title="Progress Hub" icon={<LineChart size={18} />}
+              actions={<Button variant="secondary" size="sm" onClick={() => router.push('/pt-os/progress')}>Change client</Button>} />
+            <DashboardError onRetry={() => void load()} title="Could not load progress" detail={failed} retrying={loading} />
+          </PageContainer>
+        </div>
+      </>
     );
   }
   if (!data) return null;
 
   return (
-    <PageContainer>
-      <PageHero
-        compact
-        title="Progress Hub"
-        subtitle={`${data.dashboard.period.start_date} to ${data.dashboard.period.end_date} · studio time ${data.dashboard.timezone}`}
-        icon={<LineChart size={18} />}
-        actions={(
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
-            <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-              {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
-            </Button>
-          </div>
-        )}
-      >
-        <div className="flex flex-wrap gap-2">
-          {/* One badge, and only when it names the next action. The unlogged-day
-              count and the assessments-on-file count that used to sit here were
-              printed again in the panels below (Data quality, Assessment
-              history) and cost ~28px each above the first panel on a phone. */}
-          {data.overview.state.state === 'missing_baseline' && (
-            <span className="rounded-full px-3 py-1 text-[11px] font-[700]"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              No baseline — start with the seven-step assessment
-            </span>
+    <>
+      <PageWash />
+      <div className="relative" style={{ zIndex: 1 }}>
+        <PageContainer>
+          <HubHero
+            eyebrow="Client progress"
+            title="Progress Hub"
+            subtitle={`${data.dashboard.period.start_date} to ${data.dashboard.period.end_date} · studio time ${data.dashboard.timezone}`}
+            icon={<LineChart size={18} />}
+            actions={(
+              <>
+                <Button variant="outline" size="sm"
+                  className="!border-white/25 !bg-white/10 !text-white hover:!border-white/40 hover:!bg-white/20"
+                  onClick={() => router.push('/pt-os/progress')}>Change client</Button>
+                <Button variant="outline" size="sm"
+                  className="!border-white/25 !bg-white/10 !text-white hover:!border-white/40 hover:!bg-white/20"
+                  onClick={() => void load()} disabled={loading}>
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
+                </Button>
+              </>
+            )}
+          >
+            {/* One badge, and only when it names the next action. The unlogged-day
+                count and the assessments-on-file count that used to sit here were
+                printed again in the panels below (Data quality, Assessment
+                history) and cost ~28px each above the first panel on a phone. */}
+            {data.overview.state.state === 'missing_baseline' && (
+              <span className="inline-flex rounded-full px-3 py-1 text-[11px] font-[700]"
+                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.24)', color: '#fff' }}>
+                No baseline — start with the seven-step assessment
+              </span>
+            )}
+          </HubHero>
+
+          {failed && (
+            <div className="flex items-center gap-2 rounded-[14px] px-4 py-3 text-[12.5px]"
+              style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)', color: 'var(--danger-text)' }}>
+              <AlertCircle size={15} /> {failed} — showing the last loaded data.
+            </div>
           )}
-        </div>
-      </PageHero>
 
-      {failed && (
-        <div className="flex items-center gap-2 rounded-[14px] px-4 py-3 text-[12.5px]"
-          style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)', color: 'var(--danger-text)' }}>
-          <AlertCircle size={15} /> {failed} — showing the last loaded data.
-        </div>
-      )}
+          <div className="below-topbar sticky z-20 -mx-1 overflow-x-auto px-1 py-2"
+            style={{ background: 'color-mix(in srgb, var(--bg-canvas) 86%, transparent)', backdropFilter: 'blur(16px)' }}>
+            <div className="flex min-w-max gap-1.5" role="tablist" aria-label="Progress sections">
+              {SECTIONS.map((s) => {
+                const Icon = s.icon;
+                const active = tab === s.key;
+                const tone = SECTION_TONE[s.key];
+                return (
+                  <button key={s.key} role="tab" aria-selected={active}
+                    onClick={() => setTab(s.key)}
+                    className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[750] transition-all"
+                    style={active ? {
+                      background: `linear-gradient(135deg,${tone.from},${tone.to})`, color: '#fff',
+                      boxShadow: `0 6px 16px -8px ${tone.to}, inset 0 1px 0 rgba(255,255,255,0.22)`,
+                    } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                    <Icon size={14} style={{ color: active ? '#fff' : tone.ink }} /> {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      <div className="sticky top-0 z-20 -mx-1 overflow-x-auto px-1 py-2"
-        style={{ background: 'color-mix(in srgb, var(--bg-canvas) 86%, transparent)', backdropFilter: 'blur(16px)' }}>
-        <div className="flex min-w-max gap-1.5" role="tablist" aria-label="Progress sections">
-          {SECTIONS.map((s) => {
-            const Icon = s.icon;
-            const active = tab === s.key;
-            const tone = SECTION_TONE[s.key];
-            return (
-              <button key={s.key} role="tab" aria-selected={active}
-                onClick={() => setTab(s.key)}
-                className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[750] transition-all"
-                style={active ? {
-                  background: `linear-gradient(135deg,${tone.from},${tone.to})`, color: '#fff',
-                  boxShadow: `0 6px 16px -8px ${tone.to}, inset 0 1px 0 rgba(255,255,255,0.22)`,
-                } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                <Icon size={14} style={{ color: active ? '#fff' : tone.ink }} /> {s.label}
-              </button>
-            );
-          })}
-        </div>
+          {tab === 'overview' && <OverviewSection data={data} days={days} setDays={setDays} />}
+          {tab === 'history' && <HistorySection data={data} />}
+          {tab === 'comparison' && <ComparisonSection comparison={data.dashboard.assessment.comparison} />}
+          {tab === 'calendar' && <CalendarSection clientId={clientId} data={data} reload={load} />}
+          {tab === 'journal' && <JournalSection data={data} />}
+          {tab === 'analytics' && <AnalyticsSection data={data} days={days} setDays={setDays} />}
+          {tab === 'insights' && <InsightsSection clientId={clientId} data={data} reload={load} />}
+        </PageContainer>
       </div>
-
-      {tab === 'overview' && <OverviewSection data={data} days={days} setDays={setDays} />}
-      {tab === 'history' && <HistorySection data={data} />}
-      {tab === 'comparison' && <ComparisonSection comparison={data.dashboard.assessment.comparison} />}
-      {tab === 'calendar' && <CalendarSection clientId={clientId} data={data} reload={load} />}
-      {tab === 'journal' && <JournalSection data={data} />}
-      {tab === 'analytics' && <AnalyticsSection data={data} days={days} setDays={setDays} />}
-      {tab === 'insights' && <InsightsSection clientId={clientId} data={data} reload={load} />}
-    </PageContainer>
+    </>
   );
 }
 
@@ -404,14 +551,19 @@ function ProgressHub({ clientId }: { clientId: string }) {
 
 function LoadingShell() {
   return (
-    <PageContainer>
-      <Skeleton className="h-[64px] w-full rounded-[16px]" />
-      <Skeleton className="h-10 w-full rounded-[12px]" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[104px] rounded-[18px]" />)}
+    <>
+      <PageWash />
+      <div className="relative" style={{ zIndex: 1 }}>
+        <PageContainer>
+          <Skeleton className="h-[170px] w-full rounded-[24px] sm:rounded-[30px]" />
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-[6/5] rounded-[18px]" />)}
+          </div>
+          <Skeleton className="h-14 w-full rounded-[18px]" />
+          <Skeleton className="h-56 w-full rounded-[22px]" />
+        </PageContainer>
       </div>
-      <Skeleton className="h-56 w-full rounded-[22px]" />
-    </PageContainer>
+    </>
   );
 }
 
@@ -419,7 +571,7 @@ function Panel({ title, subtitle, children, action }: {
   title: string; subtitle?: string; children: React.ReactNode; action?: React.ReactNode;
 }) {
   return (
-    <Card className="p-0">
+    <div className="glass-panel overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-2 border-b px-4 py-3.5" style={{ borderColor: 'var(--border)' }}>
         <div>
           <h2 className="text-[14px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
@@ -428,7 +580,7 @@ function Panel({ title, subtitle, children, action }: {
         {action}
       </div>
       <div className="p-4">{children}</div>
-    </Card>
+    </div>
   );
 }
 
@@ -440,10 +592,40 @@ const STAT_TONE: Record<'brand' | 'success' | 'warn' | 'danger' | 'neutral', { f
   neutral: { from: '#94A3B8', to: '#475569', value: 'var(--text-primary)' },
 };
 
-function Stat({ label, value, hint, tone = 'brand' }: {
+function Stat({ label, value, hint, tone = 'brand', icon, variant = 'compact', delay = 0 }: {
   label: string; value: string; hint?: string; tone?: 'brand' | 'success' | 'warn' | 'danger' | 'neutral';
+  icon?: React.ReactNode;
+  /** `kpi` is the dashboard's 6:5 tile; `compact` is the in-panel strip. */
+  variant?: 'compact' | 'kpi';
+  delay?: number;
 }) {
   const t = STAT_TONE[tone];
+  const reduce = useReducedMotion() ?? false;
+
+  if (variant === 'kpi') {
+    return (
+      <m.div
+        initial={reduce ? false : { opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={reduce ? undefined : { y: -3 }}
+        className="relative flex aspect-[6/5] flex-col overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]"
+      >
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
+          <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+            {icon && <span aria-hidden className="shrink-0 [&>svg]:h-[13px] [&>svg]:w-[13px]">{icon}</span>}
+            <p className="text-[9px] font-[800] uppercase tracking-[0.13em] sm:text-[9.5px]">{label}</p>
+          </div>
+          <div className="mt-auto">
+            <p className="text-[28px] font-[900] leading-none tracking-[-0.04em] tabular-nums sm:text-[32px]" style={{ color: t.value }}>{value}</p>
+            {hint && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-[var(--text-muted)] sm:text-[10px]">{hint}</p>}
+          </div>
+        </div>
+        <div aria-hidden className="relative z-10 h-[30px] w-full border-t border-[var(--border)]" style={{ background: 'var(--bg-subtle)' }} />
+      </m.div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden rounded-[18px] px-3.5 py-3"
       style={{
@@ -1045,11 +1227,18 @@ function AnalyticsSection({ data, days, setDays }: { data: HubData; days: number
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Sleep average" value={h.averages.sleep_hours?.average == null ? '—' : `${fmt(h.averages.sleep_hours.average)} h`} hint={`${h.averages.sleep_hours?.samples ?? 0} samples`} tone="brand" />
-        <Stat label="Steps average" value={h.averages.steps?.average == null ? '—' : Math.round(h.averages.steps.average).toLocaleString()} hint={`${h.averages.steps?.samples ?? 0} samples`} tone="success" />
-        <Stat label="Recovery average" value={h.averages.recovery_level?.average == null ? '—' : `${fmt(h.averages.recovery_level.average)}/5`} hint={`${h.averages.recovery_level?.samples ?? 0} samples`} tone="brand" />
-        <Stat label="Logging streak" value={`${h.streaks.logging_days ?? 0} d`} hint="Consecutive days with an entry" tone="warn" />
+      <div>
+        <SectionLabel icon={<Activity size={10} />}>Habit averages</SectionLabel>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <Stat variant="kpi" icon={<Moon size={13} />} delay={0}
+            label="Sleep average" value={h.averages.sleep_hours?.average == null ? '—' : `${fmt(h.averages.sleep_hours.average)} h`} hint={`${h.averages.sleep_hours?.samples ?? 0} samples`} tone="brand" />
+          <Stat variant="kpi" icon={<Footprints size={13} />} delay={0.05}
+            label="Steps average" value={h.averages.steps?.average == null ? '—' : Math.round(h.averages.steps.average).toLocaleString()} hint={`${h.averages.steps?.samples ?? 0} samples`} tone="success" />
+          <Stat variant="kpi" icon={<BatteryCharging size={13} />} delay={0.1}
+            label="Recovery average" value={h.averages.recovery_level?.average == null ? '—' : `${fmt(h.averages.recovery_level.average)}/5`} hint={`${h.averages.recovery_level?.samples ?? 0} samples`} tone="brand" />
+          <Stat variant="kpi" icon={<Flame size={13} />} delay={0.15}
+            label="Logging streak" value={`${h.streaks.logging_days ?? 0} d`} hint="Consecutive days with an entry" tone="warn" />
+        </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
