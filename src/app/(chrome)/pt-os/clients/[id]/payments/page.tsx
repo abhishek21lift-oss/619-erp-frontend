@@ -16,6 +16,7 @@ import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import { todayISO } from '@/lib/forms/domain';
+import { newRequestId } from '@/lib/requestId';
 import {
   ptPaymentSchema, blankPtPayment, toPtPaymentPayload, applyKeypad, balanceAfter,
   PT_PAYMENT_FIELD_HINTS, type PtPaymentMethod,
@@ -591,6 +592,9 @@ function RecordPaymentSheet({
 }) {
   const { toast } = useToast();
   const [showOptional, setShowOptional] = useState(false);
+  // One key per sheet: a timeout or a double tap retries the same payment,
+  // and the server answers with the row it already wrote.
+  const requestKey = useRef(newRequestId());
 
   const f = useAppForm({
     schema: ptPaymentSchema,
@@ -601,7 +605,7 @@ function RecordPaymentSheet({
         toPtPaymentPayload(values, {
           clientId: client.id,
           trainerId: client.trainer_id ?? null,
-        }),
+        }, requestKey.current),
       );
       toast.success('Payment recorded.');
     },

@@ -153,6 +153,7 @@ export const PT_PAYMENT_FIELD_HINTS: Record<string, string> = {
 export function toPtPaymentPayload(
   v: PtPaymentValues,
   ids: { clientId: string; trainerId: string | null },
+  requestId?: string,
 ) {
   return {
     client_id: ids.clientId,
@@ -166,5 +167,8 @@ export function toPtPaymentPayload(
     payment_ref: v.payment_ref,
     date: v.date as string,
     notes: v.notes,
+    // Same key on a retry: the server returns the first payment instead of
+    // crediting the client twice (backend migration 266).
+    idempotency_key: requestId,
   };
 }

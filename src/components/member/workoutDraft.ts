@@ -10,6 +10,7 @@
  */
 
 import type { MeLastPerformance, MeWorkoutLogInput } from '@/lib/api';
+import { newRequestId } from '@/lib/requestId';
 import {
   describePrescription, formatDuration, kindFields, trackingKind, type TrackingKind,
 } from '@/lib/training-tracking';
@@ -248,12 +249,6 @@ export function lastSummary(last: MeLastPerformance[string] | undefined): string
   const parts = last.sets.map(one).filter(Boolean) as string[];
   if (parts.length === 0) return null;
   return parts.length > 4 ? `${parts.slice(0, 4).join(', ')} +${parts.length - 4}` : parts.join(', ');
-}
-
-export function newRequestId(): string {
-  const c = globalThis.crypto as Crypto | undefined;
-  if (c?.randomUUID) return c.randomUUID();
-  return `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 /** Something was actually done: reps, time held or run, or distance covered. */
