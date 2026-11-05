@@ -388,7 +388,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             opens after the client profile looked like a different product. */}
         <PageHero
           compact
-          icon={<Dumbbell size={18} />}
+          icon={<Dumbbell size={20} />}
           title={clientName || 'Workout Log'}
           subtitle={activeAssignment ? `Workout Log · ${activeAssignment.plan_name}` : 'Workout Log · Freestyle sessions'}
         />

@@ -411,7 +411,8 @@ export default function WorkoutGeneratorPage() {
           compact
           icon={<Dumbbell size={20} />}
           title="AI Workout Generator"
-          subtitle="Prompt-based draft from the client's record. For a rule-based programme with powerlifting blocks and training maxes, use the Workout Generator."
+          subtitle="A prompt-based draft from the client's record, ready to review before it is saved."
+          className="mx-auto w-full max-w-4xl"
         />
 
         <p className="mx-auto mb-4 w-full max-w-4xl text-[12.5px]">
@@ -420,7 +421,7 @@ export default function WorkoutGeneratorPage() {
             className="font-[700]"
             style={{ color: ACCENT }}
           >
-            Open the rule-based Workout Generator →
+            For powerlifting blocks and training maxes, open the rule-based Workout Generator →
           </Link>
         </p>
 

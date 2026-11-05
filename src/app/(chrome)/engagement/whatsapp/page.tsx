@@ -174,6 +174,7 @@ function WAContent() {
         icon={<MessageCircle size={20} />}
         title="WhatsApp"
         subtitle="Open a pre-filled chat in your own WhatsApp. Nothing is sent until you press Send there."
+        className="mx-auto w-full max-w-6xl"
         compact
       />
 
