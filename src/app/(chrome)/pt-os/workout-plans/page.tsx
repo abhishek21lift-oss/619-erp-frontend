@@ -319,12 +319,11 @@ function Inner() {
     <div style={{ minHeight: '100%', position: 'relative' }}>
       <PageContainer>
         {/* ── Hero ──
-            The green aurora panel: glass icon tile, the page's name, and the
-            actions as pills beneath it. PageHero owns the layout so this page
-            still shares the one header every other page uses. */}
+            The shared arrival slab: the page's name, its icon and the actions.
+            It used to carry its own emerald aurora, which made this the one
+            page whose header was a different object from every other page's. */}
         <PageHero
-          showcase
-          icon={<Dumbbell size={30} />}
+          icon={<Dumbbell size={20} />}
           title={briefClient?.name ?? 'Workout Plans'}
           actions={(
             <div className="flex w-full flex-wrap items-center gap-2.5">

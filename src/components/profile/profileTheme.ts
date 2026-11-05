@@ -17,6 +17,8 @@
  * a member sees and the page the coach edits share one set.
  */
 
+import { heroBase, heroRimCool, heroRimWarm, heroShadow, heroSpotlight } from '../ui/heroTheme';
+
 const spectrum = {
   pink:   { 400: '#F472B6', 500: '#EC4899', 600: '#DB2777' },
   rose:   { 500: '#F43F5E' },
@@ -79,23 +81,19 @@ export const heroMesh = {
 } as const;
 
 /**
- * The house hero — the brand ramp the dashboard and every PageHero page open
- * on, not this file's spectrum. The export keeps its old name so the client
+ * The house hero — the slab the dashboard and every PageHero page open on,
+ * not this file's spectrum. The export keeps its old name so the client
  * profile and its test stay put; renaming is separate work.
  *
- * The client profile used to paint itself from `heroMesh` above, which made
- * the page a trainer opens most the one page in the app that did not look
- * like the app. Same values as PageHero's default surface, so the two
- * cannot drift into two hero colours. The glows are the paints its two
- * discs blur — decoration behind the content and inside the hero's own
- * overflow-hidden, which is what keeps the blur clipped to the corner.
+ * The paint is imported rather than repeated: three copies of the same navy
+ * would drift the moment one changed. `crown` is the light rig (the spotlight
+ * and the two rim lights) and sits above `base`, which is the lit slab.
+ * `shadow` is a call, not a literal, because it carries the hero's glow.
  */
 export const auroraHero = {
-  base: 'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)',
-  crown: 'radial-gradient(130% 150% at 50% -25%, #FB9590 0%, transparent 58%)',
-  glowWarm: '#FFBB94',
-  glowCool: '#DC586D',
-  shadow: '0 24px 64px -14px rgba(107,36,64,0.55), 0 8px 26px rgba(163,55,87,0.24), inset 0 1px 0 rgba(255,255,255,0.12)',
+  base: heroBase,
+  crown: `${heroSpotlight}, ${heroRimCool}, ${heroRimWarm}`,
+  shadow: heroShadow(),
 } as const;
 
 /** The completion ring's stops — Move-ring warm to cool. */

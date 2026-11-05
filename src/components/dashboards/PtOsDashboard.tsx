@@ -20,6 +20,7 @@ import { m, useReducedMotion } from 'framer-motion';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { PullToRefresh } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
+import { heroBackground, heroCrest, heroShadow } from '@/components/ui/heroTheme';
 import { palette, identity, rgba } from '@/lib/palette';
 import {
   buildCoachInsights, reachable, whatsappLink, telLink,
@@ -328,28 +329,20 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
     <m.div
       initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
+      className="relative isolate overflow-hidden rounded-[24px] sm:rounded-[30px]"
       style={{
-        background:
-          'radial-gradient(130% 150% at 50% -25%, #FB9590 0%, transparent 58%),' +
-          'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)',
-        boxShadow:
-          '0 24px 64px -14px rgba(107,36,64,0.55), 0 8px 26px rgba(163,55,87,0.24),' +
-          'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(255,133,61,0.10)',
+        background: heroBackground(),
+        boxShadow: heroShadow(),
       }}
     >
-      {/* Decorative layers */}
+      {/* Decorative layers. All non-interactive, all behind the content; the
+          sheen is the one flourish this screen gets, because it is the screen
+          a trainer lands on. `isolate` on the root keeps the grain's overlay
+          blend inside the card. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-20 -right-14 h-60 w-60 rounded-full opacity-35"
-          style={{ background: 'radial-gradient(circle, #FF853D 0%, transparent 70%)', filter: 'blur(46px)' }} />
-        <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #20BFA4 0%, transparent 70%)', filter: 'blur(54px)' }} />
-        <svg className="absolute inset-0 w-full h-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="hh-g" width="34" height="34" patternUnits="userSpaceOnUse">
-            <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
-          </pattern></defs>
-          <rect width="100%" height="100%" fill="url(#hh-g)" />
-        </svg>
+        <span className="hero-spec" />
+        <span className="hero-vignette" />
+        <span className="hero-grain" />
         {/* Sheen sweep */}
         <m.div
           aria-hidden className="absolute top-0 bottom-0 w-1/3"
@@ -357,10 +350,10 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
           initial={{ x: '-170%' }} animate={{ x: '280%' }}
           transition={{ duration: 4, repeat: Infinity, repeatDelay: 3.5, ease: 'easeInOut' }}
         />
-        {/* Spotlight vignette */}
-        <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
       </div>
+      <span aria-hidden className="hero-hair-t" />
+      <span aria-hidden className="hero-hair-b" />
+      <span aria-hidden className="hero-bevel" />
 
       {/* ── Two passes of trimming, measured off the CSS, not eyeballed ─────
           It started at ~224px on a phone and ~248px from sm up. The first pass
@@ -381,13 +374,9 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
           remaining gap. 41px and 45px, or 20.3% and 19.9%. */}
       <div className="relative z-10 flex flex-col items-center justify-center py-2 px-6 text-center">
         {/* Crest */}
-        <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full"
-          style={{
-            background: 'radial-gradient(circle at 30% 25%, #6B2440, #0F172A)',
-            border: '1px solid rgba(251,191,36,0.45)',
-            boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
-          }}>
-          <Crown size={15} style={{ color: '#FCD34D' }} />
+        <div className="hero-coin mb-1.5 flex h-8 w-8 items-center justify-center rounded-full"
+          style={{ background: heroCrest }}>
+          <Crown size={15} style={{ color: '#78350F' }} />
         </div>
 
         {/* Greeting eyebrow */}
@@ -424,10 +413,6 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
         </p>
       </div>
 
-      <div className="absolute top-0 inset-x-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }} />
-      <div className="absolute bottom-0 inset-x-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(255,187,148,0.5), transparent)' }} />
     </m.div>
   );
 }

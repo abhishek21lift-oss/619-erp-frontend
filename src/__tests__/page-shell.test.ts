@@ -256,11 +256,13 @@ describe('the five module pages', () => {
     // A lavender-to-pink card with its own corner glows and its own
     // max-w-[1400px] — a different surface from every other page's header, and
     // 120px wider than the dashboard. The KPI tiles inside it were tiles on a
-    // tile; they are cards on the page now.
+    // tile; they are cards on the page now. The emerald showcase hero that
+    // replaced it is gone too: one page with its own arrival slab is the same
+    // drift in a different colour.
     const wp = src('app', 'pt-os', 'workout-plans', 'page.tsx');
     expect(wp).not.toContain('max-w-[1400px]');
     expect(wp).not.toContain('from-indigo-500/10 via-violet-500/10 to-pink-500/10');
-    expect(wp).toContain('showcase');
+    expect(wp).not.toContain('showcase');
   });
 
   it('today keeps its progress bar, on the hero', () => {
@@ -620,10 +622,10 @@ describe('revenue analytics loses its own icon tile and header row', () => {
 });
 
 describe('the hero', () => {
-  it('carries the dashboard hero\'s shape and gradient', () => {
+  it('carries the dashboard hero\'s shape and paint', () => {
     expect(shell).toContain('rounded-[24px]');
     expect(shell).toContain('sm:rounded-[30px]');
-    expect(shell).toContain('linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)');
+    expect(shell).toContain('heroBackground(');
   });
 
   it('does not copy the infinite sheen sweep', () => {

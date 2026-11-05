@@ -2,9 +2,9 @@
 // into purple with pink and orange light — which made the page a trainer
 // opens most the one page in the app whose top did not match the house hero
 // the dashboard and every shared PageHero page use. These pins hold the
-// redesign in place: the hero wears the Aurora indigo, the sections keep
-// their spectrum, and the cards take their depth from the adaptive glass
-// tokens instead of one light-only shadow that does nothing in dark mode.
+// redesign in place: the hero wears the house slab, its depth layers are the
+// shared ones, and the cards take their depth from the adaptive glass tokens
+// instead of one light-only shadow that does nothing in dark mode.
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -13,46 +13,52 @@ import { stripComments } from '@/__tests__/helpers/strip-comments';
 
 const page = readFileSync(appPath('pt-os', 'clients', '[id]', 'page.tsx'), 'utf8');
 const code = stripComments(page);
-const theme = readFileSync(srcPath('components', 'profile', 'profileTheme.ts'), 'utf8');
 
-/** The house hero's gradient, spelled the same way in both existing heroes. */
-const HOUSE =
+/** The rose band the hero wore before the shared heroTheme. Gone from all three. */
+const OLD_HOUSE =
   'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)';
+
+/** The three heroes that wear the same paint. */
+const HEROES = [
+  'components/ui/PageHero.tsx',
+  'components/dashboards/PtOsDashboard.tsx',
+  'components/profile/profileTheme.ts',
+];
 
 const hero = () => page.slice(page.indexOf('── HERO ──'), page.indexOf('── ACTIONS ──'));
 
-describe('the client profile hero wears the house aurora', () => {
+describe('the client profile hero wears the house slab', () => {
   it('paints from the auroraHero token, not the spectrum mesh', () => {
-    for (const key of ['glowWarm', 'glowCool', 'crown', 'base', 'shadow']) {
+    for (const key of ['crown', 'base', 'shadow']) {
       expect(hero()).toContain(`auroraHero.${key}`);
     }
     expect(code).not.toContain('heroMesh');
   });
 
-  it('renders the house lights as blurred discs, not flat radial washes', () => {
-    // The house heroes blur their light: a 240px disc, half off-canvas, the
-    // blur doing the softening. Baking the same colour into the background
-    // stack as a flat radial reads as a different light at a glance.
+  it('wears the same depth layers as every other hero', () => {
+    // Bevel, grain, specular sweep and vignette are in globals.css because
+    // they are identical on all three heroes; a page painting its own copies
+    // is how the three drifted apart the first time.
     const block = hero();
-    expect(block).toContain('background: `${auroraHero.crown}, ${auroraHero.base}`');
-    expect(block).toContain('radial-gradient(circle, ${auroraHero.glowWarm} 0%, transparent 70%)');
-    expect(block).toContain('radial-gradient(circle, ${auroraHero.glowCool} 0%, transparent 70%)');
-    expect(block).toContain("filter: 'blur(46px)'");
-    expect(block).toContain("filter: 'blur(54px)'");
-  });
-
-  it('uses the gradient the dashboard and PageHero use, so they cannot drift', () => {
-    for (const file of ['components/ui/PageHero.tsx', 'components/dashboards/PtOsDashboard.tsx']) {
-      expect(readFileSync(srcPath(...file.split('/')), 'utf8')).toContain(HOUSE);
+    for (const layer of ['hero-spec', 'hero-grain', 'hero-vignette', 'hero-bevel']) {
+      expect(block).toContain(layer);
     }
-    expect(theme).toContain(HOUSE);
+    // `isolate` keeps the grain's overlay blend inside the card.
+    expect(block).toContain('isolate');
   });
 
-  it('keeps the grid and vignette behind the content, never on top', () => {
+  it('imports the paint the dashboard and PageHero use, so they cannot drift', () => {
+    for (const file of HEROES) {
+      const src = readFileSync(srcPath(...file.split('/')), 'utf8');
+      expect(src).toMatch(/from '[^']*heroTheme'/);
+      expect(src).not.toContain(OLD_HOUSE);
+    }
+  });
+
+  it('keeps the decoration behind the content, never on top', () => {
     const block = hero();
-    expect(block).toContain('id="cp-grid"');
-    expect(block).toContain('radial-gradient(120% 120% at 50% 38%');
-    // Decoration is absolute and non-interactive; the content sits above it.
+    // The grid texture is gone: at 34px it read as squares on the dark slab.
+    expect(block).not.toContain('cp-grid');
     expect(block).toContain('pointer-events-none absolute inset-0');
     expect(block).toContain('relative z-10');
   });
