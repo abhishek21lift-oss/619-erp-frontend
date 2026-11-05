@@ -399,7 +399,7 @@ function MembershipCard({ plan, profile, sessions }: {
       </div>
 
       {sessions.length > 0 && (
-        <div className="mt-3 space-y-1" aria-label="Session balance">
+        <div role="group" className="mt-3 space-y-1" aria-label="Session balance">
           {sessions.map((s, i) => (
             <p key={i} className="text-[12.5px]" style={{ color: MC.muted }}>
               <span className="font-[750]" style={{ color: MC.ink }}>
