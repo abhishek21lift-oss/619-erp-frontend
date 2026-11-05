@@ -1809,6 +1809,15 @@ export type MeRenewal = {
   requested_at: string | null;
 };
 
+/** Whether the member's pause or deletion request is still waiting for the trainer. */
+export type MeRequestState = { requested_at: string | null };
+
+export type MePauseInput = {
+  start_date: string;
+  end_date?: string | null;
+  reason?: string | null;
+};
+
 export type UpiOrder = {
   id: string;
   kind: UpiOrderKind;

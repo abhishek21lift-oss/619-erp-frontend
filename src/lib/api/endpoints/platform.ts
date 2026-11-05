@@ -16,6 +16,7 @@ import type {
   MeProfile, MeCoach, MeMembership, MeSessionBalance, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
+  MeRequestState, MePauseInput,
   MeFormCheck,
   MeBooking, MeBookingAvailability,
   ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
@@ -1023,6 +1024,18 @@ export const me = {
   /** Ask the trainer for a renewal. `sent: false` when a request is already waiting. */
   requestRenewal: (note?: string) =>
     http<{ data: { sent: boolean } }>('/api/me/renewal/request', { method: 'POST', body: JSON.stringify({ note }) }),
+  /** Whether a pause request is still waiting for the trainer. */
+  pause: () => http<{ data: MeRequestState }>('/api/me/pause'),
+  /** Ask the trainer to pause the plan. `sent: false` when a request is already waiting. */
+  requestPause: (body: MePauseInput) =>
+    http<{ data: { sent: boolean } }>('/api/me/pause/request', { method: 'POST', body: JSON.stringify(body) }),
+  /** Whether a deletion request is still waiting for the trainer. */
+  deletion: () => http<{ data: MeRequestState }>('/api/me/deletion'),
+  /** Ask the studio to delete the account. Nothing is deleted until they act. */
+  requestDeletion: () =>
+    http<{ data: { sent: boolean } }>('/api/me/deletion/request', { method: 'POST' }),
+  /** Built rather than fetched: opened as a download, the session cookie authorises it. */
+  exportUrl: () => `${apiBase()}/api/me/export`,
   /** A PDF receipt for one of the member's payments; opened in a new tab, the session cookie authorises it. */
   paymentReceiptUrl: (paymentId: string) => `${apiBase()}/api/me/payments/${encodeURIComponent(paymentId)}/receipt`,
   /** One month in numbers; the latest month with activity when `month` is omitted. */
