@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Apple, ClipboardCheck, Dumbbell, Home, UserRound, Wallet } from 'lucide-react';
+import { Apple, CalendarPlus, ClipboardCheck, Dumbbell, Home, Receipt, UserRound, Wallet } from 'lucide-react';
 import { loadMemberNotifications } from './memberNotifications';
 import { palette } from '@/lib/palette';
 import { NAV_GROUPS, isVisibleForFeature } from '@/lib/nav-config';
@@ -60,6 +60,8 @@ const MEMBER_ICONS: Record<string, typeof Home> = {
   Dumbbell,
   Apple,
   ClipboardCheck,
+  CalendarPlus,
+  Receipt,
   Wallet,
   UserRound,
 };

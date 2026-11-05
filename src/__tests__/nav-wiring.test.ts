@@ -80,6 +80,16 @@ describe('the member bottom bar is built from nav-config', () => {
     expect(memberNav).not.toMatch(/const TABS = \[/);
   });
 
+  it('has an icon in the member map for every configured tab', () => {
+    // The bar falls back to Home for an unknown name, so a missing entry
+    // silently shows the wrong icon — Book and Payments both did.
+    const start = memberNav.indexOf('const MEMBER_ICONS');
+    const block = memberNav.slice(start, memberNav.indexOf('};', start));
+    for (const icon of account.items.map((i) => i.icon)) {
+      expect(new RegExp(`\\b${icon}\\b\\s*[:,]`).test(block), `MEMBER_ICONS is missing ${icon}`).toBe(true);
+    }
+  });
+
   it('honours the member_portal flag', () => {
     expect(memberNav).toContain('isVisibleForFeature');
   });
