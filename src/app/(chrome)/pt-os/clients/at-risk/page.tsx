@@ -101,7 +101,6 @@ export default function AtRiskClientsPage() {
         <PageHero
           icon={<AlertTriangle size={20} />}
           title="At-risk Clients"
-          subtitle="Ranked by who is most likely to leave, with the reason and one next action."
         />
 
         {churn.loading && !result && (

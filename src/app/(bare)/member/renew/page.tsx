@@ -215,7 +215,6 @@ function AskCard({ requestedAt, onSent }: { requestedAt: string | null; onSent: 
           </div>
         ) : (
           <>
-            <p className="text-[15px] font-[780]" style={{ color: MC.ink }}>Keep your momentum going</p>
             <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: MC.muted }}>
               Your trainer sets your renewal price. Ask for it here and pay by UPI when it arrives — no need to wait for the studio.
             </p>

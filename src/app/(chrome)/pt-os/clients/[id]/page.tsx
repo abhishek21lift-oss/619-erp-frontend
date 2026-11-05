@@ -440,7 +440,7 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
         <p className="whitespace-pre-wrap text-[14px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{notes}</p>
       ) : (
         <p className="text-[13.5px]" style={{ color: 'var(--text-muted)' }}>
-          Nothing written yet. Notes sit here beside the client&apos;s details, so they are read on every visit.
+          Nothing written yet.
         </p>
       )}
     </SectionCard>

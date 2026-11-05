@@ -87,7 +87,7 @@ function MessagesBody() {
             </span>
             <p className="text-[14px] font-[750]" style={{ color: MC.ink }}>Message {who}</p>
             <p className="mt-1.5 max-w-[300px] text-[12.5px] leading-relaxed" style={{ color: MC.muted }}>
-              Ask about your plan, move a session or tell them how you are feeling. Only you and your studio can see this.
+              Only you and your studio can see this.
             </p>
           </div>
         }

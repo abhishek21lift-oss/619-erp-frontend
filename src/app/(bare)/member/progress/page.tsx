@@ -315,7 +315,6 @@ function PhotosLink() {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-[750]" style={{ color: MC.ink }}>Progress photos</span>
-        <span className="block text-[12px]" style={{ color: MC.muted }}>Before and after, side by side</span>
       </span>
       <ChevronRight size={16} aria-hidden style={{ color: MC.muted }} />
     </Link>
