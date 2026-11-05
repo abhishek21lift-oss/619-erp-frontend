@@ -10,7 +10,7 @@ import type { AiDietPlan, AiDietMeal } from '@/lib/api';
 import type { AiKnowledgeGrounding } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
-import { errorMessage } from '@/lib/forms/errors';
+import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
 import {
   NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
 } from '@/components/ui/form';
@@ -259,7 +259,7 @@ export default function DietGeneratorPage() {
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding });
     } catch (e: unknown) {
-      setError(errorMessage(e, 'Failed to generate diet plan.'));
+      setError(generationErrorMessage(e, 'Failed to generate diet plan.'));
     } finally {
       generatingRef.current = false;
       setLoading(false);

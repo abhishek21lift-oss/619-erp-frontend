@@ -11,7 +11,7 @@ import type {
 } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
-import { errorMessage } from '@/lib/forms/errors';
+import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
 import {
   NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
 } from '@/components/ui/form';
@@ -370,7 +370,7 @@ export default function WorkoutGeneratorPage() {
       // trainer can only read.
       const active = activeProgramFrom(e);
       if (active) setActiveProgram(active);
-      else setError(errorMessage(e, 'Failed to generate workout plan.'));
+      else setError(generationErrorMessage(e, 'Failed to generate workout plan.'));
     } finally {
       generatingRef.current = false;
       setLoading(false);

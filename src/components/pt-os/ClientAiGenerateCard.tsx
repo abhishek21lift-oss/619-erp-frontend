@@ -67,7 +67,7 @@ import GenerationContextPanel from './GenerationContextPanel';
 import TrainerStatedFields, { type StatedValues } from './TrainerStatedFields';
 import { useToast } from '@/lib/toast';
 import { palette, rgba } from '@/lib/palette';
-import { errorMessage } from '@/lib/forms/errors';
+import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
 import { ApiError } from '@/lib/http';
 
 const BLUE = palette.indigo[500];
@@ -121,22 +121,6 @@ function readableError(msg: string): string {
   if (!m) return msg;
   const names = m[1].split(',').map((k) => FIELD_WORDS[k.trim()] ?? k.trim().replace(/_/g, ' '));
   return `Record ${names.join(', ')} on the client first — the plan can't be worked out without ${names.length === 1 ? 'it' : 'them'}.`;
-}
-
-/**
- * The generator's own sentence, not the form mapper's 5xx replacement.
- *
- * `httpSSE` reports both a refused request and a failed stream as an ApiError
- * carrying the server's message. `mapApiError` deliberately scrubs every 5xx
- * to "the server had a problem saving this", which is untrue for a generation
- * and hid every knowledge-base or model failure behind one retryable sentence.
- * These endpoints write their 5xx bodies by hand (publicAiMessage, the
- * evidence refusal) and never echo a stack, so that sentence is the one to
- * show; the scrub stays for every other 5xx in the app.
- */
-function generationError(err: unknown, fallback: string): string {
-  if (err instanceof ApiError && err.status >= 500) return err.message || fallback;
-  return errorMessage(err, fallback);
 }
 
 /**
@@ -323,7 +307,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       // refusal itself carries the programme the choice is about.
       const refused = kind === 'workout' ? refusedProgramFrom(err) : null;
       if (refused) setRefusedProgram(refused);
-      const msg = readableError(generationError(err, 'Generation failed. Please try again.'));
+      const msg = readableError(generationErrorMessage(err, 'Generation failed. Please try again.'));
       setError(msg);
       toast.error(msg);
       // A refused generation is usually a record problem, and the panel is

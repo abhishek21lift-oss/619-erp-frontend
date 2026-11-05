@@ -12,7 +12,7 @@ import type { AiProgressAnalysis, AiProgressDataCounts, AiWeightPoint } from '@/
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { PremiumLineChart } from '@/components/visualizations';
-import { errorMessage } from '@/lib/forms/errors';
+import { generationErrorMessage } from '@/lib/forms/errors';
 import { AiClientPicker } from '@/components/ai/AiClientPicker';
 
 const ACCENT = '#FBBF24';
@@ -142,7 +142,7 @@ function ProgressAnalysisInner() {
       setUpdatedAt(new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
     } catch (e: unknown) {
       if (controller.signal.aborted) return;
-      setError(errorMessage(e, 'Failed to analyse progress.'));
+      setError(generationErrorMessage(e, 'Failed to analyse progress.'));
     } finally {
       if (inFlight.current === controller) {
         inFlight.current = null;

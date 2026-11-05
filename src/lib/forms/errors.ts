@@ -278,6 +278,22 @@ export function errorMessage(error: unknown, fallback: string): string {
 }
 
 /**
+ * The generator's own sentence, not the form mapper's 5xx replacement.
+ *
+ * `mapApiError` scrubs every 5xx to "the server had a problem saving this",
+ * which is untrue for a generation and hides the specific knowledge-base or
+ * model failure. Generation endpoints write their 5xx bodies by hand
+ * (publicAiMessage, the evidence refusal) and never echo a stack, so show
+ * theirs; the scrub stays for every other 5xx in the app.
+ */
+export function generationErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && error.status >= 500) {
+    return /^HTTP \d+$/.test(error.message) ? fallback : (error.message || fallback);
+  }
+  return errorMessage(error, fallback);
+}
+
+/**
  * A sign-in failure.
  *
  * Separate from `mapApiError` because the generic mapper's 401 message —
