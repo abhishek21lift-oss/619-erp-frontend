@@ -88,9 +88,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
   } as const;
 
   return (
-    <section
-      className="relative overflow-hidden rounded-[22px] border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-card)] sm:p-5"
-      aria-label="Next best action">
+    <section className="glass-panel relative overflow-hidden p-4 sm:p-5" aria-label="Next best action">
       {/* Urgency wash — decoration over the glass, never the surface itself. */}
       <div aria-hidden className="pointer-events-none absolute inset-0"
         style={{ background: `radial-gradient(120% 90% at 100% 0%, ${t.wash}, transparent 62%)` }} />
@@ -156,7 +154,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
           )}
 
           <Link href={top.href}
-            className="mt-2.5 flex min-h-[44px] items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+            className="mt-2.5 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
             Open list <ChevronRight size={14} />
           </Link>

@@ -250,12 +250,14 @@ function Glass({ children, className = '', style, onClick }: {
   onClick?: () => void;
 }) {
   return (
-    <div className={cn('rounded-[22px]', className)}
+    <div className={`rounded-[20px] sm:rounded-[24px] ${className}`}
       onClick={onClick}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow-card)',
+        background: 'rgba(255,255,255,0.76)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.92)',
+        boxShadow: '0 4px 24px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.65)',
         ...style,
       }}>
       {children}
@@ -263,81 +265,18 @@ function Glass({ children, className = '', style, onClick }: {
   );
 }
 
-// ─── Chapter band ─────────────────────────────────────────────────────────────
-//
-// The dashboard body is three chapters instead of twelve loose sections. The
-// band carries a 3–5% wash of the chapter's tone and a hairline in the same
-// family; every card inside stays on --bg-card, so colour never sits behind
-// body text. The chip on the right is a fact off the data above, not a label.
-const CHAPTERS = {
-  rose: {
-    ink: palette.blue[600],
-    fill: `linear-gradient(135deg, ${palette.blue[500]}, ${palette.blue[600]})`,
-    wash: rgba(palette.blue[500], 0.055),
-    line: rgba(palette.blue[500], 0.16),
-    chip: rgba(palette.blue[500], 0.10),
-  },
-  gold: {
-    ink: palette.amber[800],
-    fill: `linear-gradient(135deg, ${palette.amber[500]}, ${palette.amber[600]})`,
-    wash: rgba(palette.amber[500], 0.06),
-    line: rgba(palette.amber[500], 0.18),
-    chip: rgba(palette.amber[500], 0.14),
-  },
-  mint: {
-    ink: palette.emerald[800],
-    fill: `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.mint[600]})`,
-    wash: rgba(palette.emerald[500], 0.055),
-    line: rgba(palette.emerald[500], 0.16),
-    chip: rgba(palette.emerald[500], 0.10),
-  },
-} as const;
-
-function Chapter({ tone, icon, title, line, chip, children }: {
-  tone: keyof typeof CHAPTERS; icon: React.ReactNode;
-  title: string; line: string; chip?: string;
-  children: React.ReactNode;
-}) {
-  const t = CHAPTERS[tone];
-  const id = useId();
-  const reduce = useReducedMotion() ?? false;
+function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <m.section
-      aria-labelledby={id}
-      initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
-      className="relative overflow-hidden rounded-[26px] border p-2.5 sm:rounded-[30px] sm:p-3.5"
-      style={{
-        background: `linear-gradient(180deg, ${t.wash} 0%, transparent 340px)`,
-        borderColor: t.line,
-      }}
-    >
-      <header className="flex items-center gap-3 px-1 pb-3 pt-1 sm:px-1.5">
-        <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
-          style={{ background: t.fill, boxShadow: `0 8px 18px -8px ${t.ink}` }}>
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-[750] uppercase tracking-[0.14em]"
+      style={{ color: 'rgba(100,116,139,0.7)' }}>
+      {icon && (
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+          style={{ background: 'rgba(100,116,139,0.14)' }} aria-hidden>
           {icon}
         </span>
-        <div className="min-w-0 flex-1">
-          <h2 id={id} className="text-[17px] font-[850] tracking-[-0.02em] sm:text-[19px]"
-            style={{ color: 'var(--text-primary)' }}>{title}</h2>
-          <p className="truncate text-[11px] font-[550] sm:text-[12px]" style={{ color: 'var(--text-muted)' }}>{line}</p>
-        </div>
-        {/* The tint carries the chapter's tone; the text stays theme ink so it
-            is readable in both themes. */}
-        {chip && (
-          <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-[800] tabular-nums"
-            style={{ background: t.chip, color: 'var(--text-primary)' }}>{chip}</span>
-        )}
-      </header>
-      {/* min-w-0 on every item: a grid item defaults to min-width:auto, so a
-          title in `truncate` (white-space: nowrap) made its card — and the
-          whole chapter — wider than the phone, and overflow-hidden then cut
-          the buttons off rather than the text.
-          h-full on the cards inside: two cards in one bento row end level, so
-          a short card next to a tall one fills its row instead of leaving a
-          hole of chapter tint beside it. */}
-      <div className="grid grid-cols-1 gap-2.5 [&>*]:min-w-0 [&>*>*]:h-full sm:grid-cols-2 lg:grid-cols-6">{children}</div>
-    </m.section>
+      )}
+      {children}
+    </p>
   );
 }
 
@@ -484,22 +423,22 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
  * (the interview, the journey's next step), run the general fitness assessment, agree what they are training FOR, then the remaining,
  * more specific assessments.
  *
- * ONE list, rendered by one in-flow card at every breakpoint. It used to be
- * two hand-maintained copies — a mobile strip and a floating desktop dock —
- * which is precisely how they drift: three actions were added to the visible
- * mobile list and the dock was missed, because only one of the two is on
- * screen at a time. The dock is gone; the card below the schedule is the only
- * surface.
+ * ONE list, rendered by both the mobile strip and the desktop dock. They were
+ * two hand-maintained copies, which is precisely how they drift: adding three
+ * actions to the visible mobile list and missing the desktop dock entirely is
+ * an easy mistake to make and an easy one to miss in review, since only one of
+ * the two is on screen at a time.
  *
- * Icons are deliberately distinct per row. These sit under 9.5px labels,
- * where the glyph is what gets recognised at a glance — two tiles sharing an
- * icon would be a coin flip.
+ * Icons are deliberately distinct per row. On a phone this is a horizontally
+ * scrolling strip under 9.5px labels, where the glyph is what gets recognised
+ * at a glance — two rows sharing an icon would be a coin flip.
  *
- * `icon` is the component, not an element, so the surface can size it.
+ * `icon` is the component, not an element, so each surface can size it (the
+ * strip uses 16, the dock 17).
  *
- * They render as links, not buttons that push a route: a destination is a
- * link, so it can be opened in a new tab, is prefetched, and is announced as
- * one by a screen reader.
+ * Both surfaces render these as links, not buttons that push a route: a
+ * destination is a link, so it can be opened in a new tab, is prefetched, and
+ * is announced as one by a screen reader.
  */
 export const QUICK_ACTIONS = [
   { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.primary },
@@ -540,6 +479,7 @@ export function ScreeningGaps() {
 
   return (
     <section aria-labelledby="screening-gaps-title">
+      <SectionLabel icon={<ShieldCheck size={10} />}>Screening</SectionLabel>
       <Glass className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
@@ -599,37 +539,35 @@ export function ScreeningGaps() {
   );
 }
 
-// ─── Section 2 — Quick Actions, in flow at every breakpoint ────────────────────
-function QuickActions() {
+// ─── Section 2 — Mobile Quick Actions (visible on mobile only) ─────────────────
+function MobileQuickActions() {
+  const actions = QUICK_ACTIONS;
   return (
-    <Glass className="p-3 sm:p-4">
-      <div className="mb-2.5 flex items-baseline justify-between gap-2 px-0.5">
-        <h3 className="text-[13px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
-          Quick actions
-        </h3>
-        <span className="text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-          Start a client journey
-        </span>
-      </div>
-      {/* Four across on a phone, six on a tablet, all eleven on one line at
-          lg. The whole tile is the link, so the 68px height is the target. */}
-      <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 lg:grid-cols-11">
-        {QUICK_ACTIONS.map((a) => (
-          <Link key={a.label} href={a.href} aria-label={a.label}
-            className="group flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-[14px] px-1 py-2 transition hover:-translate-y-0.5 hover:bg-[var(--bg-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[11px] text-white"
+    <div className="lg:hidden -mx-3 px-3">
+      <SectionLabel icon={<Sparkles size={10} />}>Quick Actions</SectionLabel>
+      <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+        {actions.map((a, i) => (
+          <m.div key={a.label} className="shrink-0"
+            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.04, duration: 0.3 }}>
+          <Link href={a.href}
+            className="flex flex-col items-center gap-1.5 rounded-[16px] p-3 transition active:scale-95"
+            style={{ background: `${a.color}12`, border: `1px solid ${a.color}22`, minWidth: 72 }}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-[13px] text-white"
               style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 4px 12px ${a.color}40` }}>
               <a.icon size={16} />
             </span>
-            {/* The theme's ink, not C.ink: in dark mode C.ink is the card
-                colour and these labels were invisible. */}
-            <span className="whitespace-nowrap text-[9.5px] font-[680] leading-none" style={{ color: 'var(--text-secondary)' }}>
+            {/* The theme's ink, not C.ink: this strip sits on the page canvas
+                itself, not on a light Glass card, and in dark mode C.ink is
+                the canvas colour — the labels were invisible. */}
+            <span className="text-[9.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
               {a.label}
             </span>
           </Link>
+          </m.div>
         ))}
       </div>
-    </Glass>
+    </div>
   );
 }
 
@@ -668,7 +606,7 @@ function QuickActions() {
 // stays legible on every theme.
 
 function StatCard({
-  icon, label, value, sub, delay = 0, href, trend, pct, format, accent = C.primary,
+  icon, label, value, sub, delay = 0, href, trend, pct, format, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
   delay?: number; href?: string;
@@ -676,8 +614,8 @@ function StatCard({
   trend?: { label: string; value: number }[]; pct?: number | null;
   /** How the sparkline's tooltip renders a value. */
   format?: (n: number) => string;
-  /** The tint behind this tile's icon. Colour stays a mark; the figure is ink. */
-  accent?: string;
+  /** Responsive visibility, for cards that only belong on some screen sizes. */
+  className?: string;
 }) {
   const router = useRouter();
   const reduce = useReducedMotion() ?? false;
@@ -685,38 +623,67 @@ function StatCard({
     <m.div
       initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: EASE }}
-      whileHover={reduce ? undefined : { y: -2 }}
-      whileTap={{ scale: 0.99 }}
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => href && router.push(href)}
-      // h-full, not a fixed ratio: these four live in one grid, so the row's
-      // level bottom edge is the grid's job rather than a reserved band's.
-      className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--bg-card)] p-3.5 transition-shadow duration-200 hover:shadow-[var(--shadow-card)]"
+      // 6:5 rather than square. A square at two per row is ~195px on a phone
+      // and most of the upper half was empty — the label sat alone at the top
+      // with the figure pinned to the bottom. Trading that dead band for a
+      // shorter tile and a bigger number spends the same pixels on the thing
+      // the tile is for. Still one ratio for all three, so the grid stays even.
+      className={cn(
+        'group relative flex aspect-[6/5] cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]',
+        className,
+      )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span aria-hidden
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] [&>svg]:h-[15px] [&>svg]:w-[15px]"
-          style={{ background: rgba(accent, 0.10), color: accent }}>
-          {icon}
-        </span>
-        {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+      {/* min-h-0 is load-bearing. A flex item defaults to min-height:auto,
+          so this block refused to shrink below its own content and pushed
+          the foot band out through the bottom of the tile — where
+          overflow-hidden sliced the sparkline in half. */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
+        <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+          <span aria-hidden className="shrink-0 [&>svg]:h-[13px] [&>svg]:w-[13px]">{icon}</span>
+          <p className="text-[9px] font-[800] uppercase tracking-[0.13em] sm:text-[9.5px]">{label}</p>
+        </div>
+
+        <div className="mt-auto">
+          <div className="flex items-end justify-between gap-2">
+            <p className="text-[28px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-[var(--text-primary)] sm:text-[32px]">{value}</p>
+            {pct !== undefined && <TrendBadge pct={pct ?? null} />}
+          </div>
+          {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-[var(--text-muted)] sm:text-[10px]">{sub}</p>}
+        </div>
       </div>
 
-      <div className="mt-auto pt-3">
-        <p className="text-[9px] font-[800] uppercase tracking-[0.13em] text-[var(--text-muted)] sm:text-[9.5px]">{label}</p>
-        <p className="mt-1 text-[26px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-[var(--text-primary)] sm:text-[30px]">{value}</p>
-        {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-[var(--text-muted)] sm:text-[10px]">{sub}</p>}
-      </div>
+      {/* Every card ends on the same band, so the row lines up whatever each
+          one carries. A chart where there is a series worth drawing; the
+          surface's own subtle ground where there is not.
 
-      {/* A chart only where there is a series worth drawing. THREE POINTS IS
-          THE FLOOR: two months render as two half-width slabs, which is a
-          broken-looking pair of blocks rather than a shape. */}
-      {trend && trend.length >= 3 && (
-        <div className="mt-2.5">
+          THREE POINTS IS THE FLOOR. Two months render as two half-width slabs
+          — one pale, one solid — which is not a sparkline, it is a
+          broken-looking pair of blocks, and that is what a new studio with
+          two months of history was being shown. A shape needs three readings
+          before it is a shape.
+
+          data-kpi-foot marks the band on BOTH branches. It is what makes
+          "every card ends the same way" assertable: without it a test can
+          only see the chart, and the fallback could be deleted — taking the
+          grid's level bottom edge with it — while every assertion still
+          passed. */}
+      {trend && trend.length >= 3 ? (
+        <div data-kpi-foot className="relative z-10 h-[30px] w-full border-t border-[var(--border)] px-2.5"
+          style={{ background: 'var(--bg-subtle)' }}>
+          {/* Padded clear of the tile's own corner radius. Full-bleed, the
+              outermost bar on each side ran into the rounded corner and came
+              out as a half-bar with a diagonal bite taken out of it. */}
           <KpiSparkline
-            data={trend} color="var(--action)" metric={label} format={format} height={34}
+            data={trend} color="var(--action)" metric={label} format={format} height={30}
             trackFill="var(--action-soft)"
           />
         </div>
+      ) : (
+        <div data-kpi-foot aria-hidden className="relative z-10 h-[30px] w-full border-t border-[var(--border)]"
+          style={{ background: 'var(--bg-subtle)' }} />
       )}
     </m.div>
   );
@@ -1363,7 +1330,8 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   const promotedOnly = excludeTop && shown.length === 0 && insights.length > 0;
 
   return (
-    <Glass className="overflow-hidden p-4 sm:p-5">
+    <Glass className="overflow-hidden p-4 sm:p-5"
+      style={{ background: `linear-gradient(155deg, ${rgba(palette.blue[500], 0.07)}, rgba(255,255,255,0.78))` }}>
       {/* Header */}
       <div className="mb-4 flex items-center gap-2.5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
@@ -1427,11 +1395,8 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                   transition={{ delay: reduce ? 0 : i * 0.04, duration: 0.24, ease: EASE }}
                   className="w-full rounded-[15px] p-3 text-left transition-[background,border-color,box-shadow] duration-200 active:scale-[0.99]"
                   style={{
-                    // --bg-subtle, not a white wash: the card sits on the
-                    // theme surface, and a 55%-white row is a light slab on
-                    // the dark theme.
-                    background: isSel ? t.bg : 'var(--bg-subtle)',
-                    border: `1px solid ${isSel ? t.border : 'var(--border)'}`,
+                    background: isSel ? t.bg : 'rgba(255,255,255,0.55)',
+                    border: `1px solid ${isSel ? t.border : 'rgba(15,23,42,0.07)'}`,
                     boxShadow: isSel ? `0 6px 18px ${rgba(palette.gray[900], 0.06)}` : 'none',
                   }}>
                   <div className="flex items-start gap-2.5">
@@ -1509,7 +1474,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                       : 'No mobile number on file for these clients.'}
                   </p>
                   <button type="button" onClick={() => router.push(selected.href)}
-                    className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
                     style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
                     Open the list <ChevronRight size={14} />
                   </button>
@@ -1519,12 +1484,11 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                   <p className="mb-2.5 truncate text-[11.5px] font-[600]" style={{ color: C.ink }}>
                     {remaining > 0 ? <>Next: <span style={{ color: palette.blue[600] }}>{next?.name}</span></> : 'Everyone on this list has been contacted.'}
                   </p>
-                  {/* min-h-[44px], not h-11: the root font is 14px, so h-11 is
-                      38.5px — under the thumb target it was meant to be. */}
+                  {/* h-11 = 44px: the minimum a thumb can hit reliably. */}
                   <div className="flex gap-2">
                     <button type="button" onClick={() => act('whatsapp')} disabled={remaining === 0}
                       aria-label={next ? `Send WhatsApp to ${next.name}` : 'Send WhatsApp'}
-                      className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
                       style={{
                         background: `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.emerald[600]})`,
                         boxShadow: remaining === 0 ? 'none' : `0 6px 16px ${rgba(palette.emerald[500], 0.34)}`,
@@ -1533,7 +1497,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                     </button>
                     <button type="button" onClick={() => act('call')} disabled={remaining === 0}
                       aria-label={next ? `Call ${next.name}` : 'Call clients'}
-                      className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
                       style={{
                         background: `linear-gradient(135deg, ${palette.blue[450]}, ${palette.blue[600]})`,
                         boxShadow: remaining === 0 ? 'none' : `0 6px 16px ${rgba(palette.blue[500], 0.34)}`,
@@ -2136,28 +2100,66 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
   );
 }
 
+// ─── Desktop Quick Dock ─────────────────────────────────────────────────────────
+export function QuickDock() {
+  const actions = QUICK_ACTIONS;
+  return (
+    // Positioning lives on the wrapper, the animation on the child, and they
+    // must not be the same element. They used to be: this was one m.div with
+    // `left-1/2 -translate-x-1/2`, and framer-motion writes `transform` inline
+    // on every animated element — `translateY(0px)` here — which silently
+    // replaced the class's `translateX(-50%)`. The dock's left edge therefore
+    // sat at exactly 50% of the viewport and its full 900px ran off the right
+    // of the screen, at every desktop width. Posture and Strength, being
+    // last, were simply never reachable.
+    //
+    // Centering on the viewport would not have been right either: the sidebar
+    // is z-50 against this z-40, so the leading items would have slid under it
+    // instead. The wrapper clears the sidebar the same way the topbar does
+    // (lg:pl-64 xl:pl-72) and centers the dock in the space that is left.
+    //
+    // flex-wrap plus max-w-full is the guarantee: at widths where ten tiles
+    // cannot sit on one line they form a second row rather than overflowing.
+    // Nothing here is ever off-screen again, whatever gets added to
+    // QUICK_ACTIONS next.
+    <div className="hidden lg:flex pointer-events-none fixed inset-x-0 bottom-6 z-40 justify-center px-4 lg:pl-64 xl:pl-72">
+      <m.div
+        initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="pointer-events-auto flex max-w-full flex-wrap items-end justify-center gap-1 rounded-[22px] px-3 py-2.5"
+        style={{
+          background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.92)', boxShadow: '0 16px 48px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.7)',
+        }}>
+        {actions.map(a => (
+          <Link key={a.label} href={a.href}
+            className="group flex shrink-0 flex-col items-center gap-1 rounded-[14px] px-3 py-2 transition-all duration-200 hover:-translate-y-1"
+            aria-label={a.label}>
+            <span className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white transition-transform duration-200 group-hover:scale-110"
+              style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 5px 14px ${a.color}45` }}>
+              <a.icon size={17} />
+            </span>
+            <span className="text-[9px] font-[650] whitespace-nowrap" style={{ color: C.ink }}>{a.label}</span>
+          </Link>
+        ))}
+      </m.div>
+    </div>
+  );
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
-// Three chapter-shaped blocks, so the wait has the same silhouette as the page
-// that replaces it rather than a grid of six loose cards.
 function SkeletonDash() {
   return (
-    <div className="space-y-3.5">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="rounded-[26px] border p-2.5 sm:rounded-[30px] sm:p-3.5"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-3 px-1 pb-3 pt-1">
-            <Skel w="w-10" h="h-10" r="rounded-[13px]" />
-            <div className="flex-1 space-y-2"><Skel w="w-28" h="h-4" /><Skel w="w-44" h="h-3" /></div>
-          </div>
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {[0, 1].map((j) => (
-              <Glass key={j} className="space-y-2.5 p-4">
-                <Skel w="w-8" h="h-8" r="rounded-[10px]" /><Skel w="w-24" h="h-3" /><Skel w="w-3/4" h="h-6" />
-              </Glass>
-            ))}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-4">
+      <Glass className="p-4"><div className="flex items-center gap-3"><Skel w="w-16" h="h-16" r="rounded-[16px]" /><div className="flex-1 space-y-2"><Skel w="w-32" h="h-5" /><Skel w="w-48" h="h-3" /></div></div></Glass>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Glass key={i} className="p-3.5 space-y-2.5">
+            <div className="flex justify-between"><Skel w="w-8" h="h-8" r="rounded-[10px]" /><Skel w="w-9" h="h-4" r="rounded-full" /></div>
+            <Skel h="h-2.5" w="w-16" /><Skel h="h-6" w="w-3/4" /><Skel h="h-6" r="rounded-lg" />
+          </Glass>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2254,17 +2256,6 @@ export default function PtOsDashboard() {
   const activeSharePct = d && (d.active_pt_clients + d.expired_clients) > 0
     ? (d.active_pt_clients / (d.active_pt_clients + d.expired_clients)) * 100 : null;
 
-  // A chapter chip is a fact, not a label. Null when the read has not landed
-  // — or came back the wrong shape, which a failed route does — so the band
-  // never claims a number it does not have.
-  const todaySessions = Array.isArray(o?.today_sessions) ? o.today_sessions : null;
-  const sessionsLeft = todaySessions ? todaySessions.filter((s) => s.status === 'scheduled').length : null;
-  // Only the appointment book is countable here. A studio that runs off
-  // programmes has an empty pt_sessions, so 0 must say nothing rather than
-  // "day clear" over a schedule card that is listing people.
-  const todayChip = sessionsLeft ? `${sessionsLeft} left today` : undefined;
-  const monthStats = o?.session_stats;
-
   return (
     <>
       {/* Ambient color wash — fixed so it doesn't scroll */}
@@ -2274,8 +2265,8 @@ export default function PtOsDashboard() {
       </div>
 
       {/* Scroll container — pb accounts for mobile bottom nav (h-16=64px) + safe area.
-          The ambient wash above stays outside PullToRefresh: it is position:fixed,
-          which breaks once an ancestor gets a transform. */}
+          QuickDock and the ambient wash above stay outside PullToRefresh: both use
+          position:fixed, which breaks once an ancestor gets a transform. */}
       <PullToRefresh onRefresh={refreshAll}>
       <div className="relative mx-auto w-full max-w-7xl pt-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-28 space-y-3.5 sm:space-y-4"
         style={{ zIndex: 1 }}>
@@ -2287,7 +2278,7 @@ export default function PtOsDashboard() {
             both false and the content area went permanently blank — no
             message, no retry, indistinguishable from a studio with no data,
             on the screen every admin lands on after login. Logged as Critical
-            #3 in docs/audits/DASHBOARD-AUDIT.md. The trainer dashboard has had this
+            #3 in DASHBOARD-AUDIT.md. The trainer dashboard has had this
             branch all along; this is the same one.
 
             Gated on `!d` as well as `error` so a failed background refresh
@@ -2300,103 +2291,152 @@ export default function PtOsDashboard() {
 
         {d && (
           <>
-            {/* 1 — Hero header. Untouched by the chapter redesign. */}
+            {/* 1 — Hero header */}
             <HeroHeader d={d} coach={coach} studioName={studioName} founderNumber={founderNumber} loading={dash.loading} onRefresh={dash.refetch} />
 
-            {/* ── TODAY ─────────────────────────────────────────────────────
-                The only chapter whose answer changes what happens in the next
-                hour: the schedule, the one thing to do, who cannot be trained
-                yet, the actions that start a client journey, and the board. */}
-            <Chapter tone="rose" icon={<Sparkles size={18} />} title="Today"
-              line="What is happening now, and who needs clearing first."
-              chip={todayChip}>
+            {/* 2 — Today's sessions.
+                Directly under the hero, above revenue and retention: it is the
+                only section whose answer changes what happens in the next hour.
+                It replaces the half-width "Today" card that used to sit in the
+                Operations row further down — that card showed the session's
+                own title rather than the client's programme, and could only
+                ever see the appointment book.
 
-              <div className="sm:col-span-2 lg:col-span-4">
-                <TodaySchedule />
+                No SectionLabel here. "TODAY" sat directly above a card whose
+                own header reads "Today's Sessions" — the
+                label said the word twice and cost 23px to do it. Every other
+                section keeps its label, because none of them repeat their
+                heading the way this one did.
+
+                The remaining gap is inline rather than a margin class because
+                the parent's space-y utility targets `> * ~ *` and outranks a
+                plain mt-* on specificity; a class here would simply lose. */}
+            <div style={{ marginTop: 8 }}>
+              <TodaySchedule />
+            </div>
+
+            {/* 2.5 — Clients not cleared to train. Next to today's sessions
+                because that is when it matters: before someone is trained. */}
+            <ScreeningGaps />
+
+            {/* 2.75 — Next Best Action.
+                The single highest-ranked result of the same prioritisation the
+                AI Coach board runs, promoted to its own card with the actions
+                the board keeps one tap deep. Placed with the schedule because
+                both answer "what happens next" — one is what is booked, this
+                is what should be. It derives from data already on this screen;
+                no request of its own. */}
+            <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} />
+
+            {/* 3 — Mobile quick actions (desktop uses the dock) */}
+            <MobileQuickActions />
+
+            {/* 3.5 — The AI Coach board, directly under the card that promoted
+                the top of its list: excludeTop hands this board the remainder,
+                so one action never prints twice. */}
+            <AICoach d={d} ops={o}
+              birthdays={birthdayList}
+              studioName={studioName}
+              excludeTop />
+
+            {/* 3.6 — Who to call. The roster sweep's own section, heading
+                included: the half a trainer cannot see by looking around the
+                gym floor — who stopped coming, who is paying but absent. A
+                failed sweep says so in place rather than rendering an empty,
+                reassuring list. */}
+            <RosterSignalsCard />
+
+            {/* 3.7 — Progress Radar. Where the six measured categories actually
+                stand, for the studio's most recently measured client. It reads
+                its own endpoints and fails soft: a broken response removes the
+                card, not the screen. */}
+            <ProgressRadarCard />
+
+            {/* 3 — KPI grid.
+                Four cards, and four is now the whole set on every screen:
+                Outstanding has gone. It was the fifth, and it was the same
+                figure Today's Revenue already shows as Pending, one section
+                below — with the people it is owed by, how many are overdue,
+                and a link into the dues list. A tile carrying a duplicate of
+                a number that is better answered further down the page is a
+                tile spent saying something twice.
+
+                Commission stays phone-and-tablet-only, so the desktop row is
+                Clients / Revenue / Active Share and the grid still fills. */}
+            {/* 3.5 — The month's revenue target.
+                Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
+                is a fact, and whether that is good depends entirely on what
+                the studio committed to. It lived only on /insights/revenue,
+                two taps into a screen nobody opens mid-shift.
+
+                Read-only. Setting a target is irreversible for the month, so
+                the form stays where there is room to explain the lock; this
+                links there. */}
+            <div>
+              <SectionLabel icon={<Target size={10} />}>This Month</SectionLabel>
+              <MonthlyTarget />
+            </div>
+
+            <div>
+              <SectionLabel icon={<Gauge size={10} />}>Key Metrics</SectionLabel>
+              {/* Two up on a phone (all four, as a square block), three on desktop
+                    where Commission is hidden — so the row fills at both. It was
+                    lg:grid-cols-4 with one of the four hidden at lg, which left an
+                    empty fourth column the comment above claimed was filled. */}
+              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+                {/* No sparkline and no percentage. The only series this
+                    endpoint carries is revenue, and revenue is not a client
+                    count — putting it here is what made this card claim
+                    revenue's growth as its own. A number with nothing under
+                    it is the honest render. */}
+                <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
+                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active" />
+                <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
+                  sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
+                {/* The Commission card (coach payouts) went with the multi-coach
+                    model; a studio is one trainer, so there is no one to pay. */}
+                <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} delay={0.15} href="/insights/renewal" />
               </div>
+            </div>
 
-              {/* Side stack: what should happen next, then who cannot train.
-                  ScreeningGaps renders nothing when everyone is cleared, so
-                  the stack degrades to one card rather than an empty slot. */}
-              <div className="grid gap-2.5 [&>*]:min-w-0 sm:col-span-2 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-1">
-                <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} />
-                <ScreeningGaps />
-              </div>
+            {/* 5 — Renewals due.
+                Was a two-column row with a "Today" card beside it. That card
+                is now the full-width section under the hero, where it can show
+                the programme and the clients who are due but unbooked — so
+                keeping it here as well would have been the same list twice, one
+                of them worse. Renewals is full width now that it is alone. */}
+            <div>
+              <SectionLabel icon={<CalendarClock size={10} />}>Renewals</SectionLabel>
+              <RenewalsDue ops={o} loading={ops.loading} />
+            </div>
 
-              <div className="sm:col-span-2 lg:col-span-6">
-                <QuickActions />
-              </div>
+            {/* 6 — Today's Revenue.
+                Was "Revenue Intelligence": this month, a linear-regression
+                projection, average per client, six-month total. All true and
+                none of it answerable — you could read it for a minute and
+                still not know whether to pick up the phone. This asks the
+                question the day actually has: what came in, what is still out,
+                who do I call. */}
+            <TodayRevenue d={d} loading={dash.loading} />
 
-              {/* Directly under the card that promoted the top of its list:
-                  excludeTop hands this board the remainder, so one action
-                  never prints twice. */}
-              <div className="sm:col-span-2 lg:col-span-6">
-                <AICoach d={d} ops={o}
-                  birthdays={birthdayList}
-                  studioName={studioName}
-                  excludeTop />
-              </div>
-            </Chapter>
-
-            {/* ── MONEY ────────────────────────────────────────────────────
-                The month's commitment, what came in today, and who is due. */}
-            <Chapter tone="gold" icon={<Wallet size={18} />} title="Money"
-              line="What the month has earned, and what is still owed."
-              chip={`${daysLeftInMonth()} day${daysLeftInMonth() === 1 ? '' : 's'} left`}>
-
-              <div className="sm:col-span-2 lg:col-span-3"><MonthlyTarget /></div>
-              <div className="sm:col-span-2 lg:col-span-3"><TodayRevenue d={d} loading={dash.loading} /></div>
-              <div className="sm:col-span-2 lg:col-span-6"><RenewalsDue ops={o} loading={ops.loading} /></div>
-            </Chapter>
-
-            {/* ── PEOPLE ───────────────────────────────────────────────────
-                The roster's health: the numbers, who has drifted, the latest
-                measured baseline, and the work logged. */}
-            <Chapter tone="mint" icon={<Users size={18} />} title="People"
-              line="Who is training, who has drifted, and how the studio is doing."
-              chip={activeSharePct !== null ? `${activeSharePct.toFixed(0)}% active` : undefined}>
-
-              <div className="sm:col-span-2 lg:col-span-6">
-                <Glass className="p-3.5 sm:p-4">
-                  <div className="mb-3 flex items-baseline justify-between gap-2 px-0.5">
-                    <h3 className="text-[13px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
-                      Key Metrics
-                    </h3>
-                    <span className="text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>This month</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-                    {/* No sparkline and no percentage on Active Clients: the
-                        only series this endpoint carries is revenue, and
-                        revenue is not a client count. A number with nothing
-                        under it is the honest render. */}
-                    <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                      sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active" />
-                    <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                      sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR}
-                      accent={palette.amber[500]} />
-                    <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
-                      sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`}
-                      delay={0.1} href="/insights/renewal" accent={palette.emerald[500]} />
-                    <StatCard icon={<Activity size={17} />} label="Sessions" value={monthStats?.this_month_total != null ? `${monthStats.this_month_completed ?? 0}/${monthStats.this_month_total}` : '—'}
-                      sub="completed this month" delay={0.15} href="/insights/sessions" accent={palette.indigo[500]} />
-                  </div>
-                </Glass>
-              </div>
-
-              {/* mt-6 is the card's own spacing on /pt-os/today; inside the
-                  chapter grid the gap already does that job. */}
-              {/* sm:col-span-2, not a half column: the roster row goes
-                  two-column at sm, and in a 350px half-card its fixed name
-                  column squeezed the evidence to one character per line. Full
-                  width until lg, where half a desktop row is ~500px. */}
-              <div className="sm:col-span-2 lg:col-span-3 [&>section]:mt-0"><RosterSignalsCard /></div>
-              <div className="sm:col-span-2 lg:col-span-3"><ProgressRadarCard /></div>
-              <div className="sm:col-span-2 lg:col-span-6"><SessionActivity ops={o} loading={ops.loading} /></div>
-            </Chapter>
+            {/* 7 — Session activity.
+                Was a two-column "Team Performance" row with a trainer
+                leaderboard beside it. Three of the four studios have exactly
+                one trainer, so the board ranked a list of one, and "team" was
+                the wrong word for a solo studio. Full width now that it is the
+                only card in the row. */}
+            <div>
+              <SectionLabel icon={<Dumbbell size={10} />}>Sessions</SectionLabel>
+              <SessionActivity ops={o} loading={ops.loading} />
+            </div>
           </>
         )}
       </div>
       </PullToRefresh>
+
+      {/* Desktop floating dock — hidden on mobile */}
+      {d && <QuickDock />}
     </>
   );
 }

@@ -249,13 +249,6 @@ const themes = args.includes('--light') ? ['light']
   : args.includes('--dark') ? ['dark']
     : ['light', 'dark'];
 const only = args.find((a) => a.startsWith('--route='))?.slice('--route='.length);
-/**
- * Matched on PATH rather than by prefix. Every route starts with '/', so
- * `--route=/` used to select the entire table instead of the dashboard; and a
- * prefix match on a page path silently swept in the routes that reach it with
- * a different query, which is not what a caller naming one path asked for.
- */
-const onlyPath = only?.split('?')[0];
 
 // ── Build and serve ─────────────────────────────────────────────────────────
 
@@ -551,7 +544,7 @@ async function main() {
     for (const vp of VIEWPORTS) {
     for (const theme of themes) {
       for (const [name, route, open, faults] of ROUTES) {
-        if (onlyPath && route.split('?')[0] !== onlyPath) continue;
+        if (only && !route.startsWith(only)) continue;
 
         const ctx = await browser.newContext({
           viewport: { width: vp.width, height: vp.height },

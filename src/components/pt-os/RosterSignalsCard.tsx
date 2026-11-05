@@ -276,7 +276,7 @@ function Shell({
   return (
     <section className="mt-6" aria-labelledby="roster-signals-heading">
       <div
-        className="overflow-hidden rounded-[22px]"
+        className="overflow-hidden rounded-[26px]"
         style={{
           // A tinted wash rather than a second surface: the card still sits on
           // --bg-card, and the colour says how the sweep went before a word is

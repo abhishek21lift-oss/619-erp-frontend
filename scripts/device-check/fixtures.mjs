@@ -409,75 +409,6 @@ const OPS = {
 };
 
 /**
- * The month's revenue target, as /api/reports/revenue-target returns it.
- *
- * The dashboard's Money chapter renders a dark ring card for this and returns
- * NULL on a failed read — so a run without a fixture showed a chapter with a
- * hole where its signature card belongs, and the hole read as a layout bug.
- */
-const REVENUE_TARGET = {
-  period: '2026-11',
-  target_amount: 200000,
-  achieved: 172000,
-  balance: 28000,
-  surplus: null,
-  pct: 86,
-  locked: true,
-  set_by_name: 'Ramachandran Subramaniam',
-  can_set: true,
-};
-
-/**
- * The roster sweep, as /api/pt-os/signals returns it.
- *
- * One critical row and one warning row, so the "today" list is populated and
- * the long name is the one being laid out. The card renders NOTHING for a
- * malformed body — a bare `{}` was being read as a failed sweep, which is a
- * second way the People chapter grew a hole nobody could attribute.
- */
-const SIGNALS = {
-  clients: 128,
-  clients_with_signals: 2,
-  critical: 1,
-  warning: 1,
-  info: 0,
-  not_assessable: 0,
-  by_signal: [
-    { id: 'stopped_attending', severity: 'critical', clients: 1 },
-    { id: 'payment_due', severity: 'warning', clients: 1 },
-  ],
-  clients_detail: [
-    {
-      client_id: 'c-1', client_name: LONG_NAME,
-      term: { state: 'current', end: '2026-08-02', days_left: 3 },
-      last_session: '2026-07-09', days_quiet: 21,
-      signals: [{
-        id: 'stopped_attending', severity: 'critical',
-        headline: 'Paying, and stopped coming',
-        evidence: 'Last session 2026-07-09 — 21 days ago, with 6 sessions left',
-        recommendation: 'Call before the package expires with the sessions unused',
-        days_quiet: 21,
-      }],
-      unobservable: [],
-      worst: 'critical',
-    },
-    {
-      client_id: 'c-2', client_name: 'Rahul Mehta',
-      term: { state: 'ended', end: '2026-07-28', days_left: -5 },
-      last_session: '2026-07-20', days_quiet: 10,
-      signals: [{
-        id: 'payment_due', severity: 'warning',
-        headline: '\u20b98,000 still owed',
-        evidence: 'Balance carried since the package ended on 2026-07-28',
-        recommendation: 'Ask for the balance before booking the next block',
-      }],
-      unobservable: [],
-      worst: 'warning',
-    },
-  ],
-};
-
-/**
  * A training brief with real gaps in it.
  *
  * Deliberately PARTIAL: readiness, limitations, capacity and goal are filled;
@@ -610,32 +541,6 @@ const ROUTES = [
   // handler swallows the sub-path and the page renders its skeleton forever.
   [/^\/api\/pt-os\/dashboard\/ops$/, () => ({ data: OPS })],
   [/^\/api\/pt-os\/dashboard$/, () => ({ data: DASH })],
-  [/^\/api\/reports\/revenue-target$/, () => ({ data: REVENUE_TARGET })],
-  [/^\/api\/pt-os\/signals$/, () => ({ data: SIGNALS })],
-  // The shell's own badges. These had no fixture, so they answered a 200 `{}`
-  // and the sidebar crashed reading `.unread` / `.stats.pending_count` — which
-  // took EVERY route in this harness to the error boundary, dashboard
-  // included, and the report showed layout problems on a page that was really
-  // "Something went wrong".
-  [/^\/api\/pt-os\/screening-gaps$/, () => ({
-    data: [
-      {
-        client_id: 'c-1', client_name: LONG_NAME, client_photo: null,
-        missing: ['parq'], block: 'PARQ_BLOCKED',
-      },
-      {
-        client_id: 'c-2', client_name: 'Rahul Mehta', client_photo: null,
-        missing: ['informed_consent', 'parq'], block: null,
-      },
-    ],
-    total: 2,
-  })],
-  [/^\/api\/insights\/dues$/, () => []],
-  [/^\/api\/messages\/unread-count$/, () => ({ data: { unread: 0 } })],
-  [/^\/api\/payments\/upi\/pending$/, () => ({
-    data: [], total: 0, stats: { pending_count: 0 }, reject_reasons: {},
-  })],
-  [/^\/api\/subscription\/status$/, () => ({ data: { is_founder: false, founder_number: null } })],
   [/^\/api\/pt-os\/informed-consent$/, () => ({
     data: [
       { status: 'signed' }, { status: 'signed' }, { status: 'pending' }, { status: 'not_started' },
