@@ -19,6 +19,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
+import MemberPrivacy from '@/components/member/MemberPrivacy';
 import {
   Card, LoadError, MC, goalLabel, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
 } from '@/components/member/MemberUI';
@@ -102,6 +103,7 @@ function AccountBody() {
 
       <ContactForm profile={profile} onSaved={(c) => setProfile({ ...profile, ...c })} />
       <PasswordForm />
+      <MemberPrivacy />
 
       <button type="button" onClick={() => logout()}
         className="mb-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750]"
