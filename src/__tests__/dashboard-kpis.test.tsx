@@ -167,18 +167,22 @@ describe('PT-OS dashboard KPIs', () => {
     expect(chart!.getAttribute('aria-label')).toContain('70000, 80000, 90000');
   });
 
-  it('ends every card on the same band, charted or not', async () => {
-    // The grid stretches the cards to one height. One of them has a series
-    // and the others never will, so without a matching band on the others the
-    // row's bottom edge is level only by accident — and the ones without read
-    // as a number floating in a pool of white, which is how they looked
-    // before this.
+  it('gives every tile the grid\'s height instead of a reserved band', async () => {
+    // The tiles used to end on a 30px foot band so three cards of different
+    // content still shared a bottom edge. They now sit in one grid, and a
+    // stretched grid item is level by construction — no empty band is needed
+    // on the tiles that have no series.
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients');
+    const tiles: HTMLElement[] = [];
     for (const label of ['Active Clients', 'PT Revenue', 'Active Share']) {
-      const card = (await screen.findByText(label)).closest('.group');
-      expect(card!.querySelectorAll('[data-kpi-foot]'), `${label}'s foot`).toHaveLength(1);
+      const card = (await screen.findByText(label)).closest('.group') as HTMLElement;
+      expect(card.querySelector('[data-kpi-foot]'), `${label}'s foot`).toBeNull();
+      expect(card.className, `${label} stretches`).toContain('h-full');
+      tiles.push(card);
     }
+    // One grid: every tile is a direct child of the same element.
+    expect(new Set(tiles.map((t) => t.parentElement)).size).toBe(1);
   });
 
   it('draws no sparkline at all on too few months to be a shape', async () => {
@@ -190,7 +194,7 @@ describe('PT-OS dashboard KPIs', () => {
     render(<PtOsDashboard />);
     const card = (await screen.findByText('PT Revenue')).closest('.group');
     expect(card!.querySelector('[role="img"]')).toBeNull();
-    // The card still ends on the same band, so the grid stays level.
+    // The tile still shows the figure it always did.
     expect(card!.textContent).toContain('₹90K');
   });
 
