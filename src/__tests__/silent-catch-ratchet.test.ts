@@ -124,8 +124,8 @@ const KNOWN = [
   // five lines above each site, then the side-tab stripe removal deleted a
   // three-line comment-plus-property above them. File set and per-file count
   // unchanged — line numbers only.
-  'app/(chrome)/settings/profile/page.tsx:1860',
-  'app/(chrome)/settings/profile/page.tsx:2152',
+  'app/(chrome)/settings/profile/page.tsx:1857',
+  'app/(chrome)/settings/profile/page.tsx:2149',
   'app/(chrome)/settings/profile/page.tsx:952',
   'app/(chrome)/settings/profile/page.tsx:953',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',

@@ -517,8 +517,7 @@ export default function WorkoutGeneratorPage() {
               <span className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>Studio equipment</span>
             </div>
             <p className="mb-3 mt-0 text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-              What your studio can train with. Every AI programme reads this, so
-              the exercises match the kit in the room.
+              Every AI programme reads this, so the exercises match the kit in the room.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
               <TextField
