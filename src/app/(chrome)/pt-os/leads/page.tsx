@@ -287,6 +287,7 @@ export default function LeadsPage() {
                 language. The two actions stay, beside the title. */}
             <PageHero
               compact
+              accent="amber"
               icon={<UserSearch size={18} />}
               title="Leads"
               actions={(

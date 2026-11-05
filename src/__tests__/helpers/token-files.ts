@@ -1,5 +1,5 @@
-// The nine path-based decorative surfaces the palette scan sanctions, each
-// confined to its own token file by palette.test.ts. The tenth exemption,
+// The ten path-based decorative surfaces the palette scan sanctions, each
+// confined to its own token file by palette.test.ts. The eleventh exemption,
 // founderGold, lives in lib/palette.ts, which both scans skip separately.
 // Paths are relative to src/, with forward slashes. Both scans import this
 // list so they cannot drift apart.
@@ -14,6 +14,7 @@ export const DECORATIVE_THEME_PATHS = [
   'components/attendance/attendanceTheme.ts',
   'components/platform/ccTheme.ts',
   'components/pt-os/fitness-testing/fitnessTheme.ts',
+  'components/ui/pageAccents.ts',
 ] as const;
 
 export function isDecorativeTheme(relPath: string): boolean {
