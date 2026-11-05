@@ -72,7 +72,9 @@ export default function ProgressRadarCard() {
   if (assessments.hasResolved && !rows) return null;
 
   return (
-    <section className="glass-panel p-4 sm:p-5" aria-label="Progress radar">
+    <section
+      className="rounded-[22px] border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-[var(--shadow-card)] sm:p-5"
+      aria-label="Progress radar">
       <div className="flex items-center gap-2.5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
           style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
@@ -101,7 +103,7 @@ export default function ProgressRadarCard() {
             The first assessment puts a baseline on this radar — six categories, measured, not guessed.
           </p>
           <Link href="/pt-os/assessment"
-            className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+            className="mt-3 flex min-h-[44px] items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
             Run an assessment <ChevronRight size={14} />
           </Link>
