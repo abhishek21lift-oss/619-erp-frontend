@@ -4,7 +4,7 @@ import { useStore } from '@tanstack/react-form';
 import { m } from 'framer-motion';
 import { Bot, Plus, Loader2, Power, PowerOff, Edit2, Trash2, Zap, MessageSquare, Clock, Check, CheckCheck, AlertCircle, Info } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -206,15 +206,14 @@ function AutoContent() {
       <PageHero
         icon={<Bot size={20} />}
         title="Automation Rules"
-
-        actions={
-          <button type="button" onClick={()=>{cancelForm(); setShowForm(!showForm);}}
-            className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            <Plus size={14}/> {showForm?'Cancel':'New Rule'}
-          </button>
-        }
       />
+      <PageActions>
+        <Button variant={showForm ? 'secondary' : 'primary'}
+          onClick={()=>{cancelForm(); setShowForm(!showForm);}}
+          iconLeft={<Plus size={14} />}>
+          {showForm?'Cancel':'New Rule'}
+        </Button>
+      </PageActions>
 
       {/* ── KPI STATS ── */}
       {(logStats.data || logStats.loading) && (

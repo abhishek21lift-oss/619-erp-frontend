@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Dumbbell, Loader2 } from 'lucide-react';
-import { PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import {
   ChoiceChips, FormErrorBanner, NumberField, RadioField, SearchField, SubmitStatus,
   TextField, type FieldLike,
@@ -183,17 +183,12 @@ export function NewProgrammeForm({ presetClientId }: NewProgrammeFormProps) {
       <PageHero
         icon={<Dumbbell size={20} />}
         title="New programme"
-        actions={
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-            style={{ background: '#fff', color: '#0F172A' }}
-          >
-            <ArrowLeft size={16} /> Back to plans
-          </button>
-        }
       />
+      <PageActions>
+        <Button variant="secondary" onClick={handleCancel} iconLeft={<ArrowLeft size={16} />}>
+          Back to plans
+        </Button>
+      </PageActions>
 
       {/* A column of inputs is unusable at full width — max-w-2xl keeps this
           the same reading measure as the sheet it replaces, just no longer

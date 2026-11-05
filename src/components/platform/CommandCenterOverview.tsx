@@ -29,12 +29,13 @@ import {
   LayoutDashboard, LifeBuoy, RefreshCw, ShieldAlert, ShieldCheck, ToggleRight, TrendingUp, Users2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { Button, PageActions } from '@/components/ui';
 import type {
   AiOverview, AiTrendPoint, CommandCenterSnapshot, GuardianReport, PlatformAnalytics, PlatformKpis,
   SecurityOverview, SubscriptionMetrics, SupportOverview, SystemAlertList,
 } from '@/lib/api';
 import {
-  CcBars, CcCard, CcChip, CcDonut, CcEmpty, CcHBars, CcHero, CcHeroButton, CcHeroStat, CcIcon, CcLink, CcRing, CcStat,
+  CcBars, CcCard, CcChip, CcDonut, CcEmpty, CcHBars, CcHero, CcHeroStat, CcIcon, CcLink, CcRing, CcStat,
   compact, fillMonths, inr, inrCompact, nfIN, type Tone,
 } from './cc-viz';
 import { ccSeries, ccState } from './ccTheme';
@@ -161,13 +162,18 @@ export default function CommandCenterOverview() {
         subtitle={snapshot
           ? <>{health.healthy} of {health.total} signals healthy{health.critical ? ` · ${health.critical} critical` : ''}{health.unmeasured ? ` · ${health.unmeasured} not measured` : ''} · checked {new Date(snapshot.collected_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</>
           : 'The health collector did not answer. Studio and revenue figures below are still live.'}
-        actions={<CcHeroButton onClick={() => void load(true)} disabled={refreshing}><RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing' : 'Refresh'}</CcHeroButton>}
       >
         <CcHeroStat label="Studios" value={b ? nfIN(b.active_studios) : '—'} sub={b ? `active of ${nfIN(b.total_studios)} · ${nfIN(b.trial_studios)} on trial` : 'unavailable'} />
         <CcHeroStat label="Clients" value={b ? nfIN(b.active_clients) : '—'} sub={b ? `active · +${nfIN(b.new_clients_30d)} in 30 days` : 'unavailable'} />
         <CcHeroStat label="MRR" value={money ? inrCompact(money.mrr_inr) : '—'} sub={money ? `${nfIN(money.paying_studios)} paying · ARR ${inrCompact(money.arr_inr)}` : 'unavailable'} />
         <CcHeroStat label="Collected · 30d" value={kpis ? inrCompact(kpis.platform_revenue.collected_30d_inr) : '—'} sub={kpis ? `${nfIN(kpis.operations.failed_payments_30d)} failed payments` : 'unavailable'} />
       </CcHero>
+      <PageActions>
+        <Button variant="secondary" onClick={() => void load(true)} disabled={refreshing}
+          iconLeft={<RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />}>
+          {refreshing ? 'Refreshing' : 'Refresh'}
+        </Button>
+      </PageActions>
 
       {failed.length > 0 && (
         <div role="status" className="flex items-start gap-2.5 rounded-[16px] px-4 py-3 text-[12px]" style={{ background: 'var(--warning-bg, rgba(245,158,11,0.1))', border: '1px solid var(--warning-border, rgba(245,158,11,0.3))', color: 'var(--text-secondary)' }}>

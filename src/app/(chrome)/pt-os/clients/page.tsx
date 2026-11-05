@@ -7,7 +7,7 @@ import { Search, Users, UserPlus, User, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import ClientKpiStrip from '@/components/pt-os/ClientKpiStrip';
-import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 import { termEnded } from '@/lib/term-dates';
@@ -286,18 +286,12 @@ export default function PtClientsPage() {
           <PageHero
             icon={<Users size={20} />}
             title="PT Clients"
-
-            actions={(
-              <button
-                type="button"
-                onClick={() => router.push('/pt-os/new-client')}
-                className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-                style={{ background: '#fff', color: '#0F172A' }}>
-                <UserPlus size={16} />
-                New Client
-              </button>
-            )}
           />
+          <PageActions>
+            <Button onClick={() => router.push('/pt-os/new-client')} iconLeft={<UserPlus size={16} />}>
+              New Client
+            </Button>
+          </PageActions>
 
           {/* The strip's own file explains why it is one object rather
               than four cards, and why it is 2x2 on mobile. */}

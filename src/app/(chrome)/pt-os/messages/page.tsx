@@ -26,7 +26,7 @@ import { ArrowLeft, Loader2, MessagesSquare, PenSquare, Search, UserX, X } from 
 import Guard from '@/components/Guard';
 import ChatThread from '@/components/chat/ChatThread';
 import ClientPicker, { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { StudioConversation, StudioMessageThread } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
@@ -91,12 +91,12 @@ function MessagesContent() {
   if (picking) {
     return (
       <PageContainer>
-        <PageHero compact icon={<MessagesSquare size={18} />} title="Messages"
-          actions={(
-            <Button variant="outline" iconLeft={<X size={14} />} onClick={() => setPicking(false)}>
-              Cancel
-            </Button>
-          )} />
+        <PageHero compact icon={<MessagesSquare size={18} />} title="Messages" />
+        <PageActions>
+          <Button variant="outline" iconLeft={<X size={14} />} onClick={() => setPicking(false)}>
+            Cancel
+          </Button>
+        </PageActions>
         <ClientPicker title="New message"
           icon={<PenSquare size={20} color="#fff" />} basePath="/pt-os/messages" />
       </PageContainer>
@@ -107,12 +107,12 @@ function MessagesContent() {
 
   return (
     <PageContainer>
-      <PageHero compact icon={<MessagesSquare size={18} />} title="Messages"
-        actions={(
-          <Button iconLeft={<PenSquare size={14} />} onClick={() => setPicking(true)}>
-            New message
-          </Button>
-        )} />
+      <PageHero compact icon={<MessagesSquare size={18} />} title="Messages" />
+      <PageActions>
+        <Button iconLeft={<PenSquare size={14} />} onClick={() => setPicking(true)}>
+          New message
+        </Button>
+      </PageActions>
 
       {/* A soft brand wash under the header — the page's only decoration, and
           entirely behind the card. */}

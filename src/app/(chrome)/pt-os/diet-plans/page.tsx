@@ -14,7 +14,7 @@ import {
   Tooltip as ChartTooltip, LineChart, Line, ReferenceLine,
 } from 'recharts';
 import Guard from '@/components/Guard';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart, PageContainer, PageHero, FormField, TextInput } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DonutChart, PageActions, PageContainer, PageHero, FormField, TextInput } from '@/components/ui';
 import { clampNumericText } from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import type {
@@ -366,27 +366,23 @@ function Inner() {
       <PageHero
         icon={<Salad size={20} />}
         title="Diet Plans"
-
       >
-        {/* The date and Add Meal were a flex row that wrapped under the title
-            on a phone; on the hero they are a fixed two-up. */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <FormField label="Diet log date" labelHidden className="min-w-0">
-            <TextInput
-              type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="h-[44px] font-[600] text-white"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
-            />
-          </FormField>
-          <button
-            type="button"
-            onClick={() => setAddMealOpen(true)}
-            className="inline-flex h-[44px] cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95"
-            style={{ background: '#fff', color: '#0F172A' }}>
-            <Plus size={16} /> Add Meal
-          </button>
-        </div>
+        {/* The log date is a filter on what the page shows, so it stays on the
+            hero. Add Meal sits in the action row below with every other page's
+            actions. */}
+        <FormField label="Diet log date" labelHidden className="max-w-[240px]">
+          <TextInput
+            type="date" value={date} onChange={(e) => setDate(e.target.value)}
+            className="h-[44px] font-[600] text-white"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', colorScheme: 'dark' }}
+          />
+        </FormField>
       </PageHero>
+      <PageActions>
+        <Button onClick={() => setAddMealOpen(true)} iconLeft={<Plus size={16} />}>
+          Add Meal
+        </Button>
+      </PageActions>
 
       <div>
         {/* Client-scoping banner */}

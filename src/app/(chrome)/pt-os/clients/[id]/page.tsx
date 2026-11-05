@@ -750,12 +750,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     )}
                   </div>
 
-                  <Link href={`/pt-os/clients/${id}/edit`}
-                    aria-label="Edit profile"
-                    className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[700] text-white transition active:scale-95"
-                    style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
-                    <Pencil size={13} /> <span className="hidden sm:inline">Edit</span>
-                  </Link>
                 </div>
                 </div>
               </m.section>
@@ -783,6 +777,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 )}
                 {/* The member renews themselves: priced here, paid by UPI in their app. */}
                 <ActionButton label="Offer" ariaLabel="Renewal offer" icon={<Send size={20} />} tint={tones.berry} onClick={() => setOfferOpen(true)} />
+                <ActionButton label="Edit" ariaLabel="Edit profile" icon={<Pencil size={20} />} tint={tones.gold}
+                  href={`/pt-os/clients/${id}/edit`} />
               </nav>
 
               {/* ── MEMBERSHIP ──

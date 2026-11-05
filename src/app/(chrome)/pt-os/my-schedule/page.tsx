@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
-import { Button, EmptyState, HeroButton, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, PageActions, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
@@ -449,17 +449,16 @@ export default function MySchedulePage() {
         <div className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] pb-6">
 
             <PageHero
-              className="mb-5"
+              className="mb-3"
               icon={<CalendarCheck size={20} />}
               title="My Schedule"
-
-              actions={
-                <HeroButton className="w-full sm:w-auto" icon={<CalendarPlus size={15} />}
-                  onClick={() => router.push('/pt-os/schedule-session')}>
-                  Book Session
-                </HeroButton>
-              }
             />
+            <PageActions className="mb-5">
+              <Button iconLeft={<CalendarPlus size={15} />}
+                onClick={() => router.push('/pt-os/schedule-session')}>
+                Book Session
+              </Button>
+            </PageActions>
 
             {/* The trainer owns the studio, so their schedule is the studio's
                 sessions — there is no "login not linked to a trainer profile"

@@ -23,8 +23,8 @@ import Guard from '@/components/Guard';
 import { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
 import { DashboardError } from '@/components/dashboards/primitives';
 import {
-  Button, Card, CardBody, CardDescription, CardHeader, CardTitle, EmptyState, HeroButton,
-  HeroChip, KpiCard, PageContainer, PageHero, Skeleton,
+  Button, Card, CardBody, CardDescription, CardHeader, CardTitle, EmptyState, HeroChip,
+  KpiCard, PageActions, PageContainer, PageHero, Skeleton,
 } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
 import { indigo, emerald } from '@/lib/palette';
@@ -152,13 +152,14 @@ function ProgressRoster() {
           ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
           : 'Re-tests · daily habits · seven-domain change'}
         icon={<LineChart size={18} />}
-        actions={(
-          <HeroButton variant="glass"
-            onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
-            {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
-          </HeroButton>
-        )}
       />
+      <PageActions>
+        <Button variant="secondary"
+          onClick={() => setReloadKey((k) => k + 1)} disabled={loading}
+          iconLeft={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}>
+          Refresh
+        </Button>
+      </PageActions>
 
       <div>
         <SectionLabel icon={<AlertTriangle size={10} />}>Re-test status</SectionLabel>
@@ -346,8 +347,10 @@ function ProgressHub({ clientId }: { clientId: string }) {
   if (failed && !data) {
     return (
       <PageContainer>
-        <PageHero title="Progress Hub" subtitle="Client progress" icon={<LineChart size={18} />}
-          actions={<HeroButton variant="glass" onClick={() => router.push('/pt-os/progress')}>Change client</HeroButton>} />
+        <PageHero title="Progress Hub" subtitle="Client progress" icon={<LineChart size={18} />} />
+        <PageActions>
+          <Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
+        </PageActions>
         <DashboardError onRetry={() => void load()} title="Could not load progress" detail={failed} retrying={loading} />
       </PageContainer>
     );
@@ -360,14 +363,6 @@ function ProgressHub({ clientId }: { clientId: string }) {
         title="Progress Hub"
         subtitle={`${data.dashboard.period.start_date} to ${data.dashboard.period.end_date} · studio time ${data.dashboard.timezone}`}
         icon={<LineChart size={18} />}
-        actions={(
-          <>
-            <HeroButton variant="glass" onClick={() => router.push('/pt-os/progress')}>Change client</HeroButton>
-            <HeroButton variant="glass" onClick={() => void load()} disabled={loading}>
-              {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
-            </HeroButton>
-          </>
-        )}
       >
         {/* One badge, and only when it names the next action. The unlogged-day
             count and the assessments-on-file count that used to sit here were
@@ -377,6 +372,13 @@ function ProgressHub({ clientId }: { clientId: string }) {
           <HeroChip>No baseline — start with the seven-step assessment</HeroChip>
         )}
       </PageHero>
+      <PageActions>
+        <Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
+        <Button variant="secondary" onClick={() => void load()} disabled={loading}
+          iconLeft={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}>
+          Refresh
+        </Button>
+      </PageActions>
 
       {failed && (
         <div className="flex items-center gap-2 rounded-[14px] px-4 py-3 text-[12.5px]"

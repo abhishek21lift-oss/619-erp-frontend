@@ -47,7 +47,7 @@ import TodayCard from '@/components/member/TodayCard';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
 import RenewalBanner from '@/components/member/RenewalBanner';
-import HomeHero from '@/components/member/HomeHero';
+import HomeHero, { HomeActions } from '@/components/member/HomeHero';
 import { accentGradient, spectrum } from '@/components/member/memberTheme';
 import type { Accent } from '@/components/member/memberTheme';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
@@ -183,6 +183,7 @@ function MemberDashboard() {
         daysLeft={left}
         sessions={achievements ? achievements.totals.sessions : null}
       />
+      <HomeActions />
 
       {/* ── A renewal offer to pay, or a plan about to run out ──────────────── */}
       <RenewalBanner />

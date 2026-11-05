@@ -32,7 +32,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { ChartDataTable, PremiumBarChart, semantic, series as chartSeries } from '@/components/visualizations';
 import {
   TextField, SelectField, DateFieldControl, FormErrorBanner,
@@ -180,15 +180,14 @@ function CampaignContent() {
       <PageHero
         icon={<Send size={20} />}
         title="Campaigns"
-
-        actions={
-          <button type="button" onClick={() => setShowForm(v => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            <Plus size={14} /> {showForm ? 'Cancel' : 'New Campaign'}
-          </button>
-        }
       />
+      <PageActions>
+        <Button variant={showForm ? 'secondary' : 'primary'}
+          onClick={() => setShowForm(v => !v)}
+          iconLeft={<Plus size={14} />}>
+          {showForm ? 'Cancel' : 'New Campaign'}
+        </Button>
+      </PageActions>
 
       {error && (
         <div style={{

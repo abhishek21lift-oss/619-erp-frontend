@@ -13,7 +13,7 @@ import Guard from '@/components/Guard';
 import {
   Button, Dialog, DialogContent, DialogHeader, DialogTitle,
   PullToRefresh, FormField, SelectInput, EmptyState, TextInput,
-  PageContainer, PageHero,
+  PageActions, PageContainer, PageHero,
 } from '@/components/ui';
 import {
   PremiumAreaChart, PremiumBarChart, PremiumDonutChart, PremiumLineChart,
@@ -391,18 +391,17 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           icon={<Dumbbell size={18} />}
           title={clientName || 'Workout Log'}
           subtitle={activeAssignment ? `Workout Log · ${activeAssignment.plan_name}` : 'Workout Log · Freestyle sessions'}
-          actions={(
-            <Button
-              iconLeft={<Plus size={14} />}
-              loading={creating}
-              disabled={creating}
-              onClick={handleNewSession}
-              className="w-full sm:w-auto"
-            >
-              New Session
-            </Button>
-          )}
         />
+        <PageActions>
+          <Button
+            iconLeft={<Plus size={14} />}
+            loading={creating}
+            disabled={creating}
+            onClick={handleNewSession}
+          >
+            New Session
+          </Button>
+        </PageActions>
 
         {/* ── Primary KPIs ──
             Each tile carries its own accent instead of one module colour, so

@@ -59,7 +59,7 @@ import type {
   ProgressionPreview, ProgressionType, WorkoutPlan, WorkoutPlanExercise, WorkoutExerciseInput,
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { EmptyState, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ExerciseCard from './ExerciseCard';
 import PlanVersions from './PlanVersions';
@@ -382,8 +382,14 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
         icon={<Dumbbell size={20} />}
         title={plan?.name ?? 'Workout'}
         subtitle={`${forDay.length} exercise${forDay.length === 1 ? '' : 's'} on ${DAYS.find((d) => d.n === day)?.long}`}
-        actions={<SaveIndicator status={status} />}
       />
+      {/* Autosave's status sits under the hero with the page's other controls,
+          and only while there is something to report. */}
+      {status !== 'idle' && (
+        <PageActions>
+          <SaveIndicator status={status} />
+        </PageActions>
+      )}
 
       <div className="mx-auto w-full max-w-screen-md">
       {/* ── The rule ──

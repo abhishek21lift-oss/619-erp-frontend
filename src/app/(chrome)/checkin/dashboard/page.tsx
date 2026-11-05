@@ -7,7 +7,7 @@ import {
   User, Loader2, RefreshCw, Activity, CheckCircle2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero } from '@/components/ui';
+import { Button, PageActions, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 type Dashboard = Awaited<ReturnType<typeof api.qr.dashboard>>;
@@ -96,22 +96,23 @@ export default function DashboardPage() {
 
   return (
     <Guard role="trainer">
-      <PageHero
-        className="mb-5"
-        icon={<Activity size={20} />}
-        title="Attendance Dashboard"
-        subtitle={`Live · refreshes every 30s · updated ${lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
-        actions={
-          <HeroButton
-            variant="glass"
+      <div className="mb-5 space-y-3">
+        <PageHero
+          icon={<Activity size={20} />}
+          title="Attendance Dashboard"
+          subtitle={`Live · refreshes every 30s · updated ${lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+        />
+        <PageActions>
+          <Button
+            variant="secondary"
             onClick={load}
             disabled={loading}
-            icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
+            iconLeft={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
           >
             Refresh
-          </HeroButton>
-        }
-      />
+          </Button>
+        </PageActions>
+      </div>
 
       {loading && !data ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60, color: 'var(--text-muted)', gap: 10 }}>

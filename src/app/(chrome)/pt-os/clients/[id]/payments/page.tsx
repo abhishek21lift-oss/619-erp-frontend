@@ -10,7 +10,7 @@ import {
   Smartphone, Search, RefreshCw,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
@@ -214,21 +214,6 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
             <PageHero
               icon={<Wallet size={20} />}
               title={client.name}
-
-              actions={
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => router.push(`/pt-os/clients/${id}`)}
-                    className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-                    style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-                    <ArrowLeft size={14} /> Profile
-                  </button>
-                  <button type="button" onClick={() => setShowPaymentPanel(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-                    style={{ background: '#fff', color: '#0F172A' }}>
-                    <Plus size={14} /> Record Payment
-                  </button>
-                </div>
-              }
             >
               <div className="flex flex-wrap items-center gap-3">
                 <StatusBadge status={client.status} days_left={client.days_left} />
@@ -244,6 +229,15 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 )}
               </div>
             </PageHero>
+            <PageActions>
+              <Button variant="secondary" onClick={() => router.push(`/pt-os/clients/${id}`)}
+                iconLeft={<ArrowLeft size={14} />}>
+                Profile
+              </Button>
+              <Button onClick={() => setShowPaymentPanel(true)} iconLeft={<Plus size={14} />}>
+                Record Payment
+              </Button>
+            </PageActions>
 
             {/* ── Summary Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

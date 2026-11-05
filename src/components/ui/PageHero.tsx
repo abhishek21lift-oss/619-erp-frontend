@@ -49,8 +49,6 @@ export interface PageHeroProps {
   icon?: React.ReactNode;
   /** Controls that belong to the page as a whole — tabs, a date range. */
   children?: React.ReactNode;
-  /** Right-aligned actions, beside the title on desktop. */
-  actions?: React.ReactNode;
   className?: string;
   /**
    * The short, light treatment: no gradient slab, no glow, no grid, no
@@ -83,7 +81,7 @@ export interface PageHeroProps {
   accent?: PageAccent;
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface, accent }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, className, compact, surface, accent }: PageHeroProps) {
   const reduce = useReducedMotion();
   // `surface` outranks `accent`: Attendance paints its own mesh through it.
   const tint = !surface && accent ? PAGE_ACCENTS[accent] : null;
@@ -114,35 +112,32 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
             <span aria-hidden className="hero-bevel" />
           </>
         )}
-        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            {icon && (
-              <span
-                className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white',
-                  (surface || tint) && 'hero-tile',
-                )}
-                style={surface || tint ? undefined : { background: 'var(--gradient-brand)' }}
-              >
-                {icon}
-              </span>
-            )}
-            <div className="min-w-0">
-              <h1
-                className={cn('truncate text-[20px] font-[800] leading-tight sm:text-[23px]', (surface || tint) && 'text-white')}
-                style={{ ...(surface || tint ? undefined : { color: 'var(--text-primary)' }), letterSpacing: '-0.022em' }}
-              >
-                {title}
-              </h1>
-              {subtitle && (
-                <p className="mt-0.5 truncate text-[12.5px]"
-                  style={{ color: surface || tint ? 'rgba(255,255,255,0.78)' : 'var(--text-muted)' }}>
-                  {subtitle}
-                </p>
+        <div className="relative flex min-w-0 items-center gap-3">
+          {icon && (
+            <span
+              className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white',
+                (surface || tint) && 'hero-tile',
               )}
-            </div>
+              style={surface || tint ? undefined : { background: 'var(--gradient-brand)' }}
+            >
+              {icon}
+            </span>
+          )}
+          <div className="min-w-0">
+            <h1
+              className={cn('truncate text-[20px] font-[800] leading-tight sm:text-[23px]', (surface || tint) && 'text-white')}
+              style={{ ...(surface || tint ? undefined : { color: 'var(--text-primary)' }), letterSpacing: '-0.022em' }}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-0.5 truncate text-[12.5px]"
+                style={{ color: surface || tint ? 'rgba(255,255,255,0.78)' : 'var(--text-muted)' }}>
+                {subtitle}
+              </p>
+            )}
           </div>
-          {actions && <div className="shrink-0">{actions}</div>}
         </div>
         {children && <div className="relative mt-3">{children}</div>}
       </m.div>
@@ -188,12 +183,9 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
       <span aria-hidden className="hero-hair-b" />
       <span aria-hidden className="hero-bevel" />
 
-      {/* One flex-wrap row rather than two copies of the actions. The actions
-          used to render twice — beside the title for desktop, again under the
-          children for phones — with one copy hidden by CSS: two of every
-          button in the DOM, two tab stops for a keyboard, and two matches for
-          anything that looks a button up by name. `order` moves the single
-          copy instead: beside the title from `sm` up, last on a phone. */}
+      {/* One row: icon, title, then any page controls on their own line
+          underneath. The page's actions are not here — they are `PageActions`
+          below the hero. */}
       <div className="relative z-10 flex flex-wrap items-start gap-x-3.5 gap-y-4">
         {icon && (
           <span className="hero-tile flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white sm:h-12 sm:w-12">
@@ -201,8 +193,6 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
           </span>
         )}
         <div className="min-w-0 flex-1">
-          {/* Wraps. These titles are two and three words and the old markup
-              let them run into the actions on a narrow screen. */}
           <h1 className="text-[21px] font-[800] leading-tight tracking-[-0.02em] text-white sm:text-[26px]">
             {title}
           </h1>
@@ -212,7 +202,6 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
             </p>
           )}
         </div>
-        {actions && <div className="order-last w-full sm:order-none sm:w-auto sm:shrink-0">{actions}</div>}
         {children && <div className="w-full">{children}</div>}
       </div>
     </m.div>
@@ -220,52 +209,19 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
 }
 
 /**
- * A button for the hero's `actions` slot.
+ * The page's actions, in one wrapping row immediately below the hero.
  *
- * The hero is a dark slab in both themes, so the app's own Button variants —
- * built for the page surface — read as grey slabs on it. Pages had started
- * styling their hero buttons by hand, each slightly differently. This is that
- * styling in one place: `solid` (white, the page's primary action) and
- * `glass` (a translucent secondary, e.g. Refresh).
+ * `PageHero` used to take an `actions` slot, so the page's primary control
+ * shared a line with the title — squeezed against it on a phone, and gone
+ * from the first screenful once the hero grew. Actions now live here, at the
+ * same width as the content below them, in the same place on every page.
+ *
+ * Use the app's own `Button` inside: `primary` for the page's one main
+ * action, `secondary`/`outline` for the rest.
  */
-export interface HeroButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'solid' | 'glass';
-  /** The taller pill, for a hero whose actions are the only thing under the title. */
-  size?: 'default' | 'lg';
-  icon?: React.ReactNode;
+export function PageActions({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn('flex flex-wrap items-center gap-2', className)}>{children}</div>;
 }
-
-export const HeroButton = React.forwardRef<HTMLButtonElement, HeroButtonProps>(function HeroButton(
-  { variant = 'solid', size = 'default', icon, className, children, type = 'button', style, ...rest }, ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      className={cn(
-        'inline-flex cursor-pointer items-center justify-center gap-1.5 font-[700]',
-        'transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
-        size === 'lg'
-          ? 'min-h-[52px] rounded-full px-6 text-[15px]'
-          : 'min-h-[40px] rounded-[12px] px-4 text-[13px]',
-        variant === 'glass' && 'text-white hover:bg-white/20',
-        variant === 'solid' && 'hover:bg-white/90',
-        className,
-      )}
-      style={{
-        ...(variant === 'solid'
-          ? { background: '#fff', color: '#0F172A' }
-          : { background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }),
-        ...style,
-      }}
-      {...rest}
-    >
-      {icon}
-      {children}
-    </button>
-  );
-});
 
 /** A small glass pill for facts in the hero's children — a goal, a cadence. */
 export function HeroChip({ children, icon, className }: { children: React.ReactNode; icon?: React.ReactNode; className?: string }) {

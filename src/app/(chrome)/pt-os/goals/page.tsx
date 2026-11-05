@@ -7,7 +7,7 @@ import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Target, Plus,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -438,15 +438,12 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
       <PageHero
         icon={<Target size={20} />}
         title={`${clientName}'s Goals`}
-
-        actions={
-          <button type="button" onClick={() => openWizard(null)}
-            className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-            style={{ background: '#fff', color: '#0F172A' }}>
-            <Plus size={16} /> New Goal
-          </button>
-        }
       />
+      <PageActions>
+        <Button onClick={() => openWizard(null)} iconLeft={<Plus size={16} />}>
+          New Goal
+        </Button>
+      </PageActions>
 
       <div className="mx-auto w-full max-w-3xl space-y-3">
         {goals.length === 0 && (

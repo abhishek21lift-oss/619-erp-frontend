@@ -32,7 +32,7 @@ import type {
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { PageHero, HeroButton, EmptyState, cn } from '@/components/ui';
+import { PageHero, PageActions, Button, EmptyState, cn } from '@/components/ui';
 import {
   REJECT_REASONS, REJECT_REASON_LABELS, UpiStatusBadge, fmtMoney, fmtMoneyExact, orderTermLabel,
 } from '@/components/payments/upi-shared';
@@ -105,26 +105,24 @@ function Inner() {
   return (
     <>
       <PageHero
-        className="mb-5"
+        className="mb-3"
         title="Verify payments"
 
         icon={<ShieldCheck size={20} />}
-        actions={
-          <div className="flex gap-2">
-            <HeroButton
-              variant="glass"
-              onClick={() => void load()}
-              aria-label="Refresh queue"
-              icon={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
-            >
-              <span className="hidden sm:inline">Refresh</span>
-            </HeroButton>
-            <HeroButton className="flex-1 sm:flex-none" onClick={() => setCreating(true)} icon={<Plus size={15} />}>
-              New request
-            </HeroButton>
-          </div>
-        }
       />
+      <PageActions className="mb-5">
+        <Button
+          variant="secondary"
+          onClick={() => void load()}
+          aria-label="Refresh queue"
+          iconLeft={<RefreshCw size={14} className={loading ? 'animate-spin' : undefined} />}
+        >
+          Refresh
+        </Button>
+        <Button onClick={() => setCreating(true)} iconLeft={<Plus size={15} />}>
+          New request
+        </Button>
+      </PageActions>
 
       <StatsRow stats={stats} loading={loading && !stats} />
 

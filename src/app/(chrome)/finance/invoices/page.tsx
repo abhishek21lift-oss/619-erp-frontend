@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import Guard from '@/components/Guard';
 import { PremiumModal } from '@/components/premium/PremiumModal';
-import { Button, KpiCard, PageContainer, PageHero } from '@/components/ui';
+import { Button, KpiCard, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { ChartDataTable, PremiumBarChart, semantic } from '@/components/visualizations';
 import { identity } from '@/lib/palette';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -309,18 +309,12 @@ export default function InvoicesPage() {
         <PageHero
           icon={<FileText size={20} />}
           title="Invoices"
-
-        >
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-              style={{ background: '#fff', color: '#0F172A' }}>
-              <Plus size={16} /> Create Invoice
-            </button>
-          </div>
-        </PageHero>
+        />
+        <PageActions>
+          <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus size={16} />}>
+            Create Invoice
+          </Button>
+        </PageActions>
 
         {/* ── Main Content ──
             The second container: another maxWidth 1280 with its own 16/32px,

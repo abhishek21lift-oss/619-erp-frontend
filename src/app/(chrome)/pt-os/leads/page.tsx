@@ -8,7 +8,7 @@ import {
   ArrowRightCircle, X, Check, Loader2, Users, TrendingUp, Target, PhoneCall,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, EmptyState, HeroButton, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, PageActions, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { ChartDataTable, PremiumBarChart, semantic, series as chartPalette } from '@/components/visualizations';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
@@ -281,24 +281,21 @@ export default function LeadsPage() {
             max-w-[1600px] with mt-1. */}
         <PageContainer>
 
-            {/* The app-wide compact hero, like every other list page: the
-                Leads-only saturated card this used to render was the one
-                page in the studio that did not speak the shared hero's
-                language. The two actions stay, beside the title. */}
+            {/* The app-wide compact hero, like every other list page. Its two
+                actions sit in the row below it, where every page's actions
+                now live. */}
             <PageHero
               compact
               accent="amber"
               icon={<UserSearch size={18} />}
               title="Leads"
-              actions={(
-                <div className="flex shrink-0 items-center gap-2">
-                  <LeadFollowupAction />
-                  <HeroButton icon={<Plus size={15} />} onClick={() => router.push('/pt-os/leads/new')}>
-                    Add Lead
-                  </HeroButton>
-                </div>
-              )}
             />
+            <PageActions>
+              <LeadFollowupAction />
+              <Button iconLeft={<Plus size={15} />} onClick={() => router.push('/pt-os/leads/new')}>
+                Add Lead
+              </Button>
+            </PageActions>
 
             {/* KPIs — 2x2 on a phone, 4 across from `sm`, which is the
                 reference's arrangement. Each card takes its OWN

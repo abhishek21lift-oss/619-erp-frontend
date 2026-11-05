@@ -15,7 +15,7 @@ import {
   LifeBuoy, Loader2, AlertTriangle, Plus, Send, ChevronLeft, CheckCircle2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero, FormField, TextArea, TextInput } from '@/components/ui';
+import { Button, PageActions, PageHero, FormField, TextArea, TextInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SupportTicket, TicketStatus, TicketPriority, TicketCategory } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -257,13 +257,14 @@ function SupportPage() {
       <PageHero
         icon={<LifeBuoy size={20} />}
         title="Support"
-
-        actions={!open && !composing ? (
-          <HeroButton className="w-full sm:w-auto" onClick={() => setComposing(true)} icon={<Plus size={15} />}>
-            New request
-          </HeroButton>
-        ) : undefined}
       />
+      {!open && !composing && (
+        <PageActions>
+          <Button onClick={() => setComposing(true)} iconLeft={<Plus size={15} />}>
+            New request
+          </Button>
+        </PageActions>
+      )}
 
       {open ? (
         <Thread id={open} onBack={() => { setOpen(null); load(); }} />

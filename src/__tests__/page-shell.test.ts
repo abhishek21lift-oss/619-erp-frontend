@@ -397,10 +397,11 @@ describe('the engagement section (Communication)', () => {
     expect(src(...p)).not.toMatch(/DO NOT CHANGE/);
   });
 
-  it('the four pages with a primary action move it into the hero actions slot', () => {
+  it('the four pages with a primary action keep it in the row below the hero', () => {
     // Campaigns, Notifications and Offers already put "New X" beside the
     // title; Automation's "New Rule" sat in its own row below the KPIs
-    // instead, which is now consistent with the other three.
+    // instead, which is now consistent with the other three. The hero is the
+    // page's identity, so the button lives in PageActions under it.
     for (const p of [
       ['app', 'engagement', 'automation', 'page.tsx'],
       ['app', 'engagement', 'campaigns', 'page.tsx'],
@@ -408,8 +409,8 @@ describe('the engagement section (Communication)', () => {
       ['app', 'engagement', 'offers', 'page.tsx'],
     ]) {
       const s = src(...p);
-      expect(s).toContain('actions={');
-      expect(s).toContain("background: 'rgba(255,255,255,0.12)'");
+      expect(s).toContain('<PageActions>');
+      expect(s).not.toContain('actions={');
     }
   });
 
@@ -505,13 +506,13 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     expect(bi).not.toContain('p-2.5 rounded-xl bg-violet-500/10');
   });
 
-  it('knowledge base moves Upload Document into the hero actions slot', () => {
+  it('knowledge base keeps Upload Document below the hero', () => {
     const kb = src('app', 'ai-coach', 'knowledge', 'page.tsx');
     // The old header's own 48px gradient icon tile is gone — PageHero draws
     // its own — and the button that used to sit beside a plain h1 is now in
-    // the actions slot.
+    // the page's action row.
     expect(kb).not.toContain('width: 48, height: 48, borderRadius: 14');
-    expect(kb).toContain('actions={');
+    expect(kb).toContain('<PageActions>');
     expect(kb).toContain('Upload Document');
   });
 });
@@ -538,9 +539,9 @@ describe('the client-scoped PT pages (enroll, renew, goals, sessions, strength t
     expect((goals.match(/<PageContainer>/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
-  it('sessions moves refresh into the hero actions slot', () => {
+  it('sessions keeps refresh in the row below the hero', () => {
     const sessions = src('app', 'pt-os', 'sessions', 'page.tsx');
-    expect(sessions).toContain('actions={');
+    expect(sessions).toContain('<PageActions>');
     // Fragment-built: palette.test.ts scans this directory, so the old hue
     // cannot be written as a literal here.
     const oldPill = 'bg-[rgba(0,103,224,0.08)] text-[#' + '0067E0]';
@@ -573,9 +574,9 @@ describe('the training/payments/session-balance/photo pages', () => {
     }
   });
 
-  it('client payments moves Profile and Record Payment into the hero actions slot', () => {
+  it('client payments keeps Profile and Record Payment in the row below the hero', () => {
     const payments = src('app', 'pt-os', 'clients', '[id]', 'payments', 'page.tsx');
-    expect(payments).toContain('actions={');
+    expect(payments).toContain('<PageActions>');
     expect(payments).toContain('Record Payment');
     expect(payments).toContain('Profile');
   });
@@ -612,12 +613,13 @@ describe('revenue analytics loses its own icon tile and header row', () => {
     expect(revenue).not.toContain('<header className="flex flex-wrap items-center justify-between');
   });
 
-  it('moves refresh into the hero actions slot, styled for the navy surface', () => {
-    // The old button sat on `--bg-subtle`, which resolves light-on-light
-    // against the page background. On the hero it needs the same translucent
-    // white chip exercise-library and leads use for their own hero actions.
-    expect(revenue).toContain('actions={');
-    expect(revenue).toContain("background: 'rgba(255,255,255,0.12)'");
+  it('keeps CSV and refresh in the row below the hero, not on the navy surface', () => {
+    // The old controls sat on the hero as translucent white chips, styled
+    // only to survive the dark slab. Below the hero they are the app's own
+    // buttons, so no page has to hand-roll a hero surface any more.
+    expect(revenue).toContain('<PageActions>');
+    expect(revenue).not.toContain("background: 'rgba(255,255,255,0.12)'");
+    expect(revenue).toContain('CSV');
   });
 });
 

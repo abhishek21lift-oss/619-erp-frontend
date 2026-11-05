@@ -39,6 +39,13 @@ vi.mock('@/components/Guard', () => ({
 vi.mock('@/components/ui', () => ({
   PageContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   PageHero: ({ title }: { title: string }) => <h1>{title}</h1>,
+  PageActions: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Button: ({ children, iconLeft, variant, size, loading, fullWidth, iconRight, ...rest }: Record<string, unknown>) => (
+    <button {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}>
+      {iconLeft as React.ReactNode}
+      {children as React.ReactNode}
+    </button>
+  ),
 }));
 vi.mock('@/components/engagement/OfferForm', () => ({ OfferForm: () => null }));
 vi.mock('framer-motion', () => ({
