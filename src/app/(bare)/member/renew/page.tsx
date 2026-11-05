@@ -66,7 +66,7 @@ function RenewBody() {
       {title}
       <PlanStatus plan={data.plan} />
       {data.offer ? <OfferCard offer={data.offer} /> : <AskCard requestedAt={data.requested_at} onSent={load} />}
-      <MemberPauseCard requestedAt={pause?.requested_at ?? null} onSent={loadPause} />
+      {pause && <MemberPauseCard requestedAt={pause.requested_at} onSent={loadPause} />}
       {data.plan.balance > 0 && (
         <Section title="Also owed">
           <Card className="flex items-center justify-between gap-3 p-4">
