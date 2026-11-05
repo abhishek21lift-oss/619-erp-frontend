@@ -124,7 +124,6 @@ export function StepLifestyle({ form, set, step, context, clientId, error }: Ste
   return (
     <GoalStepCard
       icon={HeartHandshake} title="Lifestyle & Daily Routine" step={step}
-      hint="what the week actually looks like"
       badge={score != null ? (
         <div className="text-right">
           <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: gray[500] }}>Readiness</p>

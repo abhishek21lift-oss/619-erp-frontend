@@ -1674,7 +1674,6 @@ function ProfilePageInner() {
                   <SectionHeader tone="berry"
                     icon={<User size={15} />}
                     title="About"
-                    subtitle="What you'd tell someone before they train with you"
                   />
                   <AboutSection
                     bio={bio} philosophy={philosophy} trainingStyle={trainingStyle} languages={languages}
@@ -1720,7 +1719,6 @@ function ProfilePageInner() {
                   <SectionHeader tone="rose"
                     icon={<Dumbbell size={15} />}
                     title="Specialisations"
-                    subtitle="The work you take on"
                   />
                   <SpecialisationEditor value={specialisations} onChange={setSpecialisations} />
                 </GlassCard>
@@ -1729,7 +1727,6 @@ function ProfilePageInner() {
                   <SectionHeader tone="sky"
                     icon={<GraduationCap size={15} />}
                     title="Education"
-                    subtitle="Degrees, diplomas and academy courses"
                   />
                   <EducationSection value={education} onChange={setEducation} issues={fieldIssues} />
                 </GlassCard>
@@ -1801,7 +1798,7 @@ function ProfilePageInner() {
                   <SectionHeader tone="berry"
                     icon={<Images size={15} />}
                     title="Portfolio"
-                    subtitle="Transformations, sessions and clips — saved as you go, not on Save"
+                    subtitle="Saved as you go, not on Save"
                   />
                   {/* Nothing here feeds the dirty baseline: every action is
                       its own request, which is why this section owns its
@@ -1900,7 +1897,7 @@ function ProfilePageInner() {
                 {/* Login Alerts + Sign out everywhere */}
                 <FadeUp delay={0.05}>
                   <GlassCard className="p-6" tone="violet">
-                    <SectionHeader tone="violet" icon={<Bell size={15} />} title="Login Security" subtitle="Alerts and active session control" />
+                    <SectionHeader tone="violet" icon={<Bell size={15} />} title="Login Security" />
                     <div className="flex flex-col gap-3">
                       <SettingRow label="Login Alerts" description="Email me on new sign-ins" accent>
                         <Toggle
@@ -2062,16 +2059,16 @@ function ProfilePageInner() {
                 {/* Locale */}
                 <FadeUp delay={0.04}>
                   <GlassCard className="p-6" tone="sky">
-                    <SectionHeader tone="sky" icon={<Globe size={15} />} title="Locale" subtitle="Timezone and date format" />
+                    <SectionHeader tone="sky" icon={<Globe size={15} />} title="Locale" />
                     <div className="flex flex-col gap-2.5">
-                      <SettingRow label="Language" description="Interface language">
+                      <SettingRow label="Language">
                         <span className="text-[12.5px] font-[660]" style={{ color: 'var(--text-primary)' }}>English (India)</span>
                       </SettingRow>
                       {preferences && (
                         <>
-                          <SelectRow label="Timezone" description="Your local timezone" value={preferences.timezone}
+                          <SelectRow label="Timezone" value={preferences.timezone}
                             options={TIMEZONE_OPTIONS} onChange={v => setPreference('timezone', v)} />
-                          <SelectRow label="Date Format" description="How dates display" value={preferences.dateFormat}
+                          <SelectRow label="Date Format" value={preferences.dateFormat}
                             options={DATE_FORMAT_OPTIONS} onChange={v => setPreference('dateFormat', v)} />
                           <SettingRow label="Compact Mode" description="Denser spacing across the app">
                             <Toggle enabled={preferences.compactMode} onChange={v => setPreference('compactMode', v)} />

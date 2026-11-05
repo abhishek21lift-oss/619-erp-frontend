@@ -25,7 +25,7 @@ export default function NewPackagePage() {
         <PageHero
           icon={<Package size={20} />}
           title="Create Package"
-          subtitle="Name, sessions, duration and price. The price is what every enrolment against it charges."
+          subtitle="The price is what every enrolment against this package charges."
           actions={
             <Link
               href="/subscription/packages"

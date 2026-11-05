@@ -23,7 +23,7 @@ export function StepDigestiveHealth({ form, set }: StepDigestiveHealthProps) {
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Digestive Health</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 5 of 8 — select any recurring issues.</p>
+          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Select any recurring issues.</p>
         </div>
       </div>
 

@@ -518,7 +518,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 xKey="week"
                 areas={[{ key: 'Volume', label: 'Volume (kg)', color: '#FF853D' }]}
                 title="Training volume"
-                subtitle={`Completed set volume by week · ${fmtDate(range.from)} → ${fmtDate(range.to)}`}
+                subtitle={`${fmtDate(range.from)} → ${fmtDate(range.to)}`}
                 height={220}
                 formatValue={(v) => `${compact(v)} kg`}
                 emptyTitle="No volume logged in this range"
@@ -533,10 +533,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                   { key: 'Completed', label: 'Completed', color: '#10B981' },
                 ]}
                 title="Sessions by week"
-                subtitle="Logged sessions, completed or still open"
                 height={220}
                 emptyTitle="No sessions in this range"
-                emptyDescription="The calendar above shows what the log contains."
               />
 
               <PremiumDonutChart
@@ -557,7 +555,6 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                 xKey="week"
                 lines={[{ key: 'Duration', label: 'Avg duration (min)', color: '#20BFA4' }]}
                 title="Session duration"
-                subtitle="Average logged duration per week"
                 height={240}
                 formatValue={(v) => `${Math.round(v)} min`}
                 emptyTitle="Not enough durations yet"

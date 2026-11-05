@@ -24,7 +24,6 @@ export function StepSupplements({ form, set, error }: StepSupplementsProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Supplement Usage</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 4 of 8 — does the client currently take supplements?</p>
           </div>
         </div>
 

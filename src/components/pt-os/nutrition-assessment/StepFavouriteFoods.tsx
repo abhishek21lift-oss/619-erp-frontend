@@ -29,7 +29,6 @@ export function StepFavouriteFoods({ form, set, error }: StepFavouriteFoodsProps
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Favourite Foods</h2>
-          <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 3 of 8 — what does the client already enjoy eating?</p>
         </div>
       </div>
 

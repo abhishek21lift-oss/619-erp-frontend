@@ -542,7 +542,6 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
         <EmptyState
           icon={<Dumbbell size={22} />}
           title={`Nothing on ${DAYS.find((d) => d.n === day)?.long} yet`}
-          description="Add the first exercise and it becomes a card you can edit, duplicate and reorder."
           action={(
             <button
               type="button"

@@ -16,7 +16,7 @@ interface StepPrimaryGoalProps {
 
 export function StepPrimaryGoal({ form, set, step, error }: StepPrimaryGoalProps) {
   return (
-    <GoalStepCard icon={User} title="Primary Goal" step={step} hint="what this client wants to achieve">
+    <GoalStepCard icon={User} title="Primary Goal" step={step}>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {GOAL_TYPE_META.map((g) => {
           const selected = form.goalType === g.value;

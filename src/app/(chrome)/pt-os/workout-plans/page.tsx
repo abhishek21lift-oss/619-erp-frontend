@@ -662,9 +662,6 @@ function Inner() {
                 <h2 className="text-[18px] font-[750]" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                   AI Workout Coach
                 </h2>
-                <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  Generate a personalised programme from a client&apos;s details, then edit it like any other plan.
-                </p>
                 <button onClick={() => setAiPanelOpen(true)}
                   className="mt-5 inline-flex items-center gap-2 rounded-[12px] px-5 text-[13.5px] font-[700] text-white transition-transform active:scale-[0.98]"
                   style={{ background: 'linear-gradient(135deg, #A33757, #FB9590)', minHeight: 44, boxShadow: '0 4px 16px -3px rgba(163,55,87,0.45)' }}>

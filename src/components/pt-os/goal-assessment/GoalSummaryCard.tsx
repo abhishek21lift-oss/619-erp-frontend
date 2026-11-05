@@ -72,7 +72,7 @@ export function GoalSummaryCard({
   ];
 
   return (
-    <GoalStepCard icon={ClipboardList} title="Goal Summary" hint="everything captured, at a glance">
+    <GoalStepCard icon={ClipboardList} title="Goal Summary">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
         {rows.map((r) => (
           <div key={r.label} className="flex items-center justify-between rounded-[12px] px-4 py-2.5" style={{ background: gray[50] }}>

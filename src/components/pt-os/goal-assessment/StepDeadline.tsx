@@ -20,7 +20,7 @@ export function StepDeadline({ form, set, step, error }: StepDeadlineProps) {
   const months = days != null ? Math.round((days / 30.44) * 10) / 10 : null;
 
   return (
-    <GoalStepCard icon={CalendarClock} title="Target Deadline" step={step} hint="when should this goal be achieved?">
+    <GoalStepCard icon={CalendarClock} title="Target Deadline" step={step}>
       <div className="max-w-[280px]">
         <FloatInput label="Target Date" required type="date" value={form.targetDate} onChange={(v) => set('targetDate', v)} error={error} />
       </div>

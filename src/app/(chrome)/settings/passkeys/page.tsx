@@ -307,11 +307,8 @@ function PasskeysContent() {
           background: 'var(--bg-card)', border: '1px solid rgba(163,55,87,0.28)',
           boxShadow: '0 4px 24px rgba(163,55,87,0.10)',
         }}>
-          <p style={{ fontSize: 15, fontWeight: 720, color: 'var(--text-primary)', marginBottom: 4 }}>
+          <p style={{ fontSize: 15, fontWeight: 720, color: 'var(--text-primary)', marginBottom: 16 }}>
             Register a new passkey
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
-            Give this device a name so you can identify it later.
           </p>
           <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-end' }}>
             <FormField label="Device name" density="compact" className="flex-1">

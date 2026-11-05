@@ -309,7 +309,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
       <PageHero
         icon={<Dumbbell size={20} color="#fff" />}
         title="Workout Generator"
-        subtitle="Rule-based programme with powerlifting blocks and training maxes. For an AI draft from the client's record, use the AI Workout Generator."
+        subtitle="Rule-based programme with powerlifting blocks and training maxes."
       />
 
       <p className="mb-4 text-[12.5px]">

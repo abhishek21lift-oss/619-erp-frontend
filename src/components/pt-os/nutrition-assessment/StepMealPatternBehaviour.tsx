@@ -73,7 +73,6 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Meal Pattern &amp; Eating Behaviour</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">Step 6 of 8 — how and when the client typically eats.</p>
           </div>
         </div>
 

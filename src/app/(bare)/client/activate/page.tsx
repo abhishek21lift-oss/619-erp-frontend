@@ -262,10 +262,11 @@ function ActivateForm() {
         <h1 className="text-[22px] font-[600] tracking-[-0.02em]" style={{ color: C.ink }}>
           Create your password
         </h1>
-        <p className="mt-1 text-[13.5px] leading-[1.5]" style={{ color: C.muted }}>
-          {preview.client_name ? `Hello ${preview.client_name}. ` : ''}
-          Choose a password to see your workouts, diet, progress and payments.
-        </p>
+        {preview.client_name && (
+          <p className="mt-1 text-[13.5px] leading-[1.5]" style={{ color: C.muted }}>
+            Hello {preview.client_name}.
+          </p>
+        )}
       </div>
 
       <form onSubmit={submit} className="flex flex-col gap-4">

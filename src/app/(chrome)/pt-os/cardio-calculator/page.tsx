@@ -425,15 +425,13 @@ export default function CardioCalculatorPage() {
         <PageHero
           icon={<HeartPulse size={20} color="#fff" />}
           title="Cardio & FITT"
-          subtitle="K11 intensity bands (%MHR), Karvonen or MHR targets, FITT prescription, progression phases, and the five-phase session template."
         />
 
         <div className="space-y-5">
           {/* ── 1. Inputs ─────────────────────────────────────────────────── */}
           <section className="rounded-[14px] border p-4" style={{ borderColor: 'var(--border)' }}>
             <SectionHeading step="1" title="Client inputs and assessment values">
-              Heart-rate inputs used by every calculation below. Measured max HR is preferred; the age
-              estimate is used only when it is absent.
+              Measured max HR is preferred; the age estimate is used only when it is absent.
             </SectionHeading>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -593,7 +591,7 @@ export default function CardioCalculatorPage() {
           {/* ── 3. Results ────────────────────────────────────────────────── */}
           <section className="rounded-[14px] border p-4" style={{ borderColor: 'var(--border)' }}>
             <SectionHeading step="3" title="Calculations and results">
-              These update as the inputs above change. Nothing here is stored until it is saved below.
+              Nothing here is stored until it is saved below.
             </SectionHeading>
 
             <div className="grid gap-4 xl:grid-cols-2">

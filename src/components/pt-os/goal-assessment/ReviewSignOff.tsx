@@ -18,7 +18,7 @@ interface ReviewSignOffProps {
  */
 export function ReviewSignOff({ form, set, error }: ReviewSignOffProps) {
   return (
-    <GoalStepCard icon={ClipboardCheck} title="Client Sign-off" hint="the goal belongs to the client, not only the plan">
+    <GoalStepCard icon={ClipboardCheck} title="Client Sign-off">
       <div className="space-y-5">
         <button
           type="button" role="checkbox" aria-checked={form.clientAgreed}

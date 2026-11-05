@@ -259,9 +259,6 @@ function StarterCard({ onPick }: { onPick: (k: MeGoalKind) => void }) {
   return (
     <Card className="p-4">
       <p className="text-[14px] font-[780]" style={{ color: MC.ink }}>Set your first goal</p>
-      <p className="mt-0.5 text-[12.5px]" style={{ color: MC.muted }}>
-        Progress fills in by itself from what you log — no extra tracking.
-      </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {ideas.map(({ kind, title, body }) => {
           const Icon = KIND_META[kind].icon;

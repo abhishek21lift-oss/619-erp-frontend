@@ -33,7 +33,6 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-[color:var(--text-primary)] leading-none">Goal Timeline</h2>
-            <p className="text-[13px] text-[color:var(--text-muted)] mt-1.5">The roadmap from today to goal day.</p>
           </div>
         </div>
 

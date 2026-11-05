@@ -51,7 +51,6 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>AI Recommendations</h2>
-            <p className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>A sports-scientist read of this assessment.</p>
           </div>
         </div>
 
