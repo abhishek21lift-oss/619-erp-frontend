@@ -13,11 +13,11 @@ import Guard from '@/components/Guard';
 import {
   Button, Dialog, DialogContent, DialogHeader, DialogTitle,
   PullToRefresh, FormField, SelectInput, EmptyState, TextInput,
+  PageContainer, PageHero,
 } from '@/components/ui';
 import {
   PremiumAreaChart, PremiumBarChart, PremiumDonutChart, PremiumLineChart,
 } from '@/components/visualizations';
-import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
 import type {
@@ -31,7 +31,6 @@ import {
 import { screeningBlockOf } from '@/lib/screeningBlock';
 import { useToast } from '@/lib/toast';
 import { fmtDate, fmtDayMonth } from '@/lib/format';
-import { indigo } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -72,6 +71,48 @@ function compact(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}m`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(Math.round(n));
+}
+
+/**
+ * One KPI tile: the house "colourful card" recipe (white surface, a hairline of
+ * the card's own accent, a gradient icon tile, a tight numeral). The accent is
+ * decoration keyed to what the number measures; no status colour is borrowed
+ * for a state it does not mean.
+ */
+function KpiAccentTile({ label, value, suffix, icon, from, to }: {
+  label: string; value: number | null; suffix?: string; icon: React.ReactNode;
+  from: string; to: string;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-[20px] p-4"
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        boxShadow: `0 1px 2px rgba(15,23,42,0.04), 0 12px 26px -18px ${to}80`,
+      }}
+    >
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: `linear-gradient(90deg,${from},${to})` }} />
+      <div
+        className="mb-3 flex h-10 w-10 items-center justify-center rounded-[12px] text-white"
+        style={{
+          background: `linear-gradient(140deg,${from},${to})`,
+          boxShadow: `0 8px 18px -8px ${to}, inset 0 1px 0 rgba(255,255,255,0.34)`,
+        }}
+      >
+        {icon}
+      </div>
+      <p className="truncate text-[24px] font-[820] leading-none tracking-[-0.03em] sm:text-[26px]"
+        style={{ color: 'var(--text-primary)' }}>
+        {value == null ? '—' : <AnimatedCounter value={value} suffix={suffix} />}
+      </p>
+      <p className="mt-1.5 truncate text-[10px] font-[700] uppercase tracking-[0.06em] sm:text-[10.5px]"
+        style={{ color: 'var(--text-secondary)' }}>
+        {label}
+      </p>
+    </div>
+  );
 }
 
 export default function WorkoutLogPage({ params }: { params: Promise<{ id: string }> }) {
@@ -306,7 +347,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   const calendarList = selectedDay ? (sessionsByDay.get(selectedDay) ?? []) : filtered;
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#A33757' }} /></div>;
   }
   if (loadError) {
     return (
@@ -320,14 +361,14 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   const primaryKpis: Array<{
     label: string; value: number | null; suffix?: string; icon: React.ReactNode;
-    color: string; spotColor: string;
+    from: string; to: string;
   }> = [
-    { label: 'Sessions', value: analytics.total, icon: <Dumbbell size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-    { label: 'Completion', value: analytics.completion_pct, suffix: '%', icon: <Percent size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-    { label: 'Total Volume', value: analytics.total_volume, suffix: ' kg', icon: <Flame size={14} />, color: '#ef4444', spotColor: 'rgba(239,68,68,0.12)' },
-    { label: 'Avg Duration', value: analytics.avg_duration, suffix: ' min', icon: <Timer size={14} />, color: indigo[450], spotColor: 'rgba(220,88,109,0.12)' },
-    { label: 'Week Streak', value: analytics.week_streak, suffix: analytics.week_streak === 1 ? ' wk' : ' wks', icon: <TrendingUp size={14} />, color: '#852E4E', spotColor: 'rgba(163,55,87,0.12)' },
-    { label: 'PRs', value: statsError ? null : analytics.pr_count, icon: <Trophy size={14} />, color: indigo[700], spotColor: 'rgba(107,36,64,0.12)' },
+    { label: 'Sessions', value: analytics.total, icon: <Dumbbell size={18} />, from: '#A33757', to: '#852E4E' },
+    { label: 'Completion', value: analytics.completion_pct, suffix: '%', icon: <Percent size={18} />, from: '#10B981', to: '#059669' },
+    { label: 'Total Volume', value: analytics.total_volume, suffix: ' kg', icon: <Flame size={18} />, from: '#FF853D', to: '#E56A24' },
+    { label: 'Avg Duration', value: analytics.avg_duration, suffix: ' min', icon: <Timer size={18} />, from: '#F59E0B', to: '#D97706' },
+    { label: 'Week Streak', value: analytics.week_streak, suffix: analytics.week_streak === 1 ? ' wk' : ' wks', icon: <TrendingUp size={18} />, from: '#20BFA4', to: '#159B85' },
+    { label: 'PRs', value: statsError ? null : analytics.pr_count, icon: <Trophy size={18} />, from: '#6B2440', to: '#4C1D3D' },
   ];
 
   const secondaryKpis = [
@@ -339,96 +380,72 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="mx-auto w-full max-w-4xl pt-1 space-y-5 pb-24">
+      <PageContainer className="max-w-4xl">
 
-        {/* ── Gradient Hero ── */}
-        <m.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-rose-500/10 p-5 sm:p-7 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)]"
-        >
-          {/* Corner glows as ONE unfiltered gradient layer, replacing two
-              `blur-3xl` circles. `filter: blur()` promotes a child to its own
-              compositing layer, and WebKit then applies this card's rounded
-              `overflow-hidden` clip to that layer as a RECTANGLE — so the blob's
-              square corner paints outside the rounded corner. Reported on iOS
-              against the client profile card, which had the identical pattern.
-              A gradient needs no filter, so nothing is promoted and the clip holds. */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage: [
-                'radial-gradient(circle 240px at calc(100% - 32px) 32px, rgba(251,169,48,0.2), transparent 70%)',
-                'radial-gradient(circle 240px at 32px calc(100% - 16px), rgba(251,130,97,0.2), transparent 70%)',
-              ].join(', '),
-            }}
-            aria-hidden
-          />
-
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <m.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-[0_4px_20px_rgba(245,158,11,0.35)]"
-              >
-                <Dumbbell size={22} />
-              </m.span>
-              <div className="min-w-0">
-                <span className="text-[11px] font-[700] uppercase tracking-[0.1em]" style={{ color: 'var(--text-disabled)' }}>Workout Log</span>
-                <h1 className="truncate text-[22px] sm:text-[28px] font-extrabold tracking-[-0.02em] leading-tight text-[var(--text-primary)]">{clientName}</h1>
-              </div>
-            </div>
-            <Button iconLeft={<Plus size={14} />} loading={creating} disabled={creating} onClick={handleNewSession}
-              className="shrink-0"
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+        {/* The house header, at list-page weight. The bespoke amber slab this
+            page used to open on was the only hero in the app painted from a
+            module colour rather than the shared one — so the page a coach
+            opens after the client profile looked like a different product. */}
+        <PageHero
+          compact
+          icon={<Dumbbell size={18} />}
+          title={clientName || 'Workout Log'}
+          subtitle={activeAssignment ? `Workout Log · ${activeAssignment.plan_name}` : 'Workout Log · Freestyle sessions'}
+          actions={(
+            <Button
+              iconLeft={<Plus size={14} />}
+              loading={creating}
+              disabled={creating}
+              onClick={handleNewSession}
+              className="w-full sm:w-auto"
+            >
               New Session
             </Button>
-          </div>
+          )}
+        />
 
-          <m.div variants={containerVariants} initial="hidden" animate="visible"
-            className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
-            {primaryKpis.map((s) => (
-              <m.div key={s.label} variants={itemVariants}>
-                <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)', lineHeight: 1.3 }}>{s.label}</span>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                  </div>
-                  <div className="truncate" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                    {s.value == null
-                      ? <span style={{ color: 'var(--text-disabled)' }}>—</span>
-                      : <AnimatedCounter value={s.value} suffix={s.suffix} />}
-                  </div>
-                </SpotlightCard>
-              </m.div>
-            ))}
-          </m.div>
+        {/* ── Primary KPIs ──
+            Each tile carries its own accent instead of one module colour, so
+            the row stays colourful without turning a status amber into the
+            page's identity. The numbers are the server's, unchanged. */}
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {primaryKpis.map((s) => (
+            <m.div key={s.label} variants={itemVariants}>
+              <KpiAccentTile {...s} />
+            </m.div>
+          ))}
         </m.div>
 
         {/* ── Range filter ── */}
-        <div className="rounded-[20px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
+        <div className="rounded-[22px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -20px rgba(163,55,87,0.35)' }}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <CalendarDays size={15} style={{ color: '#F59E0B' }} />
-              <h2 className="text-[13px] font-[760] text-gray-900">Analytics range</h2>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
+                style={{ background: 'linear-gradient(140deg,#A33757,#852E4E)', boxShadow: '0 6px 14px -6px #852E4E' }}>
+                <CalendarDays size={15} />
+              </span>
+              <h2 className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>Analytics range</h2>
             </div>
-            <div role="group" aria-label="Analytics range" className="flex flex-wrap gap-1.5">
-              {RANGE_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setRangePreset(p.id)}
-                  aria-pressed={rangePreset === p.id}
-                  className="min-h-9 rounded-full px-3 py-1.5 text-[11.5px] font-[750] transition"
-                  style={{
-                    background: rangePreset === p.id ? '#0f172a' : 'var(--bg-subtle)',
-                    color: rangePreset === p.id ? '#fff' : 'var(--text-secondary)',
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
+            <div role="group" aria-label="Analytics range"
+              className="grid w-full grid-cols-6 gap-1 rounded-[14px] p-1 sm:w-auto"
+              style={{ background: 'var(--bg-subtle)' }}>
+              {RANGE_PRESETS.map((p) => {
+                const active = rangePreset === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setRangePreset(p.id)}
+                    aria-pressed={active}
+                    className="min-h-10 min-w-0 rounded-[11px] px-1 py-1.5 text-[10.5px] font-[750] transition sm:px-2.5 sm:text-[11.5px]"
+                    style={active
+                      ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
+                      : { color: 'var(--text-muted)' }}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -458,8 +475,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
         {/* ── Analytics ── */}
         {rangeLoading ? (
-          <div className="flex min-h-[240px] items-center justify-center rounded-[20px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <Loader2 size={24} className="animate-spin" style={{ color: '#F59E0B' }} />
+          <div className="flex min-h-[240px] items-center justify-center rounded-[22px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <Loader2 size={24} className="animate-spin" style={{ color: '#A33757' }} />
           </div>
         ) : rangeError ? (
           <div role="alert" className="flex items-start gap-2 rounded-[20px] border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -481,11 +498,12 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           </div>
         ) : (
           <>
-            {/* Secondary measured totals. These are the four numbers that are
-                too specific for the hero cards but too useful to hide. */}
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {/* Secondary measured totals, as one grouped inset strip rather
+                than four more white cards competing with the KPI row. */}
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[18px] sm:grid-cols-4"
+              style={{ background: 'var(--border)', border: '1px solid var(--border)' }}>
               {secondaryKpis.map((s) => (
-                <div key={s.label} className="rounded-[16px] px-4 py-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                <div key={s.label} className="px-4 py-3.5" style={{ background: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>{s.label}</p>
                   <p className="mt-1.5 text-[19px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
                     {s.value == null ? '—' : <AnimatedCounter value={s.value} suffix={s.suffix} />}
@@ -498,7 +516,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               <PremiumAreaChart
                 data={weekly}
                 xKey="week"
-                areas={[{ key: 'Volume', label: 'Volume (kg)', color: '#F59E0B' }]}
+                areas={[{ key: 'Volume', label: 'Volume (kg)', color: '#FF853D' }]}
                 title="Training volume"
                 subtitle={`Completed set volume by week · ${fmtDate(range.from)} → ${fmtDate(range.to)}`}
                 height={220}
@@ -537,7 +555,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               <PremiumLineChart
                 data={durationWeeks}
                 xKey="week"
-                lines={[{ key: 'Duration', label: 'Avg duration (min)', color: indigo[500] }]}
+                lines={[{ key: 'Duration', label: 'Avg duration (min)', color: '#20BFA4' }]}
                 title="Session duration"
                 subtitle="Average logged duration per week"
                 height={240}
@@ -554,39 +572,55 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
         {/* ── Active Plan ── */}
         {activeAssignment && (
           <button onClick={() => router.push(`/pt-os/workout-plans/${activeAssignment.workout_plan_id}`)}
-            className="flex w-full items-center justify-between gap-4 rounded-[18px] px-5 py-4 text-left transition hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg, rgba(163,55,87,0.08), rgba(163,55,87,0.05))', border: '1px solid rgba(163,55,87,0.2)' }}>
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'rgba(163,55,87,0.15)' }}>
-                <Sparkles size={15} style={{ color: '#852E4E' }} />
+            className="relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-[20px] px-5 py-4 text-left transition hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg,#6B2440 0%,#A33757 55%,#852E4E 100%)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              boxShadow: '0 14px 32px -20px rgba(107,36,64,0.85), inset 0 1px 0 rgba(255,255,255,0.14)',
+            }}>
+            <span aria-hidden className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(255,187,148,0.38), transparent 70%)', filter: 'blur(18px)' }} />
+            <div className="relative flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px]"
+                style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.22)' }}>
+                <Sparkles size={16} color="#fff" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{activeAssignment.plan_name}</p>
-                <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Active plan &middot; {activeAssignment.progress_pct}% complete</p>
+                <p className="truncate text-[13px] font-[750] text-white">{activeAssignment.plan_name}</p>
+                <p className="text-[11.5px] text-white/75">Active plan &middot; {activeAssignment.progress_pct}% complete</p>
               </div>
             </div>
-            <div className="hidden sm:block w-28 flex-shrink-0">
-              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(163,55,87,0.15)' }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min(100, activeAssignment.progress_pct)}%`, background: '#A33757' }} />
+            <div className="relative hidden w-28 flex-shrink-0 sm:block">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+                <div className="h-full rounded-full"
+                  style={{ width: `${Math.min(100, activeAssignment.progress_pct)}%`, background: 'linear-gradient(90deg,#FFBB94,#FFFFFF)' }} />
               </div>
             </div>
           </button>
         )}
 
         {/* ── Exercise progress ── */}
-        <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp size={15} style={{ color: '#F59E0B' }} />
-            <h3 className="text-[13px] font-[760] text-gray-900">Exercise Progress</h3>
+        <div className="rounded-[22px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -20px rgba(245,158,11,0.5)' }}>
+          <div className="mb-3 flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
+              style={{ background: 'linear-gradient(140deg,#F59E0B,#D97706)', boxShadow: '0 6px 14px -6px #D97706' }}>
+              <TrendingUp size={15} />
+            </span>
+            <h3 className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>Exercise Progress</h3>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            {QUICK_EXERCISES.map((ex) => (
-              <button key={ex} onClick={() => { setChartExercise(ex); setChartSearch(''); }}
-                className="rounded-full px-3 py-1.5 text-[11.5px] font-[700] transition"
-                style={{ background: chartExercise === ex ? '#0f172a' : 'var(--bg-subtle)', color: chartExercise === ex ? '#fff' : '#64748b' }}>
-                {ex}
-              </button>
-            ))}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {QUICK_EXERCISES.map((ex) => {
+              const active = chartExercise === ex;
+              return (
+                <button key={ex} onClick={() => { setChartExercise(ex); setChartSearch(''); }}
+                  className="rounded-full px-3 py-1.5 text-[11.5px] font-[700] transition"
+                  style={active
+                    ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
+                    : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                  {ex}
+                </button>
+              );
+            })}
             <input aria-label="Or search exercise"
               type="text" placeholder="Or search exercise…" value={chartSearch}
               onChange={(e) => setChartSearch(e.target.value)}
@@ -602,8 +636,8 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               data={chartProgress.map((p) => ({ date: fmtDate(p.session_date), 'Est. 1RM': p.est_1rm ?? 0, 'Best Weight': p.best_weight }))}
               xKey="date"
               areas={[
-                { key: 'Est. 1RM', label: 'Est. 1RM (kg)', color: '#F59E0B' },
-                { key: 'Best Weight', label: 'Best Weight (kg)', color: '#A33757' },
+                { key: 'Est. 1RM', label: 'Est. 1RM (kg)', color: '#A33757' },
+                { key: 'Best Weight', label: 'Best Weight (kg)', color: '#FF853D' },
               ]}
               height={220}
               bordered={false}
@@ -612,13 +646,16 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
         </div>
 
         {/* ── History ── */}
-        <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-            <div className="flex items-center gap-2">
-              <History size={15} style={{ color: '#F59E0B' }} />
-              <h3 className="text-[13px] font-[760] text-gray-900">Session History</h3>
+        <div className="rounded-[22px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -20px rgba(255,133,61,0.45)' }}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
+                style={{ background: 'linear-gradient(140deg,#FF853D,#B8521A)', boxShadow: '0 6px 14px -6px #B8521A' }}>
+                <History size={15} />
+              </span>
+              <h3 className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>Session History</h3>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1 rounded-[12px] p-1" style={{ background: 'var(--bg-subtle)' }}>
               {([
                 { id: 'list', icon: ListIcon },
                 { id: 'calendar', icon: CalendarIcon },
@@ -626,8 +663,10 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
               ] as const).map(({ id: v, icon: Icon }) => (
                 <button key={v} onClick={() => { setView(v); setSelectedDay(null); }}
                   aria-label={`${v} view`} aria-pressed={view === v}
-                  className="flex h-11 w-11 items-center justify-center rounded-[10px] transition"
-                  style={{ background: view === v ? '#0f172a' : 'var(--bg-subtle)', color: view === v ? '#fff' : '#64748b' }}>
+                  className="flex h-10 w-10 items-center justify-center rounded-[10px] transition"
+                  style={view === v
+                    ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
+                    : { color: 'var(--text-muted)' }}>
                   <Icon size={14} />
                 </button>
               ))}
@@ -635,14 +674,14 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           </div>
 
           {view !== 'calendar' && (
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <div className="relative flex-1 min-w-[180px]">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[180px] flex-1">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
                 <input aria-label="Search by date, exercise, notes"
                   type="text" placeholder="Search by date, exercise, notes…" value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-[10px] text-[12.5px] outline-none"
-                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+                  className="w-full rounded-[11px] py-2.5 pl-8 pr-3 text-[12.5px] outline-none transition-colors focus:border-[#A33757]"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                 />
               </div>
               {programs.length > 0 && (
@@ -671,7 +710,6 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             </div>
           )}
         </div>
-      </div>
 
       <Dialog open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
         <DialogContent className="max-w-sm">
@@ -694,6 +732,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           </button>
         </DialogContent>
       </Dialog>
+      </PageContainer>
     </PullToRefresh>
   );
 }
@@ -717,11 +756,11 @@ function CalendarHeatmapPanel({ days, range }: { days: HeatmapDay[]; range: Date
   const scale = maxVolume > 0 ? maxVolume : maxSessions;
   const tones = [
     'var(--bg-subtle)',
-    'rgba(245,158,11,0.16)',
-    'rgba(245,158,11,0.32)',
-    'rgba(245,158,11,0.55)',
-    'rgba(245,158,11,0.82)',
-    '#F59E0B',
+    'rgba(163,55,87,0.14)',
+    'rgba(163,55,87,0.28)',
+    'rgba(163,55,87,0.48)',
+    'rgba(163,55,87,0.72)',
+    '#A33757',
   ];
   const toneFor = (day: HeatmapDay) => {
     if (day.sessions === 0) return 0;
@@ -732,14 +771,17 @@ function CalendarHeatmapPanel({ days, range }: { days: HeatmapDay[]; range: Date
 
   return (
     <section
-      className="rounded-[20px] p-5"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}
+      className="rounded-[22px] p-4 sm:p-5"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -20px rgba(32,191,164,0.45)' }}
       aria-label="Training calendar heatmap"
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <CalendarIcon size={15} style={{ color: '#F59E0B' }} />
-          <h3 className="text-[13px] font-[760] text-gray-900">Training Calendar</h3>
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
+            style={{ background: 'linear-gradient(140deg,#20BFA4,#159B85)', boxShadow: '0 6px 14px -6px #159B85' }}>
+            <CalendarIcon size={15} />
+          </span>
+          <h3 className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>Training Calendar</h3>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] font-[650]" style={{ color: 'var(--text-disabled)' }}>
           Less
@@ -770,7 +812,7 @@ function CalendarHeatmapPanel({ days, range }: { days: HeatmapDay[]; range: Date
                     style={{
                       background: day.in_range ? tones[tone] : 'transparent',
                       border: day.date === today && day.in_range
-                        ? '1.5px solid #0f172a'
+                        ? '1.5px solid #A33757'
                         : '1px solid var(--border)',
                       opacity: day.in_range ? 1 : 0.35,
                     }}
@@ -793,27 +835,38 @@ function SessionList({ sessions, clientId, router }: { sessions: WorkoutSession[
     return <p className="py-10 text-center text-[13px] font-[600]" style={{ color: 'var(--text-disabled)' }}>No sessions found.</p>;
   }
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       {sessions.map((s) => {
         const style = statusStyle(s.status);
+        const tile = s.status === 'completed'
+          ? { from: '#10B981', to: '#059669' }
+          : s.status === 'abandoned'
+            ? { from: '#94A3B8', to: '#64748B' }
+            : { from: '#F59E0B', to: '#D97706' };
+        const [dayPart, monthPart] = fmtDayMonth(s.session_date).split(' ');
+        const facts = [
+          [s.program_name, s.workout_day].filter(Boolean).join(' · ') || 'Freestyle session',
+          s.duration_minutes ? `${s.duration_minutes} min` : '',
+          s.exercise_count != null ? `${s.exercise_count} ex` : '',
+          s.completed_set_count != null ? `${s.completed_set_count} sets` : '',
+        ].filter(Boolean).join(' · ');
         return (
           <button key={s.id} onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log/${s.id}`)}
-            className="flex w-full items-center justify-between gap-3 rounded-[14px] px-4 py-3.5 text-left transition hover:-translate-y-0.5"
+            className="group flex w-full items-center gap-3 rounded-[16px] p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-12px_rgba(15,23,42,0.28)]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-[13.5px] font-[700] text-gray-900">{fmtDate(s.session_date)}</p>
+            <span className="flex h-11 w-11 flex-shrink-0 flex-col items-center justify-center rounded-[12px] text-white"
+              style={{ background: `linear-gradient(140deg,${tile.from},${tile.to})`, boxShadow: `0 6px 14px -8px ${tile.to}` }}>
+              <span className="text-[15px] font-[820] leading-none">{dayPart}</span>
+              <span className="mt-0.5 text-[9px] font-[750] uppercase tracking-[0.08em] opacity-85">{monthPart ?? ''}</span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{fmtDate(s.session_date)}</p>
                 <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: style.bg, color: style.color }}>{style.label}</span>
               </div>
-              <p className="mt-1 truncate text-[12px] text-slate-500">
-                {[s.program_name, s.workout_day].filter(Boolean).join(' · ') || 'Freestyle session'}
-              </p>
+              <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{facts}</p>
             </div>
-            <div className="flex flex-shrink-0 items-center gap-3 text-[11px] font-[650]" style={{ color: '#94a3b8' }}>
-              {s.duration_minutes ? <span>{s.duration_minutes} min</span> : null}
-              {s.exercise_count != null && <span>{s.exercise_count} ex</span>}
-              {s.completed_set_count != null && <span>{s.completed_set_count} sets</span>}
-            </div>
+            <ChevronRight size={15} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
           </button>
         );
       })}
@@ -837,10 +890,10 @@ function SessionTimeline({ sessions, clientId, router }: { sessions: WorkoutSess
               {s.status === 'completed' ? <CheckCircle2 size={11} color="#fff" /> : <Clock size={10} color="#fff" />}
             </span>
             <button onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log/${s.id}`)}
-              className="flex w-full flex-col items-start rounded-[12px] px-3.5 py-2.5 text-left transition hover:opacity-80"
+              className="flex w-full flex-col items-start rounded-[14px] px-3.5 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-14px_rgba(15,23,42,0.3)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-              <p className="text-[12.5px] font-[700] text-gray-900">{fmtDate(s.session_date)}</p>
-              <p className="mt-0.5 truncate text-[11.5px] text-slate-500">
+              <p className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{fmtDate(s.session_date)}</p>
+              <p className="mt-0.5 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
                 {[s.program_name, s.workout_day].filter(Boolean).join(' · ') || 'Freestyle session'}
                 {s.completed_set_count != null ? ` · ${s.completed_set_count} sets` : ''}
                 {s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
@@ -877,12 +930,16 @@ function CalendarView({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setMonth(new Date(year, monthIdx - 1, 1))} aria-label="Previous month" className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+      <div className="mb-3 flex items-center justify-between">
+        <button onClick={() => setMonth(new Date(year, monthIdx - 1, 1))} aria-label="Previous month"
+          className="flex h-11 w-11 items-center justify-center rounded-[11px] transition hover:opacity-80"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
           <ChevronLeft size={14} />
         </button>
-        <p className="text-[13px] font-[760] text-gray-900">{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-        <button onClick={() => setMonth(new Date(year, monthIdx + 1, 1))} aria-label="Next month" className="flex h-11 w-11 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+        <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>{month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+        <button onClick={() => setMonth(new Date(year, monthIdx + 1, 1))} aria-label="Next month"
+          className="flex h-11 w-11 items-center justify-center rounded-[11px] transition hover:opacity-80"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
           <ChevronRight size={14} />
         </button>
       </div>
@@ -899,15 +956,18 @@ function CalendarView({
             <button
               key={i}
               onClick={() => setSelectedDay(isSelected ? null : key)}
-              className="flex h-11 flex-col items-center justify-center rounded-[8px] text-[11.5px] font-[650] transition"
+              className="flex h-11 flex-col items-center justify-center rounded-[11px] text-[11.5px] font-[650] transition"
               style={{
-                background: isSelected ? '#0f172a' : has ? 'rgba(245,158,11,0.1)' : 'transparent',
-                color: isSelected ? '#fff' : has ? '#d97706' : '#475569',
-                border: isToday && !isSelected ? '1px solid #F59E0B' : '1px solid transparent',
+                background: isSelected
+                  ? 'linear-gradient(135deg,#A33757,#852E4E)'
+                  : has ? 'rgba(163,55,87,0.10)' : 'transparent',
+                color: isSelected ? '#fff' : has ? '#852E4E' : 'var(--text-secondary)',
+                border: isToday && !isSelected ? '1.5px solid #A33757' : '1px solid transparent',
+                boxShadow: isSelected ? '0 6px 14px -8px rgba(163,55,87,0.85)' : undefined,
               }}
             >
               {Number(key.slice(-2))}
-              {has && <span className="mt-0.5 h-1 w-1 rounded-full" style={{ background: isSelected ? '#fff' : '#F59E0B' }} />}
+              {has && <span className="mt-0.5 h-1 w-1 rounded-full" style={{ background: isSelected ? '#fff' : '#A33757' }} />}
             </button>
           );
         })}
