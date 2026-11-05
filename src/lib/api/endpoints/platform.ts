@@ -13,7 +13,7 @@ import type {
   AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
-  MeProfile, MeCoach, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
+  MeProfile, MeCoach, MeMembership, MeSessionBalance, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
   MeFormCheck,
@@ -917,6 +917,8 @@ export const me = {
   profile: () => http<{ data: MeProfile }>('/api/me/profile'),
   coach: () => http<{ data: MeCoach }>('/api/me/coach'),
   membership: () => http<{ data: MeMembership }>('/api/me/membership'),
+  /** PT session packages the member still holds. Empty when the studio does not track them. */
+  sessionBalance: () => http<{ data: MeSessionBalance[] }>('/api/me/session-balance'),
   payments: () => http<{ data: MePayment[] }>('/api/me/payments'),
   attendance: () => http<{ data: MeAttendance[] }>('/api/me/attendance'),
   measurements: () => http<{ data: MeMeasurement[] }>('/api/me/measurements'),

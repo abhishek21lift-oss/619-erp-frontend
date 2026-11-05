@@ -3393,6 +3393,17 @@ export type MeMembership = {
   status: string | null;
 };
 
+/** One PT session package the member still holds (/api/me/session-balance). */
+export type MeSessionBalance = {
+  package_name: string | null;
+  total_sessions: number;
+  used_sessions: number;
+  remaining_sessions: number;
+  start_date: string;
+  end_date: string | null;
+  status: string;
+};
+
 export type MePayment = {
   id: string;
   amount: number | string;

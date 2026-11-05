@@ -246,6 +246,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "me.saveHabit → /api/me/habits",
   "me.saveHabitPreferences → /api/me/habit-preferences",
   "me.sendMessage → /api/me/messages",
+  "me.sessionBalance → /api/me/session-balance",
   "me.sessions → /api/me/sessions",
   "me.setPhoto → /api/me/photo",
   "me.submitCheckin → /api/me/checkins",
