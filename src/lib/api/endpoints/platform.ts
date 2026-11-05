@@ -17,7 +17,7 @@ import type {
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
   MeRequestState, MePauseInput,
-  MeFormCheck,
+  MeFormCheck, SessionFeedback, SessionFeedbackInput,
   MeBooking, MeBookingAvailability,
   ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
   ProgressHabitPreferences, ProgressDashboard,
@@ -985,6 +985,19 @@ export const me = {
     form.append('video', file, 'lift.mp4');
     return http<{ data: MeFormCheck }>('/api/me/form-checks', { method: 'POST', body: form });
   },
+
+  /**
+   * Post-session feedback. `pending` is what still needs an answer; the
+   * submitted rows are the member's own history. Identity is the session's —
+   * no route takes a client id.
+   */
+  feedback: (status: 'pending' | 'submitted' | 'all' = 'all') =>
+    http<{ data: SessionFeedback[] }>(`/api/me/feedback?status=${status}`),
+  /** The one submission. 409 means this session was already rated. */
+  submitFeedback: (id: string, body: SessionFeedbackInput) =>
+    http<{ data: SessionFeedback }>(`/api/me/feedback/${encodeURIComponent(id)}`, {
+      method: 'POST', body: JSON.stringify(body),
+    }),
   /** Records and streaks. */
   achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
   /** Latest PAR-Q and informed consent. */

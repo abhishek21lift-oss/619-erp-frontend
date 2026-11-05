@@ -107,6 +107,9 @@ export const JOURNEYS = {
     'src/app/(bare)/member/form-check/page.tsx',
     'src/app/(chrome)/pt-os/form-checks/page.tsx',
   ],
+  'e2e/member-feedback.ui.spec.ts': [
+    'src/app/(bare)/member/feedback/page.tsx',
+  ],
 };
 
 /** Every form file some journey claims to cover. */

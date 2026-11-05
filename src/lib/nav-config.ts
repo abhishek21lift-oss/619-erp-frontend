@@ -148,6 +148,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
       { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
       { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
+      { href: '/pt-os/feedback',           label: 'Trainer Feedback',    icon: 'Star',          roles: ['trainer'] },
       { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
       { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
     ],

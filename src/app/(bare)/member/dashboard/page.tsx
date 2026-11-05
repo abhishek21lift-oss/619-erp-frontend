@@ -44,6 +44,7 @@ import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import TodayCard from '@/components/member/TodayCard';
+import FeedbackPrompt from '@/components/member/FeedbackPrompt';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
 import RenewalBanner from '@/components/member/RenewalBanner';
@@ -184,6 +185,9 @@ function MemberDashboard() {
         sessions={achievements ? achievements.totals.sessions : null}
       />
       <HomeActions />
+
+      {/* ── A completed session still waiting for its four taps ────────────── */}
+      <FeedbackPrompt />
 
       {/* ── A renewal offer to pay, or a plan about to run out ──────────────── */}
       <RenewalBanner />

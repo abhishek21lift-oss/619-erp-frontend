@@ -91,12 +91,25 @@ function collectRouter(file, prefix, seen) {
   seen.add(key);
   const src = fs.readFileSync(file, 'utf8');
 
-  for (const r of src.matchAll(/router\.(get|post|put|patch|delete|all)\(\s*(['"`])([^'"`]*)\2/g)) {
-    const sub = r[3];
-    routes.push({
-      method: r[1].toUpperCase(),
-      path: (prefix.replace(/\/$/, '') + (sub === '/' ? '' : sub)) || '/',
-    });
+  // Routes may be declared on a named router rather than `router` — a module
+  // that serves two doors exports `{ member, trainer }` with one router each.
+  // Collect every router this file creates instead of assuming the name.
+  const routerNames = new Set(['router', ...[...src.matchAll(
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:require\(\s*['"`]express['"`]\s*\)|express)\.Router\(\)/g,
+  )].map((x) => x[1])]);
+
+  for (const name of routerNames) {
+    const routeRe = new RegExp(
+      `\\b${name}\\.(get|post|put|patch|delete|all)\\(\\s*(['"\`])([^'"\`]*)\\2`,
+      'g',
+    );
+    for (const r of src.matchAll(routeRe)) {
+      const sub = r[3];
+      routes.push({
+        method: r[1].toUpperCase(),
+        path: (prefix.replace(/\/$/, '') + (sub === '/' ? '' : sub)) || '/',
+      });
+    }
   }
 
   // Nested mounts, with or without a path of their own.
