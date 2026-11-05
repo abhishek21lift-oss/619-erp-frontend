@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
   Bell, CalendarRange, Camera, ChevronRight, ClipboardCheck, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, Medal,
-  MessageCircle, RefreshCw, Target, Trophy, UserRound, Dumbbell, Video,
+  MessageCircle, RefreshCw, Receipt, Target, Trophy, UserRound, Dumbbell, Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -36,7 +36,7 @@ import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import StudioMark from '@/components/StudioMark';
 import { api } from '@/lib/api';
-import type { MeAchievements, MeCoach, MeMembership, MeProfile } from '@/lib/api';
+import type { MeAchievements, MeCoach, MeMembership, MeProfile, MeSessionBalance } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { errorMessage } from '@/lib/forms/errors';
 import { palette, rgba } from '@/lib/palette';
@@ -77,6 +77,7 @@ const GROUPS: Group[] = [
     accent: 'plan',
     rows: [
       { href: '/member/renew', label: 'Renew', sub: 'Your plan dates and renewal', icon: RefreshCw },
+      { href: '/member/payments', label: 'Payments', sub: 'Receipts and payment history', icon: Receipt },
       { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
     ],
   },
@@ -104,6 +105,7 @@ function ProfileBody() {
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [stats, setStats] = useState<MeAchievements | null>(null);
   const [plan, setPlan] = useState<MeMembership | null>(null);
+  const [sessions, setSessions] = useState<MeSessionBalance[]>([]);
   const [coach, setCoach] = useState<MeCoach | null>(null);
   const [unread, setUnread] = useState<Record<Badge, number>>({ notifications: 0, messages: 0 });
   const [profileFailed, setProfileFailed] = useState(false);
@@ -118,6 +120,9 @@ function ProfileBody() {
       .then((r) => { if (live) setProfile(r.data); })
       .catch(() => { if (live) setProfileFailed(true); });
     api.me.membership().then((r) => { if (live) setPlan(r.data); }).catch(() => { /* the profile's copy is the fallback */ });
+    api.me.sessionBalance()
+      .then((r) => { if (live) setSessions(r.data); })
+      .catch(() => { /* sessions are additive: the plan card stands without them */ });
     api.me.achievements().then((r) => { if (live) setStats(r.data); }).catch(() => { /* numbers show a dash */ });
     api.me.coach().then((r) => { if (live) setCoach(r.data); }).catch(() => { /* the card is left out */ });
     loadMemberNotifications(true)
@@ -155,7 +160,7 @@ function ProfileBody() {
           onEditPhoto={() => setPhotoOpen(true)} photoBusy={photoBusy} />
       )}
       {profile && (plan || profile.package_type || profile.pt_end_date) && (
-        <MembershipCard plan={plan} profile={profile} />
+        <MembershipCard plan={plan} profile={profile} sessions={sessions} />
       )}
       {coach && <CoachCard coach={coach} delay={0.08} />}
 
@@ -340,7 +345,9 @@ const inr = (v: unknown) => '₹' + num(v).toLocaleString('en-IN', { maximumFrac
  * not say. The balance is only shown when the membership record loaded: a
  * failed read is a dash, not "Paid up".
  */
-function MembershipCard({ plan, profile }: { plan: MeMembership | null; profile: MeProfile }) {
+function MembershipCard({ plan, profile, sessions }: {
+  plan: MeMembership | null; profile: MeProfile; sessions: MeSessionBalance[];
+}) {
   const endDate = plan?.pt_end_date ?? profile.pt_end_date;
   const endsOn = longDate(endDate);
   const left = daysLeft(endDate);
@@ -390,6 +397,19 @@ function MembershipCard({ plan, profile }: { plan: MeMembership | null; profile:
           </PayBalanceButton>
         )}
       </div>
+
+      {sessions.length > 0 && (
+        <div className="mt-3 space-y-1" aria-label="Session balance">
+          {sessions.map((s, i) => (
+            <p key={i} className="text-[12.5px]" style={{ color: MC.muted }}>
+              <span className="font-[750]" style={{ color: MC.ink }}>
+                {s.remaining_sessions} of {s.total_sessions} sessions left
+              </span>
+              {s.end_date && <> · ends {longDate(s.end_date)}</>}
+            </p>
+          ))}
+        </div>
+      )}
     </m.section>
   );
 }

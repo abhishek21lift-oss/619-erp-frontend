@@ -8,6 +8,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 const apiMocks = vi.hoisted(() => ({
   profile: vi.fn(),
   membership: vi.fn(),
+  sessionBalance: vi.fn(),
   setPhoto: vi.fn(),
 }));
 
@@ -35,6 +36,7 @@ vi.mock('@/lib/api', () => ({
     me: {
       profile: (...a: unknown[]) => apiMocks.profile(...a),
       membership: (...a: unknown[]) => apiMocks.membership(...a),
+      sessionBalance: (...a: unknown[]) => apiMocks.sessionBalance(...a),
       achievements: async () => ({ data: { totals: { sessions: 12, prs: 3 }, training: { current: 2 } } }),
       coach: async () => ({ data: null }),
       messagesUnread: async () => ({ data: { unread: 0 } }),
@@ -68,6 +70,7 @@ function renderPage() {
 beforeEach(() => {
   apiMocks.profile.mockReset().mockResolvedValue({ data: profile });
   apiMocks.membership.mockReset().mockResolvedValue({ data: membership });
+  apiMocks.sessionBalance.mockReset().mockResolvedValue({ data: [] });
   apiMocks.setPhoto.mockReset().mockResolvedValue({ data: { photo_url: '/uploads/new.png' } });
 });
 
@@ -115,5 +118,41 @@ describe('<MemberMorePage /> profile states', () => {
     expect(await screen.findByText('Photo updated')).toBeTruthy();
     expect(apiMocks.setPhoto).toHaveBeenCalledWith('data:image/png;base64,AAAA');
     expect(await screen.findByAltText('Asha Rao')).toHaveAttribute('src', '/uploads/new.png');
+  });
+});
+
+describe('<MemberMorePage /> sessions and payments', () => {
+  it('shows each active package with its own remaining count and end date', async () => {
+    apiMocks.sessionBalance.mockResolvedValue({
+      data: [{
+        package_name: 'PT 12', total_sessions: 12, used_sessions: 4, remaining_sessions: 8,
+        start_date: '2026-10-01', end_date: '2026-12-31', status: 'active',
+      }],
+    });
+    renderPage();
+    const card = await screen.findByRole('region', { name: 'Your membership' });
+    expect(await within(card).findByText('8 of 12 sessions left')).toBeTruthy();
+    expect(within(card).getByText(/ends 31 Dec 2026/)).toBeTruthy();
+  });
+
+  it('shows no session line when the studio does not track packages', async () => {
+    renderPage();
+    const card = await screen.findByRole('region', { name: 'Your membership' });
+    expect(within(card).queryByText(/sessions left/)).toBeNull();
+  });
+
+  it('keeps the balance and plan dates when the session read fails', async () => {
+    apiMocks.sessionBalance.mockRejectedValue(new Error('offline'));
+    renderPage();
+    const card = await screen.findByRole('region', { name: 'Your membership' });
+    expect(within(card).getByText('₹1,200')).toBeTruthy();
+    expect(within(card).getByText('Ends 12 Mar 2027')).toBeTruthy();
+    expect(within(card).queryByText(/sessions left/)).toBeNull();
+  });
+
+  it('links to Payments from the membership group', async () => {
+    renderPage();
+    const link = await screen.findByRole('link', { name: /Payments/ });
+    expect(link.getAttribute('href')).toBe('/member/payments');
   });
 });
