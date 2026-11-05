@@ -61,7 +61,7 @@ export default function StudioDetailsCard() {
   };
 
   return (
-    <form onSubmit={(e) => void save(e)} noValidate className="space-y-4">
+    <form aria-label="Studio details" onSubmit={(e) => void save(e)} noValidate className="space-y-4">
       <p className="text-sm text-[var(--text-secondary)]">
         What members see when they need to call or visit.
       </p>

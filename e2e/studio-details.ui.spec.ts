@@ -44,17 +44,20 @@ test.describe('Profile — studio contact details', () => {
   test('the values typed into the card are the values the API reads back', async ({ page }) => {
     page.setDefaultNavigationTimeout(90_000);
     await gotoApp(page, '/settings/profile');
-    await expect(page.getByRole('heading', { name: 'Studio details' }))
-      .toBeVisible({ timeout: 60_000 });
+    // The card has no heading of its own (the page's SectionHeader is a <p>), so
+    // the form's accessible name is the anchor — and it scopes the labels, since
+    // the page also has a "Phone Number" field in Personal Information.
+    const card = page.getByRole('form', { name: 'Studio details' });
+    await expect(card).toBeVisible({ timeout: 60_000 });
 
     const phone = `90000${String(Date.now()).slice(-5)}`;
     const address = '2nd floor, E2E Road';
     const hours = 'Mon–Sat 6am–9pm';
 
-    await page.getByLabel('Phone').fill(`  ${phone}  `);
-    await page.getByLabel('Address').fill(address);
-    await page.getByLabel('Opening hours').fill(hours);
-    await page.getByRole('button', { name: 'Save studio details' }).click();
+    await card.getByLabel('Phone').fill(`  ${phone}  `);
+    await card.getByLabel('Address').fill(address);
+    await card.getByLabel('Opening hours').fill(hours);
+    await card.getByRole('button', { name: 'Save studio details' }).click();
 
     await expect.poll(async () => {
       const saved = await read(token);
@@ -63,8 +66,8 @@ test.describe('Profile — studio contact details', () => {
 
     // A cleared field is erased, not stored as spaces: the member card drops a
     // row on truthiness, so '' would render as an empty line.
-    await page.getByLabel('Phone').fill('   ');
-    await page.getByRole('button', { name: 'Save studio details' }).click();
+    await card.getByLabel('Phone').fill('   ');
+    await card.getByRole('button', { name: 'Save studio details' }).click();
     await expect.poll(async () => (await read(token)).phone, { timeout: 15_000 }).toBeNull();
   });
 });
