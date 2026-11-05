@@ -128,12 +128,12 @@ describe('no page draws a container box around its own title', () => {
   // pt-os/leads used to be deliberately absent from the list above: it
   // rendered components/pt-os/leads/LeadHero — a Leads-only saturated card,
   // because the design it had to match could not be expressed through
-  // PageHero's API. It is now on the shared compact hero like every other
-  // list page, so the exception is gone.
-  it('pt-os/leads uses the shared compact hero and container', () => {
+  // PageHero's API. It is on the shared hero (with its amber accent) like
+  // every other list page, so the exception is gone.
+  it('pt-os/leads uses the shared hero and container', () => {
     const s = src('app', 'pt-os', 'leads', 'page.tsx');
     expect(s).toContain('<PageHero');
-    expect(s).toContain('compact');
+    expect(s).toContain('accent="amber"');
     expect(s).toContain('<PageContainer>');
     expect(s).not.toContain('<LeadHero');
   });

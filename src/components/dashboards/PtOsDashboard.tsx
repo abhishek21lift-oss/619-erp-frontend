@@ -2390,7 +2390,7 @@ export default function PtOsDashboard() {
                     revenue's growth as its own. A number with nothing under
                     it is the honest render. */}
                 <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients" />
+                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active" />
                 <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
                   sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* The Commission card (coach payouts) went with the multi-coach
