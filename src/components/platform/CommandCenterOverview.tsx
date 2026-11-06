@@ -84,6 +84,11 @@ function greeting(): string {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
+/** The hero headline for the attention path. Singular conjugates the verb. */
+export function attentionHeadline(attention: number): string {
+  return `${attention} signal${attention === 1 ? '' : 's'} ${attention === 1 ? 'needs' : 'need'} a look`;
+}
+
 export default function CommandCenterOverview() {
   const router = useRouter();
   const go = (tab: string) => router.push(tab === 'overview' ? '/platform' : `/platform?tab=${tab}`);
@@ -143,7 +148,7 @@ export default function CommandCenterOverview() {
   const status = snapshot?.status;
   const headline = !snapshot ? 'Platform health is unavailable'
     : status === 'critical' ? 'Something is failing right now'
-    : health.attention > 0 ? `${health.attention} signal${health.attention === 1 ? '' : 's'} need a look`
+    : health.attention > 0 ? attentionHeadline(health.attention)
     : 'Everything is running';
   const statusColor = !snapshot ? ccState.unknown
     : status === 'critical' ? ccState.critical
@@ -196,7 +201,7 @@ export default function CommandCenterOverview() {
           value={support ? nfIN(support.open + support.pending) : '—'}
           sub={support ? `${support.urgent_live} urgent · ${support.awaiting_first_reply} unanswered` : 'unavailable'}
           onClick={() => go('support')} />
-        <CcStat tone="sky" icon={<ShieldAlert size={15} />} label="Operators w/o MFA"
+        <CcStat tone="sky" icon={<ShieldAlert size={15} />} label="Ops w/o MFA"
           value={security ? `${security.operators.without_mfa}/${security.operators.total}` : '—'}
           sub={security ? `${security.logins_24h.failed_24h} failed sign-ins · 24h` : 'unavailable'}
           onClick={() => go('security')} />
