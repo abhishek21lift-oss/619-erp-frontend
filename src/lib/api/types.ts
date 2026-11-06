@@ -5123,7 +5123,10 @@ export type MotivationGuidance = 'absolutely' | 'somewhat' | 'not_really';
 
 export interface SessionFeedback {
   id: string;
-  session_id: string;
+  /** The booked pt_sessions row; null when the request came from the workout log. */
+  session_id: string | null;
+  /** The workout_sessions row; null when the request came from a booking. */
+  workout_session_id: string | null;
   client_id: string;
   trainer_id: string | null;
   completed_at: string;
