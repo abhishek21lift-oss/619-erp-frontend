@@ -102,8 +102,11 @@ function PlatformContent() {
     <>
       {tab !== 'overview' && (
         <CcHero tone={tone} eyebrow={mod?.label ?? 'Command Center'} title={TAB_LABELS[tab]} subtitle={TAB_BLURB[tab]} icon={MODULE_ICON[activeModule]}>
+          {/* Wraps rather than scrolls: the hidden-scroll row clipped the third
+              pill mid-word on a phone and hid the last tabs of Operations and
+              Security entirely. */}
           {moduleTabs.length > 1 && (
-            <nav aria-label={`${mod?.label} sections`} className="col-span-2 -mb-1 flex gap-1.5 overflow-x-auto pb-1 sm:col-span-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav aria-label={`${mod?.label} sections`} className="col-span-2 -mb-1 flex flex-wrap gap-1.5 sm:col-span-4">
               {moduleTabs.map((t) => {
                 const on = t === tab;
                 return (

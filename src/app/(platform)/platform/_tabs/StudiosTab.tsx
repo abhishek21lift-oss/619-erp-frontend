@@ -508,7 +508,9 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <p className="truncate text-[15px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{org.name}</p>
-            <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            {/* Wraps: as a single truncated line, "active …" was cut off on
+                every phone. */}
+            <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
               /{org.slug} · created {fmtDate(org.created_at)} · active {fmtWhen(row.lastLogin)}
             </p>
           </div>
