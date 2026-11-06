@@ -10,7 +10,7 @@ import type {
   ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
   AiBusinessInsights, AiBusinessRawData, AiConversation, AiDietParams, AiDietPlan,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiKnowledgeGrounding, AiMessage, AiModelStat,
-  AiProgressAnalysis, AiProgressDataCounts, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
+  AiPostureInsights, AiProgressAnalysis, AiProgressDataCounts, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   AiWorkoutGenerationResult, AiWorkoutContext, AiWeightPoint,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse,
 } from '../types';
@@ -214,6 +214,17 @@ export const ai = {
     httpSSE<{ data: AiFitnessTestAnalysis; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/fitness-testing/analyze', {
       method: 'POST',
       body: JSON.stringify({ assessment_id }),
+    }),
+
+  analyzePosture: (payload: {
+    client_id: string;
+    observations: { front: string[]; side: string[]; back: string[]; frontNotes?: string; sideNotes?: string; backNotes?: string; generalNotes?: string };
+    muscle_imbalances: { muscle: string; status: string; side?: string | null; notes?: string }[];
+    trainer_notes?: string;
+  }) =>
+    httpSSE<{ data: AiPostureInsights; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/posture/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 
   businessInsights: (params?: { from?: string; to?: string }, signal?: AbortSignal) =>
