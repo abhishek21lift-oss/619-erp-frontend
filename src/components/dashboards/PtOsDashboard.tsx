@@ -1138,6 +1138,27 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
   const total = collected + pending;
   const pct = total > 0 ? (collected / total) * 100 : 0;
 
+  // Zero revenue does not need six rows of bars to say zero. Keep the read
+  // and the link, drop the empty panel.
+  if (!loading && collected === 0 && pending === 0) {
+    return (
+      <Glass className="flex cursor-pointer items-center gap-3 px-4 py-3"
+        onClick={() => router.push('/finance/collected-payments')}>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+          style={{ background: rgba(palette.emerald[500], 0.10), color: palette.emerald[700] }}>
+          <IndianRupee size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[13px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Today&apos;s Revenue</h3>
+          <p className="mt-0.5 text-[11.5px] font-[600]" style={{ color: C.muted }}>
+            No payments today · nothing pending.
+          </p>
+        </div>
+        <ChevronRight size={16} aria-hidden style={{ color: C.muted }} />
+      </Glass>
+    );
+  }
+
   return (
     // The whole card opens today's payments; the two halves override that with
     // their own destinations. A div rather than a button so the halves are not
@@ -1296,6 +1317,10 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   // Which contact the next tap will reach. Reset whenever the cohort changes,
   // so switching insight never resumes halfway through a different list.
   const [cursor, setCursor] = useState(0);
+  // Opening WhatsApp or the dialer is not proof anything was sent. The board
+  // asks before advancing, for the same reason the card above it does: a
+  // backed-out message must not skip the next client.
+  const [confirming, setConfirming] = useState(false);
 
   const shown = excludeTop ? insights.slice(1) : insights;
   const selected = shown.find((i) => i.id === selectedId) ?? shown[0] ?? null;
@@ -1303,7 +1328,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   const next = targets[Math.min(cursor, Math.max(targets.length - 1, 0))] ?? null;
   const remaining = Math.max(targets.length - cursor, 0);
 
-  const pick = (id: string) => { setSelectedId(id); setCursor(0); };
+  const pick = (id: string) => { setSelectedId(id); setCursor(0); setConfirming(false); };
 
   const act = (kind: 'whatsapp' | 'call') => {
     if (!selected || !next) return;
@@ -1314,7 +1339,12 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
     // WhatsApp is a different origin; the dialer is a scheme handler. Both want
     // a new context so the dashboard is still here when the trainer comes back.
     window.open(href, kind === 'whatsapp' ? '_blank' : '_self', 'noopener,noreferrer');
+    setConfirming(true);
+  };
+
+  const confirmContact = () => {
     setCursor((c) => Math.min(c + 1, targets.length));
+    setConfirming(false);
   };
 
   const TONE: Record<Urgency, { fg: string; bg: string; border: string; label: string; Icon: typeof AlertTriangle }> = {
@@ -1328,6 +1358,26 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   // mean the promoted card above IS the whole list — claiming "nothing in
   // the next seven days" there would contradict the card the trainer just read.
   const promotedOnly = excludeTop && shown.length === 0 && insights.length > 0;
+
+  // An empty board is a status, not a destination. It used to keep a full
+  // card — icon tile, title, dated subhead, a 36px empty panel — for a
+  // sentence that fits on one line, and pushed the money chapter down with it.
+  if (promotedOnly || done) {
+    return (
+      <Glass className="flex items-center gap-3 px-4 py-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+          style={{ background: rgba(palette.emerald[500], 0.10), color: palette.emerald[700] }}>
+          <ShieldCheck size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[13px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>AI Coach</h3>
+          <p className="mt-0.5 truncate text-[11.5px] font-[600]" style={{ color: C.muted }}>
+            {promotedOnly ? 'Nothing else to review.' : 'Nothing needs you right now.'}
+          </p>
+        </div>
+      </Glass>
+    );
+  }
 
   return (
     <Glass className="overflow-hidden p-4 sm:p-5"
@@ -1485,12 +1535,32 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                     {remaining > 0 ? <>Next: <span style={{ color: palette.blue[600] }}>{next?.name}</span></> : 'Everyone on this list has been contacted.'}
                   </p>
                   {/* h-11 = 44px: the minimum a thumb can hit reliably. */}
+                  {confirming ? (
+                    <div role="group" aria-label="Confirm contact" className="rounded-[12px] p-2"
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                      <p className="text-[11.5px] font-[650]" style={{ color: C.ink }}>
+                        Did you contact {next?.name}?
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button type="button" onClick={confirmContact}
+                          className="flex min-h-[44px] flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[780] text-white transition active:scale-[0.98]"
+                          style={{ background: 'var(--action)' }}>
+                          Yes, next
+                        </button>
+                        <button type="button" onClick={() => setConfirming(false)}
+                          className="flex min-h-[44px] flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+                          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                          Not yet
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="flex gap-2">
                     <button type="button" onClick={() => act('whatsapp')} disabled={remaining === 0}
                       aria-label={next ? `Send WhatsApp to ${next.name}` : 'Send WhatsApp'}
                       className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
                       style={{
-                        background: `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.emerald[600]})`,
+                        background: palette.emerald[700],
                         boxShadow: remaining === 0 ? 'none' : `0 6px 16px ${rgba(palette.emerald[500], 0.34)}`,
                       }}>
                       <MessageCircle size={15} /> Send WhatsApp
@@ -1505,6 +1575,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                       <Phone size={15} /> Call Clients
                     </button>
                   </div>
+                  )}
                 </>
               )}
             </m.div>
@@ -1593,6 +1664,13 @@ export type TodayRow = {
    */
   live: boolean;
   /**
+   * Why this client is on today's list. A booked slot is an appointment; a
+   * programme/enrolment row is only the day they usually train. The card used
+   * to call both "Next" and offer "Start", which read as a booking the studio
+   * did not have.
+   */
+  source: TodayClient['source'];
+  /**
    * Something about the programme the trainer should know before starting:
    * it ran past its last week, or it has nothing in it. Null when all's well.
    */
@@ -1651,6 +1729,7 @@ export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
       // Every row goes to the same place: the full list, in this same order,
       // where each client has their own Start button.
       href: '/pt-os/today',
+      source: c.source,
       note: programmeNote(c),
     }));
 }
@@ -1772,10 +1851,18 @@ function TodaySchedule() {
               // The queue is already ordered so this is a matter of reading
               // `live` rather than counting rows: labelling by index alone
               // would put NEXT on a client who is mid-set.
-              const nextUp = !r.live && !shown.slice(0, i).some((p) => !p.live);
+              const booked = r.source === 'booked';
+              // Only a real appointment is "next". A programme or enrolment
+              // day is the day they usually train, not a slot the studio is
+              // holding, and the card must not promote it with the same word.
+              const nextUp = !r.live && booked
+                && !shown.slice(0, i).some((p) => !p.live && p.source === 'booked');
               const toneKey: RowTone = r.live ? 'live' : nextUp ? 'next' : 'waiting';
               const tone = rowTones[toneKey];
               const t12 = r.time ? fmtTime12(r.time) : null;
+              const stateLabel = r.live ? 'On the floor' : nextUp ? 'Next'
+                : !booked ? (r.source === 'programme' ? 'Programme day' : 'Training day') : null;
+              const quietAction = !r.live && !booked;
               return (
                 <m.button
                   key={r.key}
@@ -1825,10 +1912,12 @@ function TodaySchedule() {
                   <span className="min-w-0 flex-1">
                     {/* The state sits ABOVE the name, not beside it: beside it,
                         a phone row had room for "M" of "Myself". */}
-                    {(r.live || nextUp) && (
-                      <span className="mb-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] text-[9px] font-[820] uppercase tracking-[0.09em] text-white"
-                        style={{ background: gradient(tone.from, tone.to) }}>
-                        {r.live ? 'On the floor' : 'Next'}
+                    {stateLabel && (
+                      <span className="mb-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] text-[9px] font-[820] uppercase tracking-[0.09em]"
+                        style={r.live || nextUp
+                          ? { background: gradient(tone.from, tone.to), color: '#fff' }
+                          : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', boxShadow: 'inset 0 0 0 1px var(--border)' }}>
+                        {stateLabel}
                       </span>
                     )}
                     <span className="block truncate text-[14px] font-[750] tracking-[-0.01em]" style={{ color: C.ink }}>
@@ -1847,12 +1936,13 @@ function TodaySchedule() {
                       two logs for one workout. Always a solid, readable
                       button: the waiting rows' old grey-on-white pill was
                       invisible. */}
-                  <span className="inline-flex h-[34px] shrink-0 items-center gap-0.5 rounded-full px-3 text-[12px] font-[800] text-white transition-transform group-hover:translate-x-0.5 sm:px-3.5"
+                  <span className="inline-flex h-[34px] shrink-0 items-center gap-0.5 rounded-full px-3 text-[12px] font-[800] transition-transform group-hover:translate-x-0.5 sm:px-3.5"
                     style={{
-                      background: toneKey === 'waiting' ? C.ink : gradient(tone.from, tone.to),
-                      boxShadow: toneKey === 'waiting' ? 'none' : `0 6px 14px -6px ${tone.glow}`,
+                      background: quietAction ? 'var(--bg-subtle)' : toneKey === 'waiting' ? C.ink : gradient(tone.from, tone.to),
+                      color: quietAction ? 'var(--text-primary)' : '#fff',
+                      boxShadow: quietAction || toneKey === 'waiting' ? 'none' : `0 6px 14px -6px ${tone.glow}`,
                     }}>
-                    {r.live ? 'Resume' : 'Start'} <ChevronRight size={13} />
+                    {r.live ? 'Resume' : booked ? 'Start' : 'Open'} <ChevronRight size={13} />
                   </span>
                   </span>
 
@@ -1925,6 +2015,21 @@ function DayRing({ done, total, reduce }: { done: number; total: number; reduce:
 function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
   const router = useRouter();
   const renewals = ops?.renewals_due ?? [];
+  // Same rule as the AI Coach row: an empty list is one line, not a panel.
+  if (!loading && renewals.length === 0) {
+    return (
+      <Glass className="flex items-center gap-3 px-4 py-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+          style={{ background: rgba(C.success, 0.10), color: C.success }}>
+          <CheckCircle2 size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[13px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Renewals Due</h3>
+          <p className="mt-0.5 text-[11.5px] font-[600]" style={{ color: C.muted }}>None in the next 7 days.</p>
+        </div>
+      </Glass>
+    );
+  }
   return (
     <Glass className="p-4 sm:p-5 flex flex-col">
       <div className="flex items-center justify-between mb-3.5">

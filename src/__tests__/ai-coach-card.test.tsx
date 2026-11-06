@@ -70,28 +70,46 @@ describe('<AICoach />', () => {
     expect(decodeURIComponent(String(url))).toContain('MY PT STUDIO');
   });
 
-  it('advances to the next client instead of reopening the same chat', () => {
+  it('advances to the next client only after the trainer confirms contact', () => {
     // The whole point of the cursor. Without it, the second tap messages the
     // first client again and the trainer has no way to work through the list.
+    // But opening a chat is not sending one: the tap that moves on must come
+    // after an explicit "yes".
     const open = vi.spyOn(window, 'open').mockImplementation(() => null);
     renderCard();
 
     fireEvent.click(screen.getByRole('button', { name: /Send WhatsApp to Hari Narayan Singh/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, next' }));
     expect(screen.getByText('1 of 2 left')).toBeTruthy();
     expect(screen.getByText('Rashi Bhatia')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Send WhatsApp to Rashi Bhatia/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, next' }));
     expect(screen.getByText('All contacted')).toBeTruthy();
 
     expect(String(open.mock.calls[0][0])).toContain('919876543210');
     expect(String(open.mock.calls[1][0])).toContain('919876543211');
   });
 
+  it('keeps the same client when the trainer backs out of the message', () => {
+    vi.spyOn(window, 'open').mockImplementation(() => null);
+    renderCard();
+
+    fireEvent.click(screen.getByRole('button', { name: /Send WhatsApp to Hari Narayan Singh/i }));
+    expect(screen.getByText('Did you contact Hari Narayan Singh?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Not yet' }));
+
+    expect(screen.getByText('2 of 2 left')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Send WhatsApp to Hari Narayan Singh/i })).toBeTruthy();
+  });
+
   it('disables both actions once everyone has been contacted', () => {
     vi.spyOn(window, 'open').mockImplementation(() => null);
     renderCard();
     fireEvent.click(screen.getByRole('button', { name: /Send WhatsApp/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, next' }));
     fireEvent.click(screen.getByRole('button', { name: /Send WhatsApp/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, next' }));
 
     expect(screen.getByRole('button', { name: /Send WhatsApp/i }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: /Call/i }).hasAttribute('disabled')).toBe(true);
