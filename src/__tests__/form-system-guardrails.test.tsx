@@ -74,7 +74,9 @@ describe('one form system, not eighteen', () => {
     const account = readFileSync(join(SRC, 'app/(chrome)/settings/page.tsx'), 'utf8');
     const profile = readFileSync(join(SRC, 'app/(chrome)/settings/profile/page.tsx'), 'utf8');
     expect(account).toContain("redirect('/settings/profile?tab=security')");
-    expect(profile.match(/<FloatInput tone="brand" upperLifted/g) ?? []).toHaveLength(10);
+    // 10 -> 9: the Overview bio textarea became a read-only summary that
+    // links to the single editor on Credentials.
+    expect(profile.match(/<FloatInput tone="brand" upperLifted/g) ?? []).toHaveLength(9);
   });
 
   it('leaves the assessment screens on gold, which is the default', () => {

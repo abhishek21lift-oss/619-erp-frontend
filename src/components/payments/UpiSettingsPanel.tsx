@@ -21,7 +21,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
-  Wallet, Loader2, Check, AlertTriangle, Info, ShieldCheck, ArrowRight,
+  Wallet, Loader2, Check, AlertTriangle, Info, ShieldCheck, ArrowRight, RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAppForm } from '@/lib/forms/useAppForm';
@@ -87,9 +87,20 @@ export default function UpiSettingsPanel() {
       </div>
 
       {loadError && !initial ? (
-        <p className="mt-4 flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
-          <AlertTriangle size={14} className="mt-px shrink-0" /> {loadError}
-        </p>
+        <div className="mt-4 rounded-2xl p-4"
+          style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)' }}>
+          <p className="flex items-start gap-2 text-[12.5px]" style={{ color: 'var(--danger-text)' }}>
+            <AlertTriangle size={14} className="mt-px shrink-0" /> {loadError}
+          </p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 text-[12.5px] font-[700]"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          >
+            <RefreshCw size={14} /> Try again
+          </button>
+        </div>
       ) : (
         <SettingsForm
           initial={initial!}
@@ -160,57 +171,107 @@ function SettingsForm({
 
   const { form } = f;
 
+  // A staged switch is not the live state. Warn before a refresh or tab close
+  // takes the edit with it; the page keeps this panel mounted across tab
+  // changes, so switching tabs alone no longer discards it.
+  useEffect(() => {
+    if (!f.isDirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [f.isDirty]);
+
+  const liveEnabled = saved?.is_enabled === true;
+
   return (
     <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }}>
       {/* ── Live/off state ── */}
-      <form.Subscribe selector={(s) => s.values.is_enabled}>
-        {(enabled) => (
-          <m.div
-            layout
-            className="mt-4 flex items-start gap-3 rounded-2xl p-4"
-            style={{
-              background: enabled ? 'var(--success-soft)' : 'var(--bg-subtle)',
-              border: `1px solid ${enabled ? 'var(--success-border)' : 'var(--border)'}`,
-            }}
-          >
-            <ShieldCheck size={18} className="mt-0.5 shrink-0"
-              style={{ color: enabled ? 'var(--success-text)' : 'var(--text-muted)' }} />
-            <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-                {enabled ? 'Collection is on' : 'Collection is off'}
-              </p>
-              <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-                {enabled
-                  ? 'Members can open a payment page, pay by UPI and submit a reference for you to verify.'
-                  : 'Members cannot start a UPI payment. Turn this on once the UPI ID below is correct.'}
-              </p>
-            </div>
-            {/* A switch, not a checkbox: it toggles a live member-facing
-                capability rather than setting a value that Save then commits,
-                so the ARIA role has to say switch. CheckboxField would render
-                the wrong control for this meaning. */}
-            <form.Field name="is_enabled">
-              {(field) => (
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={field.state.value}
-                  aria-label="Enable UPI collection"
-                  onClick={() => field.handleChange(!field.state.value)}
-                  className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors"
-                  style={{ background: field.state.value ? 'var(--success)' : 'var(--border-3)' }}
-                >
-                  <m.span
-                    layout
-                    transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
-                    style={{ left: field.state.value ? 22 : 2 }}
-                  />
-                </button>
-              )}
-            </form.Field>
-          </m.div>
-        )}
+      <form.Subscribe selector={(s) => [s.values.is_enabled, s.values.upi_id] as const}>
+        {([enabled, upiId]) => {
+          const vpaValid = VPA_RE.test(upiId.trim());
+          const staged = enabled !== liveEnabled;
+          const bannerTone = staged ? 'warning' : enabled ? 'success' : 'neutral';
+          const title = staged
+            ? enabled ? 'Will be on after you save' : 'Will be off after you save'
+            : enabled ? 'Collection is on' : 'Collection is off';
+          const body = staged
+            ? enabled
+              ? vpaValid
+                ? 'Members will be able to pay by UPI once you save.'
+                : 'Add a valid UPI ID below, then save. Collection cannot turn on without one.'
+              : 'Members can still pay until you save. Save to turn collection off.'
+            : enabled
+              ? 'Members can open a payment page, pay by UPI and submit a reference for you to verify.'
+              : 'Members cannot start a UPI payment. Turn this on once the UPI ID below is correct.';
+          return (
+            <m.div
+              layout
+              role="status"
+              aria-live="polite"
+              className="mt-4 flex items-start gap-3 rounded-2xl p-4"
+              style={{
+                background: bannerTone === 'warning' ? 'var(--warning-soft)'
+                  : bannerTone === 'success' ? 'var(--success-soft)' : 'var(--bg-subtle)',
+                border: `1px solid ${bannerTone === 'warning' ? 'var(--warning-border)'
+                  : bannerTone === 'success' ? 'var(--success-border)' : 'var(--border)'}`,
+              }}
+            >
+              <ShieldCheck size={18} className="mt-0.5 shrink-0"
+                style={{ color: bannerTone === 'warning' ? 'var(--warning-text)'
+                  : bannerTone === 'success' ? 'var(--success-text)' : 'var(--text-muted)' }} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                  {title}
+                </p>
+                <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {body}
+                </p>
+              </div>
+              {/* A switch, not a checkbox: it toggles a live member-facing
+                  capability rather than setting a value that Save then commits,
+                  so the ARIA role has to say switch. CheckboxField would render
+                  the wrong control for this meaning. The 44px button carries a
+                  26px track, so the target is thumb-sized without a bigger
+                  switch. */}
+              <form.Field name="is_enabled">
+                {(field) => {
+                  const blocked = !field.state.value && !vpaValid;
+                  return (
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={field.state.value}
+                      aria-disabled={blocked}
+                      aria-label="Enable UPI collection"
+                      onClick={() => {
+                        if (blocked) {
+                          toast.error('Add a valid UPI ID before turning collection on.');
+                          return;
+                        }
+                        field.handleChange(!field.state.value);
+                      }}
+                      className="relative mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                      style={{ cursor: blocked ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span aria-hidden className="relative block h-[26px] w-11 rounded-full transition-colors"
+                        style={{
+                          background: field.state.value ? 'var(--success)' : 'var(--border-3)',
+                          opacity: blocked ? 0.55 : 1,
+                        }}>
+                        <m.span
+                          layout
+                          transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                          className="absolute top-[3px] h-5 w-5 rounded-full bg-white shadow"
+                          style={{ left: field.state.value ? 22 : 2 }}
+                        />
+                      </span>
+                    </button>
+                  );
+                }}
+              </form.Field>
+            </m.div>
+          );
+        }}
       </form.Subscribe>
 
       {/* ── Form ── */}
@@ -304,23 +365,35 @@ function SettingsForm({
         </form.Field>
 
         {/* ── Preview ── */}
-        <form.Subscribe selector={(s) => [s.values.merchant_name, s.values.upi_id] as const}>
-          {([merchantName, upiId]) => (
+        <form.Subscribe selector={(s) => [s.values.merchant_name, s.values.upi_id, s.values.instructions] as const}>
+          {([merchantName, upiId, instructions]) => (
             <div className="mt-5 rounded-xl p-3.5" style={{ background: 'var(--bg-subtle)' }}>
               <p className="text-[11px] font-[700] uppercase tracking-[0.1em]"
                 style={{ color: 'var(--text-muted)' }}>
                 How members will see it
               </p>
-              <p className="mt-1.5 text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-                {merchantName.trim() || 'Your studio name'}
-              </p>
-              {/* Brand colour once the VPA is well-formed — the preview is
-                  the one place an admin checks the payee before turning
-                  collection on, so it should say when it is usable. */}
-              <p className="font-mono text-[13px]"
-                style={{ color: VPA_RE.test(upiId.trim()) ? 'var(--brand)' : 'var(--text-muted)' }}>
-                {upiId.trim() || 'yourname@bank'}
-              </p>
+              <div className="mt-2 rounded-xl p-3.5"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+                  {merchantName.trim() || 'Your studio name'}
+                </p>
+                {/* Brand colour once the VPA is well-formed — the preview is
+                    the one place an admin checks the payee before turning
+                    collection on, so it should say when it is usable. */}
+                <p className="font-mono text-[13px]"
+                  style={{ color: VPA_RE.test(upiId.trim()) ? 'var(--brand)' : 'var(--text-muted)' }}>
+                  {upiId.trim() || 'yourname@bank'}
+                </p>
+                {instructions.trim() && (
+                  <p className="mt-2 whitespace-pre-line text-[12px] leading-relaxed"
+                    style={{ color: 'var(--text-secondary)' }}>
+                    {instructions.trim()}
+                  </p>
+                )}
+                <p className="mt-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  Pay by UPI · you verify the reference
+                </p>
+              </div>
             </div>
           )}
         </form.Subscribe>
@@ -331,8 +404,14 @@ function SettingsForm({
           // only communicates the state. Gating on validity here as well would
           // hide WHY the form cannot be saved behind a dead button.
           disabled={f.isSubmitting}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[720] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
-          style={{ height: 50, background: 'var(--brand)' }}
+          className="above-bottom-nav mt-5 flex w-full items-center justify-center gap-2 rounded-xl text-[15px] font-[720] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
+          style={{
+            height: 50,
+            background: 'var(--brand)',
+            position: 'sticky',
+            zIndex: 10,
+            boxShadow: '0 8px 24px -12px rgba(163,55,87,0.55)',
+          }}
         >
           {f.isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Saving…</>
                           : <><Check size={16} /> Save settings</>}

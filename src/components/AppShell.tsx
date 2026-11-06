@@ -619,6 +619,7 @@ function AppShellContent({ children }: AppShellProps) {
                   type="button"
                   aria-expanded={profileOpen}
                   aria-controls="topbar-profile-menu"
+                  aria-current={pathname.startsWith('/settings/profile') ? 'page' : undefined}
                   onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'profile' ? null : 'profile')); }}
                   className="topbar-hit flex items-center gap-2.5 pl-3 transition-opacity duration-200 hover:opacity-80"
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
@@ -626,7 +627,9 @@ function AppShellContent({ children }: AppShellProps) {
                       logo, else its letters — never letters when a picture
                       exists. */}
                   <UserPhoto url={user?.avatar_url} name={user?.name} size={32}
-                    ring={`linear-gradient(135deg, ${palette.blue[300]}, ${palette.blue[600]})`}
+                    ring={pathname.startsWith('/settings/profile')
+                      ? 'linear-gradient(135deg, var(--brand), var(--brand-lo))'
+                      : `linear-gradient(135deg, ${palette.blue[300]}, ${palette.blue[600]})`}
                     fallback={<StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />} />
                   <div className="hidden sm:block text-left">
                     <p className={cn('max-w-[150px] truncate text-[12px] font-semibold uppercase leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>{studioName}</p>

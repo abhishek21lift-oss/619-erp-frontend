@@ -113,7 +113,7 @@ export function ChipInput({
             <button
               onClick={() => onChange(value.filter((x) => x !== v))}
               aria-label={`Remove ${v}`}
-              className="rounded-full p-0.5 transition-opacity hover:opacity-70"
+              className="flex h-7 w-7 items-center justify-center rounded-full transition-opacity hover:opacity-70"
             >
               <XCircle size={13} />
             </button>

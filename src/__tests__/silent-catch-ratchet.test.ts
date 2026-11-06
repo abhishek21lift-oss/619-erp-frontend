@@ -121,11 +121,13 @@ const KNOWN = [
   // 1864 -> 1859 -> 1856 and 2156 -> 2151 -> 2148: a UI-copy pass removed
   // five lines above each site, then the side-tab stripe removal deleted a
   // three-line comment-plus-property above them. File set and per-file count
-  // unchanged — line numbers only.
-  'app/(chrome)/settings/profile/page.tsx:1861',
-  'app/(chrome)/settings/profile/page.tsx:2153',
-  'app/(chrome)/settings/profile/page.tsx:949',
-  'app/(chrome)/settings/profile/page.tsx:950',
+  // unchanged — line numbers only. 1861/2153 -> 1966/2364 and 949/950 ->
+  // 1010/1011: the My Profile title row, grouped tablist, preview and discard
+  // dialogs were added above these sites.
+  'app/(chrome)/settings/profile/page.tsx:1966',
+  'app/(chrome)/settings/profile/page.tsx:2364',
+  'app/(chrome)/settings/profile/page.tsx:1010',
+  'app/(chrome)/settings/profile/page.tsx:1011',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
