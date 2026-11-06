@@ -76,9 +76,9 @@ describe('every panel the client profile opens is coloured, not just the tabs', 
 
   it('finds panels at all — a passing test on an empty list proves nothing', () => {
     const panels = [...page.matchAll(/<(?:LinkPanel|EmptyPanel)\b/g)];
-    // Four: Payments, Training, AI, Documents. The old Reports panel was
-    // folded into Documents, so the honest lower bound is four.
-    expect(panels.length).toBeGreaterThanOrEqual(4);
+    // Five: Payments, Training, AI, Screening/Documents, Reports. The old
+    // Reports tab is now a panel inside Documents.
+    expect(panels.length).toBeGreaterThanOrEqual(5);
   });
 
   it('keeps the measurements destination linked', () => {

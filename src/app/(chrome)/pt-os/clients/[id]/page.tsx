@@ -12,7 +12,7 @@ import {
   TrendingUp, MessageCircle, Save, Pencil,
   HeartPulse, Salad, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown, Mail, Sparkles,
+  QrCode, Printer, ScrollText, ChevronDown, Mail, Sparkles, FileBarChart,
   Gauge, PersonStanding, Accessibility, MessagesSquare, Send,
   Cake, UserPlus, Megaphone, CalendarRange, Flag, Ruler,
   Route,
@@ -1090,8 +1090,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
                       { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },
                       { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility', icon: <Gauge size={15} />, color: TAB_COLOR.warning },
-                      { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
                       { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
+                    ]}
+                  />
+                </div>
+                <div className="mb-4">
+                  <LinkPanel
+                    icon={<FileBarChart size={16} />}
+                    title="Reports"
+                    body="What this client's month looks like."
+                    color={TAB_COLOR.success}
+                    links={[
+                      { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
+                      { label: 'Studio reports', href: '/insights/revenue', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
                     ]}
                   />
                 </div>
