@@ -76,9 +76,15 @@ describe('every panel the client profile opens is coloured, not just the tabs', 
 
   it('finds panels at all — a passing test on an empty list proves nothing', () => {
     const panels = [...page.matchAll(/<(?:LinkPanel|EmptyPanel)\b/g)];
-    // Five: Payments, Training, AI, Reports, Screening. Notes stopped being a
-    // LinkPanel when the tab started holding the notes themselves.
-    expect(panels.length).toBeGreaterThanOrEqual(5);
+    // Four: Payments, Training, AI, Documents. The old Reports panel was
+    // folded into Documents, so the honest lower bound is four.
+    expect(panels.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('keeps the measurements destination linked', () => {
+    // Removing the Reports panel silently removed its only Measurements link;
+    // the destination now lives in the Documents panel.
+    expect(page).toContain('/pt-os/measurements?client_id=');
   });
 
   it('gives every LinkPanel and EmptyPanel a header colour', () => {

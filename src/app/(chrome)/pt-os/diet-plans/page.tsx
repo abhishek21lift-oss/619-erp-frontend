@@ -54,12 +54,12 @@ interface Supplement {
 interface ClientOption { id: string; name: string; }
 
 const MEAL_TYPES: { id: MealType; icon: React.ReactNode; label: string; time: string; color: string }[] = [
-  { id: 'Breakfast', icon: <Coffee size={13} />, label: 'Breakfast', time: '6-9 AM', color: 'var(--warning)' },
+  { id: 'Breakfast', icon: <Coffee size={13} />, label: 'Breakfast', time: '6-9 AM', color: 'var(--warning-text)' },
   { id: 'Lunch', icon: <UtensilsCrossed size={13} />, label: 'Lunch', time: '12-2 PM', color: 'var(--brand-lo)' },
   { id: 'Snacks', icon: <Apple size={13} />, label: 'Snacks', time: '4-5 PM', color: 'var(--brand-lo)' },
   { id: 'Dinner', icon: <Moon size={13} />, label: 'Dinner', time: '7-9 PM', color: 'var(--brand-lo)' },
-  { id: 'Pre Workout', icon: <Activity size={13} />, label: 'Pre Workout', time: 'Before training', color: 'var(--warning)' },
-  { id: 'Post Workout', icon: <Activity size={13} />, label: 'Post Workout', time: 'After training', color: 'var(--success)' },
+  { id: 'Pre Workout', icon: <Activity size={13} />, label: 'Pre Workout', time: 'Before training', color: 'var(--warning-text)' },
+  { id: 'Post Workout', icon: <Activity size={13} />, label: 'Post Workout', time: 'After training', color: 'var(--success-text)' },
 ];
 
 // Macro donut (protein/carbs/fats). Tokens, not hex: the semantic ramp
@@ -453,9 +453,9 @@ function Inner() {
         <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
           {[
-            { label: 'Calories', value: consumed, raw: today?.calories_consumed, goal: GOAL_CAL, unit: 'kcal', color: 'var(--danger)' },
+            { label: 'Calories', value: consumed, raw: today?.calories_consumed, goal: GOAL_CAL, unit: 'kcal', color: 'var(--danger-text)' },
             { label: 'Protein', value: totalProtein, raw: today?.protein_g, goal: GOAL_PROT, unit: 'g', color: 'var(--brand-lo)' },
-            { label: 'Carbs', value: totalCarbs, raw: today?.carbs_g, goal: GOAL_CARBS, unit: 'g', color: 'var(--warning)' },
+            { label: 'Carbs', value: totalCarbs, raw: today?.carbs_g, goal: GOAL_CARBS, unit: 'g', color: 'var(--warning-text)' },
             { label: 'Fats', value: totalFats, raw: today?.fats_g, goal: GOAL_FATS, unit: 'g', color: 'var(--brand-lo)' },
           ].map((macro) => (
             <m.div key={macro.label} variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -542,7 +542,7 @@ function Inner() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, overflowX: 'auto' }}>
           {[
-            { key: 'meals', label: "Meal Library", count: meals.length, color: 'var(--success)' },
+            { key: 'meals', label: "Meal Library", count: meals.length, color: 'var(--success-text)' },
             { key: 'templates', label: 'Templates', count: templates.length, color: 'var(--brand-lo)' },
             { key: 'supplements', label: 'Supplements', count: supplements.length, color: 'var(--brand-lo)' },
             { key: 'analytics', label: 'Analytics', color: 'var(--brand-lo)' },
@@ -570,7 +570,7 @@ function Inner() {
             <m.div key="meals" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
                 <button onClick={() => setActiveMealType(null)}
-                  style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s', background: !activeMealType ? 'rgba(16,185,129,0.1)' : 'transparent', color: !activeMealType ? 'var(--success)' : 'var(--text-muted)', borderColor: !activeMealType ? 'rgba(16,185,129,0.3)' : 'var(--border)' }}>
+                  style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s', background: !activeMealType ? 'rgba(16,185,129,0.1)' : 'transparent', color: !activeMealType ? 'var(--success-text)' : 'var(--text-muted)', borderColor: !activeMealType ? 'rgba(16,185,129,0.3)' : 'var(--border)' }}>
                   All Meals
                 </button>
                 {MEAL_TYPES.map((mt) => (
@@ -661,7 +661,7 @@ function Inner() {
                         </div>
                         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.description}</p>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-                          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
+                          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(239,68,68,0.1)', color: 'var(--danger-text)' }}>
                             {t.calories} kcal
                           </span>
                           <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10.5, background: 'rgba(163,55,87,0.1)', color: 'var(--brand-lo)' }}>
@@ -1008,9 +1008,9 @@ function MealDetailModal({ meal, onClose }: { meal: Meal | null; onClose: () => 
             {meal.description && <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>{meal.description}</p>}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {[
-                { l: 'Calories', v: meal.calories, u: 'kcal', c: 'var(--danger)' },
+                { l: 'Calories', v: meal.calories, u: 'kcal', c: 'var(--danger-text)' },
                 { l: 'Protein', v: meal.protein, u: 'g', c: 'var(--brand)' },
-                { l: 'Carbs', v: meal.carbs, u: 'g', c: 'var(--warning)' },
+                { l: 'Carbs', v: meal.carbs, u: 'g', c: 'var(--warning-text)' },
                 { l: 'Fats', v: meal.fats, u: 'g', c: 'var(--brand)' },
               ].map((m) => (
                 <div key={m.l} style={{ textAlign: 'center', padding: '10px 6px', borderRadius: 10, background: `color-mix(in srgb, ${m.c} 6%, transparent)` }}>
