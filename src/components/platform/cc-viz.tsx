@@ -109,7 +109,7 @@ export function CcCard({ title, eyebrow, icon, tone = 'blue', action, children, 
             {icon && <CcIcon tone={tone}>{icon}</CcIcon>}
             <div className="min-w-0">
               {eyebrow && <p className="text-[10px] font-[800] uppercase tracking-[0.16em]" style={{ color: t.ink }}>{eyebrow}</p>}
-              {title && <h2 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>}
+              {title && <h2 className="line-clamp-2 text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>}
             </div>
           </div>
           {action && <div className="shrink-0">{action}</div>}
@@ -265,6 +265,8 @@ export function CcBars({ data, tone = 'blue', format = nfIN, height = 150, empty
   if (!data.length || max <= 0) return <CcEmpty title={empty} height={height + 28} />;
   const peak = data.reduce((a, d) => (d.value > a.value ? d : a), data[0]);
   const labelEvery = data.length > 16 ? Math.ceil(data.length / 8) : data.length > 8 ? 2 : 1;
+  // Sparse labels may overflow their slot (neighbours are blank); dense ones must clip.
+  const denseLabels = labelEvery === 1;
   return (
     <div role="img" aria-label={`Peak ${peak.label}: ${format(peak.value)}`}>
       <div className="relative flex items-end gap-[3px] sm:gap-1.5" style={{ height }}>
@@ -290,7 +292,7 @@ export function CcBars({ data, tone = 'blue', format = nfIN, height = 150, empty
       </div>
       <div className="mt-2 flex gap-[3px] sm:gap-1.5">
         {data.map((d, i) => (
-          <span key={`${d.label}-l-${i}`} className="min-w-0 flex-1 truncate text-center text-[9.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+          <span key={`${d.label}-l-${i}`} className={`min-w-0 flex-1 text-center text-[9.5px] font-[650] ${denseLabels ? 'truncate' : ''}`} style={{ color: 'var(--text-muted)' }}>
             {i % labelEvery === 0 ? d.label : ''}
           </span>
         ))}
