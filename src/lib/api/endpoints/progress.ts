@@ -113,6 +113,8 @@ export const progress = {
   postureAssessments: {
     list: (params?: Record<string, string | number>) =>
       http<{ data: unknown[] }>(`/api/progress/posture-assessments${buildQs(params)}`),
+    get: (id: string) =>
+      http<{ data: Record<string, unknown> }>(`/api/progress/posture-assessments/${id}`),
     create: (data: Record<string, unknown>) =>
       http<{ data: unknown }>('/api/progress/posture-assessments', {
         method: 'POST', body: JSON.stringify(data),

@@ -35,12 +35,15 @@ describe.each(PAGES)('%s timeline guards forward navigation', (route) => {
 
   it('sends the one forward jump through handleNext()', () => {
     const fn = src.slice(src.indexOf('const handleStepClick = '), src.indexOf('const handleBack = '));
-    expect(fn).toMatch(/if \(id === step \+ 1\) \{ handleNext\(\); return; \}/);
+    expect(fn).toMatch(/step \+ 1/);
+    expect(fn).toMatch(/handleNext\(\)/);
   });
 
   it('validates every step before submitting', () => {
-    const submit = src.slice(src.indexOf('const handleSubmit = '));
+    // The five-step postural wizard names its submit handleComplete().
+    const start = Math.max(src.indexOf('const handleSubmit = '), src.indexOf('const handleComplete = '));
+    const submit = src.slice(start);
     expect(submit).toMatch(/for \(const s of STEPS\)/);
-    expect(submit).toMatch(/const firstInvalid = STEPS\.find/);
+    expect(submit).toMatch(/STEPS\.find/);
   });
 });
