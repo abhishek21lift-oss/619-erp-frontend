@@ -212,7 +212,7 @@
    */
   --success:        var(--emerald-500);
   --success-text:   var(--emerald-700);   /* 5.01:1 worst case */
-  --warning-text:   var(--amber-700);     /* 4.58:1 */
+  --warning-text:   var(--amber-800);     /* 7.09:1 on white, 6.26:1 on warning-soft */
   --danger-text:    var(--red-700);       /* 5.91:1 */
   --success-lo:     #10B981;
   --success-soft:   rgba(16,185,129,0.10);
