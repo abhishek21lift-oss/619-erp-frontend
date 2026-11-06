@@ -1027,6 +1027,8 @@ export interface WorkoutPreviousExercise {
 }
 
 export interface WorkoutPlannedExercise {
+  /** The plan row this prescription came from; the anchor week's row when derived. */
+  row_id: string;
   exercise_id: string | null;
   name: string;
   sets: number;
@@ -1054,6 +1056,9 @@ export interface WorkoutPlannedExercise {
 }
 
 export interface WorkoutPlanned {
+  plan_id: string;
+  /** The plan weekday this prescription belongs to, 1 = Monday. */
+  day_of_week: number;
   plan_name: string;
   exercises: WorkoutPlannedExercise[];
   /** Which week of the programme this session falls in, from its start date. */
