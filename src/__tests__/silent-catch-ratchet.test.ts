@@ -91,16 +91,9 @@ const KNOWN = [
   'app/(chrome)/finance/collected-payments/page.tsx:116',
   'app/(chrome)/finance/dues/page.tsx:97',
   'components/payments/UpiPayScreen.tsx:210',
-  // Line moved 587 -> 592 -> 597 -> 584 -> 572 -> 604 -> 605 -> 606: the
-  // Check-in QR print popup above gained five lines of escaping plus two
-  // imports, the premium hero pass added a colour note and a card-shadow
-  // comment above it, the unused hero stat helper was removed, the
-  // client-profile dedup removed the unused photo state above it, the
-  // remote-screening card added one import, and the chart import was split
-  // off the ui barrel. 606 -> 621: the legacy-tab alias map and the panel-key
-  // guard were added above it. The entry itself is unchanged — still one
-  // silent catch, still the same statement.
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:621',
+  // The client-profile assignment read used to swallow with `.catch(() => {})`
+  // and render "no programme assigned"; it now sets an error state, so its
+  // entry is gone.
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:170',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:56',
