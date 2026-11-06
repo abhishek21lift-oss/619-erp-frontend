@@ -155,7 +155,7 @@ export function AiClientPicker({
               >
                 <div>
                   <div className="text-[14px] font-[600]" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
-                  {c.email && <div className="mt-0.5 text-[12px]" style={{ color: 'var(--text-disabled)' }}>{c.email}</div>}
+                  {c.email && <div className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>{c.email}</div>}
                 </div>
                 <ChevronRight size={14} style={{ color: '#94a3b8' }} />
               </button>
