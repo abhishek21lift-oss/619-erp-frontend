@@ -349,7 +349,7 @@ function ProgressAnalysisInner() {
                   </>
                 )}
                 {thinData && (
-                  <span className="font-semibold text-amber-700">— almost no records on file; treat the reading below as a starting template, not a verdict.</span>
+                  <span className="font-semibold" style={{ color: 'var(--warning-text)' }}>— almost no records on file; treat the reading below as a starting template, not a verdict.</span>
                 )}
               </div>
             )}
@@ -357,11 +357,15 @@ function ProgressAnalysisInner() {
             {/* Nothing to trend: say so once, plainly, instead of letting the
                 model's template read as an evidence-based verdict. */}
             {thinData && (
-              <div role="status" className="flex items-start gap-2 rounded-[16px] border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div
+                role="status"
+                className="flex items-start gap-2 rounded-[16px] border p-4 text-sm"
+                style={{ borderColor: 'var(--warning-border)', background: 'var(--warning-soft)', color: 'var(--text-primary)' }}
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--warning-text)' }} />
                 <div>
-                  <p className="font-bold">Not enough history for a real trend</p>
-                  <p className="mt-1 text-amber-800">
+                  <p className="font-bold" style={{ color: 'var(--warning-text)' }}>Not enough history for a real trend</p>
+                  <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>
                     This client has no assessments, check-ins, strength logs, goals or sessions on file.
                     The reading below is a starting template, not an analysis of measured change.
                   </p>
@@ -370,8 +374,11 @@ function ProgressAnalysisInner() {
             )}
 
             {/* AI-estimate disclaimer */}
-            <div className="flex items-start gap-2 rounded-[16px] border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div
+              className="flex items-start gap-2 rounded-[16px] border p-4 text-xs leading-relaxed"
+              style={{ borderColor: 'var(--warning-border)', background: 'var(--warning-soft)', color: 'var(--text-secondary)' }}
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--warning-text)' }} />
               <span>
                 The reading below is an <strong>AI-generated estimate</strong> from the
                 records above — direction and judgement, not measured fact. Figures the

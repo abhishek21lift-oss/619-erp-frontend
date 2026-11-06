@@ -134,6 +134,12 @@ describe.each([['light', LIGHT], ['dark', DARK]] as const)('%s theme', (_name, t
     const [hi, lo] = [luminance(white), luminance(brand)].sort((a, b) => b - a);
     expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(AA);
   });
+
+  it('warning text clears AA on its own soft chip', () => {
+    // The progress analyzer's gate, summary and risk panels sit on
+    // warning-soft, not on a base surface; amber-700 measured 4.44:1 there.
+    expect(contrast('warning-text', 'warning-soft', theme)).toBeGreaterThanOrEqual(AA);
+  });
 });
 
 describe('the status tokens stay out of text', () => {
