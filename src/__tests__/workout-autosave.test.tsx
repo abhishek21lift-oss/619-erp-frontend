@@ -134,6 +134,47 @@ describe('useAutosave — status honesty', () => {
     expect(onError.mock.calls[0][2]).toEqual({ rpe: 8 });
   });
 
+  it('keeps a failed patch and sends it again on retry', async () => {
+    // The original bug: the batch was taken off the queue before the request,
+    // so a rejection had nowhere to go. The local value stayed on screen and
+    // the pill said "not saved", but the patch itself was gone.
+    const save = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({});
+    const { result } = renderHook(() => useAutosave({ save }));
+
+    act(() => { result.current.enqueue('row-1', { sets: 4 }); });
+    await settle();
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    let clean = false;
+    await act(async () => { clean = await result.current.retry(); });
+
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith('row-1', { sets: 4 });
+    expect(clean).toBe(true);
+    await waitFor(() => expect(result.current.status).toBe('saved'));
+  });
+
+  it('a later edit to the failed row carries the unsaved fields with it', async () => {
+    // A trainer who keeps typing should not have to press retry: the next
+    // edit to that row sends the failed fields too.
+    const save = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({});
+    const { result } = renderHook(() => useAutosave({ save }));
+
+    act(() => { result.current.enqueue('row-1', { sets: 4 }); });
+    await settle();
+    await waitFor(() => expect(result.current.status).toBe('error'));
+
+    act(() => { result.current.enqueue('row-1', { reps: 8 }); });
+    await settle();
+
+    expect(save).toHaveBeenLastCalledWith('row-1', { sets: 4, reps: 8 });
+    await waitFor(() => expect(result.current.status).toBe('saved'));
+  });
+
   it('one failure among several does not mask the others as saved', async () => {
     const save = vi.fn()
       .mockResolvedValueOnce({})
