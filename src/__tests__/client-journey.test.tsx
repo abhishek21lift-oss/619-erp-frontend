@@ -119,6 +119,10 @@ describe('ClientJourneyCard', () => {
         goals: 'done', assessment: 'done', program_design: 'done' }, null));
     render(<ClientJourneyCard clientId="c1" />);
     expect(await screen.findByText('Onboarding steps complete.')).toBeTruthy();
+    // The progress bar and eight green "Done" chips restated what the
+    // attention strip already said. Complete now collapses to the tools.
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByText('8/8')).toBeNull();
     expect(screen.getByRole('link', { name: /Workout Log/ }))
       .toHaveAttribute('href', '/pt-os/clients/c1/workout-log');
     expect(screen.getByRole('link', { name: /Progress & Retest/ }))

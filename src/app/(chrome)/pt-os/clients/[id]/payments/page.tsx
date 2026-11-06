@@ -42,6 +42,7 @@ interface PtClientDetail {
   package_type?: string;
   base_amount: number; discount: number; final_amount: number;
   paid_amount: number; balance_amount: number;
+  current_term_fee?: number; current_term_paid?: number; current_term_balance?: number;
   duration_months?: number; monthly_pt_amount: number;
   trainer_commission: number; status: string; days_left: number;
   due_status?: string; pt_start_date?: string; pt_end_date?: string;
@@ -193,9 +194,16 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
     .filter(p => p.status === 'completed' || !p.status)
     .reduce((s, p) => s + Number(p.amount), 0);
 
-  const progressPct = client && client.final_amount > 0
-    ? Math.min((client.paid_amount / client.final_amount) * 100, 100)
-    : 0;
+  // The summary is the CURRENT term, not the lifetime total. `paid_amount` is
+  // every rupee this client ever paid, so dividing it by the current term's fee
+  // reads >100% for a renewed client and ₹0 balance while the term is unpaid.
+  // Same fields and fallbacks as the profile summary.
+  const currentTermFee = Number(client?.current_term_fee ?? client?.final_amount ?? 0);
+  const currentTermPaid = Number(client?.current_term_paid ?? client?.paid_amount ?? 0);
+  const currentTermBalance = Number(client?.current_term_balance ?? client?.balance_amount ?? 0);
+  const lifetimePaid = Number(client?.paid_amount ?? 0);
+
+  const progressPct = currentTermFee > 0 ? Math.min((currentTermPaid / currentTermFee) * 100, 100) : 0;
 
   return (
     <Guard>
@@ -249,8 +257,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       <Wallet size={15} style={{ color: 'rgba(255,255,255,0.9)' }} />
                     </div>
                   </div>
-                  <p className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>Final Amount</p>
-                  <p className="text-[22px] font-[800] tracking-[-0.02em] mt-0.5" style={{ color: '#fff' }}>{fmtINR(client.final_amount)}</p>
+                  <p className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>Term Fee</p>
+                  <p className="text-[22px] font-[800] tracking-[-0.02em] mt-0.5" style={{ color: '#fff' }}>{fmtINR(currentTermFee)}</p>
                 </div>
               </GradientCard>
 
@@ -261,29 +269,29 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       <CheckCircle size={15} style={{ color: 'rgba(255,255,255,0.9)' }} />
                     </div>
                   </div>
-                  <p className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>Total Paid</p>
-                  <p className="text-[22px] font-[800] tracking-[-0.02em] mt-0.5" style={{ color: '#fff' }}>{fmtINR(client.paid_amount)}</p>
+                  <p className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>Paid This Term</p>
+                  <p className="text-[22px] font-[800] tracking-[-0.02em] mt-0.5" style={{ color: '#fff' }}>{fmtINR(currentTermPaid)}</p>
                   <p className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    {payments.length} transaction{payments.length !== 1 ? 's' : ''}
+                    {fmtINR(lifetimePaid)} lifetime
                   </p>
                 </div>
               </GradientCard>
 
               <GradientCard
-                from={client.balance_amount > 0 ? '#f59e0b' : '#10b981'}
-                to={client.balance_amount > 0 ? '#92400e' : '#065f46'}
+                from={currentTermBalance > 0 ? '#f59e0b' : '#10b981'}
+                to={currentTermBalance > 0 ? '#92400e' : '#065f46'}
               >
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                      {client.balance_amount > 0
+                      {currentTermBalance > 0
                         ? <AlertTriangle size={15} style={{ color: 'rgba(255,255,255,0.9)' }} />
                         : <CheckCircle size={15} style={{ color: 'rgba(255,255,255,0.9)' }} />}
                     </div>
                   </div>
                   <p className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>Balance</p>
-                  <p className="text-[22px] font-[800] tracking-[-0.02em] mt-0.5" style={{ color: '#fff' }}>{fmtINR(client.balance_amount)}</p>
-                  {client.balance_amount > 0 && client.due_status && (
+                  <p className="text-[22px] font-[800] tracking-[-0.02em] mt-0.5" style={{ color: '#fff' }}>{fmtINR(currentTermBalance)}</p>
+                  {currentTermBalance > 0 && client.due_status && (
                     <span className="inline-flex items-center gap-1 mt-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-[4px]"
                       style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}>
                       <Clock size={10} /> {client.due_status}
@@ -319,7 +327,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>Payment Progress</span>
                 </div>
                 <span className="text-[12px] font-[700] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                  {fmtINR(client.paid_amount)} / {fmtINR(client.final_amount)}
+                  {fmtINR(currentTermPaid)} / {fmtINR(currentTermFee)}
                 </span>
               </div>
               <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
@@ -342,9 +350,9 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   {progressPct < 100 ? `${progressPct.toFixed(0)}% paid` : 'Fully paid'}
                 </span>
                 <span className="text-[10px] font-[600]" style={{
-                  color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
+                  color: currentTermBalance > 0 ? '#f59e0b' : '#10b981',
                 }}>
-                  {client.balance_amount > 0 ? `${fmtINR(client.balance_amount)} remaining` : 'No balance'}
+                  {currentTermBalance > 0 ? `${fmtINR(currentTermBalance)} remaining` : 'No balance'}
                 </span>
               </div>
             </m.div>
@@ -613,6 +621,12 @@ function RecordPaymentSheet({
 
   const { form, isSubmitting } = f;
 
+  // Payments settle the CURRENT term, so the preview must use the same figures
+  // as the summary cards — not the lifetime total.
+  const currentTermFee = Number(client.current_term_fee ?? client.final_amount ?? 0);
+  const currentTermPaid = Number(client.current_term_paid ?? client.paid_amount ?? 0);
+  const currentTermBalance = Number(client.current_term_balance ?? client.balance_amount ?? 0);
+
   // Escape, focus trap and focus restore. The sheet declared
   // `aria-modal="true"` while Tab left it for the payment history table
   // behind, and it had no Escape handler, so the only way out was a click on
@@ -688,11 +702,11 @@ function RecordPaymentSheet({
             <div className="mb-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-[600]"
                 style={{
-                  background: client.balance_amount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
-                  color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
+                  background: currentTermBalance > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                  color: currentTermBalance > 0 ? '#f59e0b' : '#10b981',
                 }}>
                 <Wallet size={12} />
-                {client.balance_amount > 0 ? `Balance due: ${fmtINR(client.balance_amount)}` : 'Fully paid'}
+                {currentTermBalance > 0 ? `Balance due: ${fmtINR(currentTermBalance)}` : 'Fully paid'}
               </div>
             </div>
 
@@ -855,13 +869,13 @@ function RecordPaymentSheet({
                 const payingNow = Number(amount);
                 const safe = Number.isFinite(payingNow) ? payingNow : 0;
                 const { balanceInr, overpaymentInr } = balanceAfter(
-                  client.final_amount, client.paid_amount, safe,
+                  currentTermFee, currentTermPaid, safe,
                 );
                 return (
                   <div className="rounded-[14px] p-4 space-y-2.5 mt-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                     <div className="flex justify-between text-[12px]">
-                      <span style={{ color: 'var(--text-muted)' }}>Already paid</span>
-                      <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Already paid this term</span>
+                      <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(currentTermPaid)}</span>
                     </div>
                     <div className="flex justify-between text-[12px]">
                       <span style={{ color: 'var(--text-muted)' }}>This payment</span>

@@ -79,4 +79,22 @@ describe('client profile', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Training' }));
     await waitFor(() => expect(screen.getByText(/Hypertrophy A/)).toBeTruthy());
   });
+
+  it('does not print ₹0 a month for a term paid upfront', { timeout: 15000 }, async () => {
+    // A client on a ₹30,000 term with no monthly split is not "₹0/month" —
+    // that reads as unpaid, not paid in full.
+    window.history.replaceState({}, '', '/pt-os/clients/c1');
+    const previous = client.monthly_pt_amount;
+    client.monthly_pt_amount = 0;
+    try {
+      const params = Promise.resolve({ id: 'c1' });
+      await act(async () => { render(<Suspense fallback="loading"><Page params={params} /></Suspense>); await params; });
+      await waitFor(() => expect(screen.getAllByText('Hari Narayan Singh').length).toBeGreaterThan(0), { timeout: 3000 });
+      const assignment = screen.getByText('PT assignment').closest('section');
+      expect(within(assignment!).getByText('Paid upfront')).toBeTruthy();
+      expect(within(assignment!).queryByText('₹0')).toBeNull();
+    } finally {
+      client.monthly_pt_amount = previous;
+    }
+  });
 });

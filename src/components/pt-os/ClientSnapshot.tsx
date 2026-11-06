@@ -201,11 +201,19 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
     ? String(goal.goal_type).replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())
     : 'Goal';
   const pct = typeof goal.pct === 'number' ? goal.pct : null;
+  const reached = pct !== null && pct >= 100;
+  // A delta is only good news when it moves toward the target: a loss goal
+  // improves on a negative delta, a gain goal on a positive one. Zero is not
+  // progress, and a step away is not success.
+  const moved = goal.delta_kg != null && goal.delta_kg !== 0;
+  const towardTarget = moved && goal.start_kg != null && goal.target_kg != null
+    && Math.sign(goal.target_kg - goal.start_kg) === Math.sign(goal.delta_kg as number);
 
   return (
     <Card title="Goal" icon={<Target size={16} />} from={emerald[500]} to={emerald[600]}
       right={pct !== null
-        ? <span className="shrink-0 text-[20px] font-[860] tabular-nums leading-none" style={{ color: 'var(--success-text)' }}>{pct}%</span>
+        ? <span className="shrink-0 text-[20px] font-[860] tabular-nums leading-none"
+            style={{ color: reached ? 'var(--success-text)' : 'var(--text-primary)' }}>{pct}%</span>
         : null}>
       <p className="text-[14px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
         {label}
@@ -218,13 +226,12 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
 
       {pct !== null ? (
         <>
-              <Bar pct={pct} colour="var(--success)" />
+              <Bar pct={pct} colour={reached ? 'var(--success)' : 'var(--brand)'} />
           <div className="mt-2.5 grid grid-cols-3 gap-2">
             <Stat label="Started" value={goal.start_kg != null ? `${goal.start_kg} kg` : '—'} />
             <Stat label="Current" value={goal.current_kg != null ? `${goal.current_kg} kg` : '—'}
-              accent={goal.delta_kg != null
-                ? `${goal.delta_kg > 0 ? '+' : ''}${goal.delta_kg} kg`
-                : null} />
+              accent={moved ? `${goal.delta_kg! > 0 ? '+' : ''}${goal.delta_kg} kg` : null}
+              accentColor={towardTarget ? 'var(--success-text)' : 'var(--warning-text)'} />
             <Stat label="To go" value={goal.remaining_kg != null ? `${Math.abs(goal.remaining_kg)} kg` : '—'} />
           </div>
         </>
@@ -338,7 +345,7 @@ function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId:
 /** The number a trainer gets asked for. */
 function PrCard({ prs, clientId }: { prs: ClientPr[]; clientId: string }) {
   return (
-    <Card title="Latest personal records" icon={<Trophy size={16} />} from={amber[500]} to={amber[600]}>
+    <Card title="Personal records" icon={<Trophy size={16} />} from={amber[500]} to={amber[600]}>
       {prs.length === 0 ? (
         <Empty
           text="No records logged yet. They appear here as soon as a set beats what came before."
@@ -396,12 +403,14 @@ function Bar({ pct, colour }: { pct: number; colour: string }) {
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: string | null }) {
+function Stat({ label, value, accent, accentColor = 'var(--success-text)' }: {
+  label: string; value: string; accent?: string | null; accentColor?: string;
+}) {
   return (
     <div>
       <p className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <p className="mt-0.5 text-[13px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</p>
-      {accent && <p className="text-[11px] font-[700]" style={{ color: 'var(--success-text)' }}>{accent}</p>}
+      {accent && <p className="text-[11px] font-[700]" style={{ color: accentColor }}>{accent}</p>}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// The client tab strip has twelve tabs and a phone has room for about four.
+// The client tab strip has seven tabs and a phone has room for about four.
 //
 // It used to cut the last visible label in half against a hard container edge
 // — "Mea…" — which reads as a rendering fault, not as an invitation to scroll.
@@ -59,28 +59,44 @@ describe('<ClientTabs /> — the strip', () => {
     // The strip is navigation, not a tablist: every tile has an href, so
     // middle-click, Ctrl-click and copy-link all work.
     expect(screen.getAllByRole('link')).toHaveLength(TABS.length);
-    expect(screen.getByRole('link', { name: /Measurements/ })).toBeInTheDocument();
+    expect(TABS).toHaveLength(7);
+    expect(screen.getByRole('link', { name: /Nutrition/ })).toBeInTheDocument();
   });
 
-  it('sends the three link tabs to the screen that does the job', () => {
-    // Each of these was a panel whose whole content was a list of links to
-    // these pages — a tap to reach a tap. The destination lives beside the tab
-    // now, and it is a real href, so middle-click and long-press still work.
+  it('keeps the removed destinations off the strip', () => {
+    // Workout Log, Measurements, Photos and Reports are linked from the tab
+    // that owns the job now. The strip must not grow back to eleven.
     render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
-    expect(screen.getByRole('link', { name: /Workout Log/ }))
-      .toHaveAttribute('href', '/pt-os/clients/c1/workout-log');
-    expect(screen.getByRole('link', { name: /Measurements/ }))
-      .toHaveAttribute('href', '/pt-os/measurements?client_id=c1');
+    for (const name of [/Workout Log/, /Measurements/, /^Photos$/, /^Reports$/]) {
+      expect(screen.queryByRole('link', { name })).toBeNull();
+    }
+  });
+
+  it('sends the one link tab to the screen that does the job', () => {
+    // It used to be a panel whose whole content was a list of links to this
+    // page — a tap to reach a tap. The destination lives beside the tab now,
+    // and it is a real href, so middle-click and long-press still work.
+    render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
     expect(screen.getByRole('link', { name: /Nutrition/ }))
       .toHaveAttribute('href', '/pt-os/diet-plans?client_id=c1');
   });
 
-  it('builds those destinations from the client it was given', () => {
-    // A hard-coded id here would send every trainer to one client's log.
-    render(<ClientTabs active="overview" onChange={() => {}} clientId="other-client" />);
-    for (const name of [/Workout Log/, /Measurements/, /Nutrition/]) {
-      expect(screen.getByRole('link', { name })!.getAttribute('href')).toContain('other-client');
+  it('marks the tab that leaves this page, and only that one', () => {
+    // Eight of the old eleven tiles switched a panel; three navigated away.
+    // Nothing on screen told them apart, so a tap could leave the profile
+    // without warning. The outbound arrow and the marker are that warning.
+    render(<ClientTabs active="overview" onChange={() => {}} clientId="c1" />);
+    const outbound = screen.getByRole('link', { name: /Nutrition/ });
+    expect(outbound).toHaveAttribute('data-leaves-page', 'true');
+    for (const name of [/Overview/, /Training/, /Check-ins/, /Payments/, /Documents/, /AI Coach/]) {
+      expect(screen.getByRole('link', { name })).not.toHaveAttribute('data-leaves-page');
     }
+  });
+
+  it('builds that destination from the client it was given', () => {
+    // A hard-coded id here would send every trainer to one client's diet.
+    render(<ClientTabs active="overview" onChange={() => {}} clientId="other-client" />);
+    expect(screen.getByRole('link', { name: /Nutrition/ })!.getAttribute('href')).toContain('other-client');
   });
 
   it('does not switch panels for a tab that navigates', () => {
@@ -88,7 +104,7 @@ describe('<ClientTabs /> — the strip', () => {
     // browser is already leaving.
     const onChange = vi.fn();
     render(<ClientTabs active="overview" onChange={onChange} clientId="c1" />);
-    fireEvent.click(screen.getByRole('link', { name: /Workout Log/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Nutrition/ }));
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -109,11 +125,15 @@ describe('<ClientTabs /> — the strip', () => {
     for (const a of anchors) expect(a.getAttribute('href')).toBeTruthy();
   });
 
-  it('marks exactly one tab as the current page', () => {
+  it('marks exactly one tab as current, without claiming a page change', () => {
+    // In-page panels change, the document does not. aria-current="page" told
+    // a screen reader the page had navigated; "true" says "current item in
+    // this set" and nothing more.
     render(<ClientTabs active="training" onChange={() => {}} clientId="c1" />);
-    const current = screen.getAllByRole('link').filter((t) => t.getAttribute('aria-current') === 'page');
+    const current = screen.getAllByRole('link').filter((t) => t.getAttribute('aria-current') === 'true');
     expect(current).toHaveLength(1);
     expect(current[0]).toHaveTextContent('Training');
+    expect(screen.getAllByRole('link').filter((t) => t.getAttribute('aria-current') === 'page')).toHaveLength(0);
   });
 
   // data-fade rather than style.maskImage: jsdom's CSS parser drops a
@@ -157,7 +177,7 @@ describe('<ClientTabs /> — the strip', () => {
   it('labels each tab for the scroll-into-view lookup', () => {
     // The effect finds the active tab by [data-tab="..."]. Drop the attribute
     // and a deep link to a far-right tab silently leaves it off-screen.
-    render(<ClientTabs active="reports" onChange={() => {}} clientId="c1" />);
+    render(<ClientTabs active="ai" onChange={() => {}} clientId="c1" />);
     for (const t of TABS) {
       expect(strip().querySelector(`[data-tab="${t.key}"]`)).not.toBeNull();
     }
@@ -171,7 +191,7 @@ describe('<ClientTabs /> — the strip', () => {
     Object.defineProperty(HTMLElement.prototype, 'offsetLeft', { configurable: true, value: 800 });
     originals.push(() => { delete (HTMLElement.prototype as unknown as Record<string, unknown>).offsetLeft; });
 
-    act(() => { render(<ClientTabs active="reports" onChange={() => {}} clientId="c1" />); });
+    act(() => { render(<ClientTabs active="ai" onChange={() => {}} clientId="c1" />); });
     expect(scrollTo).toHaveBeenCalled();
   });
 
@@ -183,7 +203,7 @@ describe('<ClientTabs /> — the strip', () => {
     const tabs = screen.getAllByRole('link');
     const iconStyle = (t: HTMLElement) => (t.querySelector('span[style*="linear-gradient"]') as HTMLElement).style;
 
-    const selected = tabs.find((t) => t.getAttribute('aria-current') === 'page')!;
+    const selected = tabs.find((t) => t.getAttribute('aria-current') !== null)!;
     const resting = tabs.find((t) => t.getAttribute('aria-current') === null)!;
     expect(iconStyle(selected).boxShadow).not.toBe(iconStyle(resting).boxShadow);
     // No tab, selected or not, wraps its icon in a background rectangle of
@@ -211,11 +231,5 @@ describe('<ClientTabs /> — the strip', () => {
     for (let i = 1; i < tabs.length; i++) {
       expect(bg(tabs[i])).not.toBe(bg(tabs[i - 1]));
     }
-  });
-
-  it('shows a count badge only where there is something to count', () => {
-    render(<ClientTabs active="overview" onChange={() => {}} counts={{ photos: 4, documents: 0 }} clientId="c1" />);
-    expect(screen.getByRole('link', { name: /Photos/ })).toHaveTextContent('4');
-    expect(screen.getByRole('link', { name: /Documents/ })).not.toHaveTextContent('0');
   });
 });

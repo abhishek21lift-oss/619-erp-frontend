@@ -69,6 +69,7 @@ afterAll(() => { vi.unstubAllGlobals(); });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.history.replaceState(null, '', '/');
   mocks.clients.mockResolvedValue({ data: CLIENTS });
   mocks.list.mockResolvedValue({ data: [] });
   mocks.create.mockResolvedValue({ data: { id: 'checkin-1' } });
@@ -157,6 +158,17 @@ describe('the form sends the payload the endpoint expects', () => {
     await selectClient(OTHER_ID);
 
     expect(mocks.list).toHaveBeenCalledWith({ client_id: OTHER_ID });
+  });
+
+  it('preselects the client a profile deep link names', async () => {
+    window.history.replaceState(null, '', `/pt-os/weekly-checkin?client_id=${CLIENT_ID}`);
+
+    await renderPage();
+
+    await waitFor(() => expect(
+      (screen.getByLabelText(/^client/i) as HTMLSelectElement).value,
+    ).toBe(CLIENT_ID));
+    expect(mocks.list).toHaveBeenCalledWith({ client_id: CLIENT_ID });
   });
 });
 
