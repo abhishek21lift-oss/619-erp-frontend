@@ -13,9 +13,10 @@
 // strip is naturally "not scrollable". The scrollable case is created by
 // stubbing those two properties, which is also the honest way to test it —
 // the component reads exactly those two numbers and nothing else.
+import { useState } from 'react';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
-import { ClientTabs, TABS } from '@/components/pt-os/client/ClientTabs';
+import { ClientTabs, TabPanel, TABS, type TabKey } from '@/components/pt-os/client/ClientTabs';
 
 const originals: Array<() => void> = [];
 
@@ -231,5 +232,35 @@ describe('<ClientTabs /> — the strip', () => {
     for (let i = 1; i < tabs.length; i++) {
       expect(bg(tabs[i])).not.toBe(bg(tabs[i - 1]));
     }
+  });
+});
+
+describe('<TabPanel /> — leaving a tab does not throw its state away', () => {
+  it('keeps an unsaved draft and hides the panel it is not showing', () => {
+    // Unmounting Overview discarded an unsaved notes draft and a one-time
+    // screening link (which cannot be reissued for free) on every tab switch.
+    function Harness() {
+      const [tab, setTab] = useState<TabKey>('overview');
+      return (
+        <>
+          <button type="button" onClick={() => setTab(tab === 'overview' ? 'training' : 'overview')}>switch</button>
+          <TabPanel id="overview" active={tab}>
+            <textarea aria-label="draft notes" defaultValue="" />
+          </TabPanel>
+          <TabPanel id="training" active={tab}><p>training panel</p></TabPanel>
+        </>
+      );
+    }
+
+    render(<Harness />);
+    fireEvent.change(screen.getByLabelText('draft notes'), { target: { value: 'keep me' } });
+    fireEvent.click(screen.getByRole('button', { name: 'switch' }));
+
+    expect(screen.getByRole('region', { name: 'Training' })).not.toHaveAttribute('hidden');
+    // A hidden region has no computed accessible name, so find it by attribute.
+    expect(document.querySelector('div[role="region"][aria-label="Overview"]')).toHaveAttribute('hidden');
+
+    fireEvent.click(screen.getByRole('button', { name: 'switch' }));
+    expect((screen.getByLabelText('draft notes') as HTMLTextAreaElement).value).toBe('keep me');
   });
 });

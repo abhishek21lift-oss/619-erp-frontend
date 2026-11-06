@@ -18,9 +18,15 @@ const deep = (): any => new Proxy(function () {}, {
   get: (_t, k) => (k === 'then' ? undefined : deep()),
   apply: () => Promise.resolve({ data: [] }),
 });
+/** Newest first, the order the API returns. */
+let assessmentRows: Array<{ assessment_date: string; weight: number }> = [];
 vi.mock('@/lib/api', () => ({
   api: new Proxy({}, {
     get: (_t, k) => {
+      if (k === 'progress') return {
+        assessments: { list: () => Promise.resolve({ data: assessmentRows }) },
+        goals: { list: () => Promise.resolve({ data: [] }) },
+      };
       if (k === 'pt') return { client: () => Promise.resolve({ data: client }), subscriptions: () => Promise.resolve({ data: [] }), memberGoals: () => Promise.resolve({ data: { studio: null, goals: [] } }), journey: () => Promise.resolve({ data: { steps: [{ key: 'welcome_tour', state: 'done' }, { key: 'consent', state: 'todo' }], next: 'consent', screening: null } }) };
       if (k === 'workouts') return { assignments: { list: () => Promise.resolve([{ plan_name: 'Hypertrophy A' }]) } };
       return deep();
@@ -39,6 +45,21 @@ vi.mock('@/components/pt-os/ClientLoginCard', () => ({ default: () => null }));
 vi.mock('@/components/pt-os/ClientAiGenerateCard', () => ({ default: () => <div>AI generate card</div> }));
 
 import Page from '@/app/(chrome)/pt-os/clients/[id]/page';
+
+// framer-motion and the chart's responsive hook read this during render.
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 describe('client profile', () => {
   // The render itself is ~3s warm (a cold import can double that), so the 5s
@@ -78,6 +99,24 @@ describe('client profile', () => {
     // The programme itself still renders in its own tab.
     fireEvent.click(screen.getByRole('link', { name: 'Training' }));
     await waitFor(() => expect(screen.getByText(/Hypertrophy A/)).toBeTruthy());
+  });
+
+  it('draws the weight trend oldest to newest even though the API answers newest first', { timeout: 15000 }, async () => {
+    assessmentRows = [
+      { assessment_date: '2026-05-01', weight: 70 },
+      { assessment_date: '2026-04-01', weight: 75 },
+      { assessment_date: '2026-03-01', weight: 80 },
+    ];
+    try {
+      window.history.replaceState({}, '', '/pt-os/clients/c1');
+      const params = Promise.resolve({ id: 'c1' });
+      await act(async () => { render(<Suspense fallback="loading"><Page params={params} /></Suspense>); await params; });
+      await waitFor(() => expect(screen.getByText(/Weight trend:/)).toBeTruthy());
+      // The first point is the oldest, so the summary and the line agree.
+      expect(screen.getByText(/Weight trend:/)).toHaveTextContent('80 kg on 01 Mar to 70 kg on 01 May.');
+    } finally {
+      assessmentRows = [];
+    }
   });
 
   it('does not print ₹0 a month for a term paid upfront', { timeout: 15000 }, async () => {

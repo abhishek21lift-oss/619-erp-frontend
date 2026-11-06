@@ -26,6 +26,7 @@
 // second one is an instruction to go and measure something.
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { m, useReducedMotion } from 'framer-motion';
 import {
   AlertTriangle, ChevronRight, Target, Trophy, Sparkles, Info, RefreshCw,
@@ -134,7 +135,7 @@ function AttentionStrip({ alerts }: { alerts: ClientAlert[] }) {
         style={{ background: stateTone.success.bg, border: `1px solid ${stateTone.success.border}` }}>
         <Info size={15} style={{ color: stateTone.success.fg }} />
         <p className="text-[12px] font-[680]" style={{ color: stateTone.success.fg }}>
-          Nothing needs attention — term, payments, measurements and last session all look current.
+          No alerts right now.
         </p>
       </div>
     );
@@ -168,7 +169,7 @@ function AttentionStrip({ alerts }: { alerts: ClientAlert[] }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.04 * i, duration: 0.26, ease: EASE }}>
               {a.href
-                ? <a href={a.href} className={className} style={style}>{body}</a>
+                ? <Link href={a.href} className={className} style={style}>{body}</Link>
                 : <div className={className} style={style}>{body}</div>}
             </m.div>
           );
@@ -391,7 +392,7 @@ function Bar({ pct, colour }: { pct: number; colour: string }) {
   const reduce = useReducedMotion();
   return (
     <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}
-      role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+      role="progressbar" aria-label="Goal progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
       <m.div
         initial={reduce ? false : { width: 0 }}
         animate={{ width: `${pct}%` }}
@@ -459,11 +460,11 @@ function Empty({ text, action }: { text: string; action?: { label: string; href:
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="max-w-[42ch] text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{text}</p>
       {action && (
-        <a href={action.href}
+        <Link href={action.href}
           className="flex h-[44px] items-center gap-1 rounded-[10px] px-3 text-[11px] font-[720]"
           style={{ color: 'var(--brand)' }}>
           {action.label} <ChevronRight size={12} />
-        </a>
+        </Link>
       )}
     </div>
   );

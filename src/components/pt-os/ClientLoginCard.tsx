@@ -308,7 +308,11 @@ export default function ClientLoginCard({ clientId }: { clientId: string }) {
 
           {status.login_activated && (
             <Button
-              onClick={() => run('deactivate', () => api.clientLogin.deactivate(clientId))}
+              onClick={() => {
+                if (window.confirm('Disable this client’s login? Every open session will be signed out.')) {
+                  void run('deactivate', () => api.clientLogin.deactivate(clientId));
+                }
+              }}
               busy={busy === 'deactivate'}
               tone={C.danger}
               subtle
