@@ -352,12 +352,17 @@ export function ProfessionalSection({
 
   return (
     <div className="flex flex-col gap-5">
-      <TextField
-        field={designationField}
-        label="Designation"
-        density="compact"
-        maxLength={PROFILE_LIMITS.designation}
-      />
+      <div>
+        <TextField
+          field={designationField}
+          label="Designation"
+          density="compact"
+          maxLength={PROFILE_LIMITS.designation}
+        />
+        <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          Shown to members as your title when set; otherwise your job title is used.
+        </p>
+      </div>
 
       <div>
         <Label>How you coach</Label>
