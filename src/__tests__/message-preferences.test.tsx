@@ -40,6 +40,14 @@ describe('MessagePreferences', () => {
     expect(screen.getByRole('switch', { name: /Email/ })).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('tells the profile what was saved, so a remount does not show stale flags', async () => {
+    mockUpdate.mockResolvedValue({ data: {} });
+    const onSaved = vi.fn();
+    render(<MessagePreferences clientId="c1" whatsappOptOut={false} emailOptOut={false} onSaved={onSaved} />);
+    fireEvent.click(screen.getByRole('switch', { name: /WhatsApp/ }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith({ whatsapp_opt_out: true, email_opt_out: false }));
+  });
+
   it('says receipts still go', () => {
     render(<MessagePreferences clientId="c1" whatsappOptOut={false} emailOptOut={false} />);
     expect(screen.getByText(/Payment receipts are always sent/)).toBeInTheDocument();

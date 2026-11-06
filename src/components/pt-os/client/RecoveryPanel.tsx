@@ -17,6 +17,7 @@
 // an instruction.
 
 import { m, useReducedMotion } from 'framer-motion';
+import Link from 'next/link';
 import { ClipboardCheck, TrendingDown, TrendingUp, Minus, ChevronRight, RefreshCw } from 'lucide-react';
 import type { ClientRecovery } from '@/lib/api';
 import { cardSurface } from '@/components/ui/Card';
@@ -194,7 +195,8 @@ export default function RecoveryPanel({
               </p>
               {/* A sparkline of bars rather than a chart library: four to twelve
                   points, one number each, and nothing to interact with. */}
-              <div className="flex items-end gap-1.5" style={{ height: 48 }}>
+              <div className="flex items-end gap-1.5" style={{ height: 48 }} role="img"
+                aria-label={`Weekly readiness scores: ${recovery.weeks.map((w) => `${w.week} ${w.score} of 100`).join(', ')}`}>
                 {recovery.weeks.map((w) => (
                   <div key={w.week} className="flex-1" title={`${w.week}: ${w.score}`}>
                     <m.div
@@ -214,11 +216,11 @@ export default function RecoveryPanel({
             </div>
           )}
 
-          <a href={checkinHref}
+          <Link href={checkinHref}
             className="mt-4 flex h-[44px] w-fit items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--brand)' }}>
             Record this week&apos;s check-in <ChevronRight size={13} />
-          </a>
+          </Link>
         </>
       )}
     </Shell>
@@ -254,11 +256,11 @@ function Empty({ title, body, href }: { title: string; body: string; href: strin
     <div className="flex flex-col items-center gap-2.5 py-6 text-center">
       <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>{title}</p>
       <p className="max-w-[52ch] text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
-      <a href={href}
+      <Link href={href}
         className="mt-1 flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750] text-white"
         style={{ background: 'var(--brand)', boxShadow: `0 4px 14px ${rgba(indigo[500], 0.35)}` }}>
         Record a check-in <ChevronRight size={13} />
-      </a>
+      </Link>
     </div>
   );
 }

@@ -51,18 +51,29 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
   const ref = useDialogA11y({ open: true, onClose });
   const [current, setCurrent] = useState<UpiOrder | null | undefined>(undefined);
   const [upi, setUpi] = useState<{ ready: boolean; gst: number } | null>(null);
+  // A failed read is not "not set up" and not "no offer". Track them apart.
+  const [failed, setFailed] = useState({ settings: false, offer: false });
+  const [reloadKey, setReloadKey] = useState(0);
   const [sent, setSent] = useState<{ order: UpiOrder; memberCanSee: boolean } | null>(null);
 
   useEffect(() => {
     let live = true;
+    setCurrent(undefined);
+    setUpi(null);
+    setFailed({ settings: false, offer: false });
     api.upiPayments.renewalOffer(client.id)
       .then((r) => { if (live) setCurrent(r.data.order); })
-      .catch(() => { if (live) setCurrent(null); });
+      .catch(() => { if (live) setFailed((f) => ({ ...f, offer: true })); });
     api.upiPayments.getSettings()
       .then((r) => { if (live) setUpi({ ready: r.configured && r.enabled, gst: Number(r.data?.gst_percent) || 0 }); })
-      .catch(() => { if (live) setUpi({ ready: false, gst: 0 }); });
+      .catch(() => { if (live) setFailed((f) => ({ ...f, settings: true })); });
     return () => { live = false; };
-  }, [client.id]);
+  }, [client.id, reloadKey]);
+
+  const readFailed = failed.settings || failed.offer;
+  const failedWhat = failed.settings && failed.offer
+    ? 'your UPI setup and any existing offer'
+    : failed.settings ? 'your UPI setup' : 'for an existing offer';
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" data-no-pull-refresh>
@@ -86,6 +97,20 @@ export default function RenewalOfferSheet({ client, onClose }: { client: OfferCl
 
         {sent ? (
           <Sent client={client} order={sent.order} memberCanSee={sent.memberCanSee} onClose={onClose} />
+        ) : readFailed ? (
+          <div className="rounded-[14px] p-4" style={{ background: stateTone.warning.bg, border: `1px solid ${stateTone.warning.border}` }} role="alert">
+            <p className="flex items-center gap-2 text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+              <AlertTriangle size={15} aria-hidden style={{ color: stateTone.warning.fg }} /> Could not check {failedWhat}
+            </p>
+            <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+              {failed.settings ? 'Your UPI setup could not be confirmed, so an offer may not be payable. ' : ''}
+              {failed.offer ? 'An existing offer could not be checked, so sending now could replace one you have not seen.' : ''}
+            </p>
+            <button type="button" onClick={() => setReloadKey((k) => k + 1)}
+              className="mt-3 inline-flex h-[44px] items-center rounded-[12px] px-4 text-[13px] font-[750] text-white" style={{ background: BLUE }}>
+              Try again
+            </button>
+          </div>
         ) : upi === null || current === undefined ? (
           <div className="grid h-40 place-items-center" aria-busy="true"><Loader2 size={20} className="animate-spin" style={{ color: 'var(--text-muted)' }} /></div>
         ) : !upi.ready ? (

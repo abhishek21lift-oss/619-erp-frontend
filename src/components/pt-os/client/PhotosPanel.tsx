@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import { Camera, ChevronRight, AlertTriangle, X } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -86,11 +87,11 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
         <p className="max-w-[46ch] text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {error} This client may still have photos on file.
         </p>
-        <a href={`/pt-os/progress-photos?client_id=${clientId}`}
+        <Link href={`/pt-os/progress-photos?client_id=${clientId}`}
           className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-4 text-[12px] font-[750]"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
           Open Progress Photos <ChevronRight size={13} />
-        </a>
+        </Link>
       </div>
     );
   }
@@ -126,10 +127,10 @@ export default function PhotosPanel({ clientId }: { clientId: string }) {
         <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>
           {photos.length} photo{photos.length === 1 ? '' : 's'}
         </p>
-        <a href={`/pt-os/progress-photos?client_id=${clientId}`}
+        <Link href={`/pt-os/progress-photos?client_id=${clientId}`}
           className="flex items-center gap-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>
           Compare and add <ChevronRight size={13} />
-        </a>
+        </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">

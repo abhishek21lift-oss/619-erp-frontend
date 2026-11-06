@@ -32,7 +32,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
   LayoutGrid, Dumbbell, Salad, ClipboardCheck,
   FileSignature, Wallet, Sparkles, ChevronRight, ArrowUpRight,
@@ -307,26 +307,21 @@ export function ClientTabs({ active, onChange, clientId }: ClientTabsProps) {
   );
 }
 
-/** Wrapper that fades one panel out and the next in, without layout jump. */
+/** A panel stays mounted once visited, hidden when inactive. */
 export function TabPanel({ id, active, children }: { id: TabKey; active: TabKey; children: React.ReactNode }) {
-  const reduce = useReducedMotion();
   const label = TABS.find((t) => t.key === id)?.label ?? 'Client section';
+  // Unmounting an inactive panel threw away its state — an unsaved notes
+  // draft, a one-time screening link that cannot be reissued for free. Hidden
+  // is enough: it keeps the panel out of the a11y tree and out of sight.
+  const [mounted, setMounted] = useState(id === active);
+  useEffect(() => {
+    if (id === active) setMounted(true);
+  }, [id, active]);
+  if (!mounted) return null;
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {id === active && (
-        <m.div
-          key={id}
-          role="region"
-          aria-label={label}
-          initial={reduce ? false : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={reduce ? undefined : { opacity: 0 }}
-          transition={{ duration: 0.2, ease: EASE }}
-        >
-          {children}
-        </m.div>
-      )}
-    </AnimatePresence>
+    <div role="region" aria-label={label} hidden={id !== active}>
+      {children}
+    </div>
   );
 }
 

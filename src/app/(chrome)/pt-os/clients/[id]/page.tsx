@@ -1,7 +1,8 @@
 'use client';
 
-import { use, useState, useEffect, useCallback } from 'react';
+import { use, useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
 import { m, useReducedMotion } from 'framer-motion';
 import {
@@ -169,7 +170,8 @@ function MemberGoalRow({ goal: g }: { goal: MeGoal }) {
           .filter(Boolean).join(' · ') || 'No reading yet'}
       </p>
       {pct != null && !g.reached && (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}
+          role="progressbar" aria-label={`${label} progress`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: gradient(tint) }} />
         </div>
       )}
@@ -465,6 +467,11 @@ function ActionButton({ label, ariaLabel, icon, tint, onClick, href, external }:
   );
   const cls = 'group flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-[16px] py-1 outline-none focus-visible:ring-2';
   if (href) {
+    // tel: stays an anchor; an app route uses Link so it does not reload the
+    // whole profile and drop the open tab / unsaved draft.
+    if (!external && !href.startsWith('tel:')) {
+      return <Link href={href} className={cls} aria-label={ariaLabel ?? label}>{inner}</Link>;
+    }
     return (
       <a href={href} className={cls} aria-label={ariaLabel ?? label}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
@@ -510,7 +517,19 @@ const LEGACY_TAB: Record<string, TabKey> = {
 // accepting it into `tab` would render the strip with an empty workspace.
 const PANEL_TABS: readonly TabKey[] = TABS.filter((t) => !t.href).map((t) => t.key);
 
+/**
+ * useSearchParams suspends, so the page export wraps the real component.
+ * Without this the route opts into dynamic rendering and Next warns at build.
+ */
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ClientProfileInner params={params} />
+    </Suspense>
+  );
+}
+
+function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -522,13 +541,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [snapshotState, setSnapshotState] = useState<SnapshotState>({ status: 'loading' });
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
+  const [offerOpen, setOfferOpen] = useState(false);
+  const searchParams = useSearchParams();
   // Notifications deep-link a section (a weekly check-in lands on Check-ins).
-  // Read once on mount; the tabs are this page's own state after that.
+  // Reactive params, not window.location read once: a notification that
+  // targets a tab while this profile is already open used to update the URL
+  // and leave the old tab showing.
   useEffect(() => {
-    const want = new URLSearchParams(window.location.search).get('tab');
+    const want = searchParams.get('tab');
     const next = want ? LEGACY_TAB[want] ?? want : null;
     if (next && (PANEL_TABS as readonly string[]).includes(next)) setTab(next as TabKey);
-  }, []);
+    // A PT-expiry alert links here with ?renew=1; nothing read it before.
+    if (searchParams.get('renew') === '1') setOfferOpen(true);
+  }, [searchParams]);
 
   // The URL follows the selected section, so refresh/share/Back land where
   // the trainer was. Replace rather than push: tab switches are not pages.
@@ -540,13 +565,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   }, []);
   /** Ask AI — the read-only assistant scoped to this client. */
   const [aiOpen, setAiOpen] = useState(false);
-  const [offerOpen, setOfferOpen] = useState(false);
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
   /** Targets the member set in the member app. null until loaded or on failure. */
   const [memberGoals, setMemberGoals] = useState<MeGoals | null>(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
+  /** A failed history read is not "zero terms" — it is unknown. */
+  const [subscriptionsStatus, setSubscriptionsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  /** A failed assignment read is not "no programme assigned". */
+  const [activePlanError, setActivePlanError] = useState(false);
 
   const loadData = async () => {
     try {
@@ -568,13 +596,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       setMemberGoals(memberGoalsRes.status === 'fulfilled' ? memberGoalsRes.value.data : null);
 
       const assessments = assessmentsRes.status === 'fulfilled' && Array.isArray((assessmentsRes.value as any)?.data) ? (assessmentsRes.value as any).data : [];
-      setRecentWeights(assessments.filter((a: any) => a.weight).slice(0, 6));
+      // The endpoint answers newest first; the chart draws left to right. Plot
+      // oldest → newest here, or a client losing weight shows a rising line.
+      const weights = assessments
+        .filter((a: any) => a.weight)
+        .sort((a: any, b: any) =>
+          new Date(b.assessment_date ?? b.created_at ?? 0).getTime()
+          - new Date(a.assessment_date ?? a.created_at ?? 0).getTime())
+        .slice(0, 6)
+        .reverse();
+      setRecentWeights(weights);
 
       const goals = goalsRes.status === 'fulfilled' && Array.isArray((goalsRes.value as any)?.data) ? (goalsRes.value as any).data : [];
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
 
-      const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
-      setSubscriptionHistory(renewals);
+      const renewalsOk = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data);
+      setSubscriptionHistory(renewalsOk ? (renewalsRes.value as any).data : []);
+      setSubscriptionsStatus(renewalsOk ? 'ready' : 'error');
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
     } finally {
@@ -616,9 +654,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [activePlanName, setActivePlanName] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
+    setActivePlanError(false);
     api.workouts.assignments.list({ client_id: id, status: 'active' }).then((rows) => {
       if (!cancelled) setActivePlanName(rows[0]?.plan_name ?? null);
-    }).catch(() => {});
+    }).catch(() => { if (!cancelled) setActivePlanError(true); });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -643,11 +682,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? subscriptionHistory.length
     : hasPtTerm(client) ? 1 : 0;
 
-  // More than the single 'enrollment' term means a renewal (studio, UPI, or a
-  // legacy row) already exists — and the server refuses a term edit with
-  // USE_RENEW, so the link would lead to a form that cannot save.
-  const hasRenewed = subscriptionHistory.length > 1
-    || subscriptionHistory.some((s: any) => s.source !== 'enrollment');
+  // More than the single enrollment term means a renewal already exists — and
+  // the server refuses a term edit with USE_RENEW, so the link would lead to a
+  // form that cannot save. `pt_client_subscriptions.source` defaults to
+  // 'manual' (migration 048), so only an explicit 'renewal' row is proof; the
+  // term count is the other. A failed history read means unknown: no link.
+  const subscriptionsReady = subscriptionsStatus === 'ready';
+  const hasRenewed = subscriptionsReady && (
+    subscriptionHistory.length > 1
+    || subscriptionHistory.some((s: any) => s.source === 'renewal')
+  );
+
+  // Never print a count computed from a failed read.
+  const subscriptionSummary = subscriptionsStatus === 'error'
+    ? 'Subscription history unavailable'
+    : subscriptionsStatus === 'loading'
+      ? 'Loading subscription history…'
+      : `${lifetimeTermCount} term${lifetimeTermCount !== 1 ? 's' : ''} · ${fmtMoney(lifetimePaid)} lifetime paid`;
 
   // PT term progress: elapsed over total, clamped so a finished term is 100%.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
@@ -664,7 +715,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   // Readiness belongs to the summary; only hand it over once that answered.
   const recovery = snapshotState.status === 'ready' ? snapshotState.snapshot.recovery : undefined;
   const weightPoints = recentWeights.map((a: any) => ({
-    date: fmtDayMonth(a.created_at || a.assessment_date),
+    date: fmtDayMonth(a.assessment_date || a.created_at),
     weight: Number(a.weight),
   }));
   const firstWeight = weightPoints[0];
@@ -861,7 +912,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     Once they have renewed, the server answers USE_RENEW and
                     this link would lead to a form that cannot save. */}
                 {hasTerm && client.days_left != null && !termEnded(client.days_left, client.pt_end_date)
-                  && !hasRenewed && (
+                  && subscriptionsReady && !hasRenewed && (
                   <Link
                     href={`/pt-os/clients/${id}/enroll`}
                     className="mt-3 inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[700]"
@@ -936,7 +987,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <MessagePreferences clientId={client.id}
                       whatsappOptOut={client.whatsapp_opt_out === true}
                       emailOptOut={client.email_opt_out === true}
-                      updatedAt={client.comm_prefs_updated_at ?? null} />
+                      updatedAt={client.comm_prefs_updated_at ?? null}
+                      onSaved={(flags) => setClient((prev) => prev ? {
+                        ...prev,
+                        whatsapp_opt_out: flags.whatsapp_opt_out,
+                        email_opt_out: flags.email_opt_out,
+                        comm_prefs_updated_at: new Date().toISOString(),
+                      } : prev)} />
                   </SectionCard>
 
                   <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
@@ -1001,7 +1058,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <div>
                       <h2 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>PT subscription history</h2>
                       <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                        {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtMoney(lifetimePaid)} lifetime paid
+                        {subscriptionSummary}
                       </p>
                     </div>
                   </div>
@@ -1017,9 +1074,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <LinkPanel
                   icon={<Dumbbell size={16} />}
                   title="Training"
-                  body={activePlanName
-                    ? `Currently running "${activePlanName}".`
-                    : 'No programme is assigned yet — start with a plan, then build the week.'}
+                  body={activePlanError
+                    ? 'Could not load their assigned programme. Open Assigned programme to retry.'
+                    : activePlanName
+                      ? `Currently running "${activePlanName}".`
+                      : 'No programme is assigned yet — start with a plan, then build the week.'}
                   color={TAB_COLOR.success}
                   links={[
                     { label: 'Workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sessions, sets and records', icon: <ScrollText size={15} />, color: TAB_COLOR.danger },

@@ -43,7 +43,7 @@ describe('ClientSnapshot states', () => {
 
   it('renders the summary once it answers', () => {
     render(<ClientSnapshot clientId="c1" state={{ status: 'ready', snapshot: empty }} onRetry={() => {}} />);
-    expect(screen.getByText(/Nothing needs attention/)).toBeInTheDocument();
+    expect(screen.getByText('No alerts right now.')).toBeInTheDocument();
   });
 
   it('reads a partial payload as empty instead of throwing', () => {
