@@ -175,7 +175,6 @@ function WAContent() {
         title="WhatsApp"
         subtitle="Open a pre-filled chat in your own WhatsApp. Nothing is sent until you press Send there."
         className="mx-auto w-full max-w-6xl"
-        compact
       />
 
       <div className="mx-auto w-full max-w-6xl space-y-5">

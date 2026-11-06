@@ -474,12 +474,11 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     }
   });
 
-  it('the three AI pages use the compact hero, with no feature-pill row under it', () => {
+  it('the three AI pages use the full shared hero, with no feature-pill row under it', () => {
     // These heroes used to carry a navy pill row ('Progressive Overload',
     // 'Weight Trends'). The 2026-10-19 redesign made all three title-only and
-    // compact: a trainer opening a generator is there to fill in a form, and
-    // the pills were a paragraph of adjectives above it. The title is the
-    // page's own, exactly.
+    // compact; the owner then brought them back onto the full shared hero so
+    // the generators match every other page. The title is the page's own.
     const titles: Record<string, string> = {
       'workout-generator': 'AI Workout Generator',
       'diet-generator': 'AI Diet Generator',
@@ -487,8 +486,10 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     };
     for (const [folder, title] of Object.entries(titles)) {
       const s = src('app', 'ai', folder, 'page.tsx');
+      const start = s.indexOf('<PageHero');
+      const hero = s.slice(start, s.indexOf('/>', start));
       expect(s).toContain('<PageHero');
-      expect(s).toContain('compact');
+      expect(hero).not.toMatch(/\bcompact\b/);
       expect(s).toContain(`title="${title}"`);
       expect(s).not.toContain("background: 'rgba(255,255,255,0.14)'");
     }

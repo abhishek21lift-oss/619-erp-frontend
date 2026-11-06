@@ -299,7 +299,6 @@ export default function DietGeneratorPage() {
           title="AI Diet Generator"
           subtitle="A full day of meals with macros, hydration and a grocery list, ready to save to the client's plan."
           className="mx-auto w-full max-w-4xl"
-          compact
         />
 
       <div className="mx-auto w-full max-w-4xl">
