@@ -1,6 +1,6 @@
 'use client';
 
-// The client workspace: eleven tabs instead of thirteen tiles.
+// The client workspace: seven tabs instead of thirteen tiles.
 //
 // ── What this replaces ─────────────────────────────────────────────────────
 //
@@ -34,8 +34,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import Link from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
-  LayoutGrid, Dumbbell, Salad, Ruler, ScrollText, ClipboardCheck, Camera,
-  FileSignature, Wallet, Sparkles, FileBarChart, ChevronRight,
+  LayoutGrid, Dumbbell, Salad, ClipboardCheck,
+  FileSignature, Wallet, Sparkles, ChevronRight, ArrowUpRight,
 } from 'lucide-react';
 import { palette, rgba } from '@/lib/palette';
 import { cardSurface } from '@/components/ui/Card';
@@ -57,8 +57,7 @@ export const TAB_COLOR = {
 };
 
 export const TAB_KEYS = [
-  'overview', 'training', 'nutrition', 'measurements', 'log', 'checkins',
-  'photos', 'documents', 'payments', 'ai', 'reports',
+  'overview', 'training', 'checkins', 'nutrition', 'payments', 'documents', 'ai',
 ] as const;
 export type TabKey = typeof TAB_KEYS[number];
 
@@ -72,11 +71,10 @@ interface TabDef {
   /**
    * This tab LEAVES the page instead of switching a panel.
    *
-   * Three of these used to open a panel whose entire content was a list of
-   * links to the screen that actually does the job — a tap to reach a tap.
-   * Where that was the whole panel, the tab now goes straight there. Built
-   * from the client's id, because that is the only thing these destinations
-   * need.
+   * A former panel's entire content was a list of links to the screen that
+   * actually does the job — a tap to reach a tap. Where that was the whole
+   * panel, the tab now goes straight there. Built from the client's id,
+   * because that is the only thing these destinations need.
    *
    * A tab with an `href` renders as a LINK, not a button: middle-click,
    * long-press and "open in new tab" all have to work, and a button with an
@@ -101,34 +99,28 @@ export interface TabLink {
   color?: string;
 }
 
+// Seven tabs, grouped by the question each answers: who is this (Overview),
+// what are they training (Training), how are they doing (Check-ins), what are
+// they eating (Nutrition), what do they owe (Payments), what is on file
+// (Documents), and what can the AI do (AI Coach). Workout Log, Measurements,
+// Photos and Reports are no longer tiles: each destination is linked from the
+// tab that already owns it, so nothing was removed, only the top row shrank.
 const TABS: TabDef[] = [
   { key: 'overview', label: 'Overview', icon: <LayoutGrid size={16} />, color: TAB_COLOR.primary },
   { key: 'training', label: 'Training', icon: <Dumbbell size={16} />, color: TAB_COLOR.success },
-  {
-    key: 'log', label: 'Workout Log', icon: <ScrollText size={16} />, color: TAB_COLOR.warning,
-    href: (id) => `/pt-os/clients/${id}/workout-log`,
-  },
-  {
-    key: 'measurements', label: 'Measurements', icon: <Ruler size={16} />, color: TAB_COLOR.danger,
-    href: (id) => `/pt-os/measurements?client_id=${id}`,
-  },
+  { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={16} />, color: TAB_COLOR.primary },
   {
     key: 'nutrition', label: 'Nutrition', icon: <Salad size={16} />, color: TAB_COLOR.dangerDeep,
     href: (id) => `/pt-os/diet-plans?client_id=${id}`,
   },
-  { key: 'checkins', label: 'Check-ins', icon: <ClipboardCheck size={16} />, color: TAB_COLOR.primary },
-  { key: 'photos', label: 'Photos', icon: <Camera size={16} />, color: TAB_COLOR.success },
-  { key: 'ai', label: 'AI Coach', icon: <Sparkles size={16} />, color: TAB_COLOR.warning },
   { key: 'payments', label: 'Payments', icon: <Wallet size={16} />, color: TAB_COLOR.danger },
   { key: 'documents', label: 'Documents', icon: <FileSignature size={16} />, color: TAB_COLOR.dangerDeep },
-  { key: 'reports', label: 'Reports', icon: <FileBarChart size={16} />, color: TAB_COLOR.success },
+  { key: 'ai', label: 'AI Coach', icon: <Sparkles size={16} />, color: TAB_COLOR.warning },
 ];
 
 export interface ClientTabsProps {
   active: TabKey;
   onChange: (key: TabKey) => void;
-  /** Badge counts, only for tabs where a number means something. */
-  counts?: Partial<Record<TabKey, number>>;
   /** Whose profile this is. Tabs that navigate build their destination from it. */
   clientId: string;
 }
@@ -144,8 +136,8 @@ export interface ClientTabsProps {
  * reaching for. Dropping the rectangle and letting the icon carry its own
  * colour alone is what made it actually read as simple.
  *
- * Horizontally scrollable rather than wrapped: eleven tabs wrap to three rows
- * on a phone, and a three-row tab bar is a menu pretending to be a tab bar.
+ * Horizontally scrollable rather than wrapped: seven tabs wrap to two rows on
+ * a phone, and a multi-row tab bar is a menu pretending to be a tab bar.
  * Scrolling keeps it one line.
  *
  * ── What still makes it a tab strip, not an icon-grid launcher ────────────
@@ -160,11 +152,11 @@ export interface ClientTabsProps {
  *
  * ── Why the edges fade ─────────────────────────────────────────────────────
  *
- * Eleven tabs do not fit a phone, so the strip was cutting the last visible
- * label in half against a hard container edge — "Mea…" — which reads as a
- * rendering fault rather than an invitation to scroll. The strip now fades out
- * at whichever end has more content, which is the one honest way to say "there
- * is more this way" without spending a row on arrows.
+ * Seven tabs still do not fit a phone, so the strip was cutting the last
+ * visible label in half against a hard container edge — "Paym…" — which reads
+ * as a rendering fault rather than an invitation to scroll. The strip now
+ * fades out at whichever end has more content, which is the one honest way to
+ * say "there is more this way" without spending a row on arrows.
  *
  * It is a mask rather than a gradient overlay on purpose: this sits on a page
  * with a gradient background, and an overlay would have to know the exact
@@ -173,9 +165,9 @@ export interface ClientTabsProps {
  *
  * The fades are driven by measured scroll position, not shown unconditionally
  * — a permanent fade over a strip that is not scrollable is a lie about the
- * content, and on a desktop where all eleven fit it would dim two real tabs.
+ * content, and on a desktop where all seven fit it would dim two real tabs.
  */
-export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsProps) {
+export function ClientTabs({ active, onChange, clientId }: ClientTabsProps) {
   const reduce = useReducedMotion();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
@@ -196,14 +188,11 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    // Children too: a count badge appearing changes scrollWidth without
-    // changing the scroller's own box.
-    for (const child of Array.from(el.children)) ro.observe(child);
     return () => ro.disconnect();
   }, [measure]);
 
   // Keep the selected tab visible. The active tab can be set from outside this
-  // component — a deep link straight to ?tab=reports, or the panel below
+  // component — a deep link straight to ?tab=ai, or the panel below
   // switching tabs — and landing on a strip scrolled to the far left with the
   // selected tab off-screen looks like nothing happened.
   useEffect(() => {
@@ -251,7 +240,6 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
       >
         {TABS.map((t, i) => {
           const on = t.key === active;
-          const n = counts?.[t.key];
           // A tab that leaves the page is a link to its own screen. A tab that
           // switches a panel is also a real link, to this page with ?tab=, so
           // middle-click / copy-link / Back all work; a plain click is handled
@@ -263,7 +251,11 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
               key={t.key}
               href={to}
               data-tab={t.key}
-              aria-current={on ? 'page' : undefined}
+              data-leaves-page={t.href ? 'true' : undefined}
+              // Panel switches change what is on this page, not the page
+              // itself; "page" would tell a screen reader the document
+              // navigated. The outbound tile is the only real page change.
+              aria-current={on ? (switchesPanel ? 'true' : 'page') : undefined}
               onClick={(e) => {
                 if (!switchesPanel) return;
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
@@ -292,10 +284,14 @@ export function ClientTabs({ active, onChange, counts, clientId }: ClientTabsPro
                 }}
               >
                 {t.icon}
-                {n != null && n > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-[800]"
-                    style={{ background: 'var(--brand)', color: '#fff', border: '2px solid var(--bg-canvas)' }}>
-                    {n}
+                {/* A tab that leaves the page carries a small outbound arrow.
+                    It is the one visual difference between "switch panel" and
+                    "go somewhere else" — the strip otherwise looks uniform. */}
+                {t.href && (
+                  <span aria-hidden
+                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                    <ArrowUpRight size={10} />
                   </span>
                 )}
               </m.span>

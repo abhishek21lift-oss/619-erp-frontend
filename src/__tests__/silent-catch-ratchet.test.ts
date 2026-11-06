@@ -97,13 +97,11 @@ const KNOWN = [
   // comment above it, the unused hero stat helper was removed, the
   // client-profile dedup removed the unused photo state above it, the
   // remote-screening card added one import, and the chart import was split
-  // off the ui barrel. The entry itself is unchanged — still one silent
-  // catch, still the same statement.
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:606',
+  // off the ui barrel. 606 -> 621: the legacy-tab alias map and the panel-key
+  // guard were added above it. The entry itself is unchanged — still one
+  // silent catch, still the same statement.
+  'app/(chrome)/pt-os/clients/[id]/page.tsx:621',
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:170',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:187',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:188',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:189',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:56',
   // The goal wizard reads the Client Interview and the Module 5 re-test

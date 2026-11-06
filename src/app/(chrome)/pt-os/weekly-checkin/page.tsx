@@ -56,6 +56,13 @@ export default function WeeklyCheckinPage() {
     },
   });
   const { form, errors, isSubmitting } = f;
+
+  // The Check-ins tab links here with ?client_id=; without this the trainer
+  // lands on a blank picker and has to find the same client a second time.
+  useEffect(() => {
+    const preset = new URLSearchParams(window.location.search).get('client_id');
+    if (preset) form.setFieldValue('client_id', preset);
+  }, [form]);
   const values = useStore(form.store, (s) => s.values);
   const clientId = values.client_id;
 

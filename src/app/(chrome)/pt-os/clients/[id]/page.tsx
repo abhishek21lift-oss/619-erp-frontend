@@ -12,9 +12,9 @@ import {
   TrendingUp, MessageCircle, Save, Pencil,
   HeartPulse, Salad, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
-  Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
-  Cake, UserPlus, Megaphone, CalendarRange, Flag,
+  QrCode, Printer, ScrollText, ChevronDown, Mail, Sparkles, FileBarChart,
+  Gauge, PersonStanding, Accessibility, MessagesSquare, Send,
+  Cake, UserPlus, Megaphone, CalendarRange, Flag, Ruler,
   Route,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -32,7 +32,7 @@ import ScreeningLinkCard from '@/components/pt-os/ScreeningLinkCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
 import {
-  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, TAB_KEYS, type TabKey,
+  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, TABS, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
@@ -496,6 +496,20 @@ function ProfileSkeleton() {
 // Baseline Setup is not an action here: it belongs to onboarding (see
 // ClientSnapshot). Delete is not either — a destructive action does not
 // belong beside "Call". It lives inside Edit.
+// Tabs that were removed when the strip went from eleven to seven. Old
+// bookmarks and notifications still carry these keys, so they land on the tab
+// that now owns the job rather than falling back to Overview.
+const LEGACY_TAB: Record<string, TabKey> = {
+  log: 'training',
+  reports: 'training',
+  measurements: 'documents',
+  photos: 'checkins',
+};
+
+// Only these keys own a panel on this page. `nutrition` is a link tab, so
+// accepting it into `tab` would render the strip with an empty workspace.
+const PANEL_TABS: readonly TabKey[] = TABS.filter((t) => !t.href).map((t) => t.key);
+
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { toast } = useToast();
@@ -512,7 +526,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   // Read once on mount; the tabs are this page's own state after that.
   useEffect(() => {
     const want = new URLSearchParams(window.location.search).get('tab');
-    if (want && (TAB_KEYS as readonly string[]).includes(want)) setTab(want as TabKey);
+    const next = want ? LEGACY_TAB[want] ?? want : null;
+    if (next && (PANEL_TABS as readonly string[]).includes(next)) setTab(next as TabKey);
   }, []);
 
   // The URL follows the selected section, so refresh/share/Back land where
@@ -758,7 +773,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   Enroll only for somebody without a PT term, Renew only for
                   somebody with one: showing both offered a choice that only
                   ever had one right answer. */}
-              <nav aria-label="Client actions" className="mb-5 flex items-start justify-between gap-1 px-1 sm:justify-start sm:gap-6 sm:px-2">
+              <nav aria-label="Client actions" className="mb-5 grid grid-cols-3 gap-y-3 px-1 sm:flex sm:items-start sm:justify-start sm:gap-6 sm:px-2">
                 {client.mobile && (
                   <ActionButton label="Call" icon={<Phone size={20} />} tint={tones.lime} href={`tel:${client.mobile}`} />
                 )}
@@ -857,26 +872,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 )}
               </SectionCard>
 
-              {/* ── CLIENT LOGIN ──
-                  Under the money because that is where the reader looks for
-                  "what does this client still owe / have access to". The login
-                  itself no longer depends on payment — see clientInvitations.js. */}
-              <div className="mb-5">
-                <ClientLoginCard clientId={client.id} />
-              </div>
-
-              {/* ── REMOTE SCREENING ──
-                  Sits with the login card: both are one-time links sent to the
-                  client, and the trainer who is about to send one is usually
-                  also about to send the other. */}
-              <div className="mb-5">
-                <ScreeningLinkCard
-                  clientId={client.id}
-                  clientName={client.name}
-                  phone={client.whatsapp || client.mobile}
-                />
-              </div>
-
               {/* ── WORKSPACE ── */}
               <ClientTabs active={tab} onChange={selectTab} clientId={client.id} />
 
@@ -946,7 +941,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                   <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
                     <InfoRow icon={<Clock size={13} />} tint={tones.mint} label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
-                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee" value={fmtMoney(client.monthly_pt_amount)} last />
+                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee"
+                      value={Number(client.monthly_pt_amount) > 0
+                        ? fmtMoney(client.monthly_pt_amount)
+                        : hasTerm ? 'Paid upfront' : '—'} last />
                   </SectionCard>
 
                   <NotesCard notes={client.notes} onSave={handleSaveNotes} />
@@ -966,6 +964,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </Link>
                     <QrCheckinCard clientId={client.id} clientName={client.name} />
                   </div>
+                </div>
+
+                {/* One-time links to the member app and the screening form.
+                    They used to sit above the tab strip, pushing the workspace
+                    about two phone screens down. They are admin tools, not the
+                    daily workspace, so they belong at the bottom of Overview. */}
+                <div className="mt-4 space-y-4">
+                  <ClientLoginCard clientId={client.id} />
+                  <ScreeningLinkCard
+                    clientId={client.id}
+                    clientName={client.name}
+                    phone={client.whatsapp || client.mobile}
+                  />
                 </div>
               </TabPanel>
 
@@ -999,8 +1010,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               {/* Tabs whose work lives on its own screen send you there rather
-                  than re-implementing it; Workout Log, Measurements and
-                  Nutrition go straight to their screens (see ClientTabs). */}
+                  than re-implementing it; Nutrition goes straight to its
+                  screen (see ClientTabs). Workout Log, Progress Report and
+                  Photos are links inside the tab that owns the job. */}
               <TabPanel id="training" active={tab}>
                 <LinkPanel
                   icon={<Dumbbell size={16} />}
@@ -1010,9 +1022,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     : 'No programme is assigned yet — start with a plan, then build the week.'}
                   color={TAB_COLOR.success}
                   links={[
+                    { label: 'Workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sessions, sets and records', icon: <ScrollText size={15} />, color: TAB_COLOR.danger },
                     { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
                     { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now', icon: <ClipboardList size={15} />, color: TAB_COLOR.success },
-                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
+                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, trend and weekly report', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
                     { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Lifts and personal records', icon: <Zap size={15} />, color: TAB_COLOR.danger },
                   ]}
                 />
@@ -1026,10 +1039,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   error={snapshotState.status === 'error' ? snapshotState.message : undefined}
                   onRetry={loadSnapshot}
                 />
-              </TabPanel>
-
-              <TabPanel id="photos" active={tab}>
-                <PhotosPanel clientId={client.id} />
+                <div className="mt-4">
+                  <PhotosPanel clientId={client.id} />
+                </div>
               </TabPanel>
 
               <TabPanel id="ai" active={tab}>
@@ -1062,20 +1074,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 />
               </TabPanel>
 
-              <TabPanel id="reports" active={tab}>
-                <LinkPanel
-                  icon={<FileBarChart size={16} />}
-                  title="Reports"
-                  body="What this client's month looks like."
-                  color={TAB_COLOR.success}
-                  links={[
-                    { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
-                    { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
-                    { label: 'Studio reports', href: '/insights/revenue', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
-                  ]}
-                />
-              </TabPanel>
-
               <TabPanel id="documents" active={tab}>
                 <div className="mb-4">
                   <InterviewSnapshotCard clientId={client.id} />
@@ -1092,6 +1090,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
                       { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },
                       { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility', icon: <Gauge size={15} />, color: TAB_COLOR.warning },
+                      { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
+                    ]}
+                  />
+                </div>
+                <div className="mb-4">
+                  <LinkPanel
+                    icon={<FileBarChart size={16} />}
+                    title="Reports"
+                    body="What this client's month looks like."
+                    color={TAB_COLOR.success}
+                    links={[
+                      { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
+                      { label: 'Studio reports', href: '/insights/revenue', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
                     ]}
                   />
                 </div>

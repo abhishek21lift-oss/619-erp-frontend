@@ -33,7 +33,7 @@ import { api } from '@/lib/api';
 import type {
   WorkoutProgressPoint, WorkoutVolumePoint, WorkoutSession, TrainingAnalytics,
 } from '@/lib/api';
-import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 /** One hue for volume, one for strength. Fixed, so a measure keeps its colour. */
 const VOLUME = '#A33757';
@@ -48,7 +48,6 @@ const shortDate = (d: string) => {
 
 export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: clientId } = use(params);
-  const { toast } = useToast();
 
   const [volume, setVolume] = useState<WorkoutVolumePoint[]>([]);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -59,6 +58,8 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
   const [loadingProgress, setLoadingProgress] = useState(false);
   const [stats, setStats] = useState<TrainingAnalytics | null>(null);
   const [editingRanges, setEditingRanges] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   /** Adherence, records and per-muscle sets. Re-read after a range edit. */
   const loadStats = useCallback(async () => {
@@ -75,23 +76,27 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
+      setLoadError('');
       try {
+        // No per-call catch: swallowing the two primary reads made a failed
+        // request indistinguishable from "this client has never trained".
         const [vol, sess] = await Promise.all([
-          api.progress.workoutLog.volumeSummary({ client_id: clientId }).catch(() => ({ data: [] })),
-          api.progress.workoutLog.sessions.list({ client_id: clientId, limit: 50 }).catch(() => ({ data: [] })),
+          api.progress.workoutLog.volumeSummary({ client_id: clientId }),
+          api.progress.workoutLog.sessions.list({ client_id: clientId, limit: 50 }),
           loadStats(),
         ]);
         if (cancelled) return;
         setVolume(vol.data ?? []);
         setSessions(sess.data ?? []);
-      } catch {
-        if (!cancelled) toast.error('Could not load training analytics');
+      } catch (err: unknown) {
+        if (!cancelled) setLoadError(errorMessage(err, 'Could not load training analytics.'));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, toast, loadStats]);
+  }, [clientId, loadStats, reloadKey]);
 
   // Exercise choices come from what this client has actually logged. Offering
   // the whole library would mostly offer exercises with no data behind them.
@@ -171,6 +176,25 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 size={24} className="animate-spin" style={{ color: 'var(--brand)' }} />
+          </div>
+        ) : loadError ? (
+          <div
+            role="alert"
+            className="rounded-[20px] p-6 text-center"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+              Could not load analytics
+            </p>
+            <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{loadError}</p>
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              className="mt-4 inline-flex h-[44px] items-center rounded-[14px] px-4 text-[13px] font-[700] text-white"
+              style={{ background: 'var(--brand)' }}
+            >
+              Retry
+            </button>
           </div>
         ) : volume.length === 0 && sessions.length === 0 && !stats?.plan ? (
           // Only truly empty when there is no log AND no programme. A client

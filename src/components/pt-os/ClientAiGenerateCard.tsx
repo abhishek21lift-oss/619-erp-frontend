@@ -52,7 +52,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { m, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   AlertTriangle, ArrowRight, Dumbbell, Loader2, RotateCcw, Salad, Sparkles,
 } from 'lucide-react';
@@ -139,6 +139,7 @@ function refusedProgramFrom(err: unknown): AiProgramState | null {
 export default function ClientAiGenerateCard({ client, goalType }: ClientAiGenerateCardProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const reduce = useReducedMotion();
   const [busy, setBusy] = useState<'workout' | 'diet' | null>(null);
   const [context, setContext] = useState<AiWorkoutContext | null>(null);
   const [contextFailed, setContextFailed] = useState(false);
@@ -444,9 +445,9 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: EASE }}
+      transition={{ duration: reduce ? 0 : 0.35, ease: EASE }}
       className="relative overflow-hidden rounded-[18px]"
       style={{
         // An elevated surface rather than the translucent card, with the two
@@ -628,9 +629,10 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         <AnimatePresence>
           {error && (
             <m.p
-              initial={{ opacity: 0, height: 0 }}
+              initial={reduce ? false : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              exit={reduce ? undefined : { opacity: 0, height: 0 }}
+              transition={reduce ? { duration: 0 } : undefined}
               role="alert"
               className="mt-3 flex items-start gap-1.5 overflow-hidden rounded-[10px] px-2.5 py-2 text-[11.5px] leading-relaxed"
               style={{ background: rgba(palette.red[500], 0.08), color: palette.red[500] }}
@@ -644,9 +646,10 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         <AnimatePresence>
           {result && (
             <m.div
-              initial={{ opacity: 0, height: 0 }}
+              initial={reduce ? false : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              exit={reduce ? undefined : { opacity: 0, height: 0 }}
+              transition={reduce ? { duration: 0 } : undefined}
               className="mt-3 overflow-hidden rounded-[12px] px-3 py-2.5"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >

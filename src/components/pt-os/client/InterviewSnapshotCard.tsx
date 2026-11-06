@@ -107,7 +107,7 @@ export default function InterviewSnapshotCard({ clientId }: { clientId: string }
       )}
 
       <Link href={href}
-        className="mt-3.5 inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-[720] transition hover:bg-[var(--bg-subtle)]"
+        className="mt-3.5 inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-[720] transition hover:bg-[var(--bg-subtle)]"
         style={{ color: indigo[600] }}>
         {!interview ? 'Start the interview' : completed ? 'Review and edit' : 'Continue draft'}
         <ArrowRight size={13} aria-hidden />
