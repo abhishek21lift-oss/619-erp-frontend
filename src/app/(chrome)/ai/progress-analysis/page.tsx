@@ -166,7 +166,6 @@ function ProgressAnalysisInner() {
           title="AI Progress Analyzer"
           subtitle="Weight, strength, attendance and goals in one read, with an AI summary and recommendations."
           className="mx-auto w-full max-w-4xl"
-          compact
         />
 
       <div className="mx-auto w-full max-w-4xl">
