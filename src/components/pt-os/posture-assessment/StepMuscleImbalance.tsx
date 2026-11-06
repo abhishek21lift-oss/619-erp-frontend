@@ -110,7 +110,6 @@ export function StepMuscleImbalance({ form, set }: StepMuscleImbalanceProps) {
                   type="search"
                   value={group.search}
                   onChange={(e) => group.setSearch(e.target.value)}
-                  placeholder="Search muscles"
                   className="min-w-0 flex-1 bg-transparent py-2 text-[12px] outline-none"
                   style={{ color: 'var(--text-primary)' }}
                 />

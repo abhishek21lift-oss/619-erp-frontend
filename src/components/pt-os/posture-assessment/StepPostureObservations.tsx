@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import {
   Camera, CheckCircle2, Circle, ImagePlus, RefreshCw, Trash2,
@@ -183,9 +184,8 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
               <div key={field} className="overflow-hidden rounded-[14px]" style={{ border: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
                 {photo ? (
                   <>
-                    <a href={photo} target="_blank" rel="noreferrer" className="block aspect-[3/4]" aria-label={`Open ${label.toLowerCase()} photograph`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo} alt={`${label} posture`} className="h-full w-full object-cover" />
+                    <a href={photo} target="_blank" rel="noreferrer" className="relative block aspect-[3/4]" aria-label={`Open ${label.toLowerCase()} photograph`}>
+                      <Image src={photo} alt={`${label} posture`} fill unoptimized sizes="(max-width: 640px) 30vw, 200px" className="object-cover" />
                     </a>
                     <div className="flex items-center justify-between gap-1 p-1.5">
                       <button

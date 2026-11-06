@@ -117,20 +117,20 @@ export function generatePostureReportHTML(row: Row, clientName: string): string 
   .brand{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:3px solid #A33757}
   .brand h1{font-size:22px;letter-spacing:-.03em;margin:0}
   .brand p{margin:3px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A33757;font-weight:800}
-  .badge{border-radius:999px;padding:6px 12px;background:#fdf2f5;color:#A33757;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 24px;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e6e2e7}
+  .badge{border-radius:999px;padding:6px 12px;background:#FFF7F3;color:#A33757;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+  .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 24px;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #E2E8F0}
   .meta label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:800;margin-bottom:3px}
   .meta p{font-size:12px;font-weight:700;margin:0}
   section{margin:0 0 20px;break-inside:avoid}
-  h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:#A33757;margin:0 0 9px;padding-bottom:6px;border-bottom:1px solid #eee6e9}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:#A33757;margin:0 0 9px;padding-bottom:6px;border-bottom:1px solid #E2E8F0}
   h3{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#64748b;margin:12px 0 5px}
   p{font-size:12px;line-height:1.55;margin:4px 0}
   .muted{color:#94a3b8;font-style:italic}
   .note{color:#64748b;font-size:11px;line-height:1.5;margin:5px 0 0}
   .chips{display:flex;flex-wrap:wrap;gap:5px}
-  .chip{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:#fdf2f5;color:#852E4E;border:1px solid #f3dbe2}
+  .chip{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:#FFF7F3;color:#852E4E;border:1px solid #FFD0C6}
   .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  figure{margin:0;border:1px solid #e6e2e7;border-radius:10px;overflow:hidden;background:#f8fafc}
+  figure{margin:0;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;background:#f8fafc}
   figure img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
   figure.empty div{display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;color:#cbd5e1;font-size:10px}
   figcaption{font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.07em;color:#64748b;padding:5px 7px;border-top:1px solid #eee}
@@ -142,7 +142,7 @@ export function generatePostureReportHTML(row: Row, clientName: string): string 
   .ex-name{font-size:12px;font-weight:750;margin:0}
   .ex-meta{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:10.5px;color:#64748b;margin:2px 0 0}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .callout{border-left:3px solid #A33757;background:#fdf8f9;padding:9px 12px;border-radius:0 8px 8px 0}
+  .callout{border-left:3px solid #A33757;background:#FFF7F3;padding:9px 12px;border-radius:0 8px 8px 0}
   .disclaimer{margin-top:24px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:9.5px;line-height:1.55;color:#94a3b8}
   @media print{body{background:#fff}.page{padding:0;max-width:none}@page{margin:14mm}}
 </style></head><body><div class="page">

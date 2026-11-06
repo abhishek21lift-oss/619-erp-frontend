@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { CheckCircle2, ClipboardList, ImageIcon, ShieldCheck } from 'lucide-react';
 import { POSTURE_VIEWS, VIEW_FIELD, allFindings, viewStatus } from './types';
 import type { PostureFormData, PostureViewKey } from './types';
@@ -122,10 +123,9 @@ export function StepReview({ form, set, previous }: StepReviewProps) {
               { label: 'Side', photo: form.sidePhoto },
               { label: 'Back', photo: form.backPhoto },
             ].map(({ label, photo }) => (
-              <div key={label} className="aspect-[3/4] overflow-hidden rounded-[10px]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+              <div key={label} className="relative aspect-[3/4] overflow-hidden rounded-[10px]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                 {photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photo} alt={`${label} posture evidence`} className="h-full w-full object-cover" />
+                  <Image src={photo} alt={`${label} posture evidence`} fill unoptimized sizes="(max-width: 640px) 30vw, 180px" className="object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-[10px]" style={{ color: 'var(--text-disabled)' }}>No {label.toLowerCase()} photo</div>
                 )}

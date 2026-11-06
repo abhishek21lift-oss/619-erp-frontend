@@ -55,7 +55,7 @@ export function PostureCard({ assessment, onClick, onDownload }: PostureCardProp
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>{date}</p>
-            <span className="rounded-full px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wide" style={{
+            <span className="rounded-full px-1.5 py-0.5 text-[9px] font-[800] uppercase tracking-wide" style={{
               background: status === 'draft' ? 'rgba(245,158,11,0.14)' : 'rgba(16,185,129,0.12)',
               color: status === 'draft' ? '#b45309' : '#047857',
             }}>
@@ -82,7 +82,7 @@ export function PostureCard({ assessment, onClick, onDownload }: PostureCardProp
         <button
           type="button"
           onClick={onDownload}
-          className="flex w-[44px] shrink-0 flex-col items-center justify-center gap-1 rounded-[14px] text-[8.5px] font-[750]"
+          className="flex w-[44px] shrink-0 flex-col items-center justify-center gap-1 rounded-[14px] text-[9px] font-[750]"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
           aria-label={`Download report for ${date}`}
         >
