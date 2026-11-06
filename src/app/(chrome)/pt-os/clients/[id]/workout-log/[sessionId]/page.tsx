@@ -14,7 +14,7 @@ import ExercisePicker from '@/components/pt-os/workout-log/ExercisePicker';
 import SessionSummary from '@/components/pt-os/workout-log/SessionSummary';
 import SessionClock from '@/components/pt-os/workout-log/SessionClock';
 import { api } from '@/lib/api';
-import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit } from '@/lib/api';
+import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit, WorkoutPlannedExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
@@ -257,6 +257,31 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       });
       if (res?.data) setExpanded((prev) => ({ ...prev, [res.data.id]: true }));
       await loadSession();
+
+      if (!picked.id) {
+        toast.success('Added to session only — custom exercises are not added to the plan.');
+        return;
+      }
+      const planned = session?.planned;
+      if (!planned?.plan_id) {
+        toast.success('Added to session only — this session has no linked plan.');
+        return;
+      }
+      if (planned.exercises.some((ex) => ex.exercise_id === picked.id)) {
+        toast.success('Added to session only — already in today\'s plan.');
+        return;
+      }
+      try {
+        await api.workouts.plans.exercises.add(planned.plan_id, {
+          exercise_id: picked.id,
+          day_of_week: planned.day_of_week,
+          week_number: planned.week,
+          sets: 3, reps: 12, rest_seconds: 60,
+        });
+        toast.success('Added to session and plan.');
+      } catch {
+        toast.error('Added to session, but the plan was not updated.');
+      }
     } catch (err: unknown) {
       toast.error(errorMessage(err, 'Could not add exercise.'));
     }
@@ -269,6 +294,23 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       await loadSession();
     } catch (err: unknown) {
       toast.error(errorMessage(err, 'Could not remove exercise.'));
+    }
+  };
+
+  const handleRemovePlanned = async (ex: WorkoutPlannedExercise) => {
+    const planned = session?.planned;
+    if (!planned) return;
+    const week = planned.week ?? 1;
+    const scope = week > 1 ? `from Week ${week} onwards` : 'in every week';
+    if (!window.confirm(
+      `Remove ${ex.name} from the plan? This changes the programme for every client assigned to this plan, ${scope}. Sets already logged in this session stay.`,
+    )) return;
+    try {
+      await api.workouts.plans.exercises.remove(planned.plan_id, ex.row_id, week);
+      await loadSession();
+      toast.success('Removed from the plan.');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not update the plan.'));
     }
   };
 
@@ -534,11 +576,17 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                         {ex.superset_group ? ` · Superset ${ex.superset_group}` : ''} target
                       </p>
                     </div>
-                    <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
-                      className="flex h-[44px] flex-shrink-0 items-center rounded-[8px] px-3 text-[11px] font-[700]"
-                      style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(163,55,87,0.1)', color: alreadyAdded ? '#94a3b8' : '#852E4E' }}>
-                      {alreadyAdded ? 'Added' : '+ Add'}
-                    </button>
+                    <div className="flex flex-shrink-0 items-center gap-1">
+                      <button onClick={() => handleRemovePlanned(ex)} aria-label={`Remove ${ex.name} from plan`}
+                        className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-red-50">
+                        <Trash2 size={14} style={{ color: '#ef4444' }} />
+                      </button>
+                      <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
+                        className="flex h-[44px] flex-shrink-0 items-center rounded-[8px] px-3 text-[11px] font-[700]"
+                        style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(163,55,87,0.1)', color: alreadyAdded ? '#94a3b8' : '#852E4E' }}>
+                        {alreadyAdded ? 'Added' : '+ Add'}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
