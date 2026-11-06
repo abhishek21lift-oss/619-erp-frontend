@@ -4459,6 +4459,38 @@ export type AiFitnessTestAnalysis = {
   motivation_message: string;
 };
 
+export type AiPostureExercise = {
+  exercise: string;
+  target_muscle?: string;
+  region?: string;
+  duration?: string;
+  sets?: string;
+  reps?: string;
+  hold?: string;
+  resistance?: string;
+  tempo?: string;
+  rest?: string;
+  frequency?: string;
+  instructions?: string;
+};
+
+export type AiPostureInsights = {
+  summary: string;
+  potential_patterns: {
+    pattern: string;
+    observations: string[];
+    muscles_involved: string[];
+    confidence: 'low' | 'medium' | 'high';
+    rationale: string;
+  }[];
+  mobility: AiPostureExercise[];
+  activation: AiPostureExercise[];
+  strengthening: AiPostureExercise[];
+  training_modifications: string[];
+  follow_up: string[];
+  safety_note: string;
+};
+
 export type AiBusinessInsights = {
   summary: string;
   period: string;
