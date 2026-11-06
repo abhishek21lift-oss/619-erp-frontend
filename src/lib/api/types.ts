@@ -4465,6 +4465,9 @@ export type AiProgressDataCounts = {
   checkins: number;
   strength_logs: number;
   goals: number;
+  /** Optional so a frontend deployed ahead of the backend still renders. */
+  sessions?: number;
+  photos?: number;
 };
 
 export type AiWeightPoint = { date: string; weight_kg: number };

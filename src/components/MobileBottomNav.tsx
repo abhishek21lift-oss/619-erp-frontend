@@ -28,7 +28,11 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
   { href: '/',                   icon: Home,          label: 'Home'     },
   { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
-  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite'   },
+  // The AI Suite spans two route prefixes: `/ai-coach` and the `/ai` analysis
+  // tools. Without the extra matches the tab goes dark on the generator
+  // pages, which is exactly where a trainer is most likely to be.
+  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite',
+    alsoActive: ['/ai/workout-generator', '/ai/diet-generator', '/ai/progress-analysis', '/ai/business-insights'] },
   { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
   { href: '/checkin/qr-scanner', icon: ScanFace,      label: 'Check-in', feature: 'attendance' },
 ];

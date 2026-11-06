@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   TrendingUp, Loader2, Sparkles, AlertTriangle, AlertCircle, CheckCircle2,
@@ -12,14 +13,22 @@ import type { AiProgressAnalysis, AiProgressDataCounts, AiWeightPoint } from '@/
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
 import { PremiumLineChart } from '@/components/visualizations';
-import { generationErrorMessage } from '@/lib/forms/errors';
+import { generationErrorMessage, mapApiError } from '@/lib/forms/errors';
+import { ApiError } from '@/lib/http';
 import { AiClientPicker } from '@/components/ai/AiClientPicker';
 
 const ACCENT = '#FBBF24';
-const ACCENT_DIM = 'rgba(251,191,36,0.12)';
-const ACCENT_GLOW = 'rgba(251,191,36,0.25)';
 
 interface Client { id: string | number; name: string; email?: string; }
+
+interface AnalysisError {
+  message: string;
+  retryable: boolean;
+  /** The MPTS grounding gate refused before any model call. */
+  gate: boolean;
+  /** The gate's `detail`: empty | unavailable | stale. */
+  detail?: string;
+}
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -33,13 +42,13 @@ function TrendBadge({ direction }: { direction: string }) {
   const up = direction === 'up' || direction === 'improving';
   const down = direction === 'down' || direction === 'declining';
   if (up) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#10b981' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--success-text)' }}>
       <TrendingUp size={15} />
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Up</span>
     </div>
   );
   if (down) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#ef4444' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--danger-text)' }}>
       <TrendingDown size={15} />
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Down</span>
     </div>
@@ -47,17 +56,32 @@ function TrendBadge({ direction }: { direction: string }) {
   // Unknown is "no data", never "Stable" — absence of a reading must not
   // render as a flat trend.
   if (direction === 'stable' || direction === 'flat') return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-disabled)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
       <Minus size={15} />
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stable</span>
     </div>
   );
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-disabled)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}>
       <Minus size={15} />
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>No data</span>
     </div>
   );
+}
+
+/**
+ * The gate's own sentence, written for the trainer on this screen. The server
+ * copy names the internal intent ("PROGRESS analysis") and sends a trainer to
+ * the platform console; this says the same thing without either.
+ */
+function gateMessage(detail?: string): string {
+  if (detail === 'stale') {
+    return 'The approved methodology index needs a reindex before this analysis can run. Ask your platform admin to reindex the methodology documents — nothing was generated.';
+  }
+  if (detail === 'unavailable') {
+    return 'The knowledge base could not be checked just now. Try again shortly — nothing was generated.';
+  }
+  return 'No approved methodology passage could be found for this analysis, so it cannot be generated. Ask your platform admin to check the approved methodology documents — or add one in your studio knowledge base. Nothing was generated.';
 }
 
 /**
@@ -82,7 +106,7 @@ function ProgressAnalysisInner() {
   const [weights, setWeights] = useState<AiWeightPoint[]>([]);
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<AnalysisError | null>(null);
   // A request belongs to the client it was started for. Switching clients
   // aborts it and clears the previous reading, so client A's analysis can
   // never appear under client B's name.
@@ -96,7 +120,7 @@ function ProgressAnalysisInner() {
     setWeights([]);
     setMeta(null);
     setUpdatedAt(null);
-    setError('');
+    setError(null);
   };
 
   // Resolve the linked client by id.
@@ -126,11 +150,14 @@ function ProgressAnalysisInner() {
   }, [linkedClientId]);
 
   const handleAnalyze = async () => {
-    if (!selectedClient) { setError('Please select a client first.'); return; }
+    if (!selectedClient) {
+      setError({ message: 'Please select a client first.', retryable: false, gate: false });
+      return;
+    }
     if (inFlight.current) return;
     const controller = new AbortController();
     inFlight.current = controller;
-    setError(''); setLoading(true);
+    setError(null); setLoading(true);
     // A re-run keeps the previous analysis on screen while loading.
     try {
       const res = await api.ai.analyzeProgress(String(selectedClient.id), controller.signal);
@@ -142,7 +169,19 @@ function ProgressAnalysisInner() {
       setUpdatedAt(new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
     } catch (e: unknown) {
       if (controller.signal.aborted) return;
-      setError(generationErrorMessage(e, 'Failed to analyse progress.'));
+      const mapped = mapApiError(e, { fallback: 'Failed to analyse progress.' });
+      const detail = e instanceof ApiError && e.payload && typeof e.payload === 'object'
+        ? (e.payload as { detail?: string }).detail
+        : undefined;
+      // The gate is a configuration state, not a failed request: retrying an
+      // empty corpus can never succeed, while an unavailable/transient one can.
+      const gate = e instanceof ApiError && e.code === 'INSUFFICIENT_EVIDENCE';
+      setError({
+        message: gate ? gateMessage(detail) : generationErrorMessage(e, 'Failed to analyse progress.'),
+        retryable: mapped.retryable && detail !== 'stale',
+        gate,
+        detail,
+      });
     } finally {
       if (inFlight.current === controller) {
         inFlight.current = null;
@@ -153,7 +192,9 @@ function ProgressAnalysisInner() {
 
   const thinData = counts !== null &&
     counts.assessments === 0 && counts.checkins === 0 &&
-    counts.strength_logs === 0 && counts.goals === 0;
+    counts.strength_logs === 0 && counts.goals === 0 &&
+    // Attendance is a trend source too: sessions alone are a real reading.
+    (counts.sessions ?? 0) === 0;
 
   const rate = analysis?.attendance_trend?.rate_pct;
 
@@ -175,7 +216,7 @@ function ProgressAnalysisInner() {
           className="mb-8 rounded-[24px] border border-[var(--border)] bg-[var(--bg-card)] p-5 sm:p-7"
           style={{ boxShadow: 'var(--shadow-xs)' }}>
           <div className="mb-6 flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--warning-soft)' }}>
               <User size={16} color={ACCENT} />
             </div>
             <span className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>Select Client</span>
@@ -193,16 +234,35 @@ function ProgressAnalysisInner() {
           />
 
           {error && (
-            <div role="alert" className="mt-4 flex items-start gap-2 rounded-[10px] px-3.5 py-2.5 text-[13px] font-medium"
-              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span className="flex-1">{error}</span>
-              <button
-                onClick={handleAnalyze}
-                className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 font-semibold hover:bg-red-100"
-              >
-                <RefreshCw className="h-3.5 w-3.5" /> Retry
-              </button>
+            <div
+              role="alert"
+              className="mt-4 flex items-start gap-2.5 rounded-[10px] px-3.5 py-3 text-[13px] font-medium"
+              style={error.gate
+                ? { background: 'var(--warning-soft)', border: '1px solid var(--warning-border)', color: 'var(--warning-text)' }
+                : { background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)' }}
+            >
+              {error.gate
+                ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+              <div className="min-w-0 flex-1">
+                <p className="m-0 leading-[1.5]">{error.message}</p>
+                {error.gate && error.detail !== 'unavailable' && error.detail !== 'stale' && (
+                  <Link
+                    href="/ai-coach/knowledge"
+                    className="mt-1.5 inline-flex min-h-11 items-center font-semibold underline underline-offset-2"
+                  >
+                    Open Knowledge Base
+                  </Link>
+                )}
+              </div>
+              {error.retryable && (
+                <button
+                  onClick={handleAnalyze}
+                  className="flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2.5 font-semibold hover:bg-[var(--bg-hover)]"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Retry
+                </button>
+              )}
             </div>
           )}
 
@@ -210,12 +270,14 @@ function ProgressAnalysisInner() {
             <button
               onClick={handleAnalyze}
               disabled={loading || !selectedClient}
-              className="flex items-center gap-2 rounded-xl px-7 py-3 text-[14px] font-bold transition-all"
+              className="flex items-center gap-2 rounded-xl px-7 py-3 text-[14px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--warning-text)]"
               style={{
-                background: !selectedClient || loading ? 'rgba(251,191,36,0.3)' : `linear-gradient(135deg, ${ACCENT}, #F59E0B)`,
-                color: 'var(--text-primary)', border: 'none',
+                background: !selectedClient || loading ? 'rgba(251,191,36,0.3)' : 'var(--gradient-gold)',
+                // Gold is a fill, not a theme text surface: keep a dark ink on it
+                // in both themes. `--text-primary` turns white in dark mode.
+                color: selectedClient && !loading ? 'var(--gray-950)' : 'var(--text-muted)', border: 'none',
                 cursor: !selectedClient || loading ? 'not-allowed' : 'pointer',
-                boxShadow: selectedClient && !loading ? `0 4px 20px ${ACCENT_GLOW}` : 'none',
+                boxShadow: selectedClient && !loading ? 'var(--shadow-gold)' : 'none',
               }}
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
@@ -228,7 +290,7 @@ function ProgressAnalysisInner() {
         {loading && !analysis && (
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4 py-14">
             <div className="flex h-16 w-16 items-center justify-center rounded-[20px]"
-              style={{ background: ACCENT_DIM, border: '1px solid rgba(251,191,36,0.2)' }}>
+              style={{ background: 'var(--warning-soft)', border: '1px solid var(--warning-border)' }}>
               <Loader2 size={28} color={ACCENT} className="animate-spin" />
             </div>
             <div className="text-center">
@@ -244,14 +306,14 @@ function ProgressAnalysisInner() {
               {meta && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
                   className="flex w-fit items-center gap-2 rounded-[20px] px-3.5 py-2"
-                  style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  style={{ background: 'var(--warning-soft)', border: '1px solid var(--warning-border)' }}>
                   <Sparkles size={13} color="#F59E0B" />
-                  <span className="text-[12px] font-semibold" style={{ color: '#F59E0B' }}>Analysed by {meta.model}</span>
-                  {meta.used_fallback && <span className="ml-1 text-[11px]" style={{ color: '#D97706' }}>(fallback)</span>}
+                  <span className="text-[12px] font-semibold" style={{ color: 'var(--warning-text)' }}>Analysed by {meta.model}</span>
+                  {meta.used_fallback && <span className="ml-1 text-[11px]" style={{ color: 'var(--warning-text)' }}>(fallback)</span>}
                 </m.div>
               )}
               {updatedAt && (
-                <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>Updated {updatedAt}</span>
+                <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Updated {updatedAt}</span>
               )}
               <button
                 onClick={handleAnalyze}
@@ -272,6 +334,20 @@ function ProgressAnalysisInner() {
                 <span>{counts.checkins} check-ins</span>
                 <span>·</span>
                 <span>{counts.strength_logs} strength logs</span>
+                <span>·</span>
+                <span>{counts.goals} goals</span>
+                {typeof counts.sessions === 'number' && (
+                  <>
+                    <span>·</span>
+                    <span>{counts.sessions} sessions</span>
+                  </>
+                )}
+                {typeof counts.photos === 'number' && (
+                  <>
+                    <span>·</span>
+                    <span>{counts.photos} progress photos</span>
+                  </>
+                )}
                 {thinData && (
                   <span className="font-semibold text-amber-700">— almost no records on file; treat the reading below as a starting template, not a verdict.</span>
                 )}
@@ -286,7 +362,7 @@ function ProgressAnalysisInner() {
                 <div>
                   <p className="font-bold">Not enough history for a real trend</p>
                   <p className="mt-1 text-amber-800">
-                    This client has no assessments, check-ins, strength logs or goals on file.
+                    This client has no assessments, check-ins, strength logs, goals or sessions on file.
                     The reading below is a starting template, not an analysis of measured change.
                   </p>
                 </div>
@@ -308,11 +384,11 @@ function ProgressAnalysisInner() {
             {analysis.summary && (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
                 className="rounded-[20px] p-6"
-                style={{ background: '#FFFBEB', border: '1px solid rgba(251,191,36,0.25)' }}>
-                <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: ACCENT }}>AI Summary</div>
+                style={{ background: 'var(--warning-soft)', border: '1px solid var(--warning-border)' }}>
+                <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--warning-text)' }}>AI Summary</div>
                 <p className="m-0 text-[15px] leading-[1.7]" style={{ color: 'var(--text-primary)' }}>{analysis.summary}</p>
                 {analysis.period_analysed && (
-                  <div className="mt-3 text-[12px]" style={{ color: 'var(--text-disabled)' }}>
+                  <div className="mt-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                     Period analysed: <strong style={{ color: 'var(--text-secondary)' }}>{analysis.period_analysed}</strong>
                   </div>
                 )}
@@ -338,17 +414,17 @@ function ProgressAnalysisInner() {
                   className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] p-5"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Weight</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>Weight</span>
                     <TrendBadge direction={analysis.weight_trend.direction} />
                   </div>
                   {typeof analysis.weight_trend.change_kg === 'number' && Number.isFinite(analysis.weight_trend.change_kg) ? (
                     <div className="mb-1.5 text-[28px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
                       {analysis.weight_trend.change_kg > 0 ? '+' : ''}{analysis.weight_trend.change_kg}
-                      <span className="ml-1 text-[14px] font-medium" style={{ color: 'var(--text-disabled)' }}>kg</span>
+                      <span className="ml-1 text-[14px] font-medium" style={{ color: 'var(--text-muted)' }}>kg</span>
                     </div>
                   ) : null}
                   <p className="m-0 text-[12px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{analysis.weight_trend.insight}</p>
-                  <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>AI estimate</p>
+                  <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>AI estimate</p>
                 </m.div>
               )}
               {analysis.strength_trend && (
@@ -356,7 +432,7 @@ function ProgressAnalysisInner() {
                   className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] p-5"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Strength</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>Strength</span>
                     <TrendBadge direction={analysis.strength_trend.direction} />
                   </div>
                   <div className="mb-1.5 text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{analysis.strength_trend.highlight}</div>
@@ -368,15 +444,15 @@ function ProgressAnalysisInner() {
                   className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] p-5"
                   style={{ boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-disabled)' }}>Attendance</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>Attendance</span>
                     <TrendBadge direction={(analysis.attendance_trend as { direction?: string }).direction ?? ''} />
                   </div>
                   <div className="mb-1.5 text-[28px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
                     {typeof rate === 'number' && Number.isFinite(rate) ? rate : '—'}
-                    <span className="ml-0.5 text-[14px] font-medium" style={{ color: 'var(--text-disabled)' }}>%</span>
+                    <span className="ml-0.5 text-[14px] font-medium" style={{ color: 'var(--text-muted)' }}>%</span>
                   </div>
                   <p className="m-0 text-[12px] leading-[1.5]" style={{ color: 'var(--text-muted)' }}>{analysis.attendance_trend.insight}</p>
-                  <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>AI estimate</p>
+                  <p className="m-0 mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>AI estimate</p>
                 </m.div>
               )}
             </div>
@@ -385,16 +461,16 @@ function ProgressAnalysisInner() {
             {analysis.wins?.length ? (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={5}
                 className="rounded-[20px] px-6 py-5"
-                style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)' }}>
                 <div className="mb-3.5 flex items-center gap-2">
                   <CheckCircle2 size={18} color="#10b981" />
-                  <span className="text-[14px] font-bold" style={{ color: '#059669' }}>Wins &amp; Achievements</span>
+                  <span className="text-[14px] font-bold" style={{ color: 'var(--success-text)' }}>Wins &amp; Achievements</span>
                 </div>
                 <div className="flex flex-col gap-2">
                   {analysis.wins.map((w, i) => (
                     <div key={i} className="flex items-start gap-2.5">
                       <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: '#10b981' }} />
-                      <span className="text-[14px] leading-[1.5]" style={{ color: '#059669' }}>{w}</span>
+                      <span className="text-[14px] leading-[1.5]" style={{ color: 'var(--success-text)' }}>{w}</span>
                     </div>
                   ))}
                 </div>
@@ -405,23 +481,23 @@ function ProgressAnalysisInner() {
             {analysis.risks?.length ? (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={6}
                 className="overflow-hidden rounded-[20px]"
-                style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)' }}>
-                <div className="flex items-center gap-2 px-6 py-4" style={{ borderBottom: '1px solid rgba(251,191,36,0.15)' }}>
+                style={{ background: 'var(--warning-soft)', border: '1px solid var(--warning-border)' }}>
+                <div className="flex items-center gap-2 px-6 py-4" style={{ borderBottom: '1px solid var(--warning-border)' }}>
                   <AlertTriangle size={18} color={ACCENT} />
-                  <span className="text-[14px] font-bold" style={{ color: ACCENT }}>Risk Factors</span>
+                  <span className="text-[14px] font-bold" style={{ color: 'var(--warning-text)' }}>Risk Factors</span>
                 </div>
                 {analysis.risks.map((r, i) => (
                   <div key={i} style={{
                     padding: '16px 24px',
-                    borderBottom: i < analysis.risks!.length - 1 ? '1px solid rgba(251,191,36,0.1)' : 'none',
+                    borderBottom: i < analysis.risks!.length - 1 ? '1px solid var(--warning-border)' : 'none',
                   }}>
                     <div className="mb-1.5 flex items-center gap-2.5">
                       <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>{r.risk}</span>
                       {r.severity && (
                         <span className="rounded-[20px] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.05em]"
                           style={{
-                            background: r.severity === 'high' ? 'rgba(239,68,68,0.1)' : r.severity === 'medium' ? 'rgba(251,191,36,0.15)' : '#F1F5F9',
-                            color: r.severity === 'high' ? '#ef4444' : r.severity === 'medium' ? ACCENT : '#64748b',
+                            background: r.severity === 'high' ? 'var(--danger-soft)' : r.severity === 'medium' ? 'var(--warning-soft)' : 'var(--neutral-bg)',
+                            color: r.severity === 'high' ? 'var(--danger-text)' : r.severity === 'medium' ? 'var(--warning-text)' : 'var(--text-secondary)',
                           }}>{r.severity}</span>
                       )}
                     </div>
@@ -445,9 +521,9 @@ function ProgressAnalysisInner() {
                   .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
                   .map((r, i) => (
                   <div key={i} className="flex items-start gap-3.5 px-6 py-3.5"
-                    style={{ borderBottom: i < analysis.recommendations!.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                    style={{ borderBottom: i < analysis.recommendations!.length - 1 ? '1px solid var(--border)' : 'none' }}>
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold"
-                      style={{ background: ACCENT_DIM, color: ACCENT }}>
+                      style={{ background: 'var(--warning-soft)', color: 'var(--warning-text)' }}>
                       {r.priority ?? '–'}
                     </div>
                     <div>
@@ -464,11 +540,11 @@ function ProgressAnalysisInner() {
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={8}
                 className="flex gap-3.5 rounded-[16px] border border-[var(--border)] bg-[var(--bg-card)] px-6 py-5"
                 style={{ boxShadow: 'var(--shadow-xs)' }}>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'var(--warning-soft)' }}>
                   <Brain size={18} color={ACCENT} />
                 </div>
                 <div>
-                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: ACCENT }}>Next Month Strategy</div>
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--warning-text)' }}>Next Month Strategy</div>
                   <p className="m-0 text-[14px] leading-[1.6]" style={{ color: 'var(--text-secondary)' }}>{analysis.next_month_strategy}</p>
                 </div>
               </m.div>
@@ -478,8 +554,8 @@ function ProgressAnalysisInner() {
             {analysis.motivation_message && (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={9}
                 className="rounded-[16px] px-6 py-5 text-center"
-                style={{ background: ACCENT_DIM, border: '1px solid rgba(251,191,36,0.2)' }}>
-                <p className="m-0 text-[15px] font-medium italic leading-[1.7]" style={{ color: ACCENT }}>
+                style={{ background: 'var(--warning-soft)', border: '1px solid var(--warning-border)' }}>
+                <p className="m-0 text-[15px] font-medium italic leading-[1.7]" style={{ color: 'var(--text-primary)' }}>
                   &ldquo;{analysis.motivation_message}&rdquo;
                 </p>
               </m.div>

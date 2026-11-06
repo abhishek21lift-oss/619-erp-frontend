@@ -79,4 +79,11 @@ describe('the mobile bottom bar', () => {
     expect(screen.getByRole('link', { name: /home/i })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: /clients/i })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('keeps AI Coach current on the /ai analysis tools', () => {
+    pathname.current = '/ai/progress-analysis';
+    render(<MobileBottomNav />);
+
+    expect(screen.getByRole('link', { name: /ai coach/i })).toHaveAttribute('aria-current', 'page');
+  });
 });
