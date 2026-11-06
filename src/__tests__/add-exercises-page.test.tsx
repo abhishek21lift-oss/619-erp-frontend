@@ -152,6 +152,53 @@ describe('the day comes from the URL', () => {
   });
 });
 
+describe('the week comes from the URL', () => {
+  it('writes every pick to that week, not week 1', async () => {
+    params = new URLSearchParams('day=4&week=6');
+    await renderPage();
+    await act(async () => { fireEvent.click(screen.getByText('commit-one')); });
+
+    expect(addExercise).toHaveBeenCalledWith('p1', {
+      exercise_id: 'ex-row', day_of_week: 4, week_number: 6,
+    });
+  });
+
+  it('reads what that week already holds', async () => {
+    params = new URLSearchParams('day=4&week=6');
+    await renderPage();
+    await waitFor(() => expect(detail).toHaveBeenCalledWith('p1', { week: 6 }));
+  });
+
+  it('returns to the builder on that week', async () => {
+    params = new URLSearchParams('day=4&week=6');
+    await renderPage();
+    fireEvent.click(screen.getAllByRole('button', { name: /back to builder/i })[0]);
+    expect(push).toHaveBeenCalledWith('/pt-os/workout-plans/p1/builder?day=4&week=6');
+  });
+
+  it('keeps the week in the return path for a newly authored exercise', async () => {
+    params = new URLSearchParams('day=4&week=6');
+    await renderPage();
+    fireEvent.click(screen.getAllByRole('button', { name: /new exercise/i })[0]);
+
+    expect(push).toHaveBeenCalledWith(
+      '/pt-os/exercise-library/new?returnTo=%2Fpt-os%2Fworkout-plans%2Fp1%2Fbuilder%2Fadd-exercises%3Fday%3D4%26week%3D6',
+    );
+  });
+
+  it('attaches a newly authored exercise to that week', async () => {
+    params = new URLSearchParams('day=4&week=6&new=ex-new');
+    await renderPage();
+
+    await waitFor(() => expect(addExercise).toHaveBeenCalledWith('p1', {
+      exercise_id: 'ex-new', day_of_week: 4, week_number: 6,
+    }));
+    expect(replace).toHaveBeenCalledWith(
+      '/pt-os/workout-plans/p1/builder/add-exercises?day=4&week=6',
+    );
+  });
+});
+
 describe('leaving the screen', () => {
   it('goes back to the builder, on the same day and plan, once the writes land', async () => {
     await renderPage();

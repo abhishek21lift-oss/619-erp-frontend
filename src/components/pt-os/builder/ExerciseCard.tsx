@@ -25,7 +25,7 @@
 // undo a card this small needs.
 
 import { useEffect, useRef, useState } from 'react';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
   GripVertical, Copy, Trash2, ChevronDown, StickyNote, PlayCircle, TrendingUp,
 } from 'lucide-react';
@@ -167,6 +167,7 @@ export default function ExerciseCard({
   exercise, onChange, onDuplicate, onDelete, dragHandleProps, isDragging, preview, readOnly,
 }: ExerciseCardProps) {
   const [open, setOpen] = useState(false);
+  const reduce = useReducedMotion();
   const tone = toneFor(exercise.muscle_group);
   const demo = exercise.video_url || exercise.gif_url;
   const commit = onChange ?? (() => {});
@@ -186,10 +187,10 @@ export default function ExerciseCard({
   return (
     <m.div
       layout
-      initial={isDragging ? false : { opacity: 0, y: 8 }}
+      initial={reduce || isDragging ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
-      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: reduce ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
       // A row, not a card.
       //
       // Every exercise used to sit in its own filled, bordered, shadowed box,
@@ -314,21 +315,24 @@ export default function ExerciseCard({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={`advanced-${exercise.id}`}
         className="mt-3 flex h-[44px] items-center gap-1 text-[12px] font-[650]"
         style={{ color: 'var(--text-muted)' }}
       >
         <ChevronDown
           size={14}
+          aria-hidden
           style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s' }}
         />
-        {open ? 'Fewer options' : repBased ? 'Tempo, RPE, warm-up, drop sets' : kind === 'cardio' ? (hasCardioBand ? 'Warm-up, superset' : 'Target HR, warm-up, superset') : 'RPE, warm-up, superset'}
+        {open ? 'Fewer options' : 'More options'}
       </button>
 
       {open && (
         <m.div
-          initial={{ opacity: 0, height: 0 }}
+          id={`advanced-${exercise.id}`}
+          initial={reduce ? false : { opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          transition={{ duration: 0.18 }}
+          transition={{ duration: reduce ? 0 : 0.18 }}
           className="overflow-hidden"
         >
           {/* Two rows of two rather than three-then-one: a lone field on its

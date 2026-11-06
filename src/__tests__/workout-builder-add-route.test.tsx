@@ -50,7 +50,7 @@ vi.mock('@/lib/api', () => ({
 import WorkoutBuilder from '@/components/pt-os/builder/WorkoutBuilder';
 
 const EMPTY_PLAN = {
-  id: 'p1', name: 'Hypertrophy Block', weeks: 8,
+  id: 'p1', name: 'Hypertrophy Block', duration_weeks: 8,
   progression_type: 'weight', progression_value: 2.5,
   exercises: [] as unknown[],
 };
@@ -79,6 +79,34 @@ describe('adding exercises', () => {
 
     expect(push).toHaveBeenCalledWith(
       '/pt-os/workout-plans/p1/builder/add-exercises?day=3',
+    );
+  });
+
+  it('carries the week being edited, not just the day', async () => {
+    // Week 6's Monday is not week 1's Monday. An add link that drops the week
+    // sends the new row to week 1 and changes every week of the programme.
+    params = new URLSearchParams('day=3&week=6');
+    await renderBuilder();
+
+    const add = await screen.findAllByRole('button', { name: /add exercise/i });
+    fireEvent.click(add[0]);
+
+    expect(push).toHaveBeenCalledWith(
+      '/pt-os/workout-plans/p1/builder/add-exercises?day=3&week=6',
+    );
+  });
+
+  it('clamps a hand-edited week beyond the block', async () => {
+    // ?week=99 is typable. It should land on the last real week, not a week
+    // the plan does not have.
+    params = new URLSearchParams('day=3&week=99');
+    await renderBuilder();
+
+    const add = await screen.findAllByRole('button', { name: /add exercise/i });
+    fireEvent.click(add[0]);
+
+    expect(push).toHaveBeenCalledWith(
+      '/pt-os/workout-plans/p1/builder/add-exercises?day=3&week=8',
     );
   });
 

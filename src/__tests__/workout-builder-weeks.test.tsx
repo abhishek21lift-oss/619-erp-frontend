@@ -176,6 +176,25 @@ describe('a later week is editable', () => {
   });
 });
 
+describe('a week that fails to load', () => {
+  it('never leaves the previous week’s rows under the new week label', async () => {
+    detail.mockImplementation(async (_id: string, q?: { week?: number }) => {
+      const w = q?.week ?? 1;
+      if (w === 6) throw new Error('500');
+      return planFor(w);
+    });
+    await renderBuilder();
+    await goToWeek(6);
+
+    expect(await screen.findByText(/Week 6 could not be loaded/i, {}, FIND)).toBeInTheDocument();
+    // The week-5 card said 70. It must not still be on screen labelled week 6.
+    expect(screen.queryByDisplayValue('72.5')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /back to week 5/i }));
+    expect(await screen.findByDisplayValue('70', {}, FIND)).toBeInTheDocument();
+  });
+});
+
 describe('every write carries its week', () => {
   it('a field edit sends the week it was made in', async () => {
     await renderBuilder();
@@ -249,6 +268,18 @@ describe('every write carries its week', () => {
     });
     await waitFor(() => expect(add).toHaveBeenCalled());
     expect(add.mock.calls[0][1]).toMatchObject({ week_number: 6 });
+  });
+
+  it('adding an exercise navigates with the week', async () => {
+    // The add screen defaults to week 1. If the link drops the week, the
+    // trainer's new exercise lands on week 1 and appears in every week.
+    await renderBuilder();
+    await goToWeek(6);
+    const addButtons = await screen.findAllByRole('button', { name: /add exercise/i });
+    fireEvent.click(addButtons[0]);
+    expect(push).toHaveBeenCalledWith(
+      '/pt-os/workout-plans/p1/builder/add-exercises?day=1&week=6',
+    );
   });
 });
 

@@ -46,18 +46,28 @@ export interface AddExercisesScreenProps {
   planId: string;
   /** 1-7, already clamped by the route that read it out of the URL. */
   day: number;
+  /**
+   * The week the builder was showing. Adds belong to that week; the route
+   * defaults to week 1 when the builder never named one.
+   */
+  week: number;
   /** Where "Back to builder" and a finished batch both return to. */
   backHref: string;
   /** Just created in the library; attach it to this day on arrival. */
   newExerciseId?: string | null;
 }
 
-export default function AddExercisesScreen({ planId, day, backHref, newExerciseId }: AddExercisesScreenProps) {
+export default function AddExercisesScreen({
+  planId, day, week, backHref, newExerciseId,
+}: AddExercisesScreenProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
   const goBack = useCallback(() => router.push(backHref), [router, backHref]);
+
+  /** This screen's own address, with the week carried through every round trip. */
+  const here = `${pathname}?day=${day}${week > 1 ? `&week=${week}` : ''}`;
 
   // What this day already holds, so the panel can mark those rows and refuse
   // to add them twice. Fetched here rather than passed through the URL: a list
@@ -75,7 +85,9 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
     let cancelled = false;
     (async () => {
       try {
-        const detail = await api.workouts.plans.detail(planId);
+        // Read the week being filled, not week 1: what is already on Thursday
+        // of week 6 is not what is on Thursday of week 1.
+        const detail = await api.workouts.plans.detail(planId, week > 1 ? { week } : undefined);
         if (cancelled) return;
         const rows: WorkoutPlanExercise[] = detail.exercises ?? [];
         setExistingIds(
@@ -94,7 +106,7 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
       }
     })();
     return () => { cancelled = true; };
-  }, [planId, day]);
+  }, [planId, day, week]);
 
   /** Survives StrictMode's double effect without firing the attach twice. */
   const attachedNew = useRef<string | null>(null);
@@ -112,6 +124,7 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
         await api.workouts.plans.exercises.add(planId, {
           exercise_id: newExerciseId,
           day_of_week: day,
+          ...(week > 1 ? { week_number: week } : {}),
         });
         if (!alive.current) return;
         setExistingIds((ids) => (ids.includes(newExerciseId) ? ids : [...ids, newExerciseId]));
@@ -122,24 +135,22 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
         toast.error('The exercise was saved, but could not be added. Search for it below.');
       } finally {
         // Drop ?new either way: a refresh must not retry the attach.
-        if (alive.current) router.replace(`${pathname}?day=${day}`);
+        if (alive.current) router.replace(here);
       }
     })();
-  }, [newExerciseId, loaded, planId, day, pathname, router, toast]);
+  }, [newExerciseId, loaded, planId, day, week, here, router, toast]);
 
   /** The picker found nothing exact — author it, then come straight back. */
   const createExercise = useCallback((name: string) => {
-    const returnTo = `${pathname}?day=${day}`;
     router.push(
-      `/pt-os/exercise-library/new?name=${encodeURIComponent(name)}&returnTo=${encodeURIComponent(returnTo)}`,
+      `/pt-os/exercise-library/new?name=${encodeURIComponent(name)}&returnTo=${encodeURIComponent(here)}`,
     );
-  }, [router, pathname, day]);
+  }, [router, here]);
 
   /** The same destination without a typed name, for the visible action. */
   const openNewExercise = useCallback(() => {
-    const returnTo = `${pathname}?day=${day}`;
-    router.push(`/pt-os/exercise-library/new?returnTo=${encodeURIComponent(returnTo)}`);
-  }, [router, pathname, day]);
+    router.push(`/pt-os/exercise-library/new?returnTo=${encodeURIComponent(here)}`);
+  }, [router, here]);
 
   const addAll = useCallback(async (picked: { id: string; name: string }[]) => {
     if (picked.length === 0 || saving) return;
@@ -149,6 +160,7 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
       const res = await api.workouts.plans.exercises.add(planId, {
         exercise_id: exerciseId,
         day_of_week: day,
+        ...(week > 1 ? { week_number: week } : {}),
       });
       return res.exercise;
     });
@@ -163,7 +175,7 @@ export default function AddExercisesScreen({ planId, day, backHref, newExerciseI
 
     // Back to the builder, which refetches on mount and so shows the new rows.
     goBack();
-  }, [planId, day, saving, toast, goBack]);
+  }, [planId, day, week, saving, toast, goBack]);
 
   if (!planId) {
     return (

@@ -25,7 +25,7 @@
 // a copy of what I had" means.
 
 import { useCallback, useEffect, useState } from 'react';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { History, Loader2, Save } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlanVersion } from '@/lib/api';
@@ -37,30 +37,53 @@ export interface PlanVersionsProps {
   version: number;
   /** Lets the builder adopt the incremented version without a full reload. */
   onSaved: (nextVersion: number) => void;
+  /**
+   * Flushes pending autosaves before the snapshot is taken.
+   *
+   * A snapshot that races a save freezes the numbers from BEFORE the last
+   * thing the trainer typed — the one thing a version is supposed to preserve.
+   * Resolves false when something is still unsaved, in which case no snapshot
+   * is taken.
+   */
+  beforeSave?: () => Promise<boolean>;
 }
 
-export default function PlanVersions({ planId, version, onSaved }: PlanVersionsProps) {
+export default function PlanVersions({ planId, version, onSaved, beforeSave }: PlanVersionsProps) {
   const { toast } = useToast();
+  const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<WorkoutPlanVersion[] | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Fetched on expand, not on mount: most visits to the builder are to edit
   // the programme, and a request nobody reads is a request not worth making.
   const load = useCallback(async () => {
+    setLoadingHistory(true);
+    setHistoryError(false);
     try {
       setRows(await api.workouts.plans.versions.list(planId));
     } catch {
+      setHistoryError(true);
       setRows([]);
       toast.error('Could not load the version history');
+    } finally {
+      setLoadingHistory(false);
     }
   }, [planId, toast]);
 
-  useEffect(() => { if (open && rows === null) void load(); }, [open, rows, load]);
+  useEffect(() => {
+    if (open && rows === null && !loadingHistory) void load();
+  }, [open, rows, loadingHistory, load]);
 
   const save = async () => {
     setSaving(true);
     try {
+      if (beforeSave && !(await beforeSave())) {
+        toast.error('Some changes could not be saved. Retry the save first.');
+        return;
+      }
       const res = await api.workouts.plans.versions.create(planId);
       onSaved(res.plan.version ?? version + 1);
       setRows(null);          // force a refetch; the list has a new entry
@@ -75,7 +98,7 @@ export default function PlanVersions({ planId, version, onSaved }: PlanVersionsP
 
   return (
     <div
-      className="mb-4 rounded-[20px] p-4"
+      className="rounded-[20px] p-4"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -83,6 +106,7 @@ export default function PlanVersions({ planId, version, onSaved }: PlanVersionsP
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
+          aria-controls="plan-version-history"
           className="flex min-h-[44px] items-center gap-2 text-left"
         >
           <History size={15} style={{ color: 'var(--text-muted)' }} />
@@ -102,7 +126,7 @@ export default function PlanVersions({ planId, version, onSaved }: PlanVersionsP
           disabled={saving}
           className="flex h-[44px] items-center gap-1.5 rounded-[14px] px-3.5 text-[12.5px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
           style={{
-            background: 'linear-gradient(135deg, #A33757, #FB9590)',
+            background: 'var(--gradient-brand)',
             boxShadow: '0 4px 14px -4px rgba(163,55,87,0.5)',
           }}
         >
@@ -113,14 +137,30 @@ export default function PlanVersions({ planId, version, onSaved }: PlanVersionsP
 
       {open && (
         <m.div
-          initial={{ opacity: 0, y: -4 }}
+          id="plan-version-history"
+          initial={reduce ? false : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.16 }}
+          transition={{ duration: reduce ? 0 : 0.16 }}
           className="mt-3"
         >
-          {rows === null ? (
-            <div className="flex justify-center py-4">
-              <Loader2 size={16} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+          {historyError ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[12px]" style={{ color: 'var(--danger-text)' }}>
+                Could not load the version history.
+              </p>
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="flex h-[44px] items-center text-[12.5px] font-[700]"
+                style={{ color: 'var(--brand)' }}
+              >
+                Try again
+              </button>
+            </div>
+          ) : loadingHistory || rows === null ? (
+            <div role="status" aria-live="polite" className="flex justify-center py-4">
+              <Loader2 size={16} className="animate-spin" aria-hidden style={{ color: 'var(--text-muted)' }} />
+              <span className="sr-only">Loading version history</span>
             </div>
           ) : rows.length === 0 ? (
             <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>

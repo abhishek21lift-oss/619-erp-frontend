@@ -19,13 +19,18 @@ export default function PlanAddExercisesPage({
 
   const dayRaw = Number(sp.get('day'));
   const day = Number.isFinite(dayRaw) && dayRaw >= 1 && dayRaw <= 7 ? Math.trunc(dayRaw) : 1;
+  // Week 1 is the default; a hand-edited 0 or a word falls back rather than
+  // writing a week that does not exist.
+  const weekRaw = Number(sp.get('week'));
+  const week = Number.isFinite(weekRaw) && weekRaw >= 1 ? Math.trunc(weekRaw) : 1;
 
   return (
     <AddExercisesScreen
       planId={planId}
       day={day}
+      week={week}
       newExerciseId={sp.get('new')}
-      backHref={`/pt-os/workout-plans/${planId}/builder?day=${day}`}
+      backHref={`/pt-os/workout-plans/${planId}/builder?day=${day}${week > 1 ? `&week=${week}` : ''}`}
     />
   );
 }

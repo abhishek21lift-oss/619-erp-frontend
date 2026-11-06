@@ -10,8 +10,8 @@
 // So this tracks three things and reports all of them:
 //   - `pending`  edits queued but not yet sent
 //   - `saving`   a request in flight
-//   - `error`    the last save failed; the local value is still shown, but the
-//                caller is told, and can offer a retry
+//   - `error`    the last save failed; the local value is still shown, the
+//                failed patch is KEPT, and `retry()` sends it again
 //
 // ── Why edits coalesce per exercise ────────────────────────────────────────
 //
@@ -43,15 +43,19 @@ export function useAutosave<P extends object>({ save, onError }: UseAutosaveOpti
   // Refs, not state: mutating these must not re-render, and the flush timer
   // has to read the latest queue rather than the one captured at schedule time.
   const queue = useRef(new Map<string, P>());
+  /** Patches a request rejected. Kept until retried or folded into a newer edit. */
+  const failed = useRef(new Map<string, P>());
   const inFlight = useRef(0);
+  /** Save promises still running, so flushNow can wait for a request it did not start. */
+  const running = useRef(new Set<Promise<unknown>>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const linger = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveRef = useRef(save);
   const errRef = useRef(onError);
   useEffect(() => { saveRef.current = save; errRef.current = onError; });
 
-  const flush = useCallback(async () => {
-    if (queue.current.size === 0) return;
+  const flush = useCallback(async (): Promise<boolean> => {
+    if (queue.current.size === 0) return failed.current.size === 0;
 
     // Take the whole queue and clear it, so edits made DURING the request are
     // queued for the next flush rather than lost or double-sent.
@@ -61,25 +65,36 @@ export function useAutosave<P extends object>({ save, onError }: UseAutosaveOpti
     inFlight.current += batch.length;
     setStatus('saving');
 
-    const results = await Promise.allSettled(
-      batch.map(([id, patch]) => saveRef.current(id, patch)),
-    );
+    const sends = batch.map(([id, patch]) =>
+      Promise.resolve().then(() => saveRef.current(id, patch)));
+    for (const p of sends) running.current.add(p);
+
+    const results = await Promise.allSettled(sends);
+    for (const p of sends) running.current.delete(p);
 
     inFlight.current -= batch.length;
 
-    const failed = results
-      .map((r, i) => (r.status === 'rejected' ? { r, entry: batch[i] } : null))
-      .filter(Boolean) as { r: PromiseRejectedResult; entry: [string, P] }[];
+    // A row that saved is no longer failed. A row that rejected replaces (or
+    // extends) its failed patch, so the retry sends the whole prescription.
+    const rejected: { reason: unknown; id: string; patch: P }[] = [];
+    results.forEach((r, i) => {
+      const [id, patch] = batch[i];
+      if (r.status === 'rejected') rejected.push({ reason: r.reason, id, patch });
+      else failed.current.delete(id);
+    });
 
-    for (const f of failed) errRef.current?.(f.r.reason, f.entry[0], f.entry[1]);
+    for (const f of rejected) {
+      failed.current.set(f.id, { ...(failed.current.get(f.id) ?? {}), ...f.patch } as P);
+      errRef.current?.(f.reason, f.id, f.patch);
+    }
 
-    if (failed.length) {
+    if (failed.current.size > 0) {
       setStatus('error');
-      return;
+      return false;
     }
     // More arrived while we were saving — stay in `saving` and let the pending
     // timer take it, rather than flashing `Saved ✓` for a stale batch.
-    if (queue.current.size > 0 || inFlight.current > 0) return;
+    if (queue.current.size > 0 || inFlight.current > 0) return true;
 
     setStatus('saved');
     if (linger.current) clearTimeout(linger.current);
@@ -87,23 +102,59 @@ export function useAutosave<P extends object>({ save, onError }: UseAutosaveOpti
       // Only fall back to idle if nothing new happened in the meantime.
       setStatus((s) => (s === 'saved' ? 'idle' : s));
     }, SAVED_LINGER_MS);
+    return true;
   }, []);
 
   /** Queue a patch for `id`, merging with anything already queued for it. */
   const enqueue = useCallback((id: string, patch: P) => {
+    // A new edit to a row whose last write failed carries the failed fields
+    // with it. Otherwise those fields would stay unsaved until the trainer
+    // noticed the error pill — which is exactly the silent loss this hook
+    // exists to prevent.
+    const failedPatch = failed.current.get(id);
+    const merged = failedPatch ? { ...failedPatch, ...patch } : patch;
+    if (failedPatch) failed.current.delete(id);
+
     const existing = queue.current.get(id);
-    queue.current.set(id, existing ? { ...existing, ...patch } : patch);
+    queue.current.set(id, existing ? { ...existing, ...merged } : merged);
     setStatus('pending');
 
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(flush, DEBOUNCE_MS);
   }, [flush]);
 
-  /** Send everything now — for unmount, or a deliberate "save now". */
-  const flushNow = useCallback(() => {
+  /** Send everything now — for unmount, a version snapshot, or "save now". */
+  const flushNow = useCallback(async (): Promise<boolean> => {
     if (timer.current) clearTimeout(timer.current);
-    return flush();
+    let clean = true;
+    // Flush until the queue AND anything already in flight has settled: a
+    // snapshot is only faithful if it cannot race a save.
+    for (;;) {
+      if (queue.current.size > 0) {
+        clean = (await flush()) && clean;
+        continue;
+      }
+      if (running.current.size > 0) {
+        const results = await Promise.allSettled([...running.current]);
+        if (results.some((r) => r.status === 'rejected')) clean = false;
+        continue;
+      }
+      break;
+    }
+    return clean && failed.current.size === 0;
   }, [flush]);
+
+  /** Send the retained failed patches again. */
+  const retry = useCallback(() => {
+    for (const [id, patch] of failed.current) {
+      // A newer queued edit wins for the fields it names; the rest of the
+      // failed patch still needs sending.
+      const queued = queue.current.get(id);
+      queue.current.set(id, queued ? { ...patch, ...queued } : patch);
+    }
+    failed.current.clear();
+    return flushNow();
+  }, [flushNow]);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -112,10 +163,11 @@ export function useAutosave<P extends object>({ save, onError }: UseAutosaveOpti
 
   // Leaving with unsaved edits is the one case where the browser should
   // interrupt: the debounce window is short, but a trainer closing the tab
-  // mid-keystroke would otherwise lose the last thing they typed.
+  // mid-keystroke would otherwise lose the last thing they typed. A failed
+  // write counts too — it is still only in this tab.
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
-      if (queue.current.size === 0 && inFlight.current === 0) return;
+      if (queue.current.size === 0 && inFlight.current === 0 && failed.current.size === 0) return;
       e.preventDefault();
       e.returnValue = '';
     };
@@ -123,7 +175,13 @@ export function useAutosave<P extends object>({ save, onError }: UseAutosaveOpti
     return () => window.removeEventListener('beforeunload', warn);
   }, []);
 
-  return { status, enqueue, flushNow, hasPending: () => queue.current.size > 0 };
+  return {
+    status,
+    enqueue,
+    flushNow,
+    retry,
+    hasPending: () => queue.current.size > 0 || failed.current.size > 0,
+  };
 }
 
 /** Label for a status pill. Exported so the indicator and its test agree. */
