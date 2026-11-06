@@ -76,11 +76,27 @@ describe('NextBestActionCard', () => {
     expect(screen.queryByText(/mobile on file/i)).toBeNull();
   });
 
+  it('does not count a contact until the trainer says they made it', () => {
+    // Opening WhatsApp is not proof anything was sent. Advancing on click
+    // skipped the client whenever the trainer backed out of the chat, and the
+    // card then claimed a list had been worked through that had not.
+    render(<NextBestActionCard d={DASH} ops={opsWith([ASHA])} birthdays={[]} studioName="Iron Studio" />);
+    fireEvent.click(screen.getByRole('link', { name: 'Send WhatsApp to Asha' }));
+
+    expect(screen.getByText('Did you contact Asha?')).toBeTruthy();
+    expect(screen.getByRole('status')).toHaveTextContent(/Next: Asha · 1 of 1 left/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Not yet' }));
+    expect(screen.queryByText(/everyone on this list has been contacted/i)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Send WhatsApp to Asha' })).toBeTruthy();
+  });
+
   it("starts the list over when the cohort changes under it — never \"everyone contacted\" against a new list", () => {
     const OMM = { ...ASHA, id: 'c2', name: 'Omm', mobile: '9876500000' };
     const { rerender } = render(
       <NextBestActionCard d={DASH} ops={opsWith([ASHA])} birthdays={[]} studioName="Iron Studio" />);
     fireEvent.click(screen.getByRole('link', { name: 'Send WhatsApp to Asha' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, next' }));
     expect(screen.getByText(/everyone on this list has been contacted/i)).toBeTruthy();
 
     // The dashboard refetches every 60s; a second client lands on the same
