@@ -174,11 +174,13 @@ export function Reveal({
  * to be the same width.
  */
 export function SegmentedTabs<T extends string>({
-  tabs, value, onChange,
+  tabs, value, onChange, label,
 }: {
-  tabs: { id: T; label: string; icon?: React.ReactNode }[];
+  tabs: { id: T; label: string; icon?: React.ReactNode; badge?: number }[];
   value: T;
   onChange: (id: T) => void;
+  /** Names the control for assistive tech, e.g. "Finance views". */
+  label: string;
 }) {
   const reduce = useReducedMotion();
   const scrollerRef = React.useRef<HTMLDivElement | null>(null);
@@ -215,8 +217,8 @@ export function SegmentedTabs<T extends string>({
     <div className="relative">
       <div
         ref={scrollerRef}
-        role="tablist"
-        aria-label="Command centre sections"
+        role="group"
+        aria-label={label}
         className="relative flex overflow-x-auto rounded-[14px] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{
           background: 'var(--bg-subtle)',
@@ -246,8 +248,8 @@ export function SegmentedTabs<T extends string>({
             <button
               key={t.id}
               ref={(el) => { btnRefs.current[t.id] = el; }}
-              role="tab"
-              aria-selected={active}
+              type="button"
+              aria-pressed={active}
               onClick={() => onChange(t.id)}
               /* shrink-0, not flex-1: at twelve tabs flex-1 would squeeze each
                  to ~30px and the labels would collide. They keep their natural
@@ -264,6 +266,16 @@ export function SegmentedTabs<T extends string>({
               <span className="whitespace-nowrap text-[9.5px] font-[700] leading-tight sm:text-[12.5px] sm:font-[680]">
                 {t.label}
               </span>
+              {t.badge ? (
+                <>
+                  <span aria-hidden
+                    className="rounded-full px-1.5 text-[10px] font-[800] tabular-nums text-white"
+                    style={{ background: '#B45309' }}>
+                    {t.badge > 99 ? '99+' : t.badge}
+                  </span>
+                  <span className="sr-only">{t.badge} waiting</span>
+                </>
+              ) : null}
             </button>
           );
         })}

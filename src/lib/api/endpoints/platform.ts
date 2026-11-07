@@ -658,11 +658,15 @@ export const superAdmin = {
   getSubscription: (orgId: string) =>
     http<{ data: SubDetail }>(`/api/platform/organizations/${orgId}/subscription`),
   activateSubscription: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string; period_months?: number }) =>
-    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
+    http<{ data: {
+      plan_code: string; amount_inr: number; gross_amount_inr: number;
+      period_end: string; invoice_number: string;
+      founder_granted: boolean; founder_number: number | null;
+    } }>(`/api/platform/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
   freezeSubscription: (orgId: string, reason?: string) =>
     http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/freeze`, { method: 'POST', body: JSON.stringify({ reason }) }),
-  reactivateSubscription: (orgId: string) =>
-    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({}) }),
+  reactivateSubscription: (orgId: string, reason?: string) =>
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({ reason }) }),
   cancelSubscription: (orgId: string) =>
     http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/cancel`, { method: 'POST', body: JSON.stringify({}) }),
   changeExpiry: (orgId: string, body: { trial_ends_at?: string | null; current_period_end?: string | null }) =>
@@ -704,7 +708,10 @@ export const superAdmin = {
    *  time on the current plan and restarts the period from now (never use activateSubscription
    *  for this: it stacks time on top instead of crediting it, double-granting days). */
   changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
-    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
+    http<{ data: {
+      plan_code: string; amount_inr: number; period_end: string; invoice_number: string;
+      new_plan: { code: string; name: string };
+    } }>(`/api/platform/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
 
   // ── Command Centre Phase 5 — home-screen KPIs, tenancy health, studio 360, search ──
   // Every endpoint here is server-gated by PLATFORM_GUARD; the client treats

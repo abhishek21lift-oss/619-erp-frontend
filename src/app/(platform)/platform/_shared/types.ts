@@ -124,6 +124,16 @@ export const FINANCE_DEEP_LINKS: Record<string, FinanceSubTab> = {
   payments: 'payments',
   invoices: 'invoices',
 };
+export const FINANCE_SUB_TABS: FinanceSubTab[] = ['billing', 'payments', 'invoices', 'coupons'];
+/**
+ * The Finance sub-tab is URL state (?tab=finance&sub=payments), so refresh,
+ * back and a shared link all land on the screen that was open. An explicit
+ * `sub` wins; the legacy top-level deep links keep selecting their sub-tab.
+ */
+export function resolveFinanceSubTab(paramTab: string | null, paramSub: string | null): FinanceSubTab {
+  if (paramSub && (FINANCE_SUB_TABS as string[]).includes(paramSub)) return paramSub as FinanceSubTab;
+  return (paramTab && FINANCE_DEEP_LINKS[paramTab]) || 'billing';
+}
 export function normalizeTab(raw: string | null): Tab {
   if (raw && raw in FINANCE_DEEP_LINKS) return 'finance';
   return TAB_IDS.includes(raw as Tab) ? (raw as Tab) : 'overview';

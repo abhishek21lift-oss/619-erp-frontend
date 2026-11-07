@@ -8,56 +8,48 @@ import { useCallback, useEffect, useState } from 'react';
 // `m`, not `motion` — AppShell mounts LazyMotion in strict mode.
 import { m } from 'framer-motion';
 import {
-  Loader2, X, IndianRupee, CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket,
-  ArrowRight, TrendingUp, Wallet, FileText,
+  Loader2, X, IndianRupee, CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt,
+  ArrowRight, Wallet, FileText, AlertTriangle, Search, CheckCircle2,
 } from 'lucide-react';
 import StudioMark from '@/components/StudioMark';
 import { Button, Badge, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
 import type {
-  SubStudio, SubDetail, SubPlan, SubEvent, SubscriptionMetrics,
+  SubStudio, SubDetail, SubPlan, SubEvent, SubKpis, SubscriptionMetrics,
   PlanChangeQuote,
 } from '@/lib/api';
 import {
-  SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
+  Panel, StatTile, Reveal, SectionLabel,
 } from '@/components/platform/console';
+import { ccTones, ccWash } from '@/components/platform/ccTheme';
 import SubscriptionRequestsTab from '@/components/platform/subscription-requests';
 import { useToast } from '@/lib/toast';
 import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 import { InvoicesPanel } from '../_shared/panels';
 import type { FinanceSubTab } from '../_shared/types';
-import { Center, ErrorState, IconBtn, Modal } from '../_shared/ui';
-import { FormField, SelectInput, TextInput } from '@/components/ui/form';
+import { Center, ConfirmDialog, ErrorState, IconBtn, MiniStat, Modal } from '../_shared/ui';
+import { clientLabel, daysOverdue, filterStudios, needsAction, planPrice } from '../_shared/billing';
+import type { BillingFilter, BillingSort } from '../_shared/billing';
+import { FormField, SearchField, SelectInput, TextInput } from '@/components/ui/form';
 import { CouponsTab } from './CouponsTab';
 import { errorMessage } from '@/lib/forms/errors';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
-export function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTabChange: (t: FinanceSubTab) => void }) {
+export function FinanceTab({ subTab }: { subTab: FinanceSubTab }) {
   // Phase 8: the dashboard subtab is removed. The run-rate view lived
   // here and now lives on the home (NewOverviewTab's revenue section),
   // and the brief explicitly says the home is the platform's
   // "RIGHT NOW" answer. Billing, Payments, Invoices, Coupons remain
   // here because they are operational surfaces, not a status card.
+  //
+  // The five-item Revenue row lives above this page (RevenueNav), so Finance
+  // and Analytics share one navigation instead of stacking two.
   return (
-    <div>
-      <div className="mb-5 max-w-[500px]">
-        <SegmentedTabs
-          tabs={[
-            { id: 'billing' as const, label: 'Billing', icon: <CreditCard size={13} /> },
-            { id: 'payments' as const, label: 'Payments', icon: <Wallet size={13} /> },
-            { id: 'invoices' as const, label: 'Invoices', icon: <Receipt size={13} /> },
-            { id: 'coupons' as const, label: 'Coupons', icon: <Ticket size={13} /> },
-          ]}
-          value={subTab}
-          onChange={onSubTabChange}
-        />
-      </div>
-      <div key={subTab}>
-        {subTab === 'billing' && <BillingTab />}
-        {subTab === 'payments' && <SubscriptionRequestsTab />}
-        {subTab === 'invoices' && <InvoicesPanel />}
-        {subTab === 'coupons' && <CouponsTab />}
-      </div>
+    <div key={subTab}>
+      {subTab === 'billing' && <BillingTab />}
+      {subTab === 'payments' && <SubscriptionRequestsTab />}
+      {subTab === 'invoices' && <InvoicesPanel />}
+      {subTab === 'coupons' && <CouponsTab />}
     </div>
   );
 }
@@ -68,7 +60,7 @@ export const SUB_STATE: Record<string, { label: string; tone: 'success' | 'dange
   trial: { label: 'Trial', tone: 'warning' },
   trial_expired: { label: 'Trial expired', tone: 'danger' },
   expired: { label: 'Expired', tone: 'danger' },
-  frozen: { label: 'Frozen', tone: 'danger' },
+  frozen: { label: 'Frozen', tone: 'warning' },
   cancelled: { label: 'Cancelled', tone: 'neutral' },
   suspended: { label: 'Suspended', tone: 'danger' },
 };
@@ -84,134 +76,338 @@ export function BillingTab() {
   const { toast } = useToast();
   const [studios, setStudios] = useState<SubStudio[]>([]);
   const [plans, setPlans] = useState<SubPlan[]>([]);
+  const [kpis, setKpis] = useState<SubKpis | null>(null);
+  const [planError, setPlanError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [payTarget, setPayTarget] = useState<SubStudio | null>(null);
   const [detailTarget, setDetailTarget] = useState<SubStudio | null>(null);
+  const [changeTarget, setChangeTarget] = useState<SubStudio | null>(null);
+  const [freezeTarget, setFreezeTarget] = useState<SubStudio | null>(null);
+  const [freezing, setFreezing] = useState(false);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<BillingFilter>('all');
+  const [sort, setSort] = useState<BillingSort>('attention');
 
   const load = useCallback(() => {
     setLoading(true); setError('');
     api.superAdmin.subscriptions()
-      .then((r) => { setStudios(r.data.studios ?? []); })
+      .then((r) => { setStudios(r.data.studios ?? []); setKpis(r.data.kpis ?? null); })
       .catch((e) => setError(errorMessage(e, 'Failed to load subscriptions')))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { api.superAdmin.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
+  useEffect(() => {
+    api.superAdmin.plans()
+      .then((r) => setPlans(r.data.plans ?? []))
+      .catch((e) => setPlanError(errorMessage(e, 'Could not load plans')));
+  }, []);
 
-  const quickFreeze = async (s: SubStudio, freeze: boolean) => {
-    if (freeze && !window.confirm(`Freeze ${s.name}? Their team is signed out of protected features until they pay. No data is deleted.`)) return;
+  const confirmFreeze = async () => {
+    if (!freezeTarget) return;
+    setFreezing(true);
     try {
-      if (freeze) await api.superAdmin.freezeSubscription(s.id);
-      else await api.superAdmin.reactivateSubscription(s.id);
-      toast.success(freeze ? 'Studio frozen.' : 'Studio reactivated.');
+      await api.superAdmin.freezeSubscription(freezeTarget.id);
+      toast.success('Studio frozen.');
+      setFreezeTarget(null);
       load();
     } catch (e) { toast.error(errorMessage(e, 'Update failed')); }
+    finally { setFreezing(false); }
   };
 
-  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#A33757' }} /></Center>;
+  if (loading && studios.length === 0) return <Center><div role="status"><Loader2 size={26} className="animate-spin" aria-hidden style={{ color: '#A33757' }} /><span className="sr-only">Loading studios</span></div></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
+
+  const attentionCount = studios.filter(needsAction).length;
+  const visible = filterStudios(studios, { query, filter, sort });
+  const needsYou = visible.filter(needsAction);
+  const rest = visible.filter((s) => !needsAction(s));
+
+  const renderRow = (s: SubStudio) => {
+    const st = SUB_STATE[s.effective_state] || { label: s.effective_state, tone: 'neutral' as const };
+    const expiry = s.effective_state === 'trial' ? s.trial_ends_at : s.current_period_end;
+    const daysLeft = s.effective_state === 'trial' ? s.trial_days_left : s.period_days_left;
+    const overdue = daysOverdue(s);
+    const price = planPrice(s, plans);
+    const priceInr = price != null ? `₹${Number(price).toLocaleString('en-IN')}` : null;
+    const priceNote = priceInr
+      ? s.is_founder && s.locked_price_inr != null
+        ? `${priceInr} locked`
+        : `${priceInr}${!s.allowed || overdue != null || s.renewal_due ? ' due' : ''}`
+      : null;
+    const meta = [s.plan_name || 'No plan'];
+    if (priceNote) meta.push(priceNote);
+    if (expiry) {
+      if (overdue != null) meta.push(`${overdue}d overdue`, `ended ${fmtDate(expiry)}`);
+      else {
+        if (daysLeft != null) meta.push(`${daysLeft}d left`);
+        meta.push(`ends ${fmtDate(expiry)}`);
+      }
+    } else if (s.plan_name) {
+      // "no expiry" on a blocked studio read as "never expires" — the opposite
+      // of a freeze. Only an allowed studio can be genuinely open-ended.
+      meta.push(s.allowed ? 'no expiry' : 'no active period');
+    }
+    // Why a blocked studio is blocked, when the freeze event knows.
+    if (s.effective_state === 'frozen') {
+      const why = s.frozen_reason === 'trial_expired' ? 'trial ended'
+        : s.frozen_reason ? `frozen: ${s.frozen_reason}` : 'frozen by operator';
+      meta.push(why.length > 64 ? `${why.slice(0, 61)}…` : why);
+      if (s.frozen_at) meta.push(`since ${fmtDate(s.frozen_at)}`);
+    }
+    meta.push(s.client_limit != null ? `${s.client_count}/${s.client_limit} clients` : clientLabel(s.client_count));
+
+    const reviewRequest = Boolean(s.requested_at && s.requested_plan_code);
+    const urgent = needsAction(s);
+
+    return (
+      <div key={s.id} className="rounded-[18px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <div className="flex flex-wrap items-center gap-3">
+          <StudioMark name={s.name} logoUrl={s.logo_url} size={40} />
+          <div className="min-w-0 flex-1">
+            {/* Wraps rather than truncating: the studio name and its
+                status badges are the row's identity, and on a phone the
+                name was being cut to "Abhishek PT …". */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-[14px] font-[750] leading-tight" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
+              <Badge tone={st.tone}>{st.label}</Badge>
+              {s.is_founder && (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
+                  style={{ background: 'rgba(245,158,11,0.12)', color: '#b45309' }}>
+                  <Crown size={10} /> Founder #{s.founder_number}
+                </span>
+              )}
+              {s.renewal_due && <Badge tone="neutral">renewal due</Badge>}
+              {s.requested_at && (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
+                  style={{ background: ccWash(ccTones.blue, 0.10), border: `1px solid ${ccWash(ccTones.blue, 0.24)}`, color: ccTones.blue.ink }}>
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: ccTones.blue.ink }} />
+                  {s.requested_plan_name
+                    ? s.requested_direction === 'downgrade' ? `Switch to ${s.requested_plan_name} requested`
+                      : s.requested_direction === 'renewal' ? `Renewal (${s.requested_plan_name}) requested`
+                      : s.requested_direction === 'upgrade' ? `Upgrade to ${s.requested_plan_name} requested`
+                      : `Activate ${s.requested_plan_name} requested`
+                    : 'Activation requested'}
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+              {meta.join(' · ')}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {reviewRequest ? (
+              <button onClick={() => setChangeTarget(s)} aria-label={`Review request for ${s.name}`}
+                className="flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
+                style={{ background: '#A33757' }}>
+                <ArrowRight size={13} /> Review request
+              </button>
+            ) : (
+              <button onClick={() => setPayTarget(s)} aria-label={`Record payment for ${s.name}`}
+                className="flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-90"
+                style={urgent
+                  ? { background: '#A33757', color: '#fff' }
+                  : { border: '1px solid rgba(163,55,87,0.28)', color: '#A33757' }}>
+                <IndianRupee size={13} /> Record Payment
+              </button>
+            )}
+            {s.allowed && !reviewRequest && (
+              <IconBtn title="Freeze" label={`Freeze ${s.name}'s subscription`} onClick={() => setFreezeTarget(s)} tone="danger"><Snowflake size={12} /> Freeze</IconBtn>
+            )}
+            <IconBtn title="Details & history" label={`Details and history for ${s.name}`} onClick={() => setDetailTarget(s)}><Receipt size={12} /> Details</IconBtn>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-5">
-      <div className="space-y-3">
-        {studios.map((s) => {
-          const st = SUB_STATE[s.effective_state] || { label: s.effective_state, tone: 'neutral' as const };
-          const frozen = !s.allowed;
-          const expiry = s.effective_state === 'trial' ? s.trial_ends_at : s.current_period_end;
-          const daysLeft = s.effective_state === 'trial' ? s.trial_days_left : s.period_days_left;
-          return (
-            <div key={s.id} className="rounded-[18px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <div className="flex flex-wrap items-center gap-3">
-                <StudioMark name={s.name} logoUrl={s.logo_url} size={40} />
-                <div className="min-w-0 flex-1">
-                  {/* Wraps rather than truncating: the studio name and its
-                      status badges are the row's identity, and on a phone the
-                      name was being cut to "Abhishek PT …". */}
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="text-[14px] font-[750] leading-tight" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
-                    <Badge tone={st.tone}>{st.label}</Badge>
-                    {s.is_founder && (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
-                        style={{ background: 'rgba(245,158,11,0.12)', color: '#b45309' }}>
-                        <Crown size={10} /> Founder #{s.founder_number}
-                      </span>
-                    )}
-                    {s.renewal_due && <Badge tone="neutral">renewal due</Badge>}
-                    {s.requested_at && (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
-                        style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
-                        ● {s.requested_plan_name
-                          ? s.requested_direction === 'downgrade' ? `Switch to ${s.requested_plan_name} requested`
-                            : s.requested_direction === 'renewal' ? `Renewal (${s.requested_plan_name}) requested`
-                            : s.requested_direction === 'upgrade' ? `Upgrade to ${s.requested_plan_name} requested`
-                            : `Activate ${s.requested_plan_name} requested`
-                          : 'Activation requested'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-                    {s.plan_name || 'No plan'}
-                    {expiry ? ` · ${daysLeft != null ? `${daysLeft}d left · ` : ''}ends ${fmtDate(expiry)}` : ' · no expiry'}
-                    {' · '}{s.client_count}{s.client_limit != null ? `/${s.client_limit}` : ''} clients
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => setPayTarget(s)}
-                    className="flex h-11 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
-                    style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
-                    <IndianRupee size={13} /> Record Payment
-                  </button>
-                  {frozen
-                    ? <IconBtn title="Reactivate (comp)" onClick={() => quickFreeze(s, false)} tone="success"><RotateCcw size={12} /> Reactivate</IconBtn>
-                    : <IconBtn title="Freeze" onClick={() => quickFreeze(s, true)} tone="danger"><Snowflake size={12} /> Freeze</IconBtn>}
-                  <IconBtn title="Details & history" onClick={() => setDetailTarget(s)}><Receipt size={12} /> Details</IconBtn>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-        {studios.length === 0 && <EmptyState icon={<CreditCard size={20} />} title="No studios" description="Studios will appear here once created." />}
-      </div>
+      {kpis && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <MiniStat icon={<IndianRupee size={13} />} value={fmtINR(kpis.revenue_this_month)} label="This month" color="#A33757" />
+          <MiniStat icon={<Wallet size={13} />} value={fmtINR(kpis.total_revenue)} label="Lifetime" color="#6B2440" />
+          <div className="col-span-2 sm:col-span-1">
+            <MiniStat icon={<AlertTriangle size={13} />} value={attentionCount} label="Need action" color="#B45309" />
+          </div>
+        </div>
+      )}
 
-      {payTarget && <RecordPaymentModal studio={payTarget} plans={plans} onClose={() => setPayTarget(null)} onDone={() => { setPayTarget(null); load(); }} />}
+      {studios.length > 0 && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <SearchField label="Search studios by name or plan" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <FormField label="Filter by billing state" labelHidden className="flex-1 sm:flex-none">
+              <SelectInput value={filter} onChange={(e) => setFilter(e.target.value as BillingFilter)}
+                className="min-h-[44px] text-[13px] font-[650]">
+                <option value="all">All states</option>
+                <option value="needs_action">Needs action</option>
+                <option value="active">Active</option>
+                <option value="trial">Trial</option>
+                <option value="frozen">Frozen</option>
+                <option value="expired">Expired</option>
+              </SelectInput>
+            </FormField>
+            <FormField label="Sort studios" labelHidden className="flex-1 sm:flex-none">
+              <SelectInput value={sort} onChange={(e) => setSort(e.target.value as BillingSort)}
+                className="min-h-[44px] text-[13px] font-[650]">
+                <option value="attention">Attention first</option>
+                <option value="name">Name A–Z</option>
+                <option value="expiry">Expiry soonest</option>
+              </SelectInput>
+            </FormField>
+          </div>
+        </div>
+      )}
+
+      {needsYou.length > 0 && (
+        <section>
+          <SectionLabel hint={`${needsYou.length} of ${visible.length}`}>Needs you</SectionLabel>
+          <div className="space-y-3">{needsYou.map(renderRow)}</div>
+        </section>
+      )}
+
+      {rest.length > 0 && (
+        <section>
+          <SectionLabel hint={`${rest.length} ${rest.length === 1 ? 'studio' : 'studios'}`}>No action due</SectionLabel>
+          <div className="space-y-3">{rest.map(renderRow)}</div>
+        </section>
+      )}
+
+      {studios.length === 0 && <EmptyState icon={<CreditCard size={20} />} title="No studios" description="Studios will appear here once created." />}
+      {studios.length > 0 && visible.length === 0 && (
+        <EmptyState icon={<Search size={20} />} title="No studios match"
+          description="Try a different name, plan, or billing state."
+          action={<Button variant="outline" onClick={() => { setQuery(''); setFilter('all'); }}>Clear filters</Button>} />
+      )}
+
+      {freezeTarget && (
+        <ConfirmDialog
+          title={`Freeze ${freezeTarget.name}?`}
+          body="Their team is signed out of protected features until they pay. No data is deleted."
+          confirmLabel="Freeze studio"
+          busy={freezing}
+          onConfirm={confirmFreeze}
+          onClose={() => { if (!freezing) setFreezeTarget(null); }}
+        />
+      )}
+
+      {payTarget && <RecordPaymentModal studio={payTarget} plans={plans} planError={planError} onClose={() => setPayTarget(null)} onDone={() => { setPayTarget(null); load(); }} />}
+      {changeTarget && changeTarget.requested_plan_code && (
+        <ExecuteChangeModal
+          studio={changeTarget}
+          planCode={changeTarget.requested_plan_code}
+          onClose={() => setChangeTarget(null)}
+          onDone={() => { setChangeTarget(null); load(); }}
+        />
+      )}
       {detailTarget && <SubDetailModal studio={detailTarget} onClose={() => setDetailTarget(null)} onChanged={load} />}
     </div>
   );
 }
 
 // ── Record Payment (activate / renew) modal ──────────────────────────────────────
-export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio: SubStudio; plans: SubPlan[]; onClose: () => void; onDone: () => void }) {
+export function RecordPaymentModal({ studio, plans, planError, onClose, onDone }: { studio: SubStudio; plans: SubPlan[]; planError?: string; onClose: () => void; onDone: () => void }) {
   const { toast } = useToast();
   const [planCode, setPlanCode] = useState(studio.plan_code || (plans[0]?.code ?? 'starter'));
   const selected = plans.find((p) => p.code === planCode);
   const defaultAmount = studio.is_founder && studio.locked_price_inr != null ? studio.locked_price_inr : (selected?.effective_price_inr ?? selected?.price_inr ?? 0);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(() => String(defaultAmount || ''));
   const [method, setMethod] = useState('upi');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [receipt, setReceipt] = useState<{
+    amount: number; plan: string; periodEnd: string; invoice: string | null;
+    method: string; reference: string | null;
+  } | null>(null);
 
   useEffect(() => { setAmount(String(defaultAmount || '')); }, [defaultAmount]);
+
+  // Anything the operator typed or chose, before it has been committed.
+  const dirty = !receipt && (
+    planCode !== (studio.plan_code || (plans[0]?.code ?? 'starter'))
+    || amount !== String(defaultAmount || '')
+    || method !== 'upi'
+    || reference.trim() !== ''
+    || notes.trim() !== ''
+  );
+
+  // activateSubscription() stacks the new period on any time left, so the
+  // preview starts from the later of now and the current period end.
+  const months = selected?.duration_months ?? 0;
+  const periodEnd = (() => {
+    if (!months) return null;
+    const base = studio.current_period_end && new Date(studio.current_period_end).getTime() > Date.now()
+      ? new Date(studio.current_period_end)
+      : new Date();
+    base.setMonth(base.getMonth() + months);
+    return base;
+  })();
 
   const submit = async () => {
     setSaving(true);
     try {
-      await api.superAdmin.activateSubscription(studio.id, {
+      const r = await api.superAdmin.activateSubscription(studio.id, {
         plan_code: planCode,
         amount_inr: amount ? Number(amount) : undefined,
         method, reference: reference.trim() || undefined, notes: notes.trim() || undefined,
       });
+      setReceipt({
+        amount: r.data.amount_inr,
+        plan: selected?.name ?? planCode,
+        periodEnd: r.data.period_end,
+        invoice: r.data.invoice_number ?? null,
+        method,
+        reference: reference.trim() || null,
+      });
       toast.success('Payment recorded — subscription activated.');
-      onDone();
     } catch (e) { toast.error(errorMessage(e, 'Activation failed')); setSaving(false); }
   };
 
+  // The confirmation the toast could not give: what was collected, for which
+  // plan, and the date access now runs through. Shown before the list refreshes
+  // so the operator can read it back against the bank statement.
+  if (receipt) {
+    return (
+      <Modal title="Payment recorded" onClose={onDone}>
+        <div className="space-y-4">
+          <div role="status" className="flex items-start gap-2.5 rounded-[12px] p-3"
+            style={{ background: 'rgba(4,120,87,0.08)', border: '1px solid rgba(4,120,87,0.28)', color: '#047857' }}>
+            <CheckCircle2 size={18} aria-hidden className="mt-0.5 shrink-0" />
+            <p className="text-[12.5px] leading-snug">
+              <b>{fmtINR(receipt.amount)}</b> recorded for <b>{studio.name}</b>. Access runs through <b>{fmtDate(receipt.periodEnd)}</b>.
+            </p>
+          </div>
+          <dl className="rounded-[12px] p-3 text-[12.5px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+            <div className="flex justify-between gap-3"><dt>Plan</dt><dd className="font-[700]">{receipt.plan}</dd></div>
+            <div className="flex justify-between gap-3"><dt>Access through</dt><dd className="font-[700]">{fmtDate(receipt.periodEnd)}</dd></div>
+            <div className="flex justify-between gap-3"><dt>Method</dt><dd className="font-[700] capitalize">{receipt.method}</dd></div>
+            {receipt.reference && <div className="flex justify-between gap-3"><dt>Reference</dt><dd className="font-[700] break-all text-right">{receipt.reference}</dd></div>}
+            {receipt.invoice && <div className="flex justify-between gap-3"><dt>Invoice</dt><dd className="font-[700]">{receipt.invoice}</dd></div>}
+          </dl>
+          <div className="flex justify-end">
+            <Button className="min-h-[44px]" onClick={onDone} style={{ background: '#A33757', color: '#fff' }}>Done</Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
-    <Modal title={`Record payment · ${studio.name}`} onClose={onClose}>
+    <Modal title={`Record payment · ${studio.name}`} onClose={onClose} dirty={dirty}
+      discardMessage="Discard this payment? The amount, reference and notes you typed will be lost.">
       <div className="space-y-4">
+        {planError && (
+          <p role="alert" className="rounded-[10px] p-2.5 text-[11.5px]" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#b91c1c' }}>
+            {planError} — recording a payment is blocked until the plan list loads.
+          </p>
+        )}
         <FormField label="Plan">
           <SelectInput value={planCode} onChange={(e) => setPlanCode(e.target.value)}>
+            {plans.length === 0 && <option value={planCode}>No plans loaded</option>}
             {plans.map((p) => (
               <option key={p.code} value={p.code}>
                 {p.name} — ₹{(p.effective_price_inr ?? p.price_inr).toLocaleString('en-IN')}{p.is_launch ? ' (launch)' : ''} / {p.duration_months}mo
@@ -223,6 +419,11 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
         <FormField label="Amount received (₹)">
           <TextInput type="text" inputMode="decimal"
             value={amount} onChange={(e) => setAmount(clampNumericText(e.target.value, 'decimal'))} />
+          {periodEnd && (
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              Expected period end {fmtDate(periodEnd.toISOString())} — any time left is added on top.
+            </p>
+          )}
           {studio.is_founder && <p className="mt-1 text-[11px]" style={{ color: '#b45309' }}>Founder — lifetime-locked price ₹{studio.locked_price_inr?.toLocaleString('en-IN')}.</p>}
         </FormField>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -240,8 +441,10 @@ export function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio:
         </FormField>
         {!studio.is_founder && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>If founder slots remain, this studio becomes a Founder Member with this price locked for life.</p>}
         <div className="flex justify-end gap-2 pt-1">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#059669,#10b981)', color: '#fff' }}>Activate</Button>
+          <Button variant="outline" className="min-h-[44px]" onClick={onClose}>Cancel</Button>
+          <Button className="min-h-[44px]" loading={saving} disabled={saving || plans.length === 0} onClick={submit} style={{ background: '#A33757', color: '#fff' }}>
+            {amount ? `Record ₹${Number(amount).toLocaleString('en-IN')}` : 'Record payment'}
+          </Button>
         </div>
       </div>
     </Modal>
@@ -263,6 +466,17 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [receipt, setReceipt] = useState<{
+    amount: number; plan: string; periodEnd: string; invoice: string | null;
+    method: string; reference: string | null;
+  } | null>(null);
+
+  const dirty = !receipt && quote != null && (
+    amount !== String(quote.amount_due_inr || '')
+    || method !== 'upi'
+    || reference.trim() !== ''
+    || notes.trim() !== ''
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -277,20 +491,54 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
   const submit = async () => {
     setSaving(true);
     try {
-      await api.superAdmin.changePlan(studio.id, {
+      const r = await api.superAdmin.changePlan(studio.id, {
         plan_code: planCode,
         amount_inr: amount ? Number(amount) : undefined,
         method, reference: reference.trim() || undefined, notes: notes.trim() || undefined,
       });
+      setReceipt({
+        amount: r.data.amount_inr,
+        plan: r.data.new_plan?.name || quote?.new_plan.name || planCode,
+        periodEnd: r.data.period_end,
+        invoice: r.data.invoice_number ?? null,
+        method,
+        reference: reference.trim() || null,
+      });
       toast.success(`Switched ${studio.name} to ${quote?.new_plan.name || planCode}.`);
-      onDone();
     } catch (e) { toast.error(errorMessage(e, 'Could not execute this change')); setSaving(false); }
   };
 
+  if (receipt) {
+    return (
+      <Modal title="Plan change recorded" onClose={onDone}>
+        <div className="space-y-4">
+          <div role="status" className="flex items-start gap-2.5 rounded-[12px] p-3"
+            style={{ background: 'rgba(4,120,87,0.08)', border: '1px solid rgba(4,120,87,0.28)', color: '#047857' }}>
+            <CheckCircle2 size={18} aria-hidden className="mt-0.5 shrink-0" />
+            <p className="text-[12.5px] leading-snug">
+              <b>{studio.name}</b> is now on <b>{receipt.plan}</b>. <b>{fmtINR(receipt.amount)}</b> recorded; access runs through <b>{fmtDate(receipt.periodEnd)}</b>.
+            </p>
+          </div>
+          <dl className="rounded-[12px] p-3 text-[12.5px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+            <div className="flex justify-between gap-3"><dt>Plan</dt><dd className="font-[700]">{receipt.plan}</dd></div>
+            <div className="flex justify-between gap-3"><dt>Access through</dt><dd className="font-[700]">{fmtDate(receipt.periodEnd)}</dd></div>
+            <div className="flex justify-between gap-3"><dt>Method</dt><dd className="font-[700] capitalize">{receipt.method}</dd></div>
+            {receipt.reference && <div className="flex justify-between gap-3"><dt>Reference</dt><dd className="font-[700] break-all text-right">{receipt.reference}</dd></div>}
+            {receipt.invoice && <div className="flex justify-between gap-3"><dt>Invoice</dt><dd className="font-[700]">{receipt.invoice}</dd></div>}
+          </dl>
+          <div className="flex justify-end">
+            <Button className="min-h-[44px]" onClick={onDone} style={{ background: '#A33757', color: '#fff' }}>Done</Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
-    <Modal title={`Execute plan change · ${studio.name}`} onClose={onClose}>
+    <Modal title={`Execute plan change · ${studio.name}`} onClose={onClose} dirty={dirty}
+      discardMessage="Discard this plan change? The amount, reference and notes you typed will be lost.">
       {loading || !quote ? (
-        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#A33757' }} /></div>
+        <div role="status" className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" aria-hidden style={{ color: '#A33757' }} /><span className="sr-only">Loading plan-change quote</span></div>
       ) : (
         <div className="space-y-4">
           <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
@@ -322,8 +570,8 @@ export function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { stud
             <TextInput value={notes} onChange={(e) => setNotes(e.target.value)} />
           </FormField>
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>Confirm change</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={onClose}>Cancel</Button>
+            <Button className="min-h-[44px]" loading={saving} disabled={saving} onClick={submit} style={{ background: '#A33757', color: '#fff' }}>Confirm change</Button>
           </div>
         </div>
       )}
@@ -338,6 +586,10 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
   const [loading, setLoading] = useState(true);
   const [newExpiry, setNewExpiry] = useState('');
   const [showExecute, setShowExecute] = useState(false);
+  const [compOpen, setCompOpen] = useState(false);
+  const [compReason, setCompReason] = useState('');
+  const [compBusy, setCompBusy] = useState(false);
+  const [compDone, setCompDone] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -350,13 +602,38 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
     catch (e) { toast.error(errorMessage(e, 'Action failed')); }
   };
 
+  // Comp reactivation is the only action here that grants access without
+  // money changing hands, so it lives behind Details, needs a reason, and can
+  // be reversed. Freeze is the exact inverse of a frozen studio's state.
+  const compReactivate = async () => {
+    if (!compReason.trim()) return;
+    setCompBusy(true);
+    try {
+      await api.superAdmin.reactivateSubscription(studio.id, compReason.trim());
+      toast.success('Reactivated without payment.');
+      setCompOpen(false); setCompReason(''); setCompDone(true);
+      load(); onChanged();
+    } catch (e) { toast.error(errorMessage(e, 'Could not reactivate')); }
+    finally { setCompBusy(false); }
+  };
+
+  const undoComp = async () => {
+    setCompBusy(true);
+    try {
+      await api.superAdmin.freezeSubscription(studio.id, 'Undo comp reactivation');
+      toast.success('Frozen again.');
+      setCompDone(false); load(); onChanged();
+    } catch (e) { toast.error(errorMessage(e, 'Could not undo')); }
+    finally { setCompBusy(false); }
+  };
+
   const o = detail?.organization;
   const onTrial = o?.subscription_status === 'trial';
 
   return (
-    <Modal title={`Billing · ${studio.name}`} onClose={onClose}>
+    <Modal title={`Details · ${studio.name}`} onClose={onClose}>
       {loading || !o ? (
-        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#A33757' }} /></div>
+        <div role="status" className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" aria-hidden style={{ color: '#A33757' }} /><span className="sr-only">Loading studio details</span></div>
       ) : (
         <div className="space-y-4 max-h-[70vh] overflow-y-auto overscroll-contain">
           <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
@@ -371,29 +648,67 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
               stacks the new period on top of remaining time, while this credits the
               unused time back (matching the quote the studio already saw). */}
           {studio.requested_at && studio.requested_plan_code && (
-            <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)' }}>
+            <div className="rounded-[12px] p-3 text-[12px]" style={{ background: ccWash(ccTones.blue, 0.08), border: `1px solid ${ccWash(ccTones.blue, 0.24)}` }}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span style={{ color: '#b45309' }}>
+                <span style={{ color: ccTones.blue.ink }}>
                   <b>{studio.requested_plan_name}</b> requested {fmtWhen(studio.requested_at)}
                   {studio.requested_direction ? ` (${studio.requested_direction})` : ''}
                 </span>
-                <Button onClick={() => setShowExecute(true)} style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>
+                <Button className="min-h-[44px]" onClick={() => setShowExecute(true)} style={{ background: '#A33757', color: '#fff' }}>
                   Review &amp; execute
                 </Button>
               </div>
             </div>
           )}
 
+          {/* Comp reactivation — only from frozen, because freeze is the exact
+              state it reverses. It grants access with no payment, so the reason
+              is required (it lands in the audit log and the studio's history)
+              and the result can be undone on the spot. */}
+          {o.subscription_status === 'frozen' || compDone ? (
+            compDone ? (
+              <div role="status" className="rounded-[12px] p-3 text-[12px]" style={{ background: 'rgba(4,120,87,0.08)', border: '1px solid rgba(4,120,87,0.28)', color: '#047857' }}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span><b>Comp reactivation applied.</b> No payment recorded.</span>
+                  <Button variant="outline" className="min-h-[44px]" onClick={undoComp} disabled={compBusy}>Undo</Button>
+                </div>
+              </div>
+            ) : compOpen ? (
+              <div className="space-y-2.5 rounded-[12px] p-3" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.26)' }}>
+                <p className="text-[12px] font-[700]" style={{ color: '#b45309' }}>Reactivate without payment</p>
+                <p className="text-[11.5px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                  Sets the studio back to <b>active</b> and clears any cancellation. No plan or expiry is
+                  set, so access stays open until you freeze or cancel it again. This is logged with your reason.
+                </p>
+                <FormField label="Reason (required)">
+                  <TextInput value={compReason} onChange={(e) => setCompReason(e.target.value)} maxLength={500} />
+                </FormField>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" className="min-h-[44px]" onClick={() => { setCompOpen(false); setCompReason(''); }} disabled={compBusy}>Cancel</Button>
+                  <Button className="min-h-[44px]" onClick={compReactivate} disabled={compBusy || !compReason.trim()} loading={compBusy} style={{ background: '#A33757', color: '#fff' }}>
+                    Reactivate
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <IconBtn title="Reactivate without payment" onClick={() => setCompOpen(true)}>
+                  <RotateCcw size={12} /> Reactivate without payment…
+                </IconBtn>
+              </div>
+            )
+          ) : null}
+
           {/* Quick overrides */}
           <div className="flex flex-wrap gap-2">
-            {!o.is_founder && <IconBtn title="Grant founder" onClick={() => act(() => api.superAdmin.grantFounder(studio.id), 'Founder granted.')} tone="success"><Gift size={12} /> Grant founder</IconBtn>}
+            {!o.is_founder && <IconBtn title="Grant founder" onClick={() => act(() => api.superAdmin.grantFounder(studio.id), 'Founder granted.')}><Gift size={12} /> Grant founder</IconBtn>}
             {o.subscription_status !== 'cancelled' && <IconBtn title="Cancel subscription" onClick={() => { if (window.confirm('Cancel this subscription? The studio will be blocked until they subscribe again.')) act(() => api.superAdmin.cancelSubscription(studio.id), 'Subscription cancelled.'); }} tone="danger"><X size={12} /> Cancel</IconBtn>}
           </div>
           <div className="flex items-end gap-2">
             <FormField label={onTrial ? 'Extend trial to' : 'Change renewal date'}>
               <TextInput type="date" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} />
             </FormField>
-            <Button variant="outline" disabled={!newExpiry} onClick={() => act(
+            <Button variant="outline" className="min-h-[44px]" disabled={!newExpiry} onClick={() => act(
               () => api.superAdmin.changeExpiry(studio.id, onTrial ? { trial_ends_at: newExpiry } : { current_period_end: newExpiry }),
               'Expiry updated.')}>Apply</Button>
           </div>
@@ -474,7 +789,7 @@ export function eventLabel(e: SubEvent): string {
     case 'downgrade_cancelled': return 'Scheduled downgrade cancelled';
     case 'founder_granted': return `Founder #${d.founder_number} granted`;
     case 'frozen': return `Frozen${d.reason ? ` (${d.reason})` : ''}`;
-    case 'reactivated': return 'Reactivated';
+    case 'reactivated': return `Reactivated${d.reason ? ` (${d.reason})` : ''}`;
     case 'cancelled': return 'Subscription cancelled';
     case 'expired': return `Expired${d.reason ? ` (${d.reason})` : ''}`;
     case 'expiry_changed': return 'Expiry date changed';

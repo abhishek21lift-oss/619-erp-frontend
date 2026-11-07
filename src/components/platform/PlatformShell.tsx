@@ -18,7 +18,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Activity, Bot, Building2, CreditCard, HeartPulse, LayoutDashboard, Menu, Search, ShieldAlert, ToggleRight, Users2, X } from 'lucide-react';
+import { Activity, Bot, Building2, HeartPulse, IndianRupee, LayoutDashboard, Menu, Search, ShieldAlert, ToggleRight, Users2, X } from 'lucide-react';
 import { MODULES, TAB_LABELS, moduleForTab, normalizeTab } from '@/app/(platform)/platform/_shared/types';
 import type { ModuleId, Tab } from '@/app/(platform)/platform/_shared/types';
 import { OPEN_COMMAND_BAR } from '@/app/(platform)/platform/_shared/CommandBar';
@@ -26,13 +26,16 @@ import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { ccGradient, ccModuleTone, ccTones, ccWash } from './ccTheme';
 import type { CcToneName } from './ccTheme';
 
-export const MOBILE_PRIMARY: ModuleId[] = ['overview', 'studios', 'users', 'revenue', 'operations'];
+// Four primaries plus More is the iOS five-target norm. Users moved into the
+// sheet: it is an occasional lookup, while Overview, Studios, Revenue and
+// Operations are the work itself.
+export const MOBILE_PRIMARY: ModuleId[] = ['overview', 'studios', 'revenue', 'operations'];
 export const PLATFORM_CONTAINER = 'mx-auto w-full max-w-[1440px] px-[16px] sm:px-[24px] lg:px-[32px]';
 export const CONTAINER = PLATFORM_CONTAINER;
 export const SIDEBAR_W = 264;
 
 const MODULE_ICON: Record<ModuleId, (size: number) => React.ReactNode> = {
-  overview: (s) => <LayoutDashboard size={s} />, studios: (s) => <Building2 size={s} />, users: (s) => <Users2 size={s} />, revenue: (s) => <CreditCard size={s} />,
+  overview: (s) => <LayoutDashboard size={s} />, studios: (s) => <Building2 size={s} />, users: (s) => <Users2 size={s} />, revenue: (s) => <IndianRupee size={s} />,
   ai: (s) => <Bot size={s} />, operations: (s) => <HeartPulse size={s} />, security: (s) => <ShieldAlert size={s} />, control: (s) => <ToggleRight size={s} />,
 };
 const toneOf = (id: ModuleId) => ccTones[(ccModuleTone[id] ?? 'blue') as CcToneName];
@@ -83,6 +86,15 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
   const tab: Tab | null = onStudio ? null : normalizeTab(sp.get('tab'));
   const active: ModuleId = onStudio ? 'studios' : moduleForTab(tab as Tab);
   const [moreOpen, setMoreOpen] = useState(false); const moreRef = useDialogA11y({ open: moreOpen, onClose: () => setMoreOpen(false) });
+  // A shadow only once the page has moved under it: at rest the bar is part of
+  // the page; scrolled, it has to read as chrome above the content.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   useEffect(() => { setMoreOpen(false); }, [pathname, tab]);
   const overflow = MODULES.filter((m) => !MOBILE_PRIMARY.includes(m.id)); const activeModule = MODULES.find((m) => m.id === active);
   const activeLabel = activeModule?.label ?? 'Overview';
@@ -105,7 +117,7 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
       </div>
     </aside>
     <div style={{ paddingLeft: 'var(--cc-sidebar-offset, 0px)' }} className="cc-content">
-      <header className="sticky top-0 z-20" style={{ background: 'color-mix(in srgb, var(--bg-elevated) 82%, transparent)', borderBottom: '1px solid var(--border)', paddingTop: 'env(safe-area-inset-top, 0px)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)' }}>
+      <header className="sticky top-0 z-20" style={{ background: 'color-mix(in srgb, var(--bg-elevated) 82%, transparent)', borderBottom: '1px solid var(--border)', paddingTop: 'env(safe-area-inset-top, 0px)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)', boxShadow: scrolled ? '0 10px 24px -20px rgba(15,23,42,0.55)' : 'none', transition: 'box-shadow 160ms ease' }}>
         <div className={CONTAINER}><div className="relative flex items-center justify-between gap-3" style={{ minHeight: 60 }}>
           <div className="relative flex min-w-0 items-center gap-3">
             <Squircle id={active} size={36} />
@@ -116,7 +128,7 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
           </div>
           <div className="relative flex shrink-0 items-center gap-2">
             <span className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-[800] uppercase tracking-[0.08em] sm:inline-flex" style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}><Activity size={11} />Platform</span>
-            <button type="button" onClick={openSearch} aria-label="Search the platform" className="flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-[650] lg:hidden" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            <button type="button" onClick={openSearch} aria-label="Search the platform" className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-3 py-2 text-[12px] font-[650] lg:hidden" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
               <Search size={14} /><span className="hidden sm:inline">Search</span>
             </button>
           </div>
@@ -125,6 +137,6 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
       <main id="main-content" className={`${CONTAINER} pt-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pt-6 lg:pb-12`}>{children}</main>
     </div>
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden" aria-label="Command Center sections" data-no-pull-refresh style={{ background: 'color-mix(in srgb, var(--bg-elevated) 88%, transparent)', borderTop: '1px solid var(--border)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)' }}><div className="flex items-stretch">{MOBILE_PRIMARY.map((id) => { const mod = MODULES.find((m) => m.id === id)!; const on = id === active; const mt = toneOf(id); return <Link key={id} href={hrefFor(mod.tabs[0])} aria-current={on ? 'page' : undefined} className="flex flex-1 flex-col items-center justify-center gap-1 py-2" style={{ minHeight: 56, color: on ? mt.ink : 'var(--text-muted)' }}>{on ? <Squircle id={id} size={26} /> : MODULE_ICON[id](19)}<span className="text-[10px] font-[750]">{mod.label}</span></Link>; })}<button onClick={() => setMoreOpen(true)} aria-expanded={moreOpen} aria-haspopup="dialog" className="flex flex-1 flex-col items-center justify-center gap-1 py-2" style={{ minHeight: 56, color: overflow.some((m) => m.id === active) ? t.ink : 'var(--text-muted)' }}><Menu size={19} /><span className="text-[10px] font-[750]">More</span></button></div></nav>
-    {moreOpen && <div ref={moreRef} className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="More sections" data-no-pull-refresh><button aria-label="Close" onClick={() => setMoreOpen(false)} className="absolute inset-0 h-full w-full" style={{ background: 'rgba(15,23,42,0.45)' }} /><div className="absolute inset-x-0 bottom-0 rounded-t-[22px] p-4" style={{ background: 'var(--bg-elevated)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}><div className="mb-3 flex items-center justify-between"><span className="text-[14px] font-[800]" style={{ color: 'var(--text-primary)' }}>More sections</span><button onClick={() => setMoreOpen(false)} aria-label="Close" className="flex items-center justify-center rounded-full" style={{ width: 32, height: 32, background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}><X size={15} /></button></div><div className="grid grid-cols-2 gap-2">{overflow.map((m) => <Link key={m.id} href={hrefFor(m.tabs[0])} className="flex items-center gap-2.5 rounded-[14px] px-3 py-3 text-[13px] font-[700]" style={{ background: m.id === active ? ccWash(toneOf(m.id), 0.12) : 'var(--bg-subtle)', color: 'var(--text-primary)', minHeight: 52 }}><Squircle id={m.id} size={28} /><span>{m.label}</span></Link>)}</div></div></div>}
+    {moreOpen && <div ref={moreRef} className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="More sections" data-no-pull-refresh><button aria-label="Close" onClick={() => setMoreOpen(false)} className="absolute inset-0 h-full w-full" style={{ background: 'rgba(15,23,42,0.45)' }} /><div className="absolute inset-x-0 bottom-0 rounded-t-[22px] p-4" style={{ background: 'var(--bg-elevated)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}><div className="mb-3 flex items-center justify-between"><span className="text-[14px] font-[800]" style={{ color: 'var(--text-primary)' }}>More sections</span><button onClick={() => setMoreOpen(false)} aria-label="Close" className="flex items-center justify-center rounded-full" style={{ width: 44, height: 44, background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}><X size={15} /></button></div><div className="grid grid-cols-2 gap-2">{overflow.map((m) => <Link key={m.id} href={hrefFor(m.tabs[0])} className="flex items-center gap-2.5 rounded-[14px] px-3 py-3 text-[13px] font-[700]" style={{ background: m.id === active ? ccWash(toneOf(m.id), 0.12) : 'var(--bg-subtle)', color: 'var(--text-primary)', minHeight: 52 }}><Squircle id={m.id} size={28} /><span>{m.label}</span></Link>)}</div></div></div>}
   </div>;
 }

@@ -3251,6 +3251,8 @@ export type SubStudio = {
   requested_at?: string | null;
   requested_plan_code?: string | null; requested_plan_name?: string | null;
   requested_direction?: string | null;
+  /** When the studio was last frozen, and why (manual, trial_expired, or operator text). */
+  frozen_at?: string | null; frozen_reason?: string | null;
 };
 export type SubKpis = {
   studios: number; trial: number; active: number; frozen: number; founders: number;
