@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MACRO_GOALS, macroPhasePlans } from '@/lib/macro-programming';
+import { MACRO_GOALS, macroPhasePlans, mapMacroGoal } from '@/lib/macro-programming';
 
 describe('macroPhasePlans', () => {
   it('turns every phase into a programme whose weeks add up to the block', () => {
@@ -39,5 +39,13 @@ describe('macroPhasePlans', () => {
     expect(MACRO_GOALS.map((g) => g.value)).toEqual([
       'strength', 'hypertrophy', 'endurance', 'fat_loss', 'general_fitness', 'powerlifting',
     ]);
+  });
+
+  it('maps record goals without guessing ambiguous ones', () => {
+    expect(mapMacroGoal('muscle_gain')).toBe('hypertrophy');
+    expect(mapMacroGoal('weight_loss')).toBe('fat_loss');
+    expect(mapMacroGoal('strength')).toBe('strength');
+    expect(mapMacroGoal('body_recomposition')).toBe('');
+    expect(mapMacroGoal('')).toBe('');
   });
 });

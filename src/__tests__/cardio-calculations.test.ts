@@ -16,6 +16,8 @@ import {
   clearCardioPlanDraft,
   estimateMaxHeartRate,
   formatIntensityPercent,
+  mapCardioExperience,
+  mapCardioGoal,
   readCardioPlanDraft,
   resolveHeartRateInputs,
   toCardioPlanConfig,
@@ -386,5 +388,22 @@ describe('session builder validation', () => {
   test('formats whole percentages only', () => {
     expect(formatIntensityPercent(0.7)).toBe('70%');
     expect(formatIntensityPercent(0.85)).toBe('85%');
+  });
+});
+
+describe('record vocabulary mapping', () => {
+  test('maps only unambiguous record goals to a cardio goal', () => {
+    expect(mapCardioGoal('fat_loss')).toBe('fat-loss');
+    expect(mapCardioGoal('weight_loss')).toBe('fat-loss');
+    expect(mapCardioGoal('general_fitness')).toBe('general-fitness');
+    expect(mapCardioGoal('muscle_gain')).toBe('');
+    expect(mapCardioGoal('')).toBe('');
+  });
+
+  test('maps experience to a K11 level and treats athlete as advanced', () => {
+    expect(mapCardioExperience('beginner')).toBe('beginner');
+    expect(mapCardioExperience('intermediate')).toBe('intermediate');
+    expect(mapCardioExperience('athlete')).toBe('advanced');
+    expect(mapCardioExperience('')).toBe('');
   });
 });
