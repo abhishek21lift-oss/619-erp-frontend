@@ -13,14 +13,18 @@ vi.mock('@/components/Guard', () => ({
 vi.mock('@/components/ui', () => ({
   PageContainer: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PageHero: ({ title }: { title: string }) => <h1>{title}</h1>,
-  FormField: ({ label, error, children }: {
-    label: string; error?: string; children: React.ReactNode;
+  FormField: ({ label, error, description, required, children }: {
+    label: string; error?: string; description?: string; required?: boolean; children: React.ReactNode;
   }) => (
-    <label>
-      <span>{label}</span>
-      {children}
+    <div>
+      <label>
+        <span>{label}</span>
+        {children}
+      </label>
+      {required && <span aria-hidden> *</span>}
+      {description && <span>{description}</span>}
       {error && <span>{error}</span>}
-    </label>
+    </div>
   ),
   TextInput: (rest: Record<string, unknown>) => <input {...rest} />,
   SelectInput: ({ children, ...rest }: Record<string, unknown>) => (
@@ -57,6 +61,52 @@ describe('<CardioCalculatorPage />', () => {
     expect(screen.getByText('K11 intensity target')).toBeTruthy();
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /Save for plan builder/i })).toBeDisabled();
+  });
+
+  it('marks resting HR required without calling an empty field a positive-number error', () => {
+    render(<CardioCalculatorPage />);
+
+    expect(screen.getByText('*')).toBeTruthy();
+    expect(screen.getByText('Required for heart-rate targets.')).toBeTruthy();
+    expect(screen.queryByText('Resting heart rate must be a positive number.')).toBeNull();
+  });
+
+  it('still rejects a non-positive resting HR once one is entered', () => {
+    render(<CardioCalculatorPage />);
+    fireEvent.change(resting(), { target: { value: '0' } });
+
+    expect(screen.getAllByText('Resting heart rate must be a positive number.').length).toBeGreaterThan(0);
+  });
+
+  it('shows the planned duration from valid phase minutes without a heart rate', () => {
+    render(<CardioCalculatorPage />);
+
+    // 5 + 3 + 20 + 5 + 5; the sum does not need resting HR.
+    expect(screen.getByText('38 min')).toBeTruthy();
+  });
+
+  it('does not call Running unclassified before a prescription exists', () => {
+    render(<CardioCalculatorPage />);
+
+    expect(screen.queryByText('Unclassified')).toBeNull();
+  });
+
+  it('shows the age-based max HR without a resting HR', () => {
+    render(<CardioCalculatorPage />);
+    fireEvent.change(age(), { target: { value: '46' } });
+
+    // 220 - 46, and the resting-HR-dependent results stay blank.
+    expect(screen.getByText('174 BPM')).toBeTruthy();
+    expect(screen.getByText('Age estimate, not a measurement.')).toBeTruthy();
+  });
+
+  it('still labels a genuinely unknown modality', () => {
+    render(<CardioCalculatorPage />);
+    fireEvent.change(age(), { target: { value: '40' } });
+    fireEvent.change(resting(), { target: { value: '60' } });
+    fireEvent.change(screen.getByLabelText('Modality'), { target: { value: 'Hula hooping' } });
+
+    expect(screen.getByText('Unclassified')).toBeTruthy();
   });
 
   it('rejects an out-of-range age instead of calculating from it', () => {

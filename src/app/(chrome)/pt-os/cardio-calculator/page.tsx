@@ -233,6 +233,7 @@ export default function CardioCalculatorPage() {
     : measuredNumber != null
       ? validateMeasuredMaxHeartRate(measuredNumber, rhrNumber)
       : null;
+  const rhrMissing = rhr.trim() === '';
   const rhrError = rhr.trim() !== '' && rhrNumber == null
     ? 'Enter a number.'
     : rhrNumber != null
@@ -250,12 +251,24 @@ export default function CardioCalculatorPage() {
 
   const parseBlocked = Boolean(ageError || measuredError || rhrError);
   const hr = parseBlocked ? null : heartRate.value;
+  // An empty field is incomplete, not a bad number. The required marker and
+  // description carry that; only a non-empty invalid value is an error.
+  const heartRateErrors = rhrMissing
+    ? heartRate.errors.filter((error) => error !== 'Resting heart rate must be a positive number.')
+    : heartRate.errors;
   const inputErrors = [...new Set([
     ...(parseBlocked ? [ageError, measuredError, rhrError] : []),
-    ...heartRate.errors,
+    ...heartRateErrors,
   ].filter((value): value is string => Boolean(value)))];
 
   const estimated = ageNumber != null && ageError == null ? estimateMaxHeartRate(ageNumber) : null;
+  // Age alone gives a max HR (220 - age). It does not need a resting HR, so
+  // show it while the reserve and targets are still waiting for one.
+  const maxHeartRateDisplay = hr?.maxHeartRate
+    ?? (measuredNumber != null && measuredError == null ? measuredNumber : null)
+    ?? estimated;
+  const maxHeartRateSourceDisplay = hr?.maxHeartRateSource
+    ?? (measuredNumber != null && measuredError == null ? 'measured' : estimated != null ? 'estimated' : null);
   const band = getK11IntensityBand(intensity);
   const k11Target = hr && band && isCardioIntensity(intensity)
     ? calcTargetRangeForBand({
@@ -304,6 +317,12 @@ export default function CardioCalculatorPage() {
     ...(fitt?.errors ?? []),
   ])];
   const fittWarnings = fittValue?.warnings ?? [];
+  const modalityCategoryLabel = fittValue
+    ? (fittValue.modalityCategory
+      ? CARDIO_MODALITY_CATEGORIES.find((category) => category.key === fittValue.modalityCategory)?.label
+        ?? fittValue.modalityCategory
+      : 'Unclassified')
+    : '—';
 
   // ── Progression phase ─────────────────────────────────────────────────────
   const phase = getProgressionPhase(progressionPhase);
@@ -375,6 +394,12 @@ export default function CardioCalculatorPage() {
     row.minutesError ? `${row.name}: ${row.minutesError}` : null,
     row.percentError ? `${row.name}: ${row.percentError}` : null,
   ]).filter((value): value is string => Boolean(value));
+
+  // The duration is a sum of minutes, not a heart-rate calculation. Keep it
+  // visible when the target columns cannot be built yet.
+  const plannedMinutes = phaseRows.every((row) => row.minutes != null && row.minutesError == null)
+    ? phaseRows.reduce((sum, row) => sum + (row.minutes ?? 0), 0)
+    : null;
 
   const template = useMemo(() => {
     if (!hr || templateErrors.length > 0) return null;
@@ -485,7 +510,12 @@ export default function CardioCalculatorPage() {
                   onChange={(e) => setMeasuredMhr(e.target.value)}
                 />
               </FormField>
-              <FormField label="Resting HR" error={rhrError ?? undefined}>
+              <FormField
+                label="Resting HR"
+                required
+                description={rhrMissing ? 'Required for heart-rate targets.' : undefined}
+                error={rhrError ?? undefined}
+              >
                 <TextInput
                   inputMode="numeric"
                   value={rhr}
@@ -514,10 +544,10 @@ export default function CardioCalculatorPage() {
             <dl className="mt-4 grid gap-2 sm:grid-cols-3">
               <Metric
                 label="Max HR used"
-                value={hr ? `${hr.maxHeartRate} BPM` : '—'}
-                hint={hr?.maxHeartRateSource === 'estimated'
+                value={maxHeartRateDisplay != null ? `${maxHeartRateDisplay} BPM` : '—'}
+                hint={maxHeartRateSourceDisplay === 'estimated'
                   ? 'Age estimate, not a measurement.'
-                  : hr?.maxHeartRateSource === 'measured'
+                  : maxHeartRateSourceDisplay === 'measured'
                     ? 'Measured value.'
                     : undefined}
               />
@@ -662,10 +692,7 @@ export default function CardioCalculatorPage() {
                   />
                   <Metric
                     label="Modality category"
-                    value={fittValue?.modalityCategory
-                      ? CARDIO_MODALITY_CATEGORIES.find((c) => c.key === fittValue.modalityCategory)?.label
-                        ?? fittValue.modalityCategory
-                      : 'Unclassified'}
+                    value={modalityCategoryLabel}
                     hint={fittValue?.modality ? fittValue.modality : undefined}
                   />
                   <Metric
@@ -790,21 +817,34 @@ export default function CardioCalculatorPage() {
                 </button>
               </div>
 
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[430px] border-collapse text-[12px]">
-                  <thead>
-                    <tr style={{ color: 'var(--text-muted)' }}>
-                      <th className="pb-1 text-left font-[700]">Phase</th>
-                      <th className="pb-1 text-left font-[700]">Min</th>
-                      <th className="pb-1 text-left font-[700]">%HRR</th>
-                      <th className="pb-1 text-right font-[700]">Target</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {phaseRows.map((row, index) => (
-                      <tr key={row.key} style={{ borderTop: '1px solid var(--border)' }}>
-                        <td className="py-1.5 pr-2">{row.name}</td>
-                        <td className="py-1.5 pr-2">
+              <div className="mt-3">
+                <div
+                  className="hidden pb-1 text-[12px] font-[700] sm:grid sm:grid-cols-[minmax(0,1fr)_64px_64px_84px] sm:gap-2"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <span>Phase</span>
+                  <span>Min</span>
+                  <span>%HRR</span>
+                  <span className="text-right">Target</span>
+                </div>
+                {phaseRows.map((row, index) => {
+                  const target = template?.phases[index]?.targetHeartRate;
+                  const targetText = target != null ? `${target} BPM` : '—';
+                  return (
+                    <div key={row.key} className="py-2" style={{ borderTop: '1px solid var(--border)' }}>
+                      <div className="flex items-center justify-between gap-3 sm:hidden">
+                        <span className="min-w-0 text-[12px]">{row.name}</span>
+                        <span className="shrink-0 text-[12px] font-[700]">{targetText}</span>
+                      </div>
+                      <div className="mt-1.5 grid grid-cols-2 gap-2 sm:mt-0 sm:grid-cols-[minmax(0,1fr)_64px_64px_84px] sm:items-center">
+                        <div className="hidden min-w-0 text-[12px] sm:block">{row.name}</div>
+                        <div>
+                          <span
+                            className="mb-0.5 block text-[10px] font-[700] uppercase tracking-wide sm:hidden"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            Min
+                          </span>
                           <TextInput
                             aria-label={`${row.name} minutes`}
                             inputMode="numeric"
@@ -814,15 +854,21 @@ export default function CardioCalculatorPage() {
                             onChange={(e) => setPhases((prev) => prev.map((item, i) => (
                               i === index ? { ...item, minutes: e.target.value } : item
                             )))}
-                            className="h-[44px] w-[64px] text-center"
+                            className="h-[44px] w-full text-center sm:w-[64px]"
                           />
                           {row.minutesError && (
                             <span className="mt-0.5 block text-[10px]" style={{ color: 'var(--danger-text, #b91c1c)' }}>
                               {row.minutesError}
                             </span>
                           )}
-                        </td>
-                        <td className="py-1.5 pr-2">
+                        </div>
+                        <div>
+                          <span
+                            className="mb-0.5 block text-[10px] font-[700] uppercase tracking-wide sm:hidden"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            %HRR
+                          </span>
                           <TextInput
                             aria-label={`${row.name} percent HRR`}
                             inputMode="numeric"
@@ -832,31 +878,27 @@ export default function CardioCalculatorPage() {
                             onChange={(e) => setPhases((prev) => prev.map((item, i) => (
                               i === index ? { ...item, percent: e.target.value } : item
                             )))}
-                            className="h-[44px] w-[64px] text-center"
+                            className="h-[44px] w-full text-center sm:w-[64px]"
                           />
                           {row.percentError && (
                             <span className="mt-0.5 block text-[10px]" style={{ color: 'var(--danger-text, #b91c1c)' }}>
                               {row.percentError}
                             </span>
                           )}
-                        </td>
-                        <td className="py-1.5 text-right font-[700]">
-                          {template?.phases[index]?.targetHeartRate != null
-                            ? `${template.phases[index].targetHeartRate} BPM`
-                            : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                        <div className="hidden text-right text-[12px] font-[700] sm:block">{targetText}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[13px]">
                   Total planned duration:{' '}
-                  <strong>{template ? `${template.totalMinutes} min` : '—'}</strong>
+                  <strong>{plannedMinutes != null ? `${plannedMinutes} min` : '—'}</strong>
                 </p>
-                {template && (
+                {plannedMinutes != null && (
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                     Sum of all five phases. Main work is {phaseRows.find((row) => row.key === 'work')?.minutes ?? 0} min.
                   </p>
