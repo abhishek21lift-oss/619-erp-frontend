@@ -45,7 +45,7 @@ export type { PageHeaderProps } from './PageHeader';
 // The form system. FormField is the layout + accessibility primitive that
 // wraps any control; the natives and SearchField consume its wiring. FloatInput
 // below is the floating-label alternative, kept for the auth and onboarding
-// forms — FORM-SYSTEM.md says which to use where.
+// forms — docs/audits/FORM-SYSTEM.md says which to use where.
 export {
   FormField, useFieldWiring, fieldControlProps,
   TextInput, TextArea, SelectInput, SearchField, TextFieldRow,
@@ -110,5 +110,6 @@ export type {
   ChartColor,
 } from './chart';
 
-export { PageHero, PageContainer, HeroButton, HeroChip } from './PageHero';
-export type { PageHeroProps, HeroButtonProps } from './PageHero';
+export { PageHero, PageContainer, PageActions, HeroChip } from './PageHero';
+export type { PageHeroProps } from './PageHero';
+export type { PageAccent } from './pageAccents';

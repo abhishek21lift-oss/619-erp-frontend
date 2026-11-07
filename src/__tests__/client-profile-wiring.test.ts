@@ -119,7 +119,7 @@ describe('the Documents card tells "could not check" from "nothing on file"', ()
   });
 });
 
-describe('the Photos tab queries', () => {
+describe('the Check-ins tab queries Photos', () => {
   it('renders the fetching panel rather than a hardcoded empty state', () => {
     expect(PROFILE).toMatch(/<PhotosPanel clientId=/);
     expect(PROFILE).not.toMatch(/title="No progress photos yet"/);
@@ -150,16 +150,15 @@ describe('the notes are edited where they are read', () => {
   });
 });
 
-describe('the Reports tab promises what it delivers', () => {
-  it('no longer sends client_id to the studio-wide finance report', () => {
+describe('the Reports tab is gone, and its links live where the job lives', () => {
+  it('no longer renders a Reports panel or a studio-wide finance link', () => {
     // /pt-os/reports is revenue, commissions and trainer counts, with no
-    // per-client concept and no reading of the parameter it was handed.
-    expect(PROFILE).not.toMatch(/pt-os\/reports\?client_id=/);
-    expect(PROFILE).not.toMatch(/insights\/revenue\?client_id=/);
+    // per-client concept. It belongs in Insights, not on a client profile.
+    expect(PROFILE).not.toMatch(/<TabPanel id="reports"/);
+    expect(PROFILE).not.toMatch(/href: '\/insights\/revenue'/);
   });
 
-  it('still offers the studio report, unparameterised', () => {
-    // /pt-os/reports is now a redirect to Revenue Analytics; link there directly.
-    expect(PROFILE).toMatch(/href: '\/insights\/revenue'/);
+  it('links the client progress report from Training', () => {
+    expect(PROFILE).toMatch(/label: 'Progress analytics'[^\n]*training\/analytics/);
   });
 });

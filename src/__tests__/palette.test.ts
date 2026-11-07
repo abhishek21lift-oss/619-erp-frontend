@@ -225,6 +225,53 @@ describe('the app uses only the palette', () => {
     expect(outside).toEqual([]);
   });
 
+  it('confines the page accents to the shared hero', () => {
+    // The eleventh exception (components/ui/pageAccents.ts): one two-stop
+    // gradient per section, painted on PageHero. Its hexes are exempt from
+    // the scan above only in that file, and only the hero may paint from them
+    // — a page importing them directly would be a second, drifting hero.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/pageAccents/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(users.sort()).toEqual(['components/ui/PageHero.tsx', 'components/ui/index.ts']);
+  });
+
+  it('confines the hero paint to the three heroes', () => {
+    // The twelfth exception (components/ui/heroTheme.ts): the arrival slab
+    // runs a dark surface of its own, and the hero navy is not in the eight
+    // families because it only ever appears there. Only the three heroes may
+    // import it — a card or a chart reaching for that navy would be a second,
+    // drifting surface, which is the exact decay this file exists to stop.
+    const users: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = join(dir, entry);
+        if (statSync(p).isDirectory()) { walk(p); continue; }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (p.includes('__tests__')) continue;
+        if (/heroTheme['"]/.test(readFileSync(p, 'utf8'))) {
+          users.push(p.split(join('src') + sep)[1].replaceAll(sep, '/'));
+        }
+      }
+    };
+    walk(join(process.cwd(), 'src'));
+    expect(users.sort()).toEqual([
+      'components/dashboards/PtOsDashboard.tsx',
+      'components/profile/profileTheme.ts',
+      'components/ui/PageHero.tsx',
+    ]);
+  });
+
   it('confines the region colours to the exercise library', () => {
     // The sixth exception (exercise-library/libraryTheme.ts): one decorative
     // hue per body region. A muscle group is not a state, so it cannot borrow

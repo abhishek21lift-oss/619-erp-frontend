@@ -46,7 +46,7 @@ import { surface, toneFor } from './tokens';
 const TIERS: AiTier[] = ['primary', 'secondary', 'fallback'];
 
 const SOURCE_LABEL: Record<string, string> = {
-  override: 'Control Centre override',
+  override: 'AI Control override',
   env: 'environment variable',
   default: 'built-in default',
 };
@@ -347,7 +347,7 @@ const Traffic: React.FC<{ ai: AiTelemetry | null }> = ({ ai }) => {
             : 'No budget set'}
           hint={ai.budget
             ? `${ai.budget.pct}% of the monthly budget${ai.budget.cost_is_floor ? ', and cost is a floor' : ''}`
-            : 'Set one under AI Control Centre → Allowances'}
+            : 'Set one under AI Control → Allowances'}
         />
       </dl>
       <div className="mt-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
@@ -370,12 +370,18 @@ const Traffic: React.FC<{ ai: AiTelemetry | null }> = ({ ai }) => {
   );
 };
 
-const Gateway: React.FC<{ card: CommandCenterCard | undefined; gw: FreeLlmApiTelemetry | null }> = ({ card, gw }) => {
+const Gateway: React.FC<{ card: CommandCenterCard | undefined; gw: FreeLlmApiTelemetry | null; ai: AiTelemetry | null }> = ({ card, gw, ai }) => {
   if (!card) return <Note>This API version does not report the AI gateway.</Note>;
   if (!gw || gw.gateway?.kind !== 'freellmapi') {
     return <Note>{card.reason ?? 'The gateway at AI_BASE_URL has no status surface to read.'}</Note>;
   }
   const svc = gw.service; const ready = gw.readiness; const pr = gw.providers; const keys = gw.keys;
+  // An empty catalog is not the same claim as "0 of 0 models are available".
+  // FreeLLMAPI's /v1/models can return an empty list while requests are still
+  // served, so the count is reported as what it is — nothing listed — and the
+  // served traffic beside it says whether the list is stale.
+  const catalogEmpty = gw.models?.total === 0;
+  const served = ai?.served_models_24h ?? [];
   return (
     <>
       <dl className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
@@ -384,8 +390,19 @@ const Gateway: React.FC<{ card: CommandCenterCard | undefined; gw: FreeLlmApiTel
         <Fact label="Version / uptime" value={`${svc?.version ?? '—'} · ${fmtDuration(svc?.uptime_s)}`} />
         <Fact label="Probe latency" value={fmtMs(svc?.latency_ms)} />
         <Fact label="Endpoint" value={gw.gateway.endpoint ?? '—'} hint={gw.gateway.endpoint ?? undefined} />
-        <Fact label="Models available" value={gw.models?.total != null ? `${fmtNum(gw.models.available)} of ${fmtNum(gw.models.total)}` : (gw.models?.reason ?? '—')} />
+        <Fact label="Models available" value={gw.models?.total != null
+          ? (catalogEmpty ? 'None listed' : `${fmtNum(gw.models.available)} of ${fmtNum(gw.models.total)}`)
+          : (gw.models?.reason ?? '—')} />
       </dl>
+
+      {catalogEmpty && (
+        <Note>
+          The gateway&apos;s catalog listed no models.
+          {served.length
+            ? ` The last 24h of traffic was served by ${served.slice(0, 3).map((s) => s.model).join(', ')} — so the empty list is incomplete, stale, or describes a different path than the traffic.`
+            : ' Nothing was served in the last 24h, so nothing contradicts the empty list yet.'}
+        </Note>
+      )}
 
       <div className="mt-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
         {pr?.items && pr.items.length > 0 ? (
@@ -408,7 +425,9 @@ const Gateway: React.FC<{ card: CommandCenterCard | undefined; gw: FreeLlmApiTel
                   </td>
                   <td className="py-1.5"><Pill status={PROVIDER_STATUS[p.status] ?? 'unavailable'}>{PROVIDER_LABEL[p.status] ?? p.status}</Pill></td>
                   <td className="py-1.5 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>
-                    {p.models_total == null ? '—' : `${p.models_available ?? 0}/${p.models_total}`}
+                    {p.models_total == null ? '—' : p.models_total === 0
+                      ? <span title="The gateway catalog lists no model for this provider">—</span>
+                      : `${p.models_available ?? 0}/${p.models_total}`}
                   </td>
                   <td className="hidden py-1.5 text-right tabular-nums sm:table-cell" style={{ color: 'var(--text-secondary)' }}>{fmtNum(p.enabled_keys)}</td>
                 </tr>
@@ -507,7 +526,7 @@ const Inventory: React.FC = () => {
         </div>
         <label className="flex min-w-[160px] flex-1 items-center gap-1.5 rounded-[10px] px-2.5 py-1" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <Search size={12} style={{ color: 'var(--text-tertiary)' }} aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Model or provider"
+          <input value={q} onChange={(e) => setQ(e.target.value)}
             aria-label="Search models" className="w-full bg-transparent text-[11.5px] outline-none" style={{ color: 'var(--text-primary)' }} />
         </label>
         <button type="button" onClick={() => load(true)} disabled={loading} aria-label="Re-read the catalog"
@@ -628,7 +647,7 @@ export const AiOperations: React.FC<{ snap: CommandCenterSnapshot; onRefresh: ()
 
       <Block title="Gateway, providers and keys" source="FreeLLMAPI /livez, /readyz, GET /v1/providers"
         aside={gw?.gateway?.checked_at ? <span className="shrink-0 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>read {when(gw.gateway.checked_at)}</span> : undefined}>
-        <Gateway card={gwCard} gw={gw} />
+        <Gateway card={gwCard} gw={gw} ai={ai} />
       </Block>
 
       <Block title="Model inventory" source="GET /command-center/ai/models">

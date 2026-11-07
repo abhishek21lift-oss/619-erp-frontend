@@ -19,7 +19,7 @@
  */
 
 import * as React from 'react';
-import { ccGradient, ccMesh, ccSeries, ccTones, ccWash, type CcTone, type CcToneName } from './ccTheme';
+import { ccGradient, ccHeroScrim, ccMesh, ccSeries, ccTones, ccWash, type CcTone, type CcToneName } from './ccTheme';
 
 export type Tone = CcToneName;
 const T = (t: Tone): CcTone => ccTones[t];
@@ -37,15 +37,16 @@ export const inrCompact = (n: number) => `₹${compact(n)}`;
 
 // ── Hero ────────────────────────────────────────────────────────────────────
 
-export function CcHero({ tone, eyebrow, title, subtitle, icon, actions, children }: {
+export function CcHero({ tone, eyebrow, title, subtitle, icon, children, compactOnMobile }: {
   tone: Tone;
   eyebrow: string;
   title: string;
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
-  actions?: React.ReactNode;
   /** A row of hero stats under the title. */
   children?: React.ReactNode;
+  /** The console header already names the screen; drop the repeated block on phones. */
+  compactOnMobile?: boolean;
 }) {
   const t = T(tone);
   return (
@@ -55,7 +56,8 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, actions, children
     >
       <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full blur-3xl" style={{ background: t.to, opacity: 0.45 }} />
       <span aria-hidden className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full blur-3xl" style={{ background: t.from, opacity: 0.35 }} />
-      <div className="relative flex flex-wrap items-start justify-between gap-4">
+      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: ccHeroScrim }} />
+      <div className={`relative flex-wrap items-start justify-between gap-4 ${compactOnMobile ? 'hidden sm:flex' : 'flex'}`}>
         <div className="flex min-w-0 items-start gap-3.5">
           {icon && (
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px]" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(10px)' }}>
@@ -63,14 +65,13 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, actions, children
             </span>
           )}
           <div className="min-w-0">
-            <p className="text-[10.5px] font-[800] uppercase tracking-[0.18em] text-white/75">{eyebrow}</p>
+            <p className="text-[10.5px] font-[800] uppercase tracking-[0.18em] text-white/90">{eyebrow}</p>
             <h1 className="mt-1 text-[24px] font-[850] leading-[1.1] tracking-[-0.035em] sm:text-[30px]">{title}</h1>
-            {subtitle && <p className="mt-1.5 max-w-[720px] text-[12.5px] leading-5 text-white/80">{subtitle}</p>}
+            {subtitle && <p className="mt-1.5 max-w-[720px] text-[12.5px] leading-5 text-white/90">{subtitle}</p>}
           </div>
         </div>
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {children && <div className="relative mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">{children}</div>}
+      {children && <div className={`relative grid grid-cols-2 gap-2.5 sm:grid-cols-4 ${compactOnMobile ? 'mt-0 sm:mt-5' : 'mt-5'}`}>{children}</div>}
     </section>
   );
 }
@@ -83,19 +84,6 @@ export function CcHeroStat({ label, value, sub }: { label: string; value: React.
       <p className="mt-0.5 truncate text-[22px] font-[850] tabular-nums tracking-[-0.03em]">{value}</p>
       {sub && <p className="truncate text-[11px] text-white/75">{sub}</p>}
     </div>
-  );
-}
-
-/** A button styled for the hero. */
-export function CcHeroButton({ children, onClick, disabled, label }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; label?: string }) {
-  return (
-    <button
-      type="button" onClick={onClick} disabled={disabled} aria-label={label}
-      className="flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-[750] text-white transition-opacity disabled:opacity-60"
-      style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(10px)' }}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -123,8 +111,8 @@ export function CcCard({ title, eyebrow, icon, tone = 'blue', action, children, 
           <div className="flex min-w-0 items-center gap-3">
             {icon && <CcIcon tone={tone}>{icon}</CcIcon>}
             <div className="min-w-0">
-              {eyebrow && <p className="text-[10px] font-[800] uppercase tracking-[0.16em]" style={{ color: t.ink }}>{eyebrow}</p>}
-              {title && <h2 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>}
+              {eyebrow && <p className="text-[10px] font-[800] uppercase tracking-[0.16em]" style={{ color: t.inkText }}>{eyebrow}</p>}
+              {title && <h2 className="line-clamp-2 text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>}
             </div>
           </div>
           {action && <div className="shrink-0">{action}</div>}
@@ -151,7 +139,7 @@ export function CcIcon({ tone, children, size = 36 }: { tone: Tone; children: Re
 export function CcLink({ children, onClick, tone = 'blue' }: { children: React.ReactNode; onClick: () => void; tone?: Tone }) {
   const t = T(tone);
   return (
-    <button type="button" onClick={onClick} className="rounded-full px-3 py-1.5 text-[11px] font-[750] transition-opacity hover:opacity-80" style={{ color: t.ink, background: ccWash(t, 0.1) }}>
+    <button type="button" onClick={onClick} className="rounded-full px-3 py-1.5 text-[11px] font-[750] transition-opacity hover:opacity-80" style={{ color: t.inkText, background: ccWash(t, 0.1) }}>
       {children}
     </button>
   );
@@ -172,7 +160,7 @@ export function CcStat({ label, value, sub, icon, tone, onClick }: {
     <>
       <span aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl" style={{ background: t.to, opacity: 0.16 }} />
       <div className="relative flex items-start justify-between gap-2">
-        <p className="min-w-0 truncate text-[10.5px] font-[800] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <p className="line-clamp-2 min-w-0 text-[10.5px] font-[800] uppercase leading-tight tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>{label}</p>
         <CcIcon tone={tone} size={32}>{icon}</CcIcon>
       </div>
       <p className="relative mt-2 truncate text-[26px] font-[850] tabular-nums tracking-[-0.04em]" style={{ color: 'var(--text-primary)' }}>{value}</p>
@@ -280,6 +268,8 @@ export function CcBars({ data, tone = 'blue', format = nfIN, height = 150, empty
   if (!data.length || max <= 0) return <CcEmpty title={empty} height={height + 28} />;
   const peak = data.reduce((a, d) => (d.value > a.value ? d : a), data[0]);
   const labelEvery = data.length > 16 ? Math.ceil(data.length / 8) : data.length > 8 ? 2 : 1;
+  // Sparse labels may overflow their slot (neighbours are blank); dense ones must clip.
+  const denseLabels = labelEvery === 1;
   return (
     <div role="img" aria-label={`Peak ${peak.label}: ${format(peak.value)}`}>
       <div className="relative flex items-end gap-[3px] sm:gap-1.5" style={{ height }}>
@@ -305,7 +295,7 @@ export function CcBars({ data, tone = 'blue', format = nfIN, height = 150, empty
       </div>
       <div className="mt-2 flex gap-[3px] sm:gap-1.5">
         {data.map((d, i) => (
-          <span key={`${d.label}-l-${i}`} className="min-w-0 flex-1 truncate text-center text-[9.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+          <span key={`${d.label}-l-${i}`} className={`min-w-0 flex-1 text-center text-[9.5px] font-[650] ${denseLabels ? 'truncate' : ''}`} style={{ color: 'var(--text-muted)' }}>
             {i % labelEvery === 0 ? d.label : ''}
           </span>
         ))}

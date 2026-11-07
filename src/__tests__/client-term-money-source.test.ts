@@ -97,3 +97,28 @@ describe('the money cards read the client record, never subscription history', (
     expect(stripComments(page)).toMatch(/lifetimeTermCount\s*=[^;]*subscriptionHistory\.length/);
   });
 });
+
+// The payments history page carried the same lifetime-vs-term defect: it
+// divided lifetime `paid_amount` by the current term's `final_amount`, and
+// printed `paid_amount` / `balance_amount` as the term's figures. A renewed
+// client could read >100% paid, or ₹0 balance on an unpaid term.
+const paymentsPage = readFileSync(
+  appPath('pt-os', 'clients', '[id]', 'payments', 'page.tsx'), 'utf8');
+const paymentsCode = stripComments(paymentsPage);
+
+describe('the payments summary reads the current term, not the lifetime total', () => {
+  it('derives the three summary figures from current_term_*', () => {
+    expect(paymentsCode).toMatch(/currentTermFee\s*=[^;]*client\?\.current_term_fee/);
+    expect(paymentsCode).toMatch(/currentTermPaid\s*=[^;]*client\?\.current_term_paid/);
+    expect(paymentsCode).toMatch(/currentTermBalance\s*=[^;]*client\?\.current_term_balance/);
+  });
+
+  it('never divides lifetime paid by the current term fee', () => {
+    expect(paymentsCode).not.toMatch(/client\.paid_amount\s*\/\s*client\.final_amount/);
+    expect(paymentsCode).toMatch(/progressPct\s*=[^;]*currentTermPaid\s*\/\s*currentTermFee/);
+  });
+
+  it('keeps the lifetime figure labelled as lifetime', () => {
+    expect(paymentsCode).toMatch(/lifetimePaid\s*=\s*Number\(client\?\.paid_amount/);
+  });
+});

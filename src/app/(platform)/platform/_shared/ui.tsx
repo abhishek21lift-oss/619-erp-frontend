@@ -4,15 +4,17 @@
 //
 // Extracted verbatim from the 3,197-line platform/page.tsx (audit H-03).
 // Component bodies, props and rendered markup are unchanged.
+import { useId } from 'react';
 import { Loader2, ShieldAlert, X, Copy, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { TextInput } from '@/components/ui/form';
 import { useToast } from '@/lib/toast';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export function PanelSkeleton({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center gap-2.5 py-16">
-      <Loader2 size={22} className="animate-spin" style={{ color: 'var(--brand)' }} />
+    <div role="status" className="flex flex-col items-center gap-2.5 py-16">
+      <Loader2 size={22} className="animate-spin" aria-hidden style={{ color: 'var(--brand)' }} />
       <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{label}</p>
     </div>
   );
@@ -32,13 +34,13 @@ export function MiniStat({ icon, value, label, color }: { icon: React.ReactNode;
 }
 
 // ── Organization card (expandable to manage its users) ──────────────────────────
-export function IconBtn({ children, title, onClick, tone, busy }: {
-  children: React.ReactNode; title: string; onClick: () => void; tone?: 'danger' | 'success'; busy?: boolean;
+export function IconBtn({ children, title, onClick, tone, busy, label }: {
+  children: React.ReactNode; title: string; onClick: () => void; tone?: 'danger' | 'success'; busy?: boolean; label?: string;
 }) {
   const color = tone === 'danger' ? '#dc2626' : tone === 'success' ? '#059669' : 'var(--text-secondary)';
   const border = tone === 'danger' ? 'rgba(239,68,68,0.20)' : tone === 'success' ? 'rgba(16,185,129,0.25)' : 'var(--border)';
   return (
-    <button onClick={onClick} title={title} disabled={busy}
+    <button onClick={onClick} title={title} aria-label={label} disabled={busy}
       className="flex items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[650] transition hover:opacity-80 disabled:opacity-50"
       style={{ border: `1px solid ${border}`, color, minHeight: 44 }}>
       {busy ? <Loader2 size={12} className="animate-spin" /> : children}
@@ -52,8 +54,8 @@ export function Center({ children }: { children: React.ReactNode }) {
 }
 export function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-16 text-center">
-      <ShieldAlert size={28} style={{ color: '#ef4444' }} />
+    <div role="alert" className="flex flex-col items-center gap-3 py-16 text-center">
+      <ShieldAlert size={28} aria-hidden style={{ color: '#ef4444' }} />
       <p className="max-w-[420px] text-[14px] font-[600] text-slate-600">{error}</p>
       {/two-factor|2fa/i.test(error)
         ? <Button onClick={() => { window.location.href = '/settings/profile'; }}>Set up two-factor authentication</Button>
@@ -62,19 +64,67 @@ export function ErrorState({ error, onRetry }: { error: string; onRetry: () => v
   );
 }
 
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Modal({
+  title, onClose, children, dirty = false, discardMessage = 'Discard what you entered?',
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  /** Unsaved input: backdrop, Escape and Close ask before throwing it away. */
+  dirty?: boolean;
+  discardMessage?: string;
+}) {
+  const titleId = useId();
+  const requestClose = () => {
+    if (dirty && !window.confirm(discardMessage)) return;
+    onClose();
+  };
+  // Rendered only while open, so the hook sees a mount/unmount — which is also
+  // where it restores focus to the control that opened the dialog.
+  const panelRef = useDialogA11y({ open: true, onClose: requestClose });
   return (
     <div data-no-pull-refresh className="fixed inset-0 z-[9000] flex items-center justify-center p-4"
-      style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)' }} onClick={onClose}>
-      <div className="w-full max-w-md rounded-[20px] p-6" onClick={(e) => e.stopPropagation()}
+      style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)' }} onClick={requestClose}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId}
+        className="w-full max-w-md rounded-[20px] p-6" onClick={(e) => e.stopPropagation()}
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(15,23,42,0.30)' }}>
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-[16px] font-[800]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
-          <button onClick={onClose} className="text-slate-400 transition hover:text-slate-600"><X size={18} /></button>
+          <h2 id={titleId} className="text-[16px] font-[800]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+          <button type="button" onClick={requestClose} aria-label="Close dialog"
+            className="flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-black/5"
+            style={{ color: 'var(--text-muted)' }}><X size={18} /></button>
         </div>
         {children}
       </div>
     </div>
+  );
+}
+
+/**
+ * A destructive/stakes-yes confirmation in the console's own visual language.
+ * The native confirm is blocking and unstyleable; this one sits on Modal, so it
+ * inherits the dialog role, focus trap and 44px controls.
+ */
+export function ConfirmDialog({
+  title, body, confirmLabel, busy = false, onConfirm, onClose,
+}: {
+  title: string;
+  body: React.ReactNode;
+  confirmLabel: string;
+  busy?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal title={title} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{body}</div>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="outline" className="min-h-[44px]" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button variant="danger" className="min-h-[44px]" loading={busy} disabled={busy} onClick={onConfirm}>{confirmLabel}</Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -99,7 +149,7 @@ export function PasswordField({ value, onChange, onGenerate }: { value: string; 
   const { toast } = useToast();
   return (
     <div className="flex gap-2">
-      <TextInput value={value} placeholder="Min 8 characters" onChange={(e) => onChange(e.target.value)} />
+      <TextInput value={value} onChange={(e) => onChange(e.target.value)} />
       <button onClick={onGenerate} title="Generate"
         className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[11px] transition hover:bg-black/5"
         style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}><RefreshCw size={15} /></button>

@@ -29,7 +29,7 @@ import {
   AlertCircle, AlertTriangle, RefreshCw, CalendarRange, BarChart3, Download,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { KpiCard, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { KpiCard, PageActions, Button, PullToRefresh, EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { PremiumBarChart } from '@/components/visualizations';
 import { useAsync } from '@/lib/use-async';
 import MonthlyTargetHero from '@/components/revenue/MonthlyTargetHero';
@@ -253,39 +253,31 @@ function RevenueAnalytics() {
 
         {/* ── Hero ──
             Was its own `--bg-subtle` icon tile + h1, 32px outside the
-            dashboard's own hero pattern. PageHero now, with Refresh as a
-            hero action — the same slot balance-sheet and exercise-library
-            use for a page-level control that isn't a filter. */}
+            dashboard's own hero pattern. PageHero now, with the export and
+            refresh controls in the action row below it. */}
         <PageHero
           icon={<TrendingUp size={20} />}
           title="Revenue Analytics"
-
-          actions={
-            <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={yearRevenue === 0 && yearIncentives === 0}
-              aria-label={`Export ${year} revenue as CSV`}
-              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95 disabled:opacity-50"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
-            >
-              <Download size={13} />
-              CSV
-            </button>
-            <button
-              type="button"
-              onClick={refreshAll}
-              aria-label="Refresh revenue data"
-              className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
-            >
-              <RefreshCw size={13} className={monthly.loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
-            </div>
-          }
         />
+        <PageActions>
+          <Button
+            variant="secondary"
+            onClick={exportCsv}
+            disabled={yearRevenue === 0 && yearIncentives === 0}
+            aria-label={`Export ${year} revenue as CSV`}
+            iconLeft={<Download size={13} />}
+          >
+            CSV
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={refreshAll}
+            aria-label="Refresh revenue data"
+            iconLeft={<RefreshCw size={13} className={monthly.loading ? 'animate-spin' : ''} />}
+          >
+            Refresh
+          </Button>
+        </PageActions>
 
         {/* ── Monthly target ──────────────────────────────────────────
             First, and deliberately so: it is the only element on this page

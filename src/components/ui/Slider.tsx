@@ -38,7 +38,7 @@ interface SliderProps {
  *
  *  Not built on FormField: a range reads as caption-then-track with the live
  *  value beside the caption, and forcing it into the text-field shape is the
- *  mistake FORM-SYSTEM.md warns about. It follows the rule the system exists
+ *  mistake docs/audits/FORM-SYSTEM.md warns about. It follows the rule the system exists
  *  to enforce — a real <label>, associated, that does not disappear — without
  *  borrowing the layout. */
 export function Slider({

@@ -84,7 +84,6 @@ export function StepSmartGoal({ form, set, step, error }: StepSmartGoalProps) {
           label={form.goalType === 'custom' ? 'Goal Statement' : 'Goal Statement (SMART)'}
           multiline autoGrow maxLength={2000}
           value={form.goalDescription} onChange={(v) => set('goalDescription', v)}
-          placeholder="Lose 6 kg of fat by 20 December, training three mornings a week at the studio."
         />
 
         <div className="rounded-[18px] p-4" style={{ background: gray[50], border: `1px solid ${gray[200]}` }}>

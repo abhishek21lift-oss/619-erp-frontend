@@ -522,7 +522,6 @@ export function UtrForm({
                 label="UPI reference number (UTR)"
                 required
                 error={error}
-                description={error ? undefined : 'Numbers only.'}
                 className="mt-4"
                 labelAside={
                   <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
@@ -543,7 +542,6 @@ export function UtrForm({
                     f.clearFieldError('utr');
                   }}
                   onBlur={field.handleBlur}
-                  placeholder="12 to 16 digits"
                   className="rounded-xl font-mono tracking-[0.02em]"
                   style={{ height: 52, background: 'var(--bg-base)', fontSize: 16 }}
                 />
@@ -632,7 +630,6 @@ export function UtrForm({
                     f.clearFieldError('notes');
                   }}
                   onBlur={field.handleBlur}
-                  placeholder="Anything the studio should know"
                   className="resize-none rounded-xl"
                   style={{ background: 'var(--bg-base)', fontSize: 14 }}
                 />

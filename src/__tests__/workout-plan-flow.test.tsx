@@ -54,7 +54,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const openDialog = () => render(<NewProgrammeForm />);
-const nameField = () => screen.getByPlaceholderText(/Upper \/ Lower Split/i) as HTMLInputElement;
+const nameField = () => screen.getByLabelText(/Programme name/i) as HTMLInputElement;
 // By inputMode, not by role: 'spinbutton' is the implicit role of
 // `<input type="number">`, and the design system no longer renders one — a
 // wheel over a focused number input silently changes its value. The

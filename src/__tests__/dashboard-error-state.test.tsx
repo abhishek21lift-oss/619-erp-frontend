@@ -1,6 +1,6 @@
 // A dashboard that cannot load says so.
 //
-// DASHBOARD-AUDIT.md logged this as Critical #3 and it survived the report:
+// docs/audits/DASHBOARD-AUDIT.md logged this as Critical #3 and it survived the report:
 // the root rendered `{loading && !d && <Skeleton/>}` and `{d && <content/>}`
 // and nothing else, so a failed fetch left BOTH branches false. The content
 // area went blank — no skeleton, no message, no retry — and stayed blank.

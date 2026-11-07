@@ -21,7 +21,7 @@
  *   · a control with two accessible names, because someone added an aria-label
  *     to a field that already had a <label>.
  *
- * See FORM-SYSTEM.md for the audit this came out of, and for what it
+ * See docs/audits/FORM-SYSTEM.md for the audit this came out of, and for what it
  * deliberately does not do — it does not replace FloatInput, it does not own
  * validation, and it does not force checkboxes into a label-above-control
  * shape.

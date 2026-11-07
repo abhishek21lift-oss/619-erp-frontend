@@ -43,7 +43,9 @@ describe('ClientSnapshot states', () => {
 
   it('renders the summary once it answers', () => {
     render(<ClientSnapshot clientId="c1" state={{ status: 'ready', snapshot: empty }} onRetry={() => {}} />);
-    expect(screen.getByText(/Nothing needs attention/)).toBeInTheDocument();
+    // Only what the data supports: no claim about term, payments or a session
+    // when the payload carries none of them.
+    expect(screen.getByText('No alerts right now.')).toBeInTheDocument();
   });
 
   it('reads a partial payload as empty instead of throwing', () => {
@@ -52,6 +54,40 @@ describe('ClientSnapshot states', () => {
     expect(safe.prs).toEqual([]);
     expect(safe.coach).toEqual([]);
     expect(safe.baseline_done).toBe(false);
+  });
+
+  it('does not paint a goal that has not moved as success', () => {
+    // STARTED 78.5 / CURRENT 78.5 / 0 kg / TO GO 6.5 kg is not progress. A
+    // green percentage and a green delta said it was.
+    const snapshot = {
+      ...empty,
+      goal: {
+        present: true, goal_type: 'weight_loss', start_kg: 78.5, current_kg: 78.5,
+        target_kg: 72, delta_kg: 0, remaining_kg: 6.5, pct: 0,
+      },
+    } as unknown as Snapshot;
+    render(<ClientSnapshot clientId="c1" state={{ status: 'ready', snapshot }} onRetry={() => {}} />);
+    expect(screen.getByText('0%').getAttribute('style')).toContain('--text-primary');
+    // Zero movement is not an accent at all, let alone a success one.
+    expect(screen.queryByText('0 kg')).toBeNull();
+  });
+
+  it('colours a delta by its direction, not by the fact that it is a number', () => {
+    // A loss goal: losing weight is progress, gaining is not.
+    const loss = (delta: number) => ({
+      ...empty,
+      goal: {
+        present: true, goal_type: 'weight_loss', start_kg: 78.5, current_kg: 78.5 + delta,
+        target_kg: 72, delta_kg: delta, remaining_kg: 6.5 - delta, pct: 20,
+      },
+    } as unknown as Snapshot);
+
+    const { unmount } = render(<ClientSnapshot clientId="c1" state={{ status: 'ready', snapshot: loss(-1.2) }} onRetry={() => {}} />);
+    expect(screen.getByText('-1.2 kg').getAttribute('style')).toContain('--success-text');
+    unmount();
+
+    render(<ClientSnapshot clientId="c1" state={{ status: 'ready', snapshot: loss(1.2) }} onRetry={() => {}} />);
+    expect(screen.getByText('+1.2 kg').getAttribute('style')).toContain('--warning-text');
   });
 });
 

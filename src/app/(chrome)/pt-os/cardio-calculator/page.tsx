@@ -425,7 +425,7 @@ export default function CardioCalculatorPage() {
         <PageHero
           icon={<HeartPulse size={20} color="#fff" />}
           title="Cardio & FITT"
-          subtitle="K11 intensity bands (%MHR), Karvonen or MHR targets, FITT prescription, progression phases, and the five-phase session template."
+          subtitle="Intensity bands (%MHR), Karvonen or MHR targets, FITT prescription, progression phases, and the five-phase session template."
         />
 
         <div className="space-y-5">
@@ -444,7 +444,6 @@ export default function CardioCalculatorPage() {
                   max={120}
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
-                  placeholder="e.g. 40"
                 />
               </FormField>
               <FormField label="Measured max HR (preferred)" error={measuredError ?? undefined}>
@@ -452,7 +451,6 @@ export default function CardioCalculatorPage() {
                   inputMode="numeric"
                   value={measuredMhr}
                   onChange={(e) => setMeasuredMhr(e.target.value)}
-                  placeholder="e.g. 180"
                 />
               </FormField>
               <FormField label="Resting HR" error={rhrError ?? undefined}>
@@ -460,7 +458,6 @@ export default function CardioCalculatorPage() {
                   inputMode="numeric"
                   value={rhr}
                   onChange={(e) => setRhr(e.target.value)}
-                  placeholder="e.g. 60"
                 />
               </FormField>
               <FormField label="Training level">
@@ -527,7 +524,7 @@ export default function CardioCalculatorPage() {
                   <option value="karvonen">Karvonen: THR = ((MHR − RHR) × %) + RHR</option>
                 </SelectInput>
               </FormField>
-              <FormField label="K11 intensity band">
+              <FormField label="Intensity band">
                 <SelectInput
                   value={intensity}
                   onChange={(e) => setIntensity(e.target.value as CardioIntensity)}
@@ -542,7 +539,6 @@ export default function CardioCalculatorPage() {
               <FormField
                 label="Sessions per week"
                 error={frequencyError ?? undefined}
-                description={`${CARDIO_FREQUENCY_LIMITS.min}–${CARDIO_FREQUENCY_LIMITS.max} accepted; ${K11_FITT_REFERENCE.frequencyPerWeek.min}–${K11_FITT_REFERENCE.frequencyPerWeek.max} is the FITT reference.`}
               >
                 <TextInput
                   inputMode="numeric"
@@ -555,7 +551,6 @@ export default function CardioCalculatorPage() {
               <FormField
                 label="Main-work time (minutes)"
                 error={mainWorkError ?? undefined}
-                description={`${CARDIO_MAIN_WORK_LIMITS.min}–${CARDIO_MAIN_WORK_LIMITS.max} accepted; ${K11_FITT_REFERENCE.mainWorkMinutes.min}–${K11_FITT_REFERENCE.mainWorkMinutes.max} is the FITT reference.`}
               >
                 <TextInput
                   inputMode="numeric"
@@ -565,11 +560,10 @@ export default function CardioCalculatorPage() {
                   onChange={(e) => setMainWork(e.target.value)}
                 />
               </FormField>
-              <FormField label="Modality" description="Free text. Unknown modalities stay unclassified rather than being forced into a category.">
+              <FormField label="Modality">
                 <TextInput
                   value={modality}
                   onChange={(e) => setModality(e.target.value)}
-                  placeholder="Running, cycling, elliptical…"
                 />
               </FormField>
               <FormField label="Programme type">
@@ -601,7 +595,7 @@ export default function CardioCalculatorPage() {
             <div className="grid gap-4 xl:grid-cols-2">
               {/* K11 target */}
               <div className="rounded-[12px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
-                <h3 className="text-[13px] font-[700]">K11 intensity target</h3>
+                <h3 className="text-[13px] font-[700]">Intensity target</h3>
                 <dl className="mt-3 grid gap-2 sm:grid-cols-2">
                   <Metric
                     label="Band"
@@ -656,7 +650,7 @@ export default function CardioCalculatorPage() {
               <h3 className="text-[13px] font-[700]">Progression phase</h3>
               <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 These percentages are of heart-rate reserve, not of max HR. They are a separate
-                reference from the K11 band above.
+                reference from the band above.
               </p>
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -862,7 +856,7 @@ export default function CardioCalculatorPage() {
                   {' '}{band.rpe} · {band.talkTest}
                 </p>
                 <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  RPE and talk-test text is application guidance, not part of the K11 percentage reference.
+                  RPE and talk-test text is application guidance, not part of the percentage reference.
                 </p>
               </div>
             )}

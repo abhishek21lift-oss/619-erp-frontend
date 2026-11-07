@@ -133,7 +133,6 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
               field={field}
               label="Offer name"
               required
-              placeholder="e.g. Summer Splash 30% Off"
               serverError={f.errors.fieldErrors.name}
             />
           )}
@@ -167,7 +166,6 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
                       required
                       mode={type === 'percent' ? 'percent' : 'money'}
                       suffix={type === 'percent' ? '%' : '₹'}
-                      placeholder={type === 'percent' ? '30' : '500'}
                       serverError={f.errors.fieldErrors.value}
                     />
                   )}
@@ -196,8 +194,6 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
                 <TextField
                   field={field}
                   label="Coupon code"
-                  placeholder="e.g. SUMMER30"
-                  description="Letters, numbers, hyphens and underscores"
                   serverError={f.errors.fieldErrors.code}
                   className="flex-1 min-w-0"
                 />
@@ -233,7 +229,6 @@ export function OfferForm({ editing, onSubmit, onCancel }: OfferFormProps) {
               <TextField
                 field={field}
                 label="Applicable plan"
-                placeholder="All Plans / Quarterly…"
                 serverError={f.errors.fieldErrors.plan}
               />
             )}

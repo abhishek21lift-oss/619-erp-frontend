@@ -35,7 +35,6 @@ import {
   MEMBER_PASSWORD_FIELD_HINTS, blankMemberContact, blankMemberPassword,
   memberContactSchema, memberPasswordSchema, toMemberContactPayload,
 } from '@/lib/forms/schemas/memberAccount';
-import { MIN_LENGTH } from '@/lib/forms/schemas/auth';
 import { useToast } from '@/lib/toast';
 
 export default function MemberAccountPage() {
@@ -160,7 +159,6 @@ function PhotoRow({ profile, onSaved }: { profile: MeProfile; onSaved: (url: str
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-[750]" style={{ color: MC.ink }}>{profile.photo_url ? 'Your photo' : 'No photo yet'}</p>
-          <p className="text-[12px]" style={{ color: MC.muted }}>Your trainer sees it on your record.</p>
         </div>
         <div className="flex shrink-0 gap-2">
           {profile.photo_url && (
@@ -219,23 +217,18 @@ function ContactForm({ profile, onSaved }: {
           <form.Field name="mobile">
             {(field) => (
               <TextField field={field} label="Mobile" type="tel" autoComplete="tel-national" required
-                placeholder="10-digit mobile number"
-                description="Your trainer calls you on this number."
                 serverError={f.errors.fieldErrors.mobile} />
             )}
           </form.Field>
           <form.Field name="whatsapp">
             {(field) => (
               <TextField field={field} label="WhatsApp number" type="tel" autoComplete="tel-national"
-                placeholder="Same as mobile"
-                description="Reminders and messages from your studio go here. Change your mobile and this moves with it, unless it is a different number."
                 serverError={f.errors.fieldErrors.whatsapp} />
             )}
           </form.Field>
           <form.Field name="address">
             {(field) => (
               <TextAreaField field={field} label="Address" maxLength={500} rows={3}
-                placeholder="House, street, area, city"
                 serverError={f.errors.fieldErrors.address} />
             )}
           </form.Field>
@@ -308,7 +301,6 @@ function PasswordForm() {
             <form.Field name="password">
               {(field) => (
                 <TextField field={field} label="New password" type={type} autoComplete="new-password" required
-                  description={`At least ${MIN_LENGTH} characters.`}
                   serverError={f.errors.fieldErrors.password} />
               )}
             </form.Field>

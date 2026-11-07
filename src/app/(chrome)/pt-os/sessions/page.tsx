@@ -7,7 +7,7 @@ import {
   RefreshCw, Calendar, Dumbbell,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { PageContainer, PageHero } from '@/components/ui';
+import { PageActions, Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 
 type Session = {
@@ -125,21 +125,17 @@ export default function PTSessionsPage() {
         <PageHero
           icon={<Calendar size={20} />}
           title="Session History"
-
-          actions={
-            <m.button
-              type="button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={loadSessions}
-              aria-label="Refresh sessions"
-              className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}
-            >
-              <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
-            </m.button>
-          }
         />
+        <PageActions>
+          <Button
+            variant="secondary"
+            onClick={loadSessions}
+            aria-label="Refresh sessions"
+            iconLeft={<RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />}
+          >
+            Refresh
+          </Button>
+        </PageActions>
 
         {/* Filters */}
         <div className="mb-5 flex flex-col gap-3">
@@ -147,7 +143,6 @@ export default function PTSessionsPage() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" strokeWidth={1.5} />
             <input aria-label="Search by client name or mobile"
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by client name or mobile..."
               className="w-full h-11 rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-4 text-[13px] text-[#0F172A] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:border-[#A33757]/30 focus:shadow-[0_0_0_3px_rgba(163,55,87,0.06)]"
             />
           </div>

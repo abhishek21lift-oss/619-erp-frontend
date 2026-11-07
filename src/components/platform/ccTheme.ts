@@ -36,24 +36,37 @@ export type CcTone = {
   /** Gradient start and end. */
   from: string;
   to: string;
-  /** A solid for text, strokes and chart marks. */
+  /** A solid for strokes, icons and chart marks. */
   ink: string;
   /** rgb triplet, for washes and glows at any alpha. */
   rgb: string;
+  /**
+   * The same hue, dark enough for text on a white card or a 10% wash.
+   * `ink` is a system colour (2.6:1 for teal); small labels need 4.5:1.
+   */
+  inkText: string;
 };
 
-const tone = (from: string, to: string, ink: string, rgb: string): CcTone => ({ from, to, ink, rgb });
+const tone = (from: string, to: string, ink: string, rgb: string, inkText: string): CcTone => ({ from, to, ink, rgb, inkText });
 
 export const ccTones = {
-  indigo: tone(sys.indigo, sys.purple, sys.indigo, '94,92,230'),
-  sky:    tone(sys.cyan,   sys.blue,   sys.blue,   '10,132,255'),
-  teal:   tone(sys.mint,   sys.teal,   sys.teal,   '48,176,199'),
-  green:  tone('#1FA347', sys.teal,   '#1FA347',  '31,163,71'),
-  purple: tone(sys.purple, sys.pink,   sys.purple, '175,82,222'),
-  orange: tone(sys.orange, '#FF5E3A', '#E07A00',  '255,120,40'),
-  pink:   tone(sys.pink,   sys.red,    sys.pink,   '255,45,85'),
-  blue:   tone(sys.blue,   sys.indigo, sys.blue,   '10,132,255'),
+  indigo: tone(sys.indigo, sys.purple, sys.indigo, '94,92,230',  '#4338CA'),
+  sky:    tone(sys.cyan,   sys.blue,   sys.blue,   '10,132,255', '#0369A1'),
+  teal:   tone(sys.mint,   sys.teal,   sys.teal,   '48,176,199', '#0E7490'),
+  green:  tone('#1FA347', sys.teal,   '#1FA347',  '31,163,71',  '#15803D'),
+  purple: tone(sys.purple, sys.pink,   sys.purple, '175,82,222', '#6B21A8'),
+  orange: tone(sys.orange, '#FF5E3A', '#E07A00',  '255,120,40', '#B45309'),
+  pink:   tone(sys.pink,   sys.red,    sys.pink,   '255,45,85',  '#BE123C'),
+  blue:   tone(sys.blue,   sys.indigo, sys.blue,   '10,132,255', '#1D4ED8'),
 } as const;
+
+/**
+ * The dark scrim under the hero's text. The mesh's lower-left glow washes the
+ * light tones out (sampled #09C3C0 under the teal title, white is 2.2:1), so
+ * the text sits on this instead. It keeps the white title above 6:1 and the
+ * 90%-white subtitle above 4.5:1 at the mesh's lightest point.
+ */
+export const ccHeroScrim = 'linear-gradient(100deg, rgba(15,23,42,0.62) 0%, rgba(15,23,42,0.52) 65%, rgba(15,23,42,0.44) 100%)';
 
 export type CcToneName = keyof typeof ccTones;
 

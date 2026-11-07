@@ -1165,7 +1165,8 @@ function SetRow({ set, kind, modes, onChanged }: { set: WorkoutSet; kind: Tracki
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Minus size={16} />
             </button>
-            <input type="text" inputMode="decimal" value={weight} placeholder="0"
+            <input type="text" inputMode="decimal" value={weight}
+              aria-label={`${shape.loadLabel} (kg)`}
               onChange={(e) => setWeight(e.target.value)}
               onBlur={(e) => saveNum('weight_kg', e.target.value)}
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
@@ -1186,7 +1187,8 @@ function SetRow({ set, kind, modes, onChanged }: { set: WorkoutSet; kind: Tracki
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Minus size={16} />
             </button>
-            <input type="text" inputMode="numeric" value={reps} placeholder="0"
+            <input type="text" inputMode="numeric" value={reps}
+              aria-label="Reps"
               onChange={(e) => setReps(e.target.value)}
               onBlur={(e) => saveNum('reps', e.target.value)}
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"

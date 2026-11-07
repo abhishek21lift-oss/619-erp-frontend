@@ -44,7 +44,7 @@ import AppShell from '@/components/AppShell';
 import StudioMark from '@/components/StudioMark';
 import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
-import { Button, HeroButton, PageContainer, PageHero } from '@/components/ui';
+import { Button, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote, CouponValidation } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -651,23 +651,24 @@ function SubscriptionScreen() {
   );
 
   const hero = (
-    <PageHero
-      icon={<CreditCard size={20} />}
-      title="Subscription & billing"
-
-      actions={
-        <HeroButton
-          variant="glass"
+    <>
+      <PageHero
+        icon={<CreditCard size={20} />}
+        title="Subscription & billing"
+      >
+        {heroTiles}
+      </PageHero>
+      <PageActions>
+        <Button
+          variant="secondary"
           onClick={refresh}
           disabled={refreshing || loading}
-          icon={<RefreshCw size={14} className={refreshing ? 'animate-spin' : undefined} />}
+          iconLeft={<RefreshCw size={14} className={refreshing ? 'animate-spin' : undefined} />}
         >
           Refresh status
-        </HeroButton>
-      }
-    >
-      {heroTiles}
-    </PageHero>
+        </Button>
+      </PageActions>
+    </>
   );
 
   // ── Page body ───────────────────────────────────────────────────────────────
@@ -918,7 +919,6 @@ function SubscriptionScreen() {
                   value={couponCode}
                   onChange={(e) => { setCouponCode(e.target.value); setCoupon(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
-                  placeholder="Coupon code"
                   aria-label="Coupon code"
                   // The verdict below was on screen and silent: no association,
                   // no live region. Someone pressed Apply, a sentence appeared,

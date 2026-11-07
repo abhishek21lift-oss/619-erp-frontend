@@ -47,7 +47,7 @@ describe('Progress Tracking Overview is named consistently everywhere', () => {
     expect(page).not.toMatch(/>Progress Tracking Setup</);
   });
 
-  it('is linked from the client\'s Reports tab, where the client is already chosen', () => {
+  it('is linked from the client\'s Documents tab, where the client is already chosen', () => {
     expect(clientDetail).toContain("label: 'Progress tracking overview'");
     expect(clientDetail).toContain('/pt-os/progress-tracking-setup?client_id=');
   });

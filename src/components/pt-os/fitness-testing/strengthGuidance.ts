@@ -18,16 +18,16 @@ export function strengthCategoryGap(
 ): string | null {
   if (oneRM == null || category) return null;
   if (exercise !== 'Bench Press' && exercise !== 'Leg Press') {
-    return `No K11 percentile reference is supplied for ${exercise || 'this lift'}. Bench Press and Leg Press are the only supported tests.`;
+    return `No percentile reference is supplied for ${exercise || 'this lift'}. Bench Press and Leg Press are the only supported tests.`;
   }
   // A body weight is needed for the ratio; until it is entered the panel's
   // "Enter weight" hint is the relevant message.
   if (bodyWeightKg == null) return null;
   if (age == null || age < 20) {
-    return `K11 strength norms require age 20 or over${age == null ? ' — no date of birth is recorded for this client' : ''}.`;
+    return `Strength norms require age 20 or over${age == null ? ' — no date of birth is recorded for this client' : ''}.`;
   }
   if (!gender || gender === 'Other') {
-    return 'K11 strength norms are sex-specific and need a recorded sex of Male or Female.';
+    return 'Strength norms are sex-specific and need a recorded sex of Male or Female.';
   }
   return null;
 }

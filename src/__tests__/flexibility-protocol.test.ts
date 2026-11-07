@@ -157,7 +157,7 @@ describe('deriveFlexibility — hamstrings', () => {
 
   it('echoes the protocol reference range on the test', () => {
     const d = able(derive().tests.hamstrings);
-    expect(d.reference).toEqual({ min_deg: 70, max_deg: 80, note: 'Reference range from the supplied K11 protocol' });
+    expect(d.reference).toEqual({ min_deg: 70, max_deg: 80, note: 'Reference range from the supplied protocol' });
   });
 
   it('prompts a repeat when the knee bent or the pelvis compensated', () => {

@@ -229,7 +229,6 @@ export default function CommandPalette() {
           <input aria-label="Search members, jump to pages, run actions"
             ref={inputRef}
             className="cmdk-input"
-            placeholder="Search members, jump to pages, run actions"
             value={q}
             onChange={e => setQ(e.target.value)}
             autoComplete="off"

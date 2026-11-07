@@ -52,7 +52,7 @@ export function HamstringsFields({ state: h, derived, patch }: Props) {
               suffix="°"
               min={0}
               max={180}
-              hint={`Reference ${HAMSTRINGS_REFERENCE.min_deg}–${HAMSTRINGS_REFERENCE.max_deg}° from the supplied K11 protocol.`}
+              hint={`Reference ${HAMSTRINGS_REFERENCE.min_deg}–${HAMSTRINGS_REFERENCE.max_deg}° from the supplied protocol.`}
             />
             <YesNoChips label="Knee stayed fully extended" value={h.kneeExtended[side]} onChange={(v) => setKnee(side, v)} compact
               hint="A bent knee invalidates the angle — repeat the test." />

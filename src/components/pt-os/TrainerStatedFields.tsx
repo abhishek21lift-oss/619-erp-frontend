@@ -52,14 +52,13 @@ export type StatedValues = Partial<Record<
 const FIELDS: Array<{
   key: keyof StatedValues;
   label: string;
-  placeholder: string;
   numeric?: boolean;
 }> = [
-  { key: 'goal', label: 'Goal', placeholder: 'e.g. muscle_gain' },
-  { key: 'experience_level', label: 'Experience', placeholder: 'e.g. intermediate' },
-  { key: 'training_days', label: 'Days / week', placeholder: '1–7', numeric: true },
-  { key: 'equipment', label: 'Equipment today', placeholder: 'e.g. barbell, rack, bench, dumbbells' },
-  { key: 'injuries', label: 'Constraint today', placeholder: 'e.g. left shoulder irritated' },
+  { key: 'goal', label: 'Goal' },
+  { key: 'experience_level', label: 'Experience' },
+  { key: 'training_days', label: 'Days / week', numeric: true },
+  { key: 'equipment', label: 'Equipment today' },
+  { key: 'injuries', label: 'Constraint today' },
 ];
 
 export default function TrainerStatedFields({
@@ -178,7 +177,6 @@ export default function TrainerStatedFields({
                     inputMode={f.numeric ? 'numeric' : undefined}
                     value={values[f.key] ?? ''}
                     onChange={(e) => set(f.key, e.target.value)}
-                    placeholder={recorded ? 'on file — this will be ignored' : f.placeholder}
                     className="min-w-0 flex-1 rounded-[9px] px-2 py-1 text-[11.5px] outline-none"
                     style={{
                       background: 'var(--bg-base)',

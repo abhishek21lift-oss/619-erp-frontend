@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAppForm } from '@/lib/forms/useAppForm';
-import { GST_SLABS } from '@/lib/forms/domain';
 import {
   platformBillingSchema, billingToFormValues, toBillingPayload,
   BILLING_TEXT_FIELDS, BILLING_FIELD_HINTS,
@@ -293,7 +292,6 @@ function SettingsForm({
                 field={field}
                 label={spec.label}
                 required={spec.key === 'legal_name'}
-                placeholder={spec.placeholder}
                 description={spec.description}
                 type={spec.key === 'email' ? 'email' : spec.key === 'phone' ? 'tel' : 'text'}
                 autoComplete="off"
@@ -315,7 +313,6 @@ function SettingsForm({
                 required
                 mode="percent"
                 suffix="%"
-                description={`One of ${GST_SLABS.join('%, ')}%`}
                 serverError={f.errors.fieldErrors.gst_percent}
                 className="w-32"
               />
@@ -441,7 +438,6 @@ export default function InvoicesPanel() {
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
           <input
             value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Invoice no., studio, reference…"
             aria-label="Search invoices"
             className="h-10 w-full rounded-[11px] pl-9 pr-3 text-[12.5px] outline-none" style={inputStyle}
           />

@@ -112,7 +112,7 @@ export default function SubscriptionRequestsTab() {
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
             style={{ color: 'var(--text-muted)' }} />
           <input value={query} onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search studio, reference or UTR" aria-label="Search payment requests"
+            aria-label="Search payment requests"
             className="w-full rounded-xl py-2.5 pl-9 pr-3 text-[14px] outline-none"
             style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', border: '1px solid var(--border-2)' }} />
         </div>
@@ -325,6 +325,7 @@ function ActionDialog({
         await api.superAdmin.rejectSubscriptionRequest(row.id, reason, note.trim() || undefined);
         toast.success('Rejected. The studio can submit a corrected reference.');
       }
+      window.dispatchEvent(new Event('subscription-requests-changed'));
       await onDone();
     } catch (err) {
       // A 409 means someone else already handled it — information, not failure.
@@ -400,7 +401,6 @@ function ActionDialog({
                 </label>
                 <textarea id="sub-note" rows={2} maxLength={500} value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="e.g. We received ₹1,499 but the plan is ₹3,999."
                   className="mt-1.5 w-full resize-none rounded-xl px-3 py-2.5 text-[14px] outline-none"
                   style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', border: '1px solid var(--border-2)' }} />
               </>
@@ -557,7 +557,6 @@ function PlatformUpiForm({
             field={field}
             label="Your UPI ID"
             required
-            placeholder="myptstudio@okhdfcbank"
             autoComplete="off"
             className="mt-4"
             serverError={f.errors.fieldErrors.upi_id}
@@ -587,7 +586,6 @@ function PlatformUpiForm({
             rows={2}
             maxLength={500}
             showCount
-            placeholder="Payments are verified within 2 hours, 9am–9pm."
             className="mt-4"
             serverError={f.errors.fieldErrors.instructions}
           />

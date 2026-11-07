@@ -14,8 +14,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  MODULES, TAB_IDS, TAB_LABELS, FINANCE_DEEP_LINKS,
-  moduleForTab, normalizeTab, tabsInModules,
+  MODULES, TAB_IDS, TAB_LABELS, FINANCE_DEEP_LINKS, FINANCE_SUB_TABS,
+  moduleForTab, normalizeTab, resolveFinanceSubTab, tabsInModules,
 } from '@/app/(platform)/platform/_shared/types';
 import type { Tab } from '@/app/(platform)/platform/_shared/types';
 
@@ -116,6 +116,19 @@ describe('existing deep links still resolve', () => {
   it('still falls back to Overview for anything unknown', () => {
     expect(normalizeTab('made-up')).toBe('overview');
     expect(normalizeTab(null)).toBe('overview');
+  });
+
+  it('resolves the Finance sub-tab from the URL, not from memory', () => {
+    for (const sub of FINANCE_SUB_TABS) {
+      expect(resolveFinanceSubTab('finance', sub)).toBe(sub);
+    }
+    // Legacy links land on their sub-tab; an explicit sub wins over them.
+    expect(resolveFinanceSubTab('payments', null)).toBe('payments');
+    expect(resolveFinanceSubTab('payments', 'invoices')).toBe('invoices');
+    // Unknown or absent values fall back instead of opening a blank screen.
+    expect(resolveFinanceSubTab('finance', 'made-up')).toBe('billing');
+    expect(resolveFinanceSubTab('finance', null)).toBe('billing');
+    expect(resolveFinanceSubTab(null, null)).toBe('billing');
   });
 
   it('resolves every deep link to a tab that a module can show', () => {

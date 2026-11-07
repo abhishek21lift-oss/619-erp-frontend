@@ -128,12 +128,12 @@ describe('no page draws a container box around its own title', () => {
   // pt-os/leads used to be deliberately absent from the list above: it
   // rendered components/pt-os/leads/LeadHero — a Leads-only saturated card,
   // because the design it had to match could not be expressed through
-  // PageHero's API. It is now on the shared compact hero like every other
-  // list page, so the exception is gone.
-  it('pt-os/leads uses the shared compact hero and container', () => {
+  // PageHero's API. It is on the shared hero (with its amber accent) like
+  // every other list page, so the exception is gone.
+  it('pt-os/leads uses the shared hero and container', () => {
     const s = src('app', 'pt-os', 'leads', 'page.tsx');
     expect(s).toContain('<PageHero');
-    expect(s).toContain('compact');
+    expect(s).toContain('accent="amber"');
     expect(s).toContain('<PageContainer>');
     expect(s).not.toContain('<LeadHero');
   });
@@ -256,11 +256,13 @@ describe('the five module pages', () => {
     // A lavender-to-pink card with its own corner glows and its own
     // max-w-[1400px] — a different surface from every other page's header, and
     // 120px wider than the dashboard. The KPI tiles inside it were tiles on a
-    // tile; they are cards on the page now.
+    // tile; they are cards on the page now. The emerald showcase hero that
+    // replaced it is gone too: one page with its own arrival slab is the same
+    // drift in a different colour.
     const wp = src('app', 'pt-os', 'workout-plans', 'page.tsx');
     expect(wp).not.toContain('max-w-[1400px]');
     expect(wp).not.toContain('from-indigo-500/10 via-violet-500/10 to-pink-500/10');
-    expect(wp).toContain('showcase');
+    expect(wp).not.toContain('showcase');
   });
 
   it('today keeps its progress bar, on the hero', () => {
@@ -395,10 +397,11 @@ describe('the engagement section (Communication)', () => {
     expect(src(...p)).not.toMatch(/DO NOT CHANGE/);
   });
 
-  it('the four pages with a primary action move it into the hero actions slot', () => {
+  it('the four pages with a primary action keep it in the row below the hero', () => {
     // Campaigns, Notifications and Offers already put "New X" beside the
     // title; Automation's "New Rule" sat in its own row below the KPIs
-    // instead, which is now consistent with the other three.
+    // instead, which is now consistent with the other three. The hero is the
+    // page's identity, so the button lives in PageActions under it.
     for (const p of [
       ['app', 'engagement', 'automation', 'page.tsx'],
       ['app', 'engagement', 'campaigns', 'page.tsx'],
@@ -406,8 +409,8 @@ describe('the engagement section (Communication)', () => {
       ['app', 'engagement', 'offers', 'page.tsx'],
     ]) {
       const s = src(...p);
-      expect(s).toContain('actions={');
-      expect(s).toContain("background: 'rgba(255,255,255,0.12)'");
+      expect(s).toContain('<PageActions>');
+      expect(s).not.toContain('actions={');
     }
   });
 
@@ -471,12 +474,11 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     }
   });
 
-  it('the three AI pages use the compact hero, with no feature-pill row under it', () => {
+  it('the three AI pages use the full shared hero, with no feature-pill row under it', () => {
     // These heroes used to carry a navy pill row ('Progressive Overload',
     // 'Weight Trends'). The 2026-10-19 redesign made all three title-only and
-    // compact: a trainer opening a generator is there to fill in a form, and
-    // the pills were a paragraph of adjectives above it. The title is the
-    // page's own, exactly.
+    // compact; the owner then brought them back onto the full shared hero so
+    // the generators match every other page. The title is the page's own.
     const titles: Record<string, string> = {
       'workout-generator': 'AI Workout Generator',
       'diet-generator': 'AI Diet Generator',
@@ -484,8 +486,10 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     };
     for (const [folder, title] of Object.entries(titles)) {
       const s = src('app', 'ai', folder, 'page.tsx');
+      const start = s.indexOf('<PageHero');
+      const hero = s.slice(start, s.indexOf('/>', start));
       expect(s).toContain('<PageHero');
-      expect(s).toContain('compact');
+      expect(hero).not.toMatch(/\bcompact\b/);
       expect(s).toContain(`title="${title}"`);
       expect(s).not.toContain("background: 'rgba(255,255,255,0.14)'");
     }
@@ -503,13 +507,13 @@ describe('the AI suite (Workout/Diet Generator, Progress Analyzer, Business Insi
     expect(bi).not.toContain('p-2.5 rounded-xl bg-violet-500/10');
   });
 
-  it('knowledge base moves Upload Document into the hero actions slot', () => {
+  it('knowledge base keeps Upload Document below the hero', () => {
     const kb = src('app', 'ai-coach', 'knowledge', 'page.tsx');
     // The old header's own 48px gradient icon tile is gone — PageHero draws
     // its own — and the button that used to sit beside a plain h1 is now in
-    // the actions slot.
+    // the page's action row.
     expect(kb).not.toContain('width: 48, height: 48, borderRadius: 14');
-    expect(kb).toContain('actions={');
+    expect(kb).toContain('<PageActions>');
     expect(kb).toContain('Upload Document');
   });
 });
@@ -536,9 +540,9 @@ describe('the client-scoped PT pages (enroll, renew, goals, sessions, strength t
     expect((goals.match(/<PageContainer>/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
-  it('sessions moves refresh into the hero actions slot', () => {
+  it('sessions keeps refresh in the row below the hero', () => {
     const sessions = src('app', 'pt-os', 'sessions', 'page.tsx');
-    expect(sessions).toContain('actions={');
+    expect(sessions).toContain('<PageActions>');
     // Fragment-built: palette.test.ts scans this directory, so the old hue
     // cannot be written as a literal here.
     const oldPill = 'bg-[rgba(0,103,224,0.08)] text-[#' + '0067E0]';
@@ -571,9 +575,9 @@ describe('the training/payments/session-balance/photo pages', () => {
     }
   });
 
-  it('client payments moves Profile and Record Payment into the hero actions slot', () => {
+  it('client payments keeps Profile and Record Payment in the row below the hero', () => {
     const payments = src('app', 'pt-os', 'clients', '[id]', 'payments', 'page.tsx');
-    expect(payments).toContain('actions={');
+    expect(payments).toContain('<PageActions>');
     expect(payments).toContain('Record Payment');
     expect(payments).toContain('Profile');
   });
@@ -610,20 +614,21 @@ describe('revenue analytics loses its own icon tile and header row', () => {
     expect(revenue).not.toContain('<header className="flex flex-wrap items-center justify-between');
   });
 
-  it('moves refresh into the hero actions slot, styled for the navy surface', () => {
-    // The old button sat on `--bg-subtle`, which resolves light-on-light
-    // against the page background. On the hero it needs the same translucent
-    // white chip exercise-library and leads use for their own hero actions.
-    expect(revenue).toContain('actions={');
-    expect(revenue).toContain("background: 'rgba(255,255,255,0.12)'");
+  it('keeps CSV and refresh in the row below the hero, not on the navy surface', () => {
+    // The old controls sat on the hero as translucent white chips, styled
+    // only to survive the dark slab. Below the hero they are the app's own
+    // buttons, so no page has to hand-roll a hero surface any more.
+    expect(revenue).toContain('<PageActions>');
+    expect(revenue).not.toContain("background: 'rgba(255,255,255,0.12)'");
+    expect(revenue).toContain('CSV');
   });
 });
 
 describe('the hero', () => {
-  it('carries the dashboard hero\'s shape and gradient', () => {
+  it('carries the dashboard hero\'s shape and paint', () => {
     expect(shell).toContain('rounded-[24px]');
     expect(shell).toContain('sm:rounded-[30px]');
-    expect(shell).toContain('linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)');
+    expect(shell).toContain('heroBackground(');
   });
 
   it('does not copy the infinite sheen sweep', () => {

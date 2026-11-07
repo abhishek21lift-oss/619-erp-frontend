@@ -150,7 +150,6 @@ function Composer({ initial, plans, onClose, onSaved }: {
         <FormField label="Title" density="compact">
           <TextInput
             value={form.title} onChange={(e) => set('title', e.target.value)} maxLength={140}
-            placeholder="Scheduled maintenance this Sunday"
             className="h-10 rounded-[10px] px-2.5 text-[12.5px]" style={inputStyle}
           />
         </FormField>
@@ -158,7 +157,6 @@ function Composer({ initial, plans, onClose, onSaved }: {
         <FormField label="Message" density="compact">
           <TextArea
             value={form.body} onChange={(e) => set('body', e.target.value)} rows={4} maxLength={4000}
-            placeholder="We are upgrading the platform on Sunday between 2am and 4am IST. Bookings and check-ins will be unavailable for about 20 minutes."
             className="rounded-[10px] px-2.5 py-2 text-[12.5px]" style={inputStyle}
           />
           <span className="text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>{form.body.length} / 4000</span>
@@ -176,7 +174,6 @@ function Composer({ initial, plans, onClose, onSaved }: {
           <FormField label="Link (optional)" density="compact" className="min-w-[180px] flex-1">
             <TextInput
               value={form.link ?? ''} onChange={(e) => set('link', e.target.value)}
-              placeholder="/subscription"
               className="h-10 rounded-[10px] px-2.5 text-[12.5px]" style={inputStyle}
             />
           </FormField>

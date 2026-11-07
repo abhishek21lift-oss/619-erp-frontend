@@ -28,7 +28,7 @@ import type { ProfileMe } from '@/lib/api';
 import StudioMark from '@/components/StudioMark';
 import { CompletionRing } from './CompletionPanel';
 import { acceptAttribute, GALLERY_RULES, LOGO_RULES } from '@/lib/forms/files';
-import { tones, gradient, heroMesh, ringStops, type Tone } from './profileTheme';
+import { tones, statusTones, gradient, heroMesh, ringStops, type Tone } from './profileTheme';
 
 /** Two letters, or one. Used whenever there is no avatar. */
 function initials(name: string) {
@@ -167,7 +167,7 @@ export function ProfileHero({
   return (
     <section
       className="relative mb-7 overflow-hidden rounded-[28px]"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 24px 50px -30px rgba(79,70,229,0.45), 0 2px 12px rgba(15,23,42,0.05)' }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 24px 50px -30px rgba(107,36,64,0.42), 0 2px 12px rgba(15,23,42,0.05)' }}
       aria-label="Profile header"
     >
       {/* ── COVER ────────────────────────────────────────────────────────── */}
@@ -246,7 +246,7 @@ export function ProfileHero({
                 // transparent border.
                 background: `${avatar ? 'linear-gradient(var(--bg-card), var(--bg-card))' : gradient(tones.indigo)} padding-box, conic-gradient(from 200deg, ${ringStops.join(', ')}, ${tones.violet.from}, ${ringStops[0]}) border-box`,
                 border: '4px solid transparent',
-                boxShadow: '0 14px 30px -12px rgba(219,39,119,0.45), 0 0 0 4px var(--bg-card)',
+                boxShadow: '0 14px 30px -12px rgba(163,55,87,0.45), 0 0 0 4px var(--bg-card)',
                 letterSpacing: '-0.02em',
               }}
             >
@@ -321,7 +321,7 @@ export function ProfileHero({
               <Badge icon={<Clock size={10} />} label={`${me.yearsExperience} yr${me.yearsExperience === 1 ? '' : 's'} coaching`} tone={tones.sunset} />
             )}
             {validCerts > 0 && (
-              <Badge icon={<Award size={10} />} label={`${validCerts} certification${validCerts === 1 ? '' : 's'}`} tone={tones.lime} />
+              <Badge icon={<Award size={10} />} label={`${validCerts} certification${validCerts === 1 ? '' : 's'}`} tone={statusTones.success} />
             )}
           </div>
 
@@ -397,7 +397,7 @@ export function ProfileHero({
         animate={{ scaleX: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="h-[3px] w-full origin-left"
-        style={{ background: `linear-gradient(90deg, ${tones.indigo.from}, ${tones.violet.from}, ${tones.berry.from}, ${tones.sunset.from}, ${tones.gold.from})` }}
+        style={{ background: `linear-gradient(90deg, ${tones.indigo.from}, ${tones.berry.from}, ${tones.gold.from})` }}
       />
     </section>
   );

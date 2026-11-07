@@ -3,13 +3,14 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { m } from 'framer-motion';
 import {
   Flag, Loader2, AlertCircle, Check, X, ChevronRight, Camera, Ruler, Zap,
   Move, Accessibility,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, DonutChart } from '@/components/ui';
+import {
+  Button, Card, CardBody, DonutChart, HeroChip, PageContainer, PageHero,
+} from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
@@ -26,7 +27,7 @@ interface CompletionItem {
 export default function ProgressTrackingSetupPage() {
   return (
     <Guard>
-      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>}>
+      <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: 'var(--warning-text)' }} /></div>}>
         <ProgressTrackingSetupContent />
       </Suspense>
     </Guard>
@@ -120,79 +121,75 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
   const baselineScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: 'var(--warning-text)' }} /></div>;
   }
   if (loadError) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
-        <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
-        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <AlertCircle size={32} style={{ color: 'var(--danger-text)', margin: '0 auto 12px' }} />
+        <p className="text-[14px] font-[600]" style={{ color: 'var(--text-secondary)' }}>{loadError}</p>
         <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-6 space-y-6">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
-        style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(245,158,11,0.15)' }}>
-            <Flag size={16} color="#F59E0B" />
-          </div>
-          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.5)' }}>Progress Tracking Overview</span>
-        </div>
-        <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight text-white">
-          {clientName}&apos;s Baseline
-        </h1>
+    <PageContainer>
+      <PageHero
+        icon={<Flag size={20} />}
+        title={`${clientName}'s Baseline`}
+      >
+        <HeroChip>Progress Tracking Overview</HeroChip>
+      </PageHero>
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 items-center">
+      <Card>
+        <CardBody className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[auto_1fr] lg:gap-8">
           <DonutChart
             data={[
-              { name: 'Score', value: baselineScore ?? 0, color: '#F59E0B' },
-              { name: 'Remaining', value: 100 - (baselineScore ?? 0), color: 'rgba(255,255,255,0.08)' },
+              { name: 'Score', value: baselineScore ?? 0, color: 'var(--warning-text)' },
+              { name: 'Remaining', value: 100 - (baselineScore ?? 0), color: 'var(--bg-subtle)' },
             ]}
-            centerValue={<span style={{ color: '#fff' }}>{baselineScore ?? '—'}</span>}
+            centerValue={baselineScore ?? '—'}
             centerLabel="Baseline Score"
             hideLegend
             thin
             height={180}
           />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {items.map((it) => (
-              <div key={it.key} className="flex items-center gap-2 rounded-[12px] px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div key={it.key} className="flex items-center gap-2 rounded-[12px] px-3 py-2.5"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                 <span
                   className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
-                  style={{ background: it.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.08)' }}
+                  style={{ background: it.done ? 'var(--success-soft)' : 'var(--border)' }}
                 >
-                  {it.done ? <Check size={11} color="#10b981" strokeWidth={3} /> : <X size={11} color="rgba(255,255,255,0.3)" />}
+                  {it.done ? <Check size={11} strokeWidth={3} style={{ color: 'var(--success-text)' }} /> : <X size={11} style={{ color: 'var(--text-disabled)' }} />}
                 </span>
-                <span className="text-[11px] font-[640]" style={{ color: it.done ? '#fff' : 'rgba(255,255,255,0.45)' }}>{it.label}</span>
+                <span className="text-[11px] font-[640]" style={{ color: it.done ? 'var(--text-primary)' : 'var(--text-muted)' }}>{it.label}</span>
               </div>
             ))}
           </div>
-        </div>
-      </m.div>
+        </CardBody>
+      </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {items.map((it) => (
           <a
             key={it.key} href={it.href}
             className="flex items-center gap-4 rounded-[20px] p-5 transition-all hover:scale-[1.01]"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}
           >
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px]" style={{ background: `${it.accent}18`, color: it.accent }}>
               {it.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-[760] text-slate-900">{it.label}</p>
-              <p className="text-[12px] text-slate-400">{it.done ? 'On file — tap to review' : 'Not started yet'}</p>
+              <p className="text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>{it.label}</p>
+              <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{it.done ? 'On file — tap to review' : 'Not started yet'}</p>
             </div>
-            <ChevronRight size={16} style={{ color: '#cbd5e1', flexShrink: 0 }} />
+            <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           </a>
         ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }

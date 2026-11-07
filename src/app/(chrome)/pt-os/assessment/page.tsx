@@ -224,7 +224,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   // A draft belongs to the new test only; an edit starts from the saved one.
   const draftKey = `fitness-testing-draft.v2:${clientId}:${editingId ?? 'new'}`;
-  const isDirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(initFormRef.current), [form]);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initFormRef.current);
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
 
   const loadData = useCallback(async () => {
@@ -522,6 +522,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       setSaveWarnings(warns);
 
       clear();
+      initFormRef.current = { ...form };
       if (created) setHistory((h) => [created, ...h.filter((x) => String(x.id) !== String(created.id))]);
       toast.success(
         created?.bp_unsafe || (created?.vitals_safety as { level?: string } | undefined)?.level === 'stop'

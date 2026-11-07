@@ -199,11 +199,11 @@ export default function KnowledgeTab() {
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <FormField label="Title">
               <TextInput value={title} onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. MPTS Training Methodology" />
+                />
             </FormField>
             <FormField label="Source version (optional)">
               <TextInput value={sourceVersion} onChange={(e) => setSourceVersion(e.target.value)}
-                placeholder="e.g. 2026.1" />
+                />
             </FormField>
           </div>
 

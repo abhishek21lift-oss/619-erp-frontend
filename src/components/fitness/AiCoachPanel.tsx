@@ -12,7 +12,7 @@ import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { errorMessage } from '@/lib/forms/errors';
+import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
 import { aiWorkoutInputSchema } from '@/lib/forms/schemas/aiGenerator';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
@@ -308,7 +308,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
       ].filter(Boolean).join('\n');
       setGenerationResult(summary);
     } catch (err) {
-      setGenerationError(errorMessage(err, 'Failed to generate plan. Please try again.'));
+      setGenerationError(generationErrorMessage(err, 'Failed to generate plan. Please try again.'));
     } finally {
       setIsGenerating(false);
     }
@@ -601,7 +601,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 
                 {/* Goal select */}
                 <Field label="Goal">
-                  <SelectInput value={goal} onChange={setGoal} disabled={goalFromRecord} placeholder="Select goal...">
+                  <SelectInput value={goal} onChange={setGoal} disabled={goalFromRecord} ariaLabel="Goal">
                     {goal && !WORKOUT_GOALS.includes(goal) && <option value={goal}>{goal}</option>}
                     {WORKOUT_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
                   </SelectInput>
@@ -609,7 +609,7 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                 </Field>
 
                 <Field label="Experience Level">
-                  <SelectInput value={experience} onChange={setExperience} disabled={experienceFromRecord} placeholder="Select level...">
+                  <SelectInput value={experience} onChange={setExperience} disabled={experienceFromRecord} ariaLabel="Experience level">
                     {experience && !EXPERIENCE_LEVELS.includes(experience) && <option value={experience}>{experience}</option>}
                     {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                   </SelectInput>
@@ -623,7 +623,6 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     readOnly={daysFromRecord}
                     onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
                     style={{ ...inputStyle, ...(daysFromRecord ? { cursor: 'default', opacity: 0.85 } : {}) }}
-                    placeholder="1–7"
                   />
                   {daysFromRecord && <RecordNote />}
                 </Field>
@@ -912,7 +911,6 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                     onKeyDown={handleChatKeyDown}
                     rows={1}
                     aria-label="Ask your AI coach anything"
-                    placeholder="Ask your AI coach anything…"
                     style={{
                       flex: 1, resize: 'none', background: 'rgba(255,255,255,0.06)',
                       border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px',
@@ -1003,7 +1001,6 @@ function ClientPicker({
         onFocus={onFocus}
         onChange={e => onQueryChange(e.target.value)}
         onBlur={onBlur}
-        placeholder="Search clients..."
         style={inputStyle}
       />
       {showClientDropdown && filteredClients.length > 0 && (
@@ -1056,17 +1053,17 @@ function RecordNote() {
 }
 
 function SelectInput({
-  value, onChange, placeholder, children, disabled = false,
-}: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode; disabled?: boolean }) {
+  value, onChange, ariaLabel, children, disabled = false,
+}: { value: string; onChange: (v: string) => void; ariaLabel: string; children: React.ReactNode; disabled?: boolean }) {
   return (
     <div style={{ position: 'relative' }}>
-      <select aria-label={placeholder}
+      <select aria-label={ariaLabel}
         value={value}
         disabled={disabled}
         onChange={e => onChange(e.target.value)}
         style={{ ...inputStyle, paddingRight: 34, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.85 : 1, color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}
       >
-        <option value="">{placeholder}</option>
+        <option value="" />
         {children}
       </select>
       <ChevronDown

@@ -297,7 +297,6 @@ function Inner() {
           <div className="relative w-full">
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
             <input aria-label="Search by client, receipt, notes"
-              placeholder="Search by client, receipt, notes..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full h-11 rounded-xl outline-none transition-all focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(163,55,87,0.10)]"

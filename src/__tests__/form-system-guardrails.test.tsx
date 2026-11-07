@@ -1,6 +1,6 @@
 // Stops the form landscape drifting back to what the audit found.
 //
-// FORM-SYSTEM.md counted eighteen components that render a control, seventeen
+// docs/audits/FORM-SYSTEM.md counted eighteen components that render a control, seventeen
 // of which skipped the label wiring, and FloatInput implemented three times.
 // The system only helps if the next form uses it, so these are the rules that
 // make not using it visible.
@@ -20,7 +20,7 @@ function sources(dir = SRC, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) sources(p, out); continue; }
-    if (/\.tsx$/.test(e.name)) out.push(p);
+    if (/\.(tsx|ts)$/.test(e.name)) out.push(p);
   }
   return out;
 }
@@ -373,7 +373,7 @@ describe('the five representative migrations', () => {
   // captions that used to live in a placeholder and now live in a label.
   const migrated: [string, string[]][] = [
     ['app/(chrome)/pt-os/weekly-checkin/page.tsx',
-      ['Client', 'Week starting', 'Weight', 'Sleep', 'Water', 'Workouts', 'Adherence', 'Trainer notes']],
+      ['Client', 'Week starting', 'Weight (kg)', 'Sleep (hours)', 'Water (glasses)', 'Workouts (this week)', 'Adherence', 'Trainer notes']],
     ['components/packages/PackageForm.tsx',
       ['Package name', 'Sessions', 'Duration', 'Price', 'Goal type', 'Description']],
     ['app/(chrome)/pt-os/session-balance/page.tsx',
@@ -396,7 +396,7 @@ describe('the five representative migrations', () => {
   it.each(migrated)('%s gives every migrated field a persistent label', (file, labels) => {
     const src = readFileSync(join(SRC, ...file.split('/')), 'utf8');
     for (const label of labels) {
-      expect(src, `no label "${label}"`).toMatch(new RegExp(`label="${label}"`));
+      expect(src, `no label "${label}"`).toMatch(new RegExp(`label="${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
     }
   });
 
@@ -565,5 +565,23 @@ describe('FloatInput — the same contract, on the component 43 files use', () =
       }
     }
     expect(bad, `FloatInput with label="" and no ariaLabel:\n${bad.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('no instructional placeholder text', () => {
+  it('leaves only the neutral empty marker and unit cue', () => {
+    const offenders: string[] = [];
+    const allowed = /placeholder="(—|kg)"/;
+    for (const f of sources()) {
+      readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+        if (/\bplaceholder=/.test(line) && !allowed.test(line)) {
+          offenders.push(`${rel(f)}:${i + 1}`);
+        }
+        if (/\bplaceholderOption=/.test(line) || /\bplaceholder\s*:\s*['"`]/.test(line)) {
+          offenders.push(`${rel(f)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders).toEqual([]);
   });
 });

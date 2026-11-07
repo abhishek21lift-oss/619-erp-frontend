@@ -1,7 +1,8 @@
 'use client';
 
-import { use, useState, useEffect, useCallback } from 'react';
+import { use, useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
 import { m, useReducedMotion } from 'framer-motion';
 import {
@@ -12,8 +13,8 @@ import {
   TrendingUp, MessageCircle, Save, Pencil,
   HeartPulse, Salad, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown, Mail, FileBarChart, Sparkles,
-  Gauge, PersonStanding, Accessibility, Ruler, MessagesSquare, Send,
+  QrCode, Printer, ScrollText, ChevronDown, Mail, Sparkles,
+  Gauge, PersonStanding, Accessibility, MessagesSquare, Send,
   Cake, UserPlus, Megaphone, CalendarRange, Flag,
   Route,
 } from 'lucide-react';
@@ -32,7 +33,7 @@ import ScreeningLinkCard from '@/components/pt-os/ScreeningLinkCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
 import RenewalOfferSheet from '@/components/pt-os/RenewalOfferSheet';
 import {
-  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, TAB_KEYS, type TabKey,
+  ClientTabs, TabPanel, LinkPanel, TAB_COLOR, TABS, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
 import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
 import PhotosPanel from '@/components/pt-os/client/PhotosPanel';
@@ -169,7 +170,8 @@ function MemberGoalRow({ goal: g }: { goal: MeGoal }) {
           .filter(Boolean).join(' · ') || 'No reading yet'}
       </p>
       {pct != null && !g.reached && (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}
+          role="progressbar" aria-label={`${label} progress`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: gradient(tint) }} />
         </div>
       )}
@@ -421,7 +423,7 @@ function NotesCard({ notes, onSave }: { notes?: string; onSave: (next: string) =
           <FormField label="Coach notes" labelHidden>
             <TextArea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} autoFocus
               className="resize-none text-[14px] leading-relaxed"
-              placeholder="Injuries, preferences, what worked last session…" />
+              />
           </FormField>
           <div className="flex gap-2">
             <button onClick={save} disabled={saving}
@@ -466,6 +468,11 @@ function ActionButton({ label, ariaLabel, icon, tint, onClick, href, external }:
   );
   const cls = 'group flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-[16px] py-1 outline-none focus-visible:ring-2';
   if (href) {
+    // tel: stays an anchor; an app route uses Link so it does not reload the
+    // whole profile and drop the open tab / unsaved draft.
+    if (!external && !href.startsWith('tel:')) {
+      return <Link href={href} className={cls} aria-label={ariaLabel ?? label}>{inner}</Link>;
+    }
     return (
       <a href={href} className={cls} aria-label={ariaLabel ?? label}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
@@ -497,7 +504,33 @@ function ProfileSkeleton() {
 // Baseline Setup is not an action here: it belongs to onboarding (see
 // ClientSnapshot). Delete is not either — a destructive action does not
 // belong beside "Call". It lives inside Edit.
+// Tabs that were removed when the strip went from eleven to seven. Old
+// bookmarks and notifications still carry these keys, so they land on the tab
+// that now owns the job rather than falling back to Overview.
+const LEGACY_TAB: Record<string, TabKey> = {
+  log: 'training',
+  reports: 'training',
+  measurements: 'documents',
+  photos: 'checkins',
+};
+
+// Only these keys own a panel on this page. `nutrition` is a link tab, so
+// accepting it into `tab` would render the strip with an empty workspace.
+const PANEL_TABS: readonly TabKey[] = TABS.filter((t) => !t.href).map((t) => t.key);
+
+/**
+ * useSearchParams suspends, so the page export wraps the real component.
+ * Without this the route opts into dynamic rendering and Next warns at build.
+ */
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ClientProfileInner params={params} />
+    </Suspense>
+  );
+}
+
+function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -509,12 +542,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [snapshotState, setSnapshotState] = useState<SnapshotState>({ status: 'loading' });
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
+  const [offerOpen, setOfferOpen] = useState(false);
+  const searchParams = useSearchParams();
   // Notifications deep-link a section (a weekly check-in lands on Check-ins).
-  // Read once on mount; the tabs are this page's own state after that.
+  // Reactive params, not window.location read once: a notification that
+  // targets a tab while this profile is already open used to update the URL
+  // and leave the old tab showing.
   useEffect(() => {
-    const want = new URLSearchParams(window.location.search).get('tab');
-    if (want && (TAB_KEYS as readonly string[]).includes(want)) setTab(want as TabKey);
-  }, []);
+    const want = searchParams.get('tab');
+    const next = want ? LEGACY_TAB[want] ?? want : null;
+    if (next && (PANEL_TABS as readonly string[]).includes(next)) setTab(next as TabKey);
+    // A PT-expiry alert links here with ?renew=1; nothing read it before.
+    if (searchParams.get('renew') === '1') setOfferOpen(true);
+  }, [searchParams]);
 
   // The URL follows the selected section, so refresh/share/Back land where
   // the trainer was. Replace rather than push: tab switches are not pages.
@@ -526,13 +566,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   }, []);
   /** Ask AI — the read-only assistant scoped to this client. */
   const [aiOpen, setAiOpen] = useState(false);
-  const [offerOpen, setOfferOpen] = useState(false);
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
   /** Targets the member set in the member app. null until loaded or on failure. */
   const [memberGoals, setMemberGoals] = useState<MeGoals | null>(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
+  /** A failed history read is not "zero terms" — it is unknown. */
+  const [subscriptionsStatus, setSubscriptionsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  /** A failed assignment read is not "no programme assigned". */
+  const [activePlanError, setActivePlanError] = useState(false);
 
   const loadData = async () => {
     try {
@@ -554,13 +597,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       setMemberGoals(memberGoalsRes.status === 'fulfilled' ? memberGoalsRes.value.data : null);
 
       const assessments = assessmentsRes.status === 'fulfilled' && Array.isArray((assessmentsRes.value as any)?.data) ? (assessmentsRes.value as any).data : [];
-      setRecentWeights(assessments.filter((a: any) => a.weight).slice(0, 6));
+      // The endpoint answers newest first; the chart draws left to right. Plot
+      // oldest → newest here, or a client losing weight shows a rising line.
+      const weights = assessments
+        .filter((a: any) => a.weight)
+        .sort((a: any, b: any) =>
+          new Date(b.assessment_date ?? b.created_at ?? 0).getTime()
+          - new Date(a.assessment_date ?? a.created_at ?? 0).getTime())
+        .slice(0, 6)
+        .reverse();
+      setRecentWeights(weights);
 
       const goals = goalsRes.status === 'fulfilled' && Array.isArray((goalsRes.value as any)?.data) ? (goalsRes.value as any).data : [];
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
 
-      const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
-      setSubscriptionHistory(renewals);
+      const renewalsOk = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data);
+      setSubscriptionHistory(renewalsOk ? (renewalsRes.value as any).data : []);
+      setSubscriptionsStatus(renewalsOk ? 'ready' : 'error');
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
     } finally {
@@ -602,9 +655,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [activePlanName, setActivePlanName] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
+    setActivePlanError(false);
     api.workouts.assignments.list({ client_id: id, status: 'active' }).then((rows) => {
       if (!cancelled) setActivePlanName(rows[0]?.plan_name ?? null);
-    }).catch(() => {});
+    }).catch(() => { if (!cancelled) setActivePlanError(true); });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -629,11 +683,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? subscriptionHistory.length
     : hasPtTerm(client) ? 1 : 0;
 
-  // More than the single 'enrollment' term means a renewal (studio, UPI, or a
-  // legacy row) already exists — and the server refuses a term edit with
-  // USE_RENEW, so the link would lead to a form that cannot save.
-  const hasRenewed = subscriptionHistory.length > 1
-    || subscriptionHistory.some((s: any) => s.source !== 'enrollment');
+  // More than the single enrollment term means a renewal already exists — and
+  // the server refuses a term edit with USE_RENEW, so the link would lead to a
+  // form that cannot save. `pt_client_subscriptions.source` defaults to
+  // 'manual' (migration 048), so only an explicit 'renewal' row is proof; the
+  // term count is the other. A failed history read means unknown: no link.
+  const subscriptionsReady = subscriptionsStatus === 'ready';
+  const hasRenewed = subscriptionsReady && (
+    subscriptionHistory.length > 1
+    || subscriptionHistory.some((s: any) => s.source === 'renewal')
+  );
+
+  // Never print a count computed from a failed read.
+  const subscriptionSummary = subscriptionsStatus === 'error'
+    ? 'Subscription history unavailable'
+    : subscriptionsStatus === 'loading'
+      ? 'Loading subscription history…'
+      : `${lifetimeTermCount} term${lifetimeTermCount !== 1 ? 's' : ''} · ${fmtMoney(lifetimePaid)} lifetime paid`;
 
   // PT term progress: elapsed over total, clamped so a finished term is 100%.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
@@ -650,7 +716,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   // Readiness belongs to the summary; only hand it over once that answered.
   const recovery = snapshotState.status === 'ready' ? snapshotState.snapshot.recovery : undefined;
   const weightPoints = recentWeights.map((a: any) => ({
-    date: fmtDayMonth(a.created_at || a.assessment_date),
+    date: fmtDayMonth(a.assessment_date || a.created_at),
     weight: Number(a.weight),
   }));
   const firstWeight = weightPoints[0];
@@ -691,17 +757,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             <>
               {/* ── HERO ──
                   Who this is, how they stand, and the one action that edits
-                  them. The paint is the house hero — the same navy gradient,
-                  gold and blue light, grid and vignette the dashboard and
-                  every other PageHero page open on — so the page a coach
-                  opens most is not the one that looks like a foreign site.
-                  The light is the house's own too: two blurred discs, behind
-                  the content and inside the hero's overflow-hidden, which is
-                  what keeps a blur from escaping the rounded corner. */}
+                  them. The paint is the house hero — the same lit slab, bevel,
+                  grain and vignette the dashboard and every other PageHero
+                  page open on — so the page a coach opens most is not the one
+                  that looks like a foreign site. The paint itself is imported
+                  from heroTheme, so this file cannot drift from the others. */}
               <m.section
                 initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="relative mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
+                className="relative isolate mb-5 overflow-hidden rounded-[32px] p-5 text-white sm:p-7"
                 style={{
                   background: `${auroraHero.crown}, ${auroraHero.base}`,
                   boxShadow: auroraHero.shadow,
@@ -709,22 +773,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               >
                 {/* Decoration behind the content, matching the house hero. */}
                 <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-                  {/* The house's two lights, blurred behind the content. */}
-                  <div className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
-                    style={{ background: `radial-gradient(circle, ${auroraHero.glowWarm} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
-                  <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-                    style={{ background: `radial-gradient(circle, ${auroraHero.glowCool} 0%, transparent 70%)`, filter: 'blur(54px)' }} />
-                  <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="cp-grid" width="34" height="34" patternUnits="userSpaceOnUse">
-                        <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#cp-grid)" />
-                  </svg>
-                  <div className="absolute inset-0"
-                    style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,0.55) 100%)' }} />
+                  <span className="hero-spec" />
+                  <span className="hero-vignette" />
+                  <span className="hero-grain" />
                 </div>
+                <span aria-hidden className="hero-hair-t" />
+                <span aria-hidden className="hero-hair-b" />
+                <span aria-hidden className="hero-bevel" />
 
                 <div className="relative z-10">
                 <div className="flex items-start gap-4 sm:gap-6">
@@ -761,12 +816,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     )}
                   </div>
 
-                  <Link href={`/pt-os/clients/${id}/edit`}
-                    aria-label="Edit profile"
-                    className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-[700] text-white transition active:scale-95"
-                    style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
-                    <Pencil size={13} /> <span className="hidden sm:inline">Edit</span>
-                  </Link>
                 </div>
                 </div>
               </m.section>
@@ -776,7 +825,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   Enroll only for somebody without a PT term, Renew only for
                   somebody with one: showing both offered a choice that only
                   ever had one right answer. */}
-              <nav aria-label="Client actions" className="mb-5 flex items-start justify-between gap-1 px-1 sm:justify-start sm:gap-6 sm:px-2">
+              <nav aria-label="Client actions" className="mb-5 grid grid-cols-3 gap-y-3 px-1 sm:flex sm:items-start sm:justify-start sm:gap-6 sm:px-2">
                 {client.mobile && (
                   <ActionButton label="Call" icon={<Phone size={20} />} tint={tones.lime} href={`tel:${client.mobile}`} />
                 )}
@@ -794,6 +843,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 )}
                 {/* The member renews themselves: priced here, paid by UPI in their app. */}
                 <ActionButton label="Offer" ariaLabel="Renewal offer" icon={<Send size={20} />} tint={tones.berry} onClick={() => setOfferOpen(true)} />
+                <ActionButton label="Edit" ariaLabel="Edit profile" icon={<Pencil size={20} />} tint={tones.gold}
+                  href={`/pt-os/clients/${id}/edit`} />
               </nav>
 
               {/* ── MEMBERSHIP ──
@@ -862,7 +913,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     Once they have renewed, the server answers USE_RENEW and
                     this link would lead to a form that cannot save. */}
                 {hasTerm && client.days_left != null && !termEnded(client.days_left, client.pt_end_date)
-                  && !hasRenewed && (
+                  && subscriptionsReady && !hasRenewed && (
                   <Link
                     href={`/pt-os/clients/${id}/enroll`}
                     className="mt-3 inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[700]"
@@ -872,26 +923,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </Link>
                 )}
               </SectionCard>
-
-              {/* ── CLIENT LOGIN ──
-                  Under the money because that is where the reader looks for
-                  "what does this client still owe / have access to". The login
-                  itself no longer depends on payment — see clientInvitations.js. */}
-              <div className="mb-5">
-                <ClientLoginCard clientId={client.id} />
-              </div>
-
-              {/* ── REMOTE SCREENING ──
-                  Sits with the login card: both are one-time links sent to the
-                  client, and the trainer who is about to send one is usually
-                  also about to send the other. */}
-              <div className="mb-5">
-                <ScreeningLinkCard
-                  clientId={client.id}
-                  clientName={client.name}
-                  phone={client.whatsapp || client.mobile}
-                />
-              </div>
 
               {/* ── WORKSPACE ── */}
               <ClientTabs active={tab} onChange={selectTab} clientId={client.id} />
@@ -957,12 +988,21 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <MessagePreferences clientId={client.id}
                       whatsappOptOut={client.whatsapp_opt_out === true}
                       emailOptOut={client.email_opt_out === true}
-                      updatedAt={client.comm_prefs_updated_at ?? null} />
+                      updatedAt={client.comm_prefs_updated_at ?? null}
+                      onSaved={(flags) => setClient((prev) => prev ? {
+                        ...prev,
+                        whatsapp_opt_out: flags.whatsapp_opt_out,
+                        email_opt_out: flags.email_opt_out,
+                        comm_prefs_updated_at: new Date().toISOString(),
+                      } : prev)} />
                   </SectionCard>
 
                   <SectionCard title="PT assignment" icon={<Dumbbell size={15} />} tint={tones.indigo}>
                     <InfoRow icon={<Clock size={13} />} tint={tones.mint} label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
-                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee" value={fmtMoney(client.monthly_pt_amount)} last />
+                    <InfoRow icon={<IndianRupee size={13} />} tint={tones.sky} label="Monthly fee"
+                      value={Number(client.monthly_pt_amount) > 0
+                        ? fmtMoney(client.monthly_pt_amount)
+                        : hasTerm ? 'Paid upfront' : '—'} last />
                   </SectionCard>
 
                   <NotesCard notes={client.notes} onSave={handleSaveNotes} />
@@ -982,6 +1022,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </Link>
                     <QrCheckinCard clientId={client.id} clientName={client.name} />
                   </div>
+                </div>
+
+                {/* One-time links to the member app and the screening form.
+                    They used to sit above the tab strip, pushing the workspace
+                    about two phone screens down. They are admin tools, not the
+                    daily workspace, so they belong at the bottom of Overview. */}
+                <div className="mt-4 space-y-4">
+                  <ClientLoginCard clientId={client.id} />
+                  <ScreeningLinkCard
+                    clientId={client.id}
+                    clientName={client.name}
+                    phone={client.whatsapp || client.mobile}
+                  />
                 </div>
               </TabPanel>
 
@@ -1006,7 +1059,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <div>
                       <h2 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>PT subscription history</h2>
                       <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                        {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtMoney(lifetimePaid)} lifetime paid
+                        {subscriptionSummary}
                       </p>
                     </div>
                   </div>
@@ -1015,20 +1068,24 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
               </TabPanel>
 
               {/* Tabs whose work lives on its own screen send you there rather
-                  than re-implementing it; Workout Log, Measurements and
-                  Nutrition go straight to their screens (see ClientTabs). */}
+                  than re-implementing it; Nutrition goes straight to its
+                  screen (see ClientTabs). Workout Log, Progress Report and
+                  Photos are links inside the tab that owns the job. */}
               <TabPanel id="training" active={tab}>
                 <LinkPanel
                   icon={<Dumbbell size={16} />}
                   title="Training"
-                  body={activePlanName
-                    ? `Currently running "${activePlanName}".`
-                    : 'No programme is assigned yet — start with a plan, then build the week.'}
+                  body={activePlanError
+                    ? 'Could not load their assigned programme. Open Assigned programme to retry.'
+                    : activePlanName
+                      ? `Currently running "${activePlanName}".`
+                      : 'No programme is assigned yet — start with a plan, then build the week.'}
                   color={TAB_COLOR.success}
                   links={[
+                    { label: 'Workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sessions, sets and records', icon: <ScrollText size={15} />, color: TAB_COLOR.danger },
                     { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan', icon: <ScrollText size={15} />, color: TAB_COLOR.primary },
                     { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now', icon: <ClipboardList size={15} />, color: TAB_COLOR.success },
-                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
+                    { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, trend and weekly report', icon: <TrendingUp size={15} />, color: TAB_COLOR.warning },
                     { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Lifts and personal records', icon: <Zap size={15} />, color: TAB_COLOR.danger },
                   ]}
                 />
@@ -1042,10 +1099,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   error={snapshotState.status === 'error' ? snapshotState.message : undefined}
                   onRetry={loadSnapshot}
                 />
-              </TabPanel>
-
-              <TabPanel id="photos" active={tab}>
-                <PhotosPanel clientId={client.id} />
+                <div className="mt-4">
+                  <PhotosPanel clientId={client.id} />
+                </div>
               </TabPanel>
 
               <TabPanel id="ai" active={tab}>
@@ -1078,20 +1134,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 />
               </TabPanel>
 
-              <TabPanel id="reports" active={tab}>
-                <LinkPanel
-                  icon={<FileBarChart size={16} />}
-                  title="Reports"
-                  body="What this client's month looks like."
-                  color={TAB_COLOR.success}
-                  links={[
-                    { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Readings over time', icon: <Ruler size={15} />, color: TAB_COLOR.danger },
-                    { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
-                    { label: 'Studio reports', href: '/insights/revenue', hint: 'Revenue and commissions across the studio', icon: <FileBarChart size={15} />, color: TAB_COLOR.warning },
-                  ]}
-                />
-              </TabPanel>
-
               <TabPanel id="documents" active={tab}>
                 <div className="mb-4">
                   <InterviewSnapshotCard clientId={client.id} />
@@ -1108,6 +1150,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings', icon: <Accessibility size={15} />, color: TAB_COLOR.primary },
                       { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain', icon: <PersonStanding size={15} />, color: TAB_COLOR.danger },
                       { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility', icon: <Gauge size={15} />, color: TAB_COLOR.warning },
+                      { label: 'Progress tracking overview', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Which baselines are complete', icon: <Flag size={15} />, color: TAB_COLOR.primary },
                     ]}
                   />
                 </div>

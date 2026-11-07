@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import { ClipboardList, Dumbbell, Pencil, Loader2, Target, Clock, SlidersHorizontal } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, HeroButton, HeroChip, PageHero } from '@/components/ui';
+import { Button, HeroChip, PageActions, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, WorkoutPlanExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -103,30 +103,9 @@ function Inner() {
   return (
     <div className="mx-auto w-full max-w-3xl pt-1 pb-6 sm:pb-8">
       <PageHero
-        className="mb-5"
+        className="mb-3"
         icon={<Dumbbell size={20} />}
         title={plan.name}
-
-        actions={
-          <div className="flex gap-2">
-            <HeroButton variant="glass" className="flex-1 sm:flex-none" onClick={() => setEditing(true)} icon={<SlidersHorizontal size={14} />}>
-              Edit Details
-            </HeroButton>
-            <HeroButton variant="glass" className="flex-1 sm:flex-none" onClick={openBuilder} icon={<Pencil size={14} />}>
-              Edit Exercises
-            </HeroButton>
-            {/* Saved the plan — now log the actual session against it. */}
-            {clientId && (
-              <HeroButton
-                className="flex-1 sm:flex-none"
-                onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
-                icon={<ClipboardList size={14} />}
-              >
-                Workout Log
-              </HeroButton>
-            )}
-          </div>
-        }
       >
         <div className="flex flex-wrap gap-2">
           {/* Goal by its label, and only when there is one: an AI-saved
@@ -142,6 +121,24 @@ function Inner() {
           {plan.difficulty && <HeroChip className="capitalize">{plan.difficulty}</HeroChip>}
         </div>
       </PageHero>
+      <PageActions className="mb-5">
+        <Button variant="secondary" onClick={() => setEditing(true)} iconLeft={<SlidersHorizontal size={14} />}>
+          Edit Details
+        </Button>
+        <Button variant="secondary" onClick={openBuilder} iconLeft={<Pencil size={14} />}>
+          Edit Exercises
+        </Button>
+        {/* Saved the plan — now log the actual session against it. */}
+        {clientId && (
+          <Button
+            variant="secondary"
+            onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
+            iconLeft={<ClipboardList size={14} />}
+          >
+            Workout Log
+          </Button>
+        )}
+      </PageActions>
 
       <div className="space-y-4">
           {plan.description && (

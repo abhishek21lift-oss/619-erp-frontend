@@ -22,7 +22,7 @@ import { palette, rgba } from '@/lib/palette';
  * content area goes blank, with no message and no way back, on the screen
  * every admin lands on after login. It is indistinguishable from a studio
  * with no data, which is why it went unnoticed long enough to be written up
- * as Critical #3 in DASHBOARD-AUDIT.md and then survive the report.
+ * as Critical #3 in docs/audits/DASHBOARD-AUDIT.md and then survive the report.
  *
  * The trainer dashboard has had a proper error branch with a retry all along
  * (trainer/dashboard/page.tsx). This is the same thing for the main one.

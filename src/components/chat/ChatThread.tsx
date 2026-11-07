@@ -25,7 +25,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { m, AnimatePresence } from 'framer-motion';
 import { AlertCircle, Check, CheckCheck } from 'lucide-react';
 import type { ChatMessage } from '@/lib/api';
-import { palette, rgba } from '@/lib/palette';
+import { identity, palette, rgba, tint } from '@/lib/palette';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ChatComposer from './ChatComposer';
 
 type Side = ChatMessage['sender'];
@@ -34,7 +35,14 @@ type Local = ChatMessage & { pending?: 'sending' | 'failed' };
 const POLL_MS = 15_000;
 const INK = 'var(--text-primary)';
 const MUTED = 'var(--text-muted)';
-const ACCENT = palette.blue[500];
+
+/** The same non-semantic tint the roster uses, so a face reads the same way
+ *  in the inbox and in the thread. */
+function peerTone(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return identity[h % identity.length];
+}
 
 function dayLabel(iso: string): string {
   const d = new Date(iso);
@@ -62,15 +70,19 @@ export type ChatThreadProps = {
   send: (body: string) => Promise<ChatMessage>;
   /** Shown when the thread is empty. */
   empty: React.ReactNode;
-  placeholder?: string;
   /** A note above the composer, e.g. "Ravi has no app login yet". */
   notice?: React.ReactNode;
   /** Height of whatever sits under the thread (a bottom tab bar). */
   bottomOffset?: string;
+  /** Colour of the viewer's own bubbles. Defaults to the brand. */
+  accent?: string;
+  /** Who the viewer is talking to — draws their face beside incoming messages. */
+  peer?: { name: string; photoUrl?: string | null };
 };
 
 export default function ChatThread({
-  me, initial, reload, send, empty, placeholder, notice, bottomOffset = '0px',
+  me, initial, reload, send, empty, notice, bottomOffset = '0px',
+  accent = palette.blue[500], peer,
 }: ChatThreadProps) {
   const [messages, setMessages] = useState<Local[]>(initial);
   const listRef = useRef<HTMLDivElement>(null);
@@ -136,19 +148,21 @@ export default function ChatThread({
           const el = e.currentTarget;
           stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-3">
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3"
+        style={{ background: 'var(--bg-subtle)' }}>
         {messages.length === 0 ? empty : messages.map((x, i) => {
           const prev = messages[i - 1];
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(x.created_at).toDateString();
           const mine = x.sender === me;
           const grouped = prev && !newDay && prev.sender === x.sender
             && new Date(x.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60_000;
+          const tone = peer ? peerTone(peer.name) : identity[0];
           return (
             <div key={x.id}>
               {newDay && (
                 <div className="my-3 flex justify-center">
                   <span className="rounded-full px-2.5 py-0.5 text-[10.5px] font-[700]"
-                    style={{ background: 'var(--bg-subtle)', color: MUTED }}>
+                    style={{ background: 'var(--bg-card)', color: MUTED, border: '1px solid var(--border)' }}>
                     {dayLabel(x.created_at)}
                   </span>
                 </div>
@@ -157,18 +171,31 @@ export default function ChatThread({
                 initial={x.pending === 'sending' ? { opacity: 0, y: 6, scale: 0.98 } : false}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.2 }}
-                className={`flex ${mine ? 'justify-end' : 'justify-start'} ${grouped ? 'mt-0.5' : 'mt-2.5'}`}>
+                className={`flex items-end ${mine ? 'justify-end' : 'justify-start'} ${grouped ? 'mt-0.5' : 'mt-2.5'}`}>
+                {!mine && peer && (
+                  <span className="mr-1.5 w-7 shrink-0">
+                    {!grouped && (
+                      <ClientAvatar
+                        name={peer.name}
+                        photoUrl={peer.photoUrl}
+                        alt=""
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-[10.5px] font-[800]"
+                        style={{ background: tint(tone, 0.2), color: INK }}
+                      />
+                    )}
+                  </span>
+                )}
                 <div className={`flex max-w-[82%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
                   <button type="button" disabled={x.pending !== 'failed'} onClick={() => retry(x)}
                     className="whitespace-pre-wrap break-words rounded-[18px] px-3.5 py-2 text-left text-[14px] leading-[1.45] disabled:cursor-default"
                     style={mine
                       ? {
-                          background: x.pending === 'failed' ? rgba(palette.red[500], 0.12) : ACCENT,
+                          background: x.pending === 'failed' ? rgba(palette.red[500], 0.12) : accent,
                           color: x.pending === 'failed' ? INK : '#fff',
                           borderBottomRightRadius: 6,
                           opacity: x.pending === 'sending' ? 0.75 : 1,
                         }
-                      : { background: 'var(--bg-subtle)', color: INK, borderBottomLeftRadius: 6 }}
+                      : { background: 'var(--bg-card)', color: INK, border: '1px solid var(--border)', borderBottomLeftRadius: 6 }}
                     aria-label={x.pending === 'failed' ? `Not sent: ${x.body}. Tap to retry.` : undefined}>
                     {x.body}
                   </button>
@@ -180,7 +207,7 @@ export default function ChatThread({
                           : <>
                               {time(x.created_at)}
                               {x.id === lastMineId && (x.read_at
-                                ? <><CheckCheck size={12} aria-hidden style={{ color: ACCENT }} /> Read</>
+                                ? <><CheckCheck size={12} aria-hidden style={{ color: accent }} /> Read</>
                                 : <><Check size={12} aria-hidden /> Sent</>)}
                             </>}
                     </span>
@@ -194,7 +221,7 @@ export default function ChatThread({
 
       <AnimatePresence>{notice && <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{notice}</m.div>}</AnimatePresence>
       <div style={{ paddingBottom: bottomOffset }}>
-        <ChatComposer onSend={submit} placeholder={placeholder} />
+        <ChatComposer onSend={submit} accent={accent} />
       </div>
     </div>
   );

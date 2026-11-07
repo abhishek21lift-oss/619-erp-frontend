@@ -679,7 +679,7 @@ export function buildProgressionPrescription(input: ProgressionPrescriptionInput
       || input.frequencyPerWeek > K11_FITT_REFERENCE.frequencyPerWeek.max)
   ) {
     warnings.push(
-      `${input.frequencyPerWeek} sessions/week is outside the K11 FITT reference of `
+      `${input.frequencyPerWeek} sessions/week is outside the FITT reference of `
       + `${K11_FITT_REFERENCE.frequencyPerWeek.min}-${K11_FITT_REFERENCE.frequencyPerWeek.max}.`,
     );
   }
@@ -689,7 +689,7 @@ export function buildProgressionPrescription(input: ProgressionPrescriptionInput
       || input.minutesPerSession > K11_FITT_REFERENCE.mainWorkMinutes.max)
   ) {
     warnings.push(
-      `${input.minutesPerSession} min is outside the K11 FITT main-work reference of `
+      `${input.minutesPerSession} min is outside the FITT main-work reference of `
       + `${K11_FITT_REFERENCE.mainWorkMinutes.min}-${K11_FITT_REFERENCE.mainWorkMinutes.max} min.`,
     );
   }
@@ -756,7 +756,7 @@ export function buildFittPrescription(input: FittPrescriptionInput): {
 
   if (!isCardioCalculationMethod(input.method)) errors.push('Choose the MHR or Karvonen method.');
   const band = getK11IntensityBand(input.intensity);
-  if (!band) errors.push('Choose a valid K11 intensity.');
+  if (!band) errors.push('Choose a valid intensity.');
 
   const frequencyError = validateFrequencyPerWeek(input.frequencyPerWeek);
   if (frequencyError) errors.push(frequencyError);
@@ -781,7 +781,7 @@ export function buildFittPrescription(input: FittPrescriptionInput): {
       || input.frequencyPerWeek > K11_FITT_REFERENCE.frequencyPerWeek.max)
   ) {
     warnings.push(
-      `${input.frequencyPerWeek} sessions/week is outside the K11 FITT reference of `
+      `${input.frequencyPerWeek} sessions/week is outside the FITT reference of `
       + `${K11_FITT_REFERENCE.frequencyPerWeek.min}-${K11_FITT_REFERENCE.frequencyPerWeek.max}.`,
     );
   }
@@ -791,7 +791,7 @@ export function buildFittPrescription(input: FittPrescriptionInput): {
       || input.mainWorkMinutes > K11_FITT_REFERENCE.mainWorkMinutes.max)
   ) {
     warnings.push(
-      `${input.mainWorkMinutes} min is outside the K11 FITT main-work reference of `
+      `${input.mainWorkMinutes} min is outside the FITT main-work reference of `
       + `${K11_FITT_REFERENCE.mainWorkMinutes.min}-${K11_FITT_REFERENCE.mainWorkMinutes.max} min.`,
     );
   }

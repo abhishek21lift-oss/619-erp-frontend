@@ -85,7 +85,7 @@ export function StepStrength({ form, set, gender, age, error, isBeginner }: Step
         <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(163,55,87,0.06)', border: '1px solid rgba(163,55,87,0.18)' }}>
           <Info size={15} style={{ color: '#852E4E', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            This client&apos;s workout experience is set to <strong>Beginner</strong>. K11 guidance is that beginners should not undergo an initial maximal 1RM test — the priority is learning movement patterns and technique. Skip this step with Next and use the technique-focused alternative: log a comfortable submaximal set (8–12 reps) in <strong>Strength Tracking</strong> instead.
+            This client&apos;s workout experience is set to <strong>Beginner</strong>. Beginners should not undergo an initial maximal 1RM test — the priority is learning movement patterns and technique. Skip this step with Next and use the technique-focused alternative: log a comfortable submaximal set (8–12 reps) in <strong>Strength Tracking</strong> instead.
           </p>
         </div>
       )}

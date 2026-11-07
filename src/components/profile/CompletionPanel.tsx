@@ -47,7 +47,7 @@ export function CompletionRing({ percent, size = 84, onDark = false }: { percent
         </defs>
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke={onDark ? 'rgba(255,255,255,0.22)' : 'rgba(236,72,153,0.14)'} strokeWidth={stroke}
+          stroke={onDark ? 'rgba(255,255,255,0.22)' : 'rgba(163,55,87,0.14)'} strokeWidth={stroke}
         />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none"
@@ -99,7 +99,7 @@ export function CompletionPanel({ completion, onGoToTab }: {
           {nextSteps.map((s) => (
             <button
               key={s.key}
-              onClick={() => onGoToTab(s.tab)}
+              onClick={() => onGoToTab(s.key === 'job_title' ? 'credentials' : s.tab)}
               className="flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-all hover:-translate-y-px hover:bg-[var(--bg-hover)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >

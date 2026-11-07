@@ -29,8 +29,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { m } from 'framer-motion';
 import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, Users, Clock, ChevronRight, X, RefreshCw } from 'lucide-react';
 import Guard from '@/components/Guard';
-import Link from 'next/link';
-import { PageContainer, PageHero, PullToRefresh, KpiCard } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { PageActions, PageContainer, PageHero, PullToRefresh, KpiCard, Button } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 
@@ -99,6 +99,7 @@ const dayLabel = (daysLeft: number | null | undefined) => {
 };
 
 export default function BalanceSheetPage() {
+  const router = useRouter();
   const bs = useAsync<{ data: BalanceItem[]; total: number; total_outstanding: number }>(
     () => api.pt.balanceSheet().then((r) => r as { data: BalanceItem[]; total: number; total_outstanding: number }),
     [],
@@ -156,15 +157,6 @@ export default function BalanceSheetPage() {
         <PageHero
           icon={<Wallet size={20} />}
           title="Balance Sheet"
-
-          // The debtors alone, with risk bands and WhatsApp reminders, are
-          // Outstanding Dues.
-          actions={
-          <Link href="/finance/dues"
-            className="inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            Who owes <ChevronRight size={13} aria-hidden />
-          </Link>}
         >
           {overdueCount > 0 && (
             <div className="flex flex-wrap gap-2">
@@ -175,6 +167,14 @@ export default function BalanceSheetPage() {
             </div>
           )}
         </PageHero>
+        {/* The debtors alone, with risk bands and WhatsApp reminders, are
+            Outstanding Dues. */}
+        <PageActions>
+          <Button variant="secondary" onClick={() => router.push('/finance/dues')}
+            iconRight={<ChevronRight size={13} aria-hidden />}>
+            Who owes
+          </Button>
+        </PageActions>
 
         {/* ── Receivables ── */}
         <div className="mb-3 flex items-end justify-between gap-3">
@@ -294,7 +294,6 @@ export default function BalanceSheetPage() {
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search client, trainer, phone…"
               style={{ width: '100%', minHeight: 44, paddingLeft: 36, paddingRight: search ? 44 : 14, paddingTop: 9, paddingBottom: 9, borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
             />
             {search && (

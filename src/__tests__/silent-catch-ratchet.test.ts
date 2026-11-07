@@ -89,21 +89,9 @@ const KNOWN = [
   // They are the fallback, not the failure — the OUTER catch is what used to
   // render a failure as zero, and that is gone from all three.
   'app/(chrome)/finance/collected-payments/page.tsx:116',
-  'app/(chrome)/finance/dues/page.tsx:96',
+  'app/(chrome)/finance/dues/page.tsx:97',
   'components/payments/UpiPayScreen.tsx:210',
-  // Line moved 587 -> 592 -> 597 -> 584 -> 572 -> 604 -> 605 -> 606: the
-  // Check-in QR print popup above gained five lines of escaping plus two
-  // imports, the premium hero pass added a colour note and a card-shadow
-  // comment above it, the unused hero stat helper was removed, the
-  // client-profile dedup removed the unused photo state above it, the
-  // remote-screening card added one import, and the chart import was split
-  // off the ui barrel. The entry itself is unchanged — still one silent
-  // catch, still the same statement.
-  'app/(chrome)/pt-os/clients/[id]/page.tsx:607',
-  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:129',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:187',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:188',
-  'app/(chrome)/pt-os/diet-plans/page.tsx:189',
+  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:170',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:56',
   // The goal wizard reads the Client Interview and the Module 5 re-test
@@ -117,23 +105,27 @@ const KNOWN = [
   'app/(chrome)/pt-os/workout-plans/[id]/page.tsx:51',
   // 442 -> 436: the side-tab stripe removal deleted the six-line category
   // colour table above this site. File set and per-file count unchanged.
-  'app/(chrome)/settings/integrations/page.tsx:273',
+  // 273 -> 137: the studio OpenRouter card was removed; model health is now
+  // operator-only in the Command Center.
+  'app/(chrome)/settings/integrations/page.tsx:137',
   // Two remain on the Security page (the session count on each panel); the
   // other two went with the account-management UI.
   // 1864 -> 1859 -> 1856 and 2156 -> 2151 -> 2148: a UI-copy pass removed
   // five lines above each site, then the side-tab stripe removal deleted a
   // three-line comment-plus-property above them. File set and per-file count
-  // unchanged — line numbers only.
-  'app/(chrome)/settings/profile/page.tsx:1860',
-  'app/(chrome)/settings/profile/page.tsx:2152',
-  'app/(chrome)/settings/profile/page.tsx:952',
-  'app/(chrome)/settings/profile/page.tsx:953',
+  // unchanged — line numbers only. 2148 -> 2159: the Security tab gained the
+  // Member Passkey Setup link above this site. 1858/2161 -> 1963/2370 and
+  // 950/951 -> 1011/1012: the title row, grouped tablist, preview and discard
+  // dialogs were added above. File set and per-file count unchanged.
+  'app/(chrome)/settings/profile/page.tsx:1963',
+  'app/(chrome)/settings/profile/page.tsx:2372',
+  'app/(chrome)/settings/profile/page.tsx:1011',
+  'app/(chrome)/settings/profile/page.tsx:1012',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
   'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:344',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:100',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:598',
   'app/(platform)/platform/_tabs/StudiosTab.tsx:375',
   'components/LandingPage.tsx:63',
   'components/LandingPage.tsx:70',
@@ -149,7 +141,7 @@ const KNOWN = [
   // says it fell back to "the API revision this console was built against".
   // A general outage still surfaces — `hostingerStatus()`/`hostingerVps()` in
   // the same Promise.all rejects into the screen's error state and retry.
-  'components/platform/hosting-centre.tsx:681',
+  'components/platform/hosting-centre.tsx:679',
   'components/platform/hosting-vps.tsx:75',
   'components/pt-os/builder/NewProgrammeForm.tsx:135',
   'components/pt-os/builder/NewProgrammeForm.tsx:138',

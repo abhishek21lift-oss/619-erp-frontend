@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
-  Camera, BarChart3, Loader2,
-  Settings, Clock, CheckCircle2, Bot, Activity,
+  Camera, BarChart3,
+  Settings, CheckCircle2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { PageHero } from '@/components/ui';
 import WhatsAppCard from '@/components/modules/WhatsAppCard';
 import { api } from '@/lib/api';
-import { errorMessage } from '@/lib/forms/errors';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
@@ -42,9 +41,10 @@ interface Integration {
 // a Razorpay payment, and the webhook only logs. The card says so rather than
 // showing "Connected", which read as "online payments are live".
 //
-// WhatsApp and OpenRouter are not in this list either: each has a live card
-// below with its own lifecycle (a device pairing, a model health check) rather
-// than a stored string.
+// WhatsApp is not in this list: it has a live card below with its own
+// device-pairing lifecycle rather than a stored string. AI was removed from
+// this page entirely — model health is an operator concern and now lives in
+// the Command Center. Studio AI features are unaffected.
 const STATIC_INTEGRATIONS: Integration[] = [
   { id: 'razorpay', name: 'Razorpay', description: 'Razorpay keys, held by your operator. Online checkout is not enabled — record payments manually.', category: 'payments', icon: 'CreditCard', color: '#A33757', bg: '#f1f5f9', status: 'unavailable', managed: 'server' },
 ];
@@ -53,7 +53,6 @@ const CATEGORIES = [
   { id: 'all',          label: 'All' },
   { id: 'payments',     label: 'Payments' },
   { id: 'communication',label: 'Communication' },
-  { id: 'ai',           label: 'AI & Automation' },
 ];
 
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -70,141 +69,6 @@ const glass = {
 
 const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: 'var(--text-disabled)' };
 const sl: Record<Status, string> = { connected: 'Connected', error: 'Error', pending: 'Pending', unavailable: 'Unavailable' };
-
-// ── OpenRouter AI Card (live status) ─────────────────────────────────────────
-type HealthModelInfo = { model: string; status: string; latency_ms?: number; error?: string };
-type HealthResult = { primary?: HealthModelInfo; secondary?: HealthModelInfo; fallback?: HealthModelInfo };
-
-function OpenRouterCard() {
-  const [settings, setSettings] = useState<{ configured: boolean; models?: { primary: string; secondary: string; fallback: string } } | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [callError, setCallError] = useState(false);
-  const [health, setHealth]       = useState<HealthResult>({});
-  const [checking, setChecking]   = useState(false);
-  const [healthError, setHealthError] = useState<string | null>(null);
-  const [checkedAt, setCheckedAt]   = useState<string | null>(null);
-
-  useEffect(() => {
-    api.ai.providerSettings()
-      .then((res) => { setCallError(false); setSettings({ configured: res.data.configured, models: res.data.models }); })
-      .catch(() => { setCallError(true); setSettings({ configured: false }); })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const checkHealth = async () => {
-    setChecking(true);
-    setHealthError(null);
-    try {
-      const res = await api.ai.health();
-      setHealth(res.models as HealthResult);
-      setCheckedAt(new Date().toLocaleTimeString());
-    } catch (e: unknown) {
-      setHealthError(errorMessage(e, 'Health check failed — check your API key and model IDs'));
-      setCheckedAt(new Date().toLocaleTimeString());
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const currentStatus: Status = loading ? 'pending' : (callError ? 'pending' : (settings?.configured ? 'connected' : 'unavailable'));
-  const modelEntries: { label: string; key: keyof HealthResult; name?: string }[] = [
-    { label: 'Primary',   key: 'primary',   name: settings?.models?.primary },
-    { label: 'Secondary', key: 'secondary', name: settings?.models?.secondary },
-    { label: 'Fallback',  key: 'fallback',  name: settings?.models?.fallback },
-  ];
-
-  const healthValues = Object.values(health) as HealthModelInfo[];
-  const okCount = healthValues.filter((h) => h.status === 'ok').length;
-
-  return (
-    <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
-      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20 }}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#A33757' }}>
-          <Bot size={20} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>OpenRouter AI</span>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            Multi-model AI gateway powering coaching, workouts &amp; insights
-          </p>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        {loading ? (
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></m.span>
-            Checking…
-          </span>
-        ) : (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: callError ? '#f59e0b' : sc[currentStatus] }}>
-            {settings?.configured ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: callError ? '#f59e0b' : sc[currentStatus], display: 'inline-block' }} />}
-            {callError ? 'Error — backend unreachable' : (settings?.configured ? 'Configured' : 'Not Configured')}
-          </span>
-        )}
-      </div>
-
-      {settings?.configured && (
-        <div style={{ marginBottom: 14, fontSize: 11, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {modelEntries.filter((e) => e.name).map(({ label, key, name }) => {
-            const h = health[key];
-            const isError = h && h.status !== 'ok';
-            return (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ minWidth: 58 }}>{label}:</span>
-                  <code style={{ fontSize: 10, background: 'var(--bg-subtle)', padding: '1px 6px', borderRadius: 6, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</code>
-                  {h && (
-                    <span style={{ fontSize: 9, fontWeight: 700, flexShrink: 0, color: h.status === 'ok' ? '#10b981' : '#ef4444' }}>
-                      {h.status === 'ok' ? `● ${h.latency_ms}ms` : '✕'}
-                    </span>
-                  )}
-                </div>
-                {isError && h.error && (
-                  <div style={{ paddingLeft: 66, fontSize: 10, color: '#ef4444', lineHeight: 1.3, wordBreak: 'break-all' }}>
-                    {h.error.slice(0, 120)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {checkedAt && !healthError && (
-        <div style={{ marginBottom: 10, padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-          background: okCount === healthValues.length ? '#d1fae5' : okCount > 0 ? '#fef3c7' : '#fee2e2',
-          color:      okCount === healthValues.length ? '#065f46' : okCount > 0 ? '#92400e' : '#991b1b' }}>
-          {okCount === healthValues.length
-            ? `All ${okCount} models healthy`
-            : okCount > 0
-            ? `${okCount} / ${healthValues.length} models healthy — check errors above`
-            : `All models failed — verify model IDs and API key`}
-          <span style={{ float: 'right', fontWeight: 400, opacity: 0.7 }}>{checkedAt}</span>
-        </div>
-      )}
-
-      {healthError && (
-        <div style={{ marginBottom: 10, padding: '6px 10px', borderRadius: 8, fontSize: 11, background: '#fee2e2', color: '#991b1b' }}>
-          {healthError}
-          <span style={{ float: 'right', fontWeight: 400, opacity: 0.7 }}>{checkedAt}</span>
-        </div>
-      )}
-
-      <button
-        onClick={checkHealth}
-        disabled={checking || !settings?.configured}
-        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#A33757,#852E4E)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(163,55,87,0.3)' : 'none' }}
-      >
-        {checking ? <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> : <Activity size={13} />}
-        {checking ? 'Pinging models…' : 'Check Model Health'}
-      </button>
-    </m.div>
-  );
-}
 
 // ── Static integration card ───────────────────────────────────────────────────
 function StaticCard({ integration, isConnected, connectedAt }: {
@@ -281,13 +145,10 @@ export default function IntegrationsPage() {
       if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !i.description.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-    const showOpenRouter =
-      (category === 'all' || category === 'ai') &&
-      (!search || 'openrouter ai'.includes(search.toLowerCase()) || 'coaching workout diet insights'.includes(search.toLowerCase()));
     const showWhatsApp =
       (category === 'all' || category === 'communication') &&
       (!search || 'whatsapp'.includes(search.toLowerCase()) || 'messages reminders receipts qr'.includes(search.toLowerCase()));
-    return { staticFiltered, showOpenRouter, showWhatsApp };
+    return { staticFiltered, showWhatsApp };
   }, [category, search]);
 
   return (
@@ -305,7 +166,7 @@ export default function IntegrationsPage() {
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, ...glass, borderRadius: 14, padding: '4px 16px', marginBottom: 16 }}>
             <Search size={16} className="text-[var(--text-muted)]" />
-            <input aria-label="Search integrations" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search integrations..."
+            <input aria-label="Search integrations" value={search} onChange={(e) => setSearch(e.target.value)}
               style={{ flex: 1, border: 'none', fontSize: 13, padding: '12px 0', color: 'var(--text-primary)', background: 'transparent' }}
             />
             {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}><X size={14} /></button>}
@@ -332,16 +193,13 @@ export default function IntegrationsPage() {
                 connectedAt={apiData[integration.id]?.connected_at}
               />
             ))}
-            {filtered.showOpenRouter && (
-              <OpenRouterCard key="openrouter" />
-            )}
             {filtered.showWhatsApp && (
               <WhatsAppCard key="whatsapp" />
             )}
           </AnimatePresence>
         </div>
 
-        {!filtered.staticFiltered.length && !filtered.showOpenRouter && !filtered.showWhatsApp && (
+        {!filtered.staticFiltered.length && !filtered.showWhatsApp && (
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>

@@ -69,7 +69,6 @@ export function PackageForm({ editing, onCancel, onSaved }: {
         <form.Field name="name">
           {(field) => (
             <TextField field={field} label="Package name" required maxLength={120}
-              placeholder="e.g. Fat Loss Starter"
               serverError={f.errors.fieldErrors.name} />
           )}
         </form.Field>
@@ -78,19 +77,19 @@ export function PackageForm({ editing, onCancel, onSaved }: {
           <form.Field name="session_count">
             {(field) => (
               <NumberField field={field} label="Sessions" required mode="integer"
-                placeholder="e.g. 12" serverError={f.errors.fieldErrors.session_count} />
+                serverError={f.errors.fieldErrors.session_count} />
             )}
           </form.Field>
           <form.Field name="duration_days">
             {(field) => (
               <NumberField field={field} label="Duration" required mode="integer" suffix="d"
-                placeholder="e.g. 30" serverError={f.errors.fieldErrors.duration_days} />
+                serverError={f.errors.fieldErrors.duration_days} />
             )}
           </form.Field>
           <form.Field name="price">
             {(field) => (
               <NumberField field={field} label="Price" required mode="money" suffix="₹"
-                placeholder="e.g. 8000" serverError={f.errors.fieldErrors.price} />
+                serverError={f.errors.fieldErrors.price} />
             )}
           </form.Field>
         </div>
@@ -105,7 +104,6 @@ export function PackageForm({ editing, onCancel, onSaved }: {
         <form.Field name="description">
           {(field) => (
             <TextAreaField field={field} label="Description"
-              description="Shown to members on the package card."
               rows={3} maxLength={1000} showCount
               serverError={f.errors.fieldErrors.description} />
           )}

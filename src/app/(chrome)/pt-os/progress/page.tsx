@@ -14,17 +14,20 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Activity, AlertCircle, AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardList,
-  Flag, HeartPulse, LineChart, Loader2, Ruler, Search, Sparkles, TrendingUp, Users,
+  Activity, AlertCircle, AlertTriangle, ArrowRight, BatteryCharging, CalendarClock, CheckCircle2,
+  ClipboardList, Flag, Flame, Footprints, HeartPulse, LineChart, Loader2, Moon, Ruler, Search,
+  Sparkles, TrendingUp, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
+import { DashboardError } from '@/components/dashboards/primitives';
 import {
-  Button, Card, EmptyState, PageContainer, PageHero, Skeleton,
+  Button, Card, CardBody, CardDescription, CardHeader, CardTitle, EmptyState, HeroChip,
+  KpiCard, PageActions, PageContainer, PageHero, Skeleton,
 } from '@/components/ui';
 import { PremiumAreaChart } from '@/components/visualizations';
-import { indigo, emerald, gray } from '@/lib/palette';
+import { indigo, emerald } from '@/lib/palette';
 import { DateFieldControl, SelectField, TextAreaField, useStandaloneField } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type {
@@ -45,6 +48,37 @@ const SECTIONS: { key: SectionKey; label: string; icon: LucideIcon }[] = [
   { key: 'analytics', label: 'Habit Analytics', icon: Activity },
   { key: 'insights', label: 'Insights & Alerts', icon: Sparkles },
 ];
+
+/**
+ * One hue per section, used as decoration on its tab. `ink` is the readable
+ * tone for the icon on a light track; every active gradient is dark enough
+ * that white label text clears AA. No semantic colour is borrowed to mean
+ * "this is a tab" — a status stays a status in the panels below.
+ */
+const SECTION_TONE: Record<SectionKey, { from: string; to: string; ink: string }> = {
+  overview: { from: '#A33757', to: '#852E4E', ink: '#A33757' },
+  history: { from: '#B45309', to: '#92400E', ink: '#B45309' },
+  comparison: { from: '#047857', to: '#065F46', ink: '#047857' },
+  calendar: { from: '#117A6A', to: '#0D5C50', ink: '#117A6A' },
+  journal: { from: '#B8521A', to: '#8C3E14', ink: '#B8521A' },
+  analytics: { from: '#852E4E', to: '#6B2440', ink: '#A33757' },
+  insights: { from: '#475569', to: '#334155', ink: '#475569' },
+};
+
+function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-[750] uppercase tracking-[0.14em]"
+      style={{ color: 'var(--text-muted)' }}>
+      {icon && (
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+          style={{ background: 'var(--bg-subtle)' }} aria-hidden>
+          {icon}
+        </span>
+      )}
+      {children}
+    </p>
+  );
+}
 
 export default function TrainerProgressPage() {
   return (
@@ -116,131 +150,145 @@ function ProgressRoster() {
         title="Progress Hub"
         subtitle={data
           ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
-          : 'Re-tests, daily habits and seven-domain change across every client.'}
-        icon={<LineChart size={20} />}
-        actions={(
-          <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
-            {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
-          </Button>
-        )}
+          : 'Re-tests · daily habits · seven-domain change'}
+        icon={<LineChart size={18} />}
       />
+      <PageActions>
+        <Button variant="secondary"
+          onClick={() => setReloadKey((k) => k + 1)} disabled={loading}
+          iconLeft={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}>
+          Refresh
+        </Button>
+      </PageActions>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Stat label="Overdue" value={String(counts?.overdue ?? '—')} hint="Needs a decision"
-          tone={counts?.overdue ? 'warn' : 'neutral'} />
-        <Stat label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
-          tone={counts?.due ? 'warn' : 'neutral'} />
-        <Stat label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
-          hint="Scheduled ahead" tone="brand" />
-        <Stat label="No open cycle"
-          value={String((counts?.not_scheduled ?? 0) + (counts?.missing_baseline ?? 0))}
-          hint="Not scheduled / no baseline" tone="neutral" />
-      </div>
-
-      <div className="space-y-2.5">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            aria-label="Search clients by name, email or mobile"
-            type="search"
-            placeholder="Search by name, email or mobile…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-        </div>
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by re-test state">
-          {ROSTER_FILTERS.map((f) => {
-            const active = status === f.key;
-            const count = counts
-              ? (f.key === 'all' ? counts.total : counts[f.key as keyof ProgressRetestRoster['counts']])
-              : null;
-            return (
-              <button key={f.key} type="button" aria-pressed={active}
-                onClick={() => { setStatus(f.key); setPage(1); }}
-                className="rounded-full px-3 py-1.5 text-[11px] font-[750] transition-colors"
-                style={active
-                  ? { background: 'var(--brand)', color: '#fff' }
-                  : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
-              </button>
-            );
-          })}
+      <div>
+        <SectionLabel icon={<AlertTriangle size={10} />}>Re-test status</SectionLabel>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <KpiCard icon={<AlertTriangle size={13} />} label="Overdue" value={String(counts?.overdue ?? '—')} hint="Needs a decision"
+            accent={counts?.overdue ? 'coral' : 'graphite'} />
+          <KpiCard icon={<CalendarClock size={13} />} label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
+            accent={counts?.due ? 'amber' : 'graphite'} />
+          <KpiCard icon={<TrendingUp size={13} />} label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
+            hint="Scheduled ahead" accent="rose" />
+          <KpiCard icon={<Users size={13} />} label="No open cycle"
+            value={String((counts?.not_scheduled ?? 0) + (counts?.missing_baseline ?? 0))}
+            hint="Not scheduled / no baseline" accent="graphite" />
         </div>
       </div>
 
-      {failed && data && (
-        <p className="rounded-[12px] px-4 py-2.5 text-[12px]"
-          style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>
-          {failed} — showing the last loaded roster.
-        </p>
-      )}
+      <div>
+        <SectionLabel icon={<Users size={10} />}>Clients</SectionLabel>
+        <div className="space-y-2.5">
+          <div className="glass-panel space-y-2.5 p-3.5">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+              <input
+                aria-label="Search clients by name, email or mobile"
+                type="search"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-1 rounded-[14px] p-1" role="group" aria-label="Filter by re-test state"
+              style={{ background: 'var(--bg-subtle)' }}>
+              {ROSTER_FILTERS.map((f) => {
+                const active = status === f.key;
+                const count = counts
+                  ? (f.key === 'all' ? counts.total : counts[f.key as keyof ProgressRetestRoster['counts']])
+                  : null;
+                return (
+                  <button key={f.key} type="button" aria-pressed={active}
+                    onClick={() => { setStatus(f.key); setPage(1); }}
+                    className="min-h-10 rounded-[10px] px-3 py-1.5 text-[11px] font-[750] transition-all"
+                    style={active
+                      ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
+                      : { color: 'var(--text-muted)' }}>
+                    {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      {loading && !data && (
-        <div className="space-y-2.5" aria-busy="true" aria-label="Loading clients">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[74px] w-full rounded-[16px]" />)}
-        </div>
-      )}
+          {failed && data && (
+            <p className="rounded-[12px] px-4 py-2.5 text-[12px]"
+              style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger-text)' }}>
+              {failed} — showing the last loaded roster.
+            </p>
+          )}
 
-      {!loading && !data && failed && (
-        <EmptyState icon={<AlertCircle size={20} />} title="Could not load the roster" description={failed}
-          action={<Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>} />
-      )}
+          {loading && !data && (
+            <div className="space-y-2.5" aria-busy="true" aria-label="Loading clients">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[74px] w-full rounded-[16px]" />)}
+            </div>
+          )}
 
-      {data && (
-        <>
-          {data.clients.length === 0 ? (
-            <EmptyState icon={<Users size={20} />}
-              title={filtered ? 'No clients match' : 'No clients yet'}
-              description={filtered
-                ? 'Try a different search or re-test state.'
-                : 'Add a client to start tracking assessments and re-tests.'} />
-          ) : (
-            <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
-              {data.clients.map((c) => (
-                <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
-                  className="group flex w-full items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
-                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                  <ClientAvatar name={c.name} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-[13.5px] font-[720]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
-                      <StatePill state={c.state.state} />
-                    </div>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                      {c.assessment_count === 0
-                        ? 'No assessment on file'
-                        : `${c.assessment_count} assessment${c.assessment_count === 1 ? '' : 's'} · latest ${date(c.latest_date)}${c.latest_score == null ? '' : ` · ${Math.round(c.latest_score)}/100`}`}
-                      {c.scheduled_date ? ` · next ${date(c.scheduled_date)} (${timing(c)})` : ` · ${timing(c)}`}
-                    </p>
-                  </div>
-                  <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
-                    style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? '#b45309' : 'var(--text-muted)' }}>
-                    {c.trainer_name || 'Unassigned'}
+          {!loading && !data && failed && (
+            <DashboardError onRetry={() => setReloadKey((k) => k + 1)} title="Could not load the roster"
+              detail={failed} retrying={loading} />
+          )}
+
+          {data && (
+            <>
+              {data.clients.length === 0 ? (
+                <EmptyState icon={<Users size={20} />}
+                  title={filtered ? 'No clients match' : 'No clients yet'}
+                  description={filtered
+                    ? 'Try a different search or re-test state.'
+                    : 'Add a client to start tracking assessments and re-tests.'} />
+              ) : (
+                <div className={loading ? 'space-y-2.5 opacity-60 transition-opacity' : 'space-y-2.5 transition-opacity'}>
+                  {data.clients.map((c) => (
+                    <button key={c.client_id} type="button" onClick={() => open(c.client_id)}
+                      className="group flex w-full items-center gap-3 rounded-[18px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#A33757] hover:shadow-[0_10px_24px_-14px_rgba(15,23,42,0.28)]"
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        boxShadow: `var(--shadow-card), inset 3px 0 0 ${STATE_EDGE[c.state.state] ?? '#64748B'}`,
+                      }}>
+                      <ClientAvatar name={c.name} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                          <StatePill state={c.state.state} />
+                        </div>
+                        <p className="mt-1 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                          {c.assessment_count === 0
+                            ? 'No assessment on file'
+                            : `${c.assessment_count} assessment${c.assessment_count === 1 ? '' : 's'} · latest ${date(c.latest_date)}${c.latest_score == null ? '' : ` · ${Math.round(c.latest_score)}/100`}`}
+                          {c.scheduled_date ? ` · next ${date(c.scheduled_date)} (${timing(c)})` : ` · ${timing(c)}`}
+                        </p>
+                      </div>
+                      <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
+                        style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? 'var(--warning-text)' : 'var(--text-muted)' }}>
+                        {c.trainer_name || 'Unassigned'}
+                      </span>
+                      <ArrowRight size={14} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100"
+                        style={{ color: 'var(--text-disabled)' }} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {data.pages > 1 && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                    Page {data.page} of {data.pages} · {data.total} client{data.total === 1 ? '' : 's'}
                   </span>
-                  <ArrowRight size={14} className="flex-shrink-0 opacity-40 transition-opacity group-hover:opacity-100"
-                    style={{ color: 'var(--text-disabled)' }} />
-                </button>
-              ))}
-            </div>
+                  <div className="flex gap-1.5">
+                    <Button variant="secondary" size="sm" disabled={data.page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+                    <Button variant="secondary" size="sm" disabled={data.page >= data.pages}
+                      onClick={() => setPage((p) => p + 1)}>Next</Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-
-          {data.pages > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                Page {data.page} of {data.pages} · {data.total} client{data.total === 1 ? '' : 's'}
-              </span>
-              <div className="flex gap-1.5">
-                <Button variant="secondary" size="sm" disabled={data.page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
-                <Button variant="secondary" size="sm" disabled={data.page >= data.pages}
-                  onClick={() => setPage((p) => p + 1)}>Next</Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+        </div>
+      </div>
     </PageContainer>
   );
 }
@@ -298,10 +346,11 @@ function ProgressHub({ clientId }: { clientId: string }) {
   if (failed && !data) {
     return (
       <PageContainer>
-        <PageHero title="Progress Hub" icon={<LineChart size={20} />}
-          actions={<Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>} />
-        <EmptyState icon={<AlertCircle size={20} />} title="Could not load progress" description={failed}
-          action={<Button variant="outline" onClick={() => void load()}>Try again</Button>} />
+        <PageHero title="Progress Hub" subtitle="Client progress" icon={<LineChart size={18} />} />
+        <PageActions>
+          <Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
+        </PageActions>
+        <DashboardError onRetry={() => void load()} title="Could not load progress" detail={failed} retrying={loading} />
       </PageContainer>
     );
   }
@@ -312,28 +361,23 @@ function ProgressHub({ clientId }: { clientId: string }) {
       <PageHero
         title="Progress Hub"
         subtitle={`${data.dashboard.period.start_date} to ${data.dashboard.period.end_date} · studio time ${data.dashboard.timezone}`}
-        icon={<LineChart size={20} />}
-        actions={(
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
-            <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-              {loading ? <Loader2 size={14} className="animate-spin" /> : 'Refresh'}
-            </Button>
-          </div>
-        )}
+        icon={<LineChart size={18} />}
       >
-        <div className="flex flex-wrap gap-2">
-          {/* One badge, and only when it names the next action. The unlogged-day
-              count and the assessments-on-file count that used to sit here were
-              printed again in the panels below (Data quality, Assessment
-              history) and cost ~28px each above the first panel on a phone. */}
-          {data.overview.state.state === 'missing_baseline' && (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-[700] text-white/80">
-              No baseline — start with the seven-step assessment
-            </span>
-          )}
-        </div>
+        {/* One badge, and only when it names the next action. The unlogged-day
+            count and the assessments-on-file count that used to sit here were
+            printed again in the panels below (Data quality, Assessment
+            history) and cost ~28px each above the first panel on a phone. */}
+        {data.overview.state.state === 'missing_baseline' && (
+          <HeroChip>No baseline — start with the seven-step assessment</HeroChip>
+        )}
       </PageHero>
+      <PageActions>
+        <Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
+        <Button variant="secondary" onClick={() => void load()} disabled={loading}
+          iconLeft={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}>
+          Refresh
+        </Button>
+      </PageActions>
 
       {failed && (
         <div className="flex items-center gap-2 rounded-[14px] px-4 py-3 text-[12.5px]"
@@ -342,21 +386,22 @@ function ProgressHub({ clientId }: { clientId: string }) {
         </div>
       )}
 
-      <div className="sticky top-0 z-20 -mx-1 overflow-x-auto px-1 py-2"
+      <div className="below-topbar sticky z-20 -mx-1 overflow-x-auto px-1 py-2"
         style={{ background: 'color-mix(in srgb, var(--bg-canvas) 86%, transparent)', backdropFilter: 'blur(16px)' }}>
         <div className="flex min-w-max gap-1.5" role="tablist" aria-label="Progress sections">
           {SECTIONS.map((s) => {
             const Icon = s.icon;
             const active = tab === s.key;
+            const tone = SECTION_TONE[s.key];
             return (
               <button key={s.key} role="tab" aria-selected={active}
                 onClick={() => setTab(s.key)}
-                className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[720] transition-all"
+                className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[750] transition-all"
                 style={active ? {
-                  background: `linear-gradient(135deg,${indigo[500]},${indigo[700]})`, color: '#fff',
-                  boxShadow: '0 6px 18px rgba(163,55,87,0.28)',
+                  background: `linear-gradient(135deg,${tone.from},${tone.to})`, color: '#fff',
+                  boxShadow: `0 6px 16px -8px ${tone.to}, inset 0 1px 0 rgba(255,255,255,0.22)`,
                 } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                <Icon size={14} /> {s.label}
+                <Icon size={14} style={{ color: active ? '#fff' : tone.ink }} /> {s.label}
               </button>
             );
           })}
@@ -379,44 +424,35 @@ function ProgressHub({ clientId }: { clientId: string }) {
 function LoadingShell() {
   return (
     <PageContainer>
-      <Skeleton className="h-[148px] w-full rounded-[24px]" />
-      <Skeleton className="h-11 w-full rounded-[12px]" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-[18px]" />)}
+      <Skeleton className="h-[176px] w-full rounded-[24px] sm:h-[112px] sm:rounded-[30px]" />
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[104px] rounded-[18px]" />)}
       </div>
-      <Skeleton className="h-64 w-full rounded-[18px]" />
+      <Skeleton className="h-14 w-full rounded-[18px]" />
+      <Skeleton className="h-56 w-full rounded-[24px]" />
     </PageContainer>
   );
 }
 
+/**
+ * The one panel shape of the app, from the shared Card primitives. `Panel`
+ * stays as a name because ~20 sections in this file take a `title`/`subtitle`
+ * + `action` slot; the mark, radius, border and paddings are Card's.
+ */
 function Panel({ title, subtitle, children, action }: {
   title: string; subtitle?: string; children: React.ReactNode; action?: React.ReactNode;
 }) {
   return (
-    <Card className="p-0">
-      <div className="flex flex-wrap items-start justify-between gap-2 border-b px-4 py-3.5" style={{ borderColor: 'var(--border)' }}>
+    <Card>
+      <CardHeader>
         <div>
-          <h2 className="text-[14px] font-[790]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
-          {subtitle && <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
+          <CardTitle>{title}</CardTitle>
+          {subtitle && <CardDescription>{subtitle}</CardDescription>}
         </div>
-        {action}
-      </div>
-      <div className="p-4">{children}</div>
+        {action && <div className="shrink-0">{action}</div>}
+      </CardHeader>
+      <CardBody>{children}</CardBody>
     </Card>
-  );
-}
-
-function Stat({ label, value, hint, tone = 'brand' }: {
-  label: string; value: string; hint?: string; tone?: 'brand' | 'success' | 'warn' | 'neutral';
-}) {
-  const color = tone === 'success' ? 'var(--success)' : tone === 'warn' ? '#d97706' : tone === 'neutral' ? 'var(--text-primary)' : 'var(--brand)';
-  return (
-    <div className="rounded-[16px] px-3.5 py-3"
-      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-      <p className="text-[10.5px] font-[760] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <p className="mt-1 text-[20px] font-[850] tracking-[-0.03em] tabular-nums" style={{ color }}>{value}</p>
-      {hint && <p className="mt-0.5 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{hint}</p>}
-    </div>
   );
 }
 
@@ -449,6 +485,17 @@ const STATE_STYLE: Record<string, { bg: string; color: string; label: string }> 
   completed: { bg: 'rgba(16,185,129,0.12)', color: '#047857', label: 'Completed' },
 };
 
+/** The left edge of a roster row names the state before any text is read. */
+const STATE_EDGE: Record<string, string> = {
+  missing_baseline: '#EF4444',
+  overdue: '#EF4444',
+  due: '#F59E0B',
+  not_scheduled: '#64748B',
+  upcoming: '#A33757',
+  rescheduled: '#A33757',
+  completed: '#10B981',
+};
+
 function StatePill({ state }: { state: string }) {
   const s = STATE_STYLE[state] || STATE_STYLE.not_scheduled;
   return (
@@ -472,9 +519,9 @@ function OverviewSection({ data, days, setDays }: {
     <div className="space-y-3.5">
       <div className="grid gap-3 lg:grid-cols-[1.35fr_1fr]">
         <div className="relative overflow-hidden rounded-[22px] p-5 text-white"
-          style={{ background: `radial-gradient(120% 160% at 10% 0%, ${indigo[700]} 0%, transparent 55%), linear-gradient(145deg,${gray[900]} 0%,${indigo[900]} 55%,${gray[900]} 100%)`, boxShadow: '0 18px 44px -20px rgba(15,23,42,0.7)' }}>
+          style={{ background: 'linear-gradient(135deg,#6B2440 0%,#A33757 55%,#852E4E 100%)', boxShadow: '0 18px 44px -22px rgba(107,36,64,0.85), inset 0 1px 0 rgba(255,255,255,0.14)' }}>
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full"
-            style={{ background: 'radial-gradient(circle,rgba(252,211,77,0.28),transparent 70%)', filter: 'blur(26px)' }} />
+            style={{ background: 'radial-gradient(circle,rgba(255,187,148,0.42),transparent 70%)', filter: 'blur(26px)' }} />
           <div className="relative flex items-start justify-between gap-3">
             <div>
               <p className="text-[10.5px] font-[760] uppercase tracking-[0.12em] text-white/50">Next fitness re-test</p>
@@ -487,7 +534,9 @@ function OverviewSection({ data, days, setDays }: {
                   : overview.prompt || 'Create the next test from the latest assessment.'}
               </p>
             </div>
-            <StatePill state={overview.state.state} />
+            <span className="shrink-0 rounded-full bg-white/90 p-0.5">
+              <StatePill state={overview.state.state} />
+            </span>
           </div>
           {schedule?.next_reminder && (
             <p className="relative mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-[650] text-white/75">
@@ -500,13 +549,13 @@ function OverviewSection({ data, days, setDays }: {
         </div>
 
         <div className="grid grid-cols-2 gap-2.5">
-          <Stat label="Assessments" value={String(overview.assessment_count)} hint="Seven-step tests" />
-          <Stat label="Latest score" value={latest ? `${fmt(latest.overall_fitness_score, 0)}/100` : '—'}
-            hint={latest ? date(latest.assessment_date) : 'No test yet'} tone={latest ? 'success' : 'neutral'} />
-          <Stat label="Workout adherence" value={dashboard.workouts.adherence_percent == null ? '—' : `${dashboard.workouts.adherence_percent}%`}
-            hint={dashboard.workouts.planned == null ? 'No weekly frequency set' : `${dashboard.workouts.completed}/${dashboard.workouts.planned} sessions`} tone="brand" />
-          <Stat label="Journal logged" value={`${dashboard.habits.data_quality.logged_days}/${dashboard.habits.data_quality.expected_days}`}
-            hint={`${days}-day window`} tone={dashboard.habits.data_quality.logged_days ? 'success' : 'warn'} />
+          <KpiCard label="Assessments" value={String(overview.assessment_count)} hint="Seven-step tests" />
+          <KpiCard label="Latest score" value={latest ? `${fmt(latest.overall_fitness_score, 0)}/100` : '—'}
+            hint={latest ? date(latest.assessment_date) : 'No test yet'} accent={latest ? 'emerald' : 'graphite'} />
+          <KpiCard label="Workout adherence" value={dashboard.workouts.adherence_percent == null ? '—' : `${dashboard.workouts.adherence_percent}%`}
+            hint={dashboard.workouts.planned == null ? 'No weekly frequency set' : `${dashboard.workouts.completed}/${dashboard.workouts.planned} sessions`} />
+          <KpiCard label="Journal logged" value={`${dashboard.habits.data_quality.logged_days}/${dashboard.habits.data_quality.expected_days}`}
+            hint={`${days}-day window`} accent={dashboard.habits.data_quality.logged_days ? 'emerald' : 'amber'} />
         </div>
       </div>
 
@@ -539,10 +588,10 @@ function OverviewSection({ data, days, setDays }: {
             )
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Stat label="Improved" value={String(comparison.summary?.improved ?? 0)} tone="success" />
-              <Stat label="Declined" value={String(comparison.summary?.declined ?? 0)} tone="warn" />
-              <Stat label="Unchanged" value={String(comparison.summary?.unchanged ?? 0)} tone="neutral" />
-              <Stat label="Not comparable" value={String(comparison.summary?.incomparable ?? 0)} tone="neutral" />
+              <KpiCard label="Improved" value={String(comparison.summary?.improved ?? 0)} accent="emerald" />
+              <KpiCard label="Declined" value={String(comparison.summary?.declined ?? 0)} accent="amber" />
+              <KpiCard label="Unchanged" value={String(comparison.summary?.unchanged ?? 0)} accent="graphite" />
+              <KpiCard label="Not comparable" value={String(comparison.summary?.incomparable ?? 0)} accent="graphite" />
             </div>
           )}
         </Panel>
@@ -674,12 +723,12 @@ function ComparisonSection({ comparison }: { comparison: ProgressComparison | nu
 
       {summary && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
-          <Stat label="Improved" value={String(summary.improved ?? 0)} tone="success" />
-          <Stat label="Declined" value={String(summary.declined ?? 0)} tone="warn" />
-          <Stat label="Changed" value={String(summary.changed ?? 0)} tone="neutral" />
-          <Stat label="Unchanged" value={String(summary.unchanged ?? 0)} tone="neutral" />
-          <Stat label="New" value={String(summary.new_measurements ?? 0)} tone="brand" />
-          <Stat label="Not comparable" value={String(summary.incomparable ?? 0)} tone="neutral" />
+          <KpiCard label="Improved" value={String(summary.improved ?? 0)} accent="emerald" />
+          <KpiCard label="Declined" value={String(summary.declined ?? 0)} accent="amber" />
+          <KpiCard label="Changed" value={String(summary.changed ?? 0)} accent="graphite" />
+          <KpiCard label="Unchanged" value={String(summary.unchanged ?? 0)} accent="graphite" />
+          <KpiCard label="New" value={String(summary.new_measurements ?? 0)} />
+          <KpiCard label="Not comparable" value={String(summary.incomparable ?? 0)} accent="graphite" />
         </div>
       )}
 
@@ -820,7 +869,7 @@ function CalendarSection({ clientId, data, reload }: { clientId: string; data: H
                 <DateFieldControl field={moveField} label="Move to" min={data.dashboard.today} />
               </div>
               <div>
-                <TextAreaField field={reasonField} label="Reason" rows={2} maxLength={500} placeholder="Travel, illness, schedule change…" />
+                <TextAreaField field={reasonField} label="Reason" rows={2} maxLength={500} />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -920,10 +969,10 @@ function JournalSection({ data }: { data: HubData }) {
             description="The member can add sleep, steps, water and recovery in the member app. The trainer view is read-only." />
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Stat label="Sleep" value={data.dashboard.habits.today.log.sleep_hours == null ? '—' : `${fmt(data.dashboard.habits.today.log.sleep_hours)} h`} tone="brand" />
-            <Stat label="Steps" value={data.dashboard.habits.today.log.steps == null ? '—' : Number(data.dashboard.habits.today.log.steps).toLocaleString()} tone="success" />
-            <Stat label="Water" value={data.dashboard.habits.today.log.water_ml == null ? '—' : `${Number(data.dashboard.habits.today.log.water_ml).toLocaleString()} ml`} tone="neutral" />
-            <Stat label="Recovery" value={data.dashboard.habits.today.log.recovery_level == null ? '—' : `${data.dashboard.habits.today.log.recovery_level}/5`} tone="brand" />
+            <KpiCard label="Sleep" value={data.dashboard.habits.today.log.sleep_hours == null ? '—' : `${fmt(data.dashboard.habits.today.log.sleep_hours)} h`} />
+            <KpiCard label="Steps" value={data.dashboard.habits.today.log.steps == null ? '—' : Number(data.dashboard.habits.today.log.steps).toLocaleString()} accent="emerald" />
+            <KpiCard label="Water" value={data.dashboard.habits.today.log.water_ml == null ? '—' : `${Number(data.dashboard.habits.today.log.water_ml).toLocaleString()} ml`} accent="graphite" />
+            <KpiCard label="Recovery" value={data.dashboard.habits.today.log.recovery_level == null ? '—' : `${data.dashboard.habits.today.log.recovery_level}/5`} />
           </div>
         )}
       </Panel>
@@ -992,11 +1041,18 @@ function AnalyticsSection({ data, days, setDays }: { data: HubData; days: number
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Sleep average" value={h.averages.sleep_hours?.average == null ? '—' : `${fmt(h.averages.sleep_hours.average)} h`} hint={`${h.averages.sleep_hours?.samples ?? 0} samples`} tone="brand" />
-        <Stat label="Steps average" value={h.averages.steps?.average == null ? '—' : Math.round(h.averages.steps.average).toLocaleString()} hint={`${h.averages.steps?.samples ?? 0} samples`} tone="success" />
-        <Stat label="Recovery average" value={h.averages.recovery_level?.average == null ? '—' : `${fmt(h.averages.recovery_level.average)}/5`} hint={`${h.averages.recovery_level?.samples ?? 0} samples`} tone="brand" />
-        <Stat label="Logging streak" value={`${h.streaks.logging_days ?? 0} d`} hint="Consecutive days with an entry" tone="warn" />
+      <div>
+        <SectionLabel icon={<Activity size={10} />}>Habit averages</SectionLabel>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <KpiCard icon={<Moon size={13} />}
+            label="Sleep average" value={h.averages.sleep_hours?.average == null ? '—' : `${fmt(h.averages.sleep_hours.average)} h`} hint={`${h.averages.sleep_hours?.samples ?? 0} samples`} />
+          <KpiCard icon={<Footprints size={13} />}
+            label="Steps average" value={h.averages.steps?.average == null ? '—' : Math.round(h.averages.steps.average).toLocaleString()} hint={`${h.averages.steps?.samples ?? 0} samples`} accent="emerald" />
+          <KpiCard icon={<BatteryCharging size={13} />}
+            label="Recovery average" value={h.averages.recovery_level?.average == null ? '—' : `${fmt(h.averages.recovery_level.average)}/5`} hint={`${h.averages.recovery_level?.samples ?? 0} samples`} />
+          <KpiCard icon={<Flame size={13} />}
+            label="Logging streak" value={`${h.streaks.logging_days ?? 0} d`} hint="Consecutive days with an entry" accent="amber" />
+        </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">

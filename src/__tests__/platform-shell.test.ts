@@ -98,9 +98,10 @@ describe('navigation', () => {
     expect(MODULES.every((m) => covered.has(m.id))).toBe(true);
   });
 
-  it('keeps the bottom bar to five plus More', () => {
-    // Six labelled targets on a 390px screen become initials.
-    expect(MOBILE_PRIMARY.length).toBe(5);
+  it('keeps the bottom bar to four plus More', () => {
+    // Five labelled destinations is the iOS norm; a sixth (More) pushed the
+    // bar past it and squeezed every label toward initials.
+    expect(MOBILE_PRIMARY.length).toBe(4);
   });
 
   it('names only modules that exist', () => {

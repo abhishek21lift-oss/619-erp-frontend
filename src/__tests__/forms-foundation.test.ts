@@ -43,7 +43,7 @@ import {
   refineDateOrder,
   GST_SLABS,
 } from '../lib/forms/domain';
-import { mapApiError, errorMessage, noErrors, hasErrors } from '../lib/forms/errors';
+import { mapApiError, errorMessage, generationErrorMessage, noErrors, hasErrors } from '../lib/forms/errors';
 import { ApiError } from '../lib/http';
 
 /** Convenience: the first message from a failed parse. */
@@ -521,6 +521,28 @@ describe('errorMessage — what 205 call sites now get instead of err.message', 
       error: { message: 'Discount must be above zero', field: 'value' },
     });
     expect(errorMessage(attributed, 'Could not save')).toBe('Discount must be above zero');
+  });
+});
+
+describe('generationErrorMessage — a generation 5xx keeps its own sentence', () => {
+  it('shows the server sentence when a 5xx carries one', () => {
+    const refusal = new ApiError(
+      'WORKOUT generation could not check the approved knowledge base. Try again shortly — nothing was generated.',
+      503,
+      'INSUFFICIENT_EVIDENCE',
+    );
+    expect(generationErrorMessage(refusal, 'Failed to generate workout plan.'))
+      .toMatch(/approved knowledge base/);
+  });
+
+  it('falls back instead of showing a bare status line', () => {
+    expect(generationErrorMessage(new ApiError('HTTP 503', 503), 'Failed to generate.'))
+      .toBe('Failed to generate.');
+  });
+
+  it('still maps 4xx through the shared mapper', () => {
+    expect(generationErrorMessage(new ApiError('Validation failed', 422), 'Failed.'))
+      .toBe('Validation failed');
   });
 });
 

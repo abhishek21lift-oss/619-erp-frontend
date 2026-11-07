@@ -23,7 +23,7 @@
 // re-asserting the DOCUMENT's scroll position rather than repositioning an
 // element.
 //
-// See BOTTOM-NAV.md.
+// See docs/audits/BOTTOM-NAV.md.
 
 import { describe, expect, it } from 'vitest';
 import ts from 'typescript';

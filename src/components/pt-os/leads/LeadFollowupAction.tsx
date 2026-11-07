@@ -78,11 +78,13 @@ export default function LeadFollowupAction() {
 
   return (
     <>
+      {/* This trigger now sits in the page's action row under the hero, so it
+          is the app's own secondary button rather than a glass pill built for
+          the dark slab. Kept at 44px because it is a real touch target. */}
       <button
         type="button"
         onClick={() => void propose()}
-        className="inline-flex h-[44px] items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-[700] transition-transform active:scale-95"
-        style={{ background: 'rgba(163,55,87,0.10)', color: '#852E4E', border: '1px solid rgba(163,55,87,0.22)' }}
+        className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--bg-card)] px-4 text-[13px] font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border-2)] transition-all hover:-translate-y-0.5 hover:bg-[var(--bg-hover)] active:translate-y-0"
       >
         <Sparkles size={15} /> Draft follow-ups
       </button>

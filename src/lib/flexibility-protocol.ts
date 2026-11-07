@@ -33,7 +33,7 @@ export const SIT_AND_REACH_ZERO_POINT_INCHES = 15;
 export const HAMSTRINGS_REFERENCE = {
   min_deg: 70,
   max_deg: 80,
-  note: 'Reference range from the supplied K11 protocol',
+  note: 'Reference range from the supplied protocol',
 } as const;
 
 export const TIGHTNESS = ['Normal', 'Mild', 'Moderate', 'Marked'] as const;
@@ -392,7 +392,7 @@ function deriveSitAndReach(raw: unknown, context: FlexibilityContext): DerivedSi
     ? {
       table_version: K11_SIT_AND_REACH_TABLE_VERSION,
       category,
-      message: 'K11 age/sex sit-and-reach norm',
+      message: 'Age/sex sit-and-reach norm',
     }
     : (!contextProvided && storedCategory
       ? {

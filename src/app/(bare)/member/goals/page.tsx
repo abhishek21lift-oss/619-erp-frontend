@@ -301,8 +301,6 @@ function NewGoalSheet({ initialKind, exercises, onClose, onCreated }: {
   const { form, isSubmitting } = f;
   const [kind, setKind] = useState<string>(initialKind);
 
-  const targetHint = kind === 'lift' ? 'The weight you want to lift' : kind === 'weight' ? 'Your target body weight' : 'Sessions to complete from today';
-
   return (
     <div data-no-pull-refresh className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose} aria-hidden />
@@ -332,12 +330,11 @@ function NewGoalSheet({ initialKind, exercises, onClose, onCreated }: {
           {kind === 'lift' && (
             <form.Field name="exercise">
               {(field) => (exercises.length > 0 ? (
-                <SelectField field={field} label="Exercise" placeholderOption="Choose a lift"
+                <SelectField field={field} label="Exercise"
                   options={exercises.map((x) => ({ value: x, label: x }))}
                   serverError={f.errors.fieldErrors.exercise} />
               ) : (
-                <TextField field={field} label="Exercise" placeholder="e.g. Back squat" maxLength={120}
-                  description="Use the name your trainer logs it under, so your sets count toward it."
+                <TextField field={field} label="Exercise" maxLength={120}
                   serverError={f.errors.fieldErrors.exercise} />
               ))}
             </form.Field>
@@ -345,9 +342,8 @@ function NewGoalSheet({ initialKind, exercises, onClose, onCreated }: {
 
           <form.Field name="target">
             {(field) => (
-              <NumberField field={field} label="Target" description={targetHint}
+              <NumberField field={field} label="Target"
                 mode={kind === 'sessions' ? 'integer' : 'decimal'} suffix={kind === 'sessions' ? 'sessions' : 'kg'}
-                placeholder={kind === 'sessions' ? 'e.g. 20' : kind === 'lift' ? 'e.g. 100' : 'e.g. 72'}
                 serverError={f.errors.fieldErrors.target} />
             )}
           </form.Field>
@@ -355,7 +351,6 @@ function NewGoalSheet({ initialKind, exercises, onClose, onCreated }: {
           <form.Field name="targetDate">
             {(field) => (
               <DateFieldControl field={field} label="By when? (optional)"
-                description="We'll tell you if you're on pace for it."
                 serverError={f.errors.fieldErrors.targetDate} />
             )}
           </form.Field>

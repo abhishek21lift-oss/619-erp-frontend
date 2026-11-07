@@ -202,7 +202,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 <form.Field name="durationMonths">
                   {(field) => (
                     <NumberField field={field} label="Duration" required mode="integer" suffix="months"
-                      description="1 to 60"
                       serverError={f.errors.fieldErrors.durationMonths} />
                   )}
                 </form.Field>
@@ -269,7 +268,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
             <form.Field name="notes">
               {(field) => (
                 <TextAreaField field={field} label="Notes" labelHidden rows={3} maxLength={1000} showCount
-                  placeholder="Any notes about this renewal…"
                   serverError={f.errors.fieldErrors.notes} />
               )}
             </form.Field>

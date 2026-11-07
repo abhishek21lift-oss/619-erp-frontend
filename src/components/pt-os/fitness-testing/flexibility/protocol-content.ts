@@ -83,7 +83,7 @@ export const HAMSTRINGS_PROTOCOL: TestProtocol = {
     'A straight-leg raise loads the lower back. Stop if the client reports back pain or neural symptoms down the leg.',
     'Never force past the first firm resistance.',
   ],
-  reference: 'Reference range from the supplied K11 protocol: 70–80°. Below 70° flags a further flexibility assessment; above 80° is above the reference range, not abnormal.',
+  reference: 'Reference range from the supplied protocol: 70–80°. Below 70° flags a further flexibility assessment; above 80° is above the reference range, not abnormal.',
 };
 
 export const HIP_FLEXORS_PROTOCOL: TestProtocol = {
@@ -143,7 +143,7 @@ export const SIT_AND_REACH_PROTOCOL: TestProtocol = {
     'No bouncing or ballistic reaching — it loads the spine and inflates the score.',
     'Stop on low-back pain or hamstring cramp.',
   ],
-  reference: 'K11 sit-and-reach norms are age- and sex-specific; the category is shown when the client’s age and sex are recorded.',
+  reference: 'Sit-and-reach norms are age- and sex-specific; the category is shown when the client’s age and sex are recorded.',
 };
 
 export const FLEXIBILITY_PROTOCOLS: Record<FlexibilityTestKey, TestProtocol> = {

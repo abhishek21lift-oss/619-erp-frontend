@@ -77,7 +77,6 @@ function EducationRow({ entry, index, issues, onChange, onRemove }: {
             label="Institution"
             density="compact"
             className="min-w-0 flex-1"
-            placeholder="School, college or academy"
             maxLength={PROFILE_LIMITS.institution}
             showCount={entry.institution.length > PROFILE_LIMITS.institution - 20}
           />
@@ -94,18 +93,18 @@ function EducationRow({ entry, index, issues, onChange, onRemove }: {
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           <TextField
             field={degree} label="Qualification" density="compact"
-            placeholder="B.Sc, Diploma…" maxLength={PROFILE_LIMITS.degree}
+            maxLength={PROFILE_LIMITS.degree}
           />
           <TextField
             field={field} label="Field" density="compact"
-            placeholder="Sports Science" maxLength={PROFILE_LIMITS.field}
+            maxLength={PROFILE_LIMITS.field}
           />
           {/* `integer` gives the numeric keypad through inputMode rather than
               type=number, so a scroll wheel over a focused year cannot change
               it and a partial "20" is not fought by a spinner. */}
           <NumberField
             field={year} label="Year" density="compact" mode="integer"
-            placeholder="2016" min={1900} max={maxProfileYear()}
+            min={1900} max={maxProfileYear()}
           />
         </div>
       </div>

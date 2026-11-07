@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { m } from 'framer-motion';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
-import { KpiCard, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, KpiCard, PageActions, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
 import { ChartDataTable, PremiumDonutChart, semantic } from '@/components/visualizations';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -60,6 +60,7 @@ function riskLevel(amount: number): { label: string; color: string; bg: string }
 }
 
 function Inner() {
+  const router = useRouter();
   const { user } = useAuth();
   const [dues, setDues]   = useState<DuesItem[]>([]);
   const [summary, setSummary] = useState<DuesSummary | null>(null);
@@ -142,16 +143,15 @@ function Inner() {
       <PageHero
         icon={<AlertTriangle size={20} />}
         title="Pending Dues"
-
-        // Only the members who owe. Every client's package, paid and balance
-        // — paid-up ones included, with a CSV export — is the Balance Sheet.
-        actions={
-          <Link href="/pt-os/balance-sheet"
-            className="inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            All balances <ChevronRight size={13} aria-hidden />
-          </Link>}
-        />
+      />
+      {/* Only the members who owe. Every client's package, paid and balance
+          — paid-up ones included, with a CSV export — is the Balance Sheet. */}
+      <PageActions>
+        <Button variant="secondary" onClick={() => router.push('/pt-os/balance-sheet')}
+          iconRight={<ChevronRight size={13} aria-hidden />}>
+          All balances
+        </Button>
+      </PageActions>
 
         {/* The three figures used to sit inside the shared hero as translucent
             tiles, which made the hero taller and pushed the search below the
@@ -219,7 +219,7 @@ function Inner() {
       <div style={{ background: 'var(--bg-card)', borderRadius: 18, border: '1px solid var(--border)', padding: '14px 18px', marginBottom: 16, boxShadow: 'var(--shadow-xs)' }}>
         <div style={{ position: 'relative', maxWidth: 340 }}>
           <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)' }} />
-          <input aria-label="Search member, ID or mobile" type="search" placeholder="Search member, ID or mobile" onChange={(e) => handleSearch(e.target.value)}
+          <input aria-label="Search member, ID or mobile" type="search" onChange={(e) => handleSearch(e.target.value)}
             style={{ width: '100%', minHeight: 44, padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid var(--border)', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-card)', boxSizing: 'border-box' }} />
         </div>
       </div>

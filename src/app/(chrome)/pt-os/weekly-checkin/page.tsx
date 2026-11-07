@@ -56,6 +56,13 @@ export default function WeeklyCheckinPage() {
     },
   });
   const { form, errors, isSubmitting } = f;
+
+  // The Check-ins tab links here with ?client_id=; without this the trainer
+  // lands on a blank picker and has to find the same client a second time.
+  useEffect(() => {
+    const preset = new URLSearchParams(window.location.search).get('client_id');
+    if (preset) form.setFieldValue('client_id', preset);
+  }, [form]);
   const values = useStore(form.store, (s) => s.values);
   const clientId = values.client_id;
 
@@ -172,7 +179,6 @@ export default function WeeklyCheckinPage() {
                     field={field}
                     label="Client"
                     required
-                    placeholderOption="Select client..."
                     options={(clients.data ?? []).map(c => ({ value: c.id, label: c.name }))}
                     serverError={errors.fieldErrors.client_id}
                   />
@@ -195,10 +201,8 @@ export default function WeeklyCheckinPage() {
                   {(field) => (
                     <NumberField
                       field={field}
-                      label="Weight"
-                      description="kg (20–400)"
+                      label="Weight (kg)"
                       mode="decimal"
-                      placeholder="e.g. 72.5"
                       min={20}
                       max={400}
                       serverError={errors.fieldErrors.weight}
@@ -209,10 +213,8 @@ export default function WeeklyCheckinPage() {
                   {(field) => (
                     <NumberField
                       field={field}
-                      label="Sleep"
-                      description="hours per night (0–24)"
+                      label="Sleep (hours)"
                       mode="decimal"
-                      placeholder="e.g. 7.5"
                       min={0}
                       max={24}
                       serverError={errors.fieldErrors.sleep_hours}
@@ -223,8 +225,7 @@ export default function WeeklyCheckinPage() {
                   {(field) => (
                     <NumberField
                       field={field}
-                      label="Water"
-                      description="glasses per day (0–40)"
+                      label="Water (glasses)"
                       mode="integer"
                       min={0}
                       max={40}
@@ -236,8 +237,7 @@ export default function WeeklyCheckinPage() {
                   {(field) => (
                     <NumberField
                       field={field}
-                      label="Workouts"
-                      description="this week (0–21)"
+                      label="Workouts (this week)"
                       mode="integer"
                       min={0}
                       max={21}
@@ -252,7 +252,6 @@ export default function WeeklyCheckinPage() {
                   <NumberField
                     field={field}
                     label="Adherence"
-                    description="Percentage, 0 to 100."
                     mode="decimal"
                     min={0}
                     max={100}
@@ -269,15 +268,14 @@ export default function WeeklyCheckinPage() {
                   is computed only from the ones answered. */}
               <div>
                 <p className="mb-2 text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>
-                  Readiness — 1 to 10, optional
+                  Readiness (optional)
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   <form.Field name="stress_level">
                     {(field) => (
                       <NumberField
                         field={field}
-                        label="Stress"
-                        description="10 = worst"
+                        label="Stress (10 = worst)"
                         mode="integer"
                         min={1}
                         max={10}
@@ -289,8 +287,7 @@ export default function WeeklyCheckinPage() {
                     {(field) => (
                       <NumberField
                         field={field}
-                        label="Energy"
-                        description="10 = best"
+                        label="Energy (10 = best)"
                         mode="integer"
                         min={1}
                         max={10}
@@ -302,8 +299,7 @@ export default function WeeklyCheckinPage() {
                     {(field) => (
                       <NumberField
                         field={field}
-                        label="Soreness"
-                        description="10 = worst"
+                        label="Soreness (10 = worst)"
                         mode="integer"
                         min={1}
                         max={10}
@@ -334,7 +330,6 @@ export default function WeeklyCheckinPage() {
                     rows={2}
                     maxLength={2000}
                     showCount
-                    placeholder="How the week went, anything to watch"
                     serverError={errors.fieldErrors.trainer_notes}
                   />
                 )}

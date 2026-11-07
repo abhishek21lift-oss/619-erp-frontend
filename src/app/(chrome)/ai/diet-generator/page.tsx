@@ -10,7 +10,7 @@ import type { AiDietPlan, AiDietMeal } from '@/lib/api';
 import type { AiKnowledgeGrounding } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
-import { errorMessage } from '@/lib/forms/errors';
+import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
 import {
   NumberField, SelectField, TextField, ChoiceChips, useStandaloneField,
 } from '@/components/ui/form';
@@ -259,7 +259,7 @@ export default function DietGeneratorPage() {
       setPlan(res.data);
       setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding });
     } catch (e: unknown) {
-      setError(errorMessage(e, 'Failed to generate diet plan.'));
+      setError(generationErrorMessage(e, 'Failed to generate diet plan.'));
     } finally {
       generatingRef.current = false;
       setLoading(false);
@@ -297,7 +297,8 @@ export default function DietGeneratorPage() {
         <PageHero
           icon={<Apple size={20} />}
           title="AI Diet Generator"
-          compact
+          subtitle="A full day of meals with macros, hydration and a grocery list, ready to save to the client's plan."
+          className="mx-auto w-full max-w-4xl"
         />
 
       <div className="mx-auto w-full max-w-4xl">
@@ -341,9 +342,9 @@ export default function DietGeneratorPage() {
               record already knows, or nobody does". Marking them required was
               not merely unenforced, it was wrong. */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <NumberField field={ageField} label="Age" density="compact" mode="integer" placeholder="28" suffix="yrs" />
-            <NumberField field={weightField} label="Weight" density="compact" mode="decimal" placeholder="75" suffix="kg" />
-            <NumberField field={heightField} label="Height" density="compact" mode="decimal" placeholder="175" suffix="cm" />
+            <NumberField field={ageField} label="Age" density="compact" mode="integer" suffix="yrs" />
+            <NumberField field={weightField} label="Weight" density="compact" mode="decimal" suffix="kg" />
+            <NumberField field={heightField} label="Height" density="compact" mode="decimal" suffix="cm" />
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -370,7 +371,6 @@ export default function DietGeneratorPage() {
             <TextField
               field={preferencesField} label="Dietary Preferences" density="compact"
               className="sm:col-span-2" maxLength={300}
-              placeholder="e.g. vegetarian, vegan, keto, Indian (optional)"
             />
             {/* Never defaulted to "none": the server's own comment explains
                 that the old `|| 'none'` printed a clean bill of health for
@@ -378,7 +378,6 @@ export default function DietGeneratorPage() {
             <TextField
               field={allergiesField} label="Allergies / Foods to Avoid" density="compact"
               className="sm:col-span-2" maxLength={300}
-              placeholder="e.g. nuts, dairy, gluten (optional)"
             />
           </div>
 

@@ -47,6 +47,7 @@ vi.mock('@/components/ui', () => {
       <div data-testid={`kpi-${label}`}>{value}</div>
     ),
     PageContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    PageActions: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     PageHero: ({ title, children }: { title: string; children?: React.ReactNode }) => (
       <div>
         <h1>{title}</h1>

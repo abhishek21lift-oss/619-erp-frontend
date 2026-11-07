@@ -13,6 +13,7 @@ export default function WorkoutLogLandingPage() {
     <Guard>
       <ClientPicker
         title="Workout Log"
+        accent="indigo"
 
         icon={<ClipboardList size={20} color="#fff" />}
         basePath="/pt-os/workout-log"

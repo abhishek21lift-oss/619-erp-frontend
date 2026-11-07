@@ -8,7 +8,7 @@ import {
   CheckCircle2, Download, Printer, Mail,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, EmptyState, PageContainer, PageHero } from '@/components/ui';
+import { Button, EmptyState, PageActions, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import ConsentSummary from '@/components/pt-os/informed-consent/ConsentSummary';
 import { api } from '@/lib/api';
@@ -149,23 +149,20 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
     // inconsistency was most visible exactly where it mattered least to the
     // code and most to the user — the first screen of the intake sequence.
     //
-    // The action lives in the hero, matching PAR-Q. The EmptyState below keeps
-    // its explanatory copy but no longer carries the button, so there is one
-    // obvious next step rather than two identical ones stacked.
+    // The action sits under the hero, matching PAR-Q. The EmptyState below
+    // keeps its explanatory copy but no longer carries the button, so there is
+    // one obvious next step rather than two identical ones stacked.
     return (
       <PageContainer>
         <PageHero
           icon={<FileSignature size={20} />}
           title={`${clientName || 'This client'}'s Consent`}
-
-          actions={
-            <button type="button" onClick={openWizard}
-              className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-              style={{ background: '#fff', color: '#0F172A' }}>
-              <Plus size={16} /> Start Consent
-            </button>
-          }
         />
+        <PageActions>
+          <Button onClick={openWizard} iconLeft={<Plus size={16} />}>
+            Start Consent
+          </Button>
+        </PageActions>
 
         <div className="mx-auto w-full max-w-3xl space-y-3">
           <EmptyState

@@ -102,7 +102,7 @@ It is **not** one of the ten sanctioned decorative themes. Its colours are all p
 
 ### 6.4 Audit findings already on record
 
-`IMPECCABLE-AUDIT.md` (13/20) names the concrete craft failures: plain `<img>` (P1), gradient text (P1), violet/indigo gradients in `finance/record-payment` (P1), side-tab borders (P1), clickable divs (P1), sub-44px targets (P1), bounce easing (P1). These are the same patterns found independently above; they are treated as the checklist for Phase 5, not as the plan itself. The violet/indigo finding is scoped to that one page — it is not a licence to flatten the ten sanctioned decorative themes.
+`docs/audits/IMPECCABLE-AUDIT.md` (13/20) names the concrete craft failures: plain `<img>` (P1), gradient text (P1), violet/indigo gradients in `finance/record-payment` (P1), side-tab borders (P1), clickable divs (P1), sub-44px targets (P1), bounce easing (P1). These are the same patterns found independently above; they are treated as the checklist for Phase 5, not as the plan itself. The violet/indigo finding is scoped to that one page — it is not a licence to flatten the ten sanctioned decorative themes.
 
 ---
 
@@ -141,7 +141,7 @@ It is **not** one of the ten sanctioned decorative themes. Its colours are all p
 
 ## 9. Dependency: dashboard correctness
 
-`DASHBOARD-AUDIT.md` documents that the trainer dashboard calls the studio-wide admin endpoint and renders a response shape that does not exist; member dashboard and `/` have related data/error-state failures. This is broken product, not visual craft.
+`docs/audits/DASHBOARD-AUDIT.md` documents that the trainer dashboard calls the studio-wide admin endpoint and renders a response shape that does not exist; member dashboard and `/` have related data/error-state failures. This is broken product, not visual craft.
 
 **Out of scope for this design**, but sequenced before Phase 4. The landing-surface work can land presentation changes independently, but the "one product" claim is only credible once the data is right. If the dashboard track slips, Phase 4 ships later, not thinner.
 

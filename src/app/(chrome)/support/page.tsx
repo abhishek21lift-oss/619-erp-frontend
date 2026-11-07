@@ -15,7 +15,7 @@ import {
   LifeBuoy, Loader2, AlertTriangle, Plus, Send, ChevronLeft, CheckCircle2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { HeroButton, PageHero, FormField, TextArea, TextInput } from '@/components/ui';
+import { Button, PageActions, PageHero, FormField, TextArea, TextInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SupportTicket, TicketStatus, TicketPriority, TicketCategory } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -135,7 +135,6 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <FormField label="Your reply" labelHidden>
               <TextArea
                 value={body} onChange={(e) => setBody(e.target.value)} rows={3}
-                placeholder="Add to this request…"
                 className="resize-y"
               />
             </FormField>
@@ -186,12 +185,11 @@ function NewTicket({ onClose, onCreated }: { onClose: () => void; onCreated: () 
       <div className="space-y-3">
         <FormField label="Subject" density="compact">
           <TextInput value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200}
-            placeholder="Check-ins are failing on the QR scanner" />
+            />
         </FormField>
 
         <FormField label="What is happening?" density="compact">
           <TextArea value={body} onChange={(e) => setBody(e.target.value)} rows={4} maxLength={10000}
-            placeholder="Tell us what you were doing and what happened instead."
             className="resize-y" />
         </FormField>
 
@@ -257,13 +255,14 @@ function SupportPage() {
       <PageHero
         icon={<LifeBuoy size={20} />}
         title="Support"
-
-        actions={!open && !composing ? (
-          <HeroButton className="w-full sm:w-auto" onClick={() => setComposing(true)} icon={<Plus size={15} />}>
-            New request
-          </HeroButton>
-        ) : undefined}
       />
+      {!open && !composing && (
+        <PageActions>
+          <Button onClick={() => setComposing(true)} iconLeft={<Plus size={15} />}>
+            New request
+          </Button>
+        </PageActions>
+      )}
 
       {open ? (
         <Thread id={open} onBack={() => { setOpen(null); load(); }} />

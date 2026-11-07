@@ -115,7 +115,6 @@ function AchievementRow({ entry, index, issues, onChange, onRemove, last }: {
               label="Achievement"
               density="compact"
               className="min-w-0 flex-1"
-              placeholder="What you achieved"
               maxLength={PROFILE_LIMITS.title}
               showCount={entry.title.length > PROFILE_LIMITS.title - 20}
             />
@@ -137,17 +136,16 @@ function AchievementRow({ entry, index, issues, onChange, onRemove, last }: {
             />
             <TextField
               field={issuer} label="Awarded by" density="compact"
-              placeholder="Federation, publication…" maxLength={PROFILE_LIMITS.issuer}
+              maxLength={PROFILE_LIMITS.issuer}
             />
             <NumberField
               field={year} label="Year" density="compact" mode="integer"
-              placeholder="2023" min={1900} max={maxProfileYear()}
+              min={1900} max={maxProfileYear()}
             />
             <TextAreaField
               field={detail} label="Detail" density="compact" className="sm:col-span-3"
               rows={2} maxLength={PROFILE_LIMITS.detail}
               showCount={entry.detail.length > PROFILE_LIMITS.detail - 60}
-              placeholder="Optional — the lift, the placing, the title."
             />
           </div>
           {entry.year == null && entry.title.trim() !== '' && (

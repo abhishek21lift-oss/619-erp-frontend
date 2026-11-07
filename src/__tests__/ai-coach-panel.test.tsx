@@ -82,7 +82,7 @@ function open() {
 }
 
 async function ask(question: string) {
-  const input = screen.getByPlaceholderText('Ask your AI coach anything…');
+  const input = screen.getByLabelText('Ask your AI coach anything');
   fireEvent.change(input, { target: { value: question } });
   fireEvent.keyDown(input, { key: 'Enter' });
 }
@@ -331,7 +331,7 @@ describe('<AiCoachPanel type="workout" /> day count', () => {
     await pick();
     expect(daysBox().value).toBe('');
 
-    fireEvent.change(screen.getByLabelText('Select goal...'), { target: { value: 'Muscle Gain' } });
+    fireEvent.change(screen.getByLabelText('Goal'), { target: { value: 'Muscle Gain' } });
     // Two controls carry that name: the mode toggle and the submit button.
     const generate = screen.getAllByRole('button', { name: /Generate Plan/i });
     fireEvent.click(generate[generate.length - 1]);
@@ -354,8 +354,8 @@ describe('<AiCoachPanel type="workout" /> day count', () => {
 
     await pick();
 
-    const goal = screen.getByLabelText('Select goal...') as HTMLSelectElement;
-    const level = screen.getByLabelText('Select level...') as HTMLSelectElement;
+    const goal = screen.getByLabelText('Goal') as HTMLSelectElement;
+    const level = screen.getByLabelText('Experience level') as HTMLSelectElement;
     expect(goal.value).toBe('Muscle Gain');
     expect(goal.disabled).toBe(true);
     expect(level.value).toBe('Advanced');

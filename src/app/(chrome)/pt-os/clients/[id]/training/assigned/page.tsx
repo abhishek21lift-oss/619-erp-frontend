@@ -20,6 +20,7 @@ import { EmptyState, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutAssignment } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { errorMessage } from '@/lib/forms/errors';
 
 const STATUS_TONE: Record<WorkoutAssignment['status'], { label: string; color: string; bg: string }> = {
   active:    { label: 'Active',    color: '#059669', bg: 'rgba(5,150,105,0.12)' },
@@ -41,23 +42,29 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
   const { toast } = useToast();
   const [rows, setRows] = useState<WorkoutAssignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const [retiring, setRetiring] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
+      setError('');
       try {
         // No status filter: past programmes are the point of this screen.
         const data = await api.workouts.assignments.list({ client_id: clientId });
         if (!cancelled) setRows(data);
-      } catch {
-        if (!cancelled) toast.error('Could not load assigned programmes');
+      } catch (err: unknown) {
+        // A failed request is not "no programmes". Saying so sends a trainer
+        // to assign a second plan to a client who already has one.
+        if (!cancelled) setError(errorMessage(err, 'Could not load assigned programmes.'));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, toast]);
+  }, [clientId, reloadKey]);
 
   // Active first, then most recently started. A client usually has one active
   // programme and a tail of finished ones; the active one is what a trainer
@@ -98,6 +105,25 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 size={24} className="animate-spin" style={{ color: 'var(--brand)' }} />
+          </div>
+        ) : error ? (
+          <div
+            role="alert"
+            className="rounded-[20px] p-6 text-center"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+              Could not load programmes
+            </p>
+            <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{error}</p>
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              className="mt-4 inline-flex h-[44px] items-center rounded-[14px] px-4 text-[13px] font-[700] text-white"
+              style={{ background: 'var(--brand)' }}
+            >
+              Retry
+            </button>
           </div>
         ) : sorted.length === 0 ? (
           <EmptyState
@@ -189,7 +215,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
                       type="button"
                       onClick={() => retire(a)}
                       disabled={retiring === a.id}
-                      className="mt-2 flex h-[40px] w-full items-center justify-center rounded-[12px] text-[12.5px] font-[700] disabled:opacity-60"
+                      className="mt-2 flex h-[44px] w-full items-center justify-center rounded-[12px] text-[12.5px] font-[700] disabled:opacity-60"
                       style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
                     >
                       {retiring === a.id ? 'Retiring…' : 'Retire programme'}

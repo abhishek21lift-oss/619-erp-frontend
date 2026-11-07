@@ -3,15 +3,19 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSeededSearch } from '@/lib/use-seeded-search';
 import { m } from 'framer-motion';
-import { Search, Users, UserPlus, User, Phone } from 'lucide-react';
+import { Search, Users, UserPlus, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import ClientKpiStrip from '@/components/pt-os/ClientKpiStrip';
-import { PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import {
+  Button, EmptyState, PageActions, PageContainer, PageHero, PullToRefresh, Skeleton,
+} from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 import { termEnded } from '@/lib/term-dates';
 import { serverFilter } from '@/lib/client-filter';
+import { identity, palette, tint } from '@/lib/palette';
 
 type PtClient = PtClientBase & {
   gender: string;
@@ -33,16 +37,16 @@ function fmtShortINR(n: number): string {
   return '₹' + n;
 }
 
-const CLIENT_PALETTES = [
-  { from: '#A33757', to: '#A33757', glow: 'rgba(163,55,87,0.35)' },
-  { from: '#852E4E', to: '#852E4E', glow: 'rgba(133,46,78,0.35)' },
-  { from: '#059669', to: '#047857', glow: 'rgba(5,150,105,0.35)' },
-  { from: '#d97706', to: '#b45309', glow: 'rgba(217,119,6,0.35)' },
-  { from: '#A33757', to: '#A33757', glow: 'rgba(163,55,87,0.35)' },
-  { from: '#A33757', to: '#A33757', glow: 'rgba(163,55,87,0.35)' },
-  { from: '#f59e0b', to: '#b91c1c', glow: 'rgba(245,158,11,0.35)' },
-  { from: '#852E4E', to: '#852E4E', glow: 'rgba(133,46,78,0.35)' },
-];
+/**
+ * Same tone for the same client on every load and through every filter.
+ * `identity` is the non-semantic ramp — a client whose avatar came out red
+ * would look overdue — and it is indexed by a hash of the id, not the row.
+ */
+function avatarTone(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return identity[h % identity.length];
+}
 
 /**
  * What the row owes on the CURRENT term — the same definition as the profile
@@ -58,14 +62,14 @@ function getStatusInfo(status: string, days_left: number | null, has_pt_term = f
   // 'pending' means two different things: a bare add (no term yet) is "Not
   // Enrolled", while a provisional enrolment (term written, screening still
   // outstanding) is "Activation Pending".
-  if (status === 'pending' && has_pt_term) return { label: 'Activation Pending', color: '#d97706', bg: 'rgba(217,119,6,0.12)', dot: '#d97706' };
-  if (status === 'pending') return { label: 'Not Enrolled', color: '#64748B', bg: 'rgba(100,116,139,0.10)', dot: '#64748B' };
-  if (status === 'frozen') return { label: 'Frozen', color: '#852E4E', bg: 'rgba(163,55,87,0.12)', dot: '#A33757' };
+  if (status === 'pending' && has_pt_term) return { label: 'Activation Pending', color: palette.amber[700], bg: 'var(--warning-soft)', dot: palette.amber[500] };
+  if (status === 'pending') return { label: 'Not Enrolled', color: palette.gray[500], bg: 'var(--bg-subtle)', dot: palette.gray[400] };
+  if (status === 'frozen') return { label: 'Frozen', color: palette.indigo[600], bg: 'var(--info-soft)', dot: palette.indigo[500] };
   // days_left 0 is the term's last day, which is still a valid day (lib/term-dates.ts).
-  if (days_left == null || termEnded(days_left)) return { label: 'Expired', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
-  if (days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
-  if (days_left <= 30) return { label: 'Soon', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', dot: '#f59e0b' };
-  return { label: 'Active', color: '#34d399', bg: 'rgba(52,211,153,0.12)', dot: '#10b981' };
+  if (days_left == null || termEnded(days_left)) return { label: 'Expired', color: palette.gray[500], bg: 'var(--bg-subtle)', dot: palette.gray[400] };
+  if (days_left <= 7) return { label: 'Expiring', color: palette.red[600], bg: 'var(--danger-soft)', dot: palette.red[500] };
+  if (days_left <= 30) return { label: 'Soon', color: palette.amber[700], bg: 'var(--warning-soft)', dot: palette.amber[500] };
+  return { label: 'Active', color: palette.emerald[700], bg: 'var(--success-soft)', dot: palette.emerald[500] };
 }
 
 function AnimatedCounter({ value, prefix = '' }: { value: number; prefix?: string }) {
@@ -88,7 +92,7 @@ function AnimatedCounter({ value, prefix = '' }: { value: number; prefix?: strin
 }
 
 function DaysArc({ days_left }: { days_left: number | null }) {
-  if (days_left === null) return <span className="text-xs text-slate-400">—</span>;
+  if (days_left === null) return <span className="text-xs text-[var(--text-muted)]">—</span>;
   const max = 90;
   const pct = Math.min(Math.max(days_left / max, 0), 1);
   const info = getStatusInfo('active', days_left);
@@ -112,70 +116,63 @@ function DaysArc({ days_left }: { days_left: number | null }) {
 }
 
 const STATUS_FILTERS = [
-  { value: 'all',     label: 'All',     from: '#A33757', to: '#A33757' },
-  { value: 'active',  label: 'Active',  from: '#10b981', to: '#059669' },
-  { value: 'pending', label: 'Pending', from: '#d97706', to: '#b45309' },
-  { value: 'frozen',  label: 'Frozen',  from: '#A33757', to: '#A33757' },
-  { value: 'expired', label: 'Expired', from: '#64748b', to: '#475569' },
+  { value: 'all', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'frozen', label: 'Frozen' },
+  { value: 'expired', label: 'Expired' },
 ];
 
-function ClientTableRow({ client, index }: { client: PtClient; index: number }) {
+function ClientTableRow({ client }: { client: PtClient }) {
   const router = useRouter();
-  const palette = CLIENT_PALETTES[index % CLIENT_PALETTES.length];
-  const initials = client.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
+  const tone = avatarTone(client.id);
   const statusInfo = getStatusInfo(client.status, client.days_left, client.has_pt_term);
-  // Same fallback the profile hero uses: photo_url carries both data URLs from
-  // the in-app crop and stored paths, and a path this deployment cannot serve
-  // must land on the initials rather than a broken-image icon in every row.
-  const [photoBroken, setPhotoBroken] = useState(false);
   return (
     <m.tr
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
       onClick={() => router.push(`/pt-os/clients/${client.id}`)}
-      className="group cursor-pointer transition-all duration-200 hover:bg-gray-50"
+      className="group cursor-pointer transition-colors duration-200 hover:bg-[var(--bg-subtle)]"
       style={{ borderBottom: '1px solid var(--border)' }}
     >
-      <td className="py-3.5 px-5">
+      <td className="py-3 pl-4 pr-3 sm:pl-5">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[15px] text-white text-[13px] font-[800] transition-transform duration-200 group-hover:scale-105"
-            style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`, boxShadow: `0 3px 10px ${palette.glow}` }}>
-            {client.photo_url && !photoBroken ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={client.photo_url} alt={client.name}
-                onError={() => setPhotoBroken(true)}
-                className="h-full w-full object-cover" />
-            ) : initials}
-          </div>
+          <ClientAvatar
+            name={client.name}
+            photoUrl={client.photo_url}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[13px] font-[800] transition-transform duration-200 group-hover:scale-105"
+            style={{
+              background: tint(tone, 0.18),
+              color: 'var(--text-primary)',
+              boxShadow: `inset 0 0 0 1px ${tint(tone, 0.28)}`,
+            }}
+          />
           <div className="min-w-0">
-            <p className="text-[13px] font-[740] text-gray-900">{client.name}</p>
+            <p className="truncate text-[13.5px] font-[760] text-[var(--text-primary)]">{client.name}</p>
             {/* The ID lived here and nobody dials an ID. The number is what you
                 reach for from a roster, and it is one tap away on the phone
                 this list is mostly read on. */}
             <div className="mt-0.5 flex items-center gap-1.5">
-              <Phone size={10} className="shrink-0 text-slate-400" />
-              <span className="text-[11.5px] font-[600] tabular-nums text-slate-500">
+              <Phone size={10} className="shrink-0 text-[var(--text-muted)]" />
+              <span className="text-[11.5px] font-[600] tabular-nums text-[var(--text-muted)]">
                 {client.mobile || '—'}
               </span>
             </div>
           </div>
         </div>
       </td>
-      <td className="py-3.5 px-4 hidden sm:table-cell">
-        <div className="flex items-center gap-1.5">
-          <User size={11} style={{ color: palette.from }} />
-          <span className="text-[12px] font-[600] text-gray-600">{client.trainer_name || '—'}</span>
-        </div>
+      <td className="hidden px-3 py-3 sm:table-cell">
+        <span className="text-[12px] font-[600] text-[var(--text-secondary)]">{client.trainer_name || '—'}</span>
       </td>
-      <td className="py-3.5 px-4 hidden md:table-cell">
-        <span className="inline-block text-[10px] font-[700] px-2.5 py-1 rounded-[7px] uppercase tracking-wide"
-          style={{ background: `${palette.from}18`, color: palette.from, border: `1px solid ${palette.from}25` }}>
+      <td className="hidden px-3 py-3 md:table-cell">
+        <span className="inline-block rounded-full px-2.5 py-1 text-[10px] font-[700] uppercase tracking-wide"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
           {client.package_type || '—'}
         </span>
       </td>
-      <td className="py-3.5 px-4">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-[700] uppercase tracking-wide px-2.5 py-1 rounded-[8px]"
+      <td className="px-3 py-3">
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-[700] uppercase tracking-wide"
           style={{ background: statusInfo.bg, color: statusInfo.color }}>
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusInfo.dot }} />
           {statusInfo.label}
@@ -184,18 +181,18 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
       {/* Balance, not the package total. What's owed is the thing you scan a
           roster for; the contracted amount never changes and is on the
           client's own page. */}
-      <td className="py-3.5 px-4 text-right">
+      <td className="px-3 py-3 text-right">
         <span className="text-[13px] font-[760] tabular-nums"
-          style={{ color: termBalance(client) > 0 ? '#dc2626' : '#059669' }}>
+          style={{ color: termBalance(client) > 0 ? palette.red[600] : palette.emerald[700] }}>
           {fmtShortINR(termBalance(client))}
         </span>
       </td>
-      <td className="py-3.5 px-4 text-right hidden xl:table-cell">
-        <span className="text-[12px] font-[700] text-violet-600 tabular-nums">
+      <td className="hidden px-3 py-3 text-right xl:table-cell">
+        <span className="text-[12px] font-[700] tabular-nums text-[var(--text-secondary)]">
           {fmtShortINR(client.total_earned_commission)}
         </span>
       </td>
-      <td className="py-3.5 px-4 text-right">
+      <td className="py-3 pl-3 pr-4 sm:pr-5">
         <DaysArc days_left={client.days_left} />
       </td>
     </m.tr>
@@ -211,6 +208,14 @@ export default function PtClientsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  // ?status=active is how the dashboard's Active Clients tile opens this
+  // roster. Validated against the pills, so a hand-edited URL cannot put the
+  // page in a state no control can get out of.
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('status');
+    if (s && STATUS_FILTERS.some((f) => f.value === s)) setStatusFilter(s);
+  }, []);
 
   // One request per pause in typing, not one per keystroke. The list is
   // filtered by the database now, so each search is a round trip.
@@ -282,28 +287,21 @@ export default function PtClientsPage() {
             max-w-[1600px] with mt-1, so on a wide screen the page ran 320px
             wider than the dashboard and sat a pixel higher. */}
         <PageContainer>
-
           <PageHero
+            accent="brand"
             icon={<Users size={20} />}
-            title="PT Clients"
-
-            actions={(
-              <button
-                type="button"
-                onClick={() => router.push('/pt-os/new-client')}
-                className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-                style={{ background: '#fff', color: '#0F172A' }}>
-                <UserPlus size={16} />
-                New Client
-              </button>
-            )}
+            title={statusFilter === 'active' ? 'Active Clients' : 'PT Clients'}
           />
+          <PageActions>
+            <Button onClick={() => router.push('/pt-os/new-client')} iconLeft={<UserPlus size={16} />}>
+              New Client
+            </Button>
+          </PageActions>
 
           {/* The strip's own file explains why it is one object rather
               than four cards, and why it is 2x2 on mobile. */}
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-5">
+            transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}>
             <ClientKpiStrip
               summary={summary ? {
                 total: summary.total ?? 0, revenue: summary.revenue ?? 0,
@@ -317,100 +315,96 @@ export default function PtClientsPage() {
           {/* ── CLIENT LIST ── */}
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-4">
+            className="space-y-3.5">
 
             {/* ── TOOLBAR ── */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="relative w-full sm:min-w-[220px] sm:max-w-md sm:flex-1">
+                  <Search size={16} aria-hidden className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                  <input aria-label="Search clients or trainers"
+                    type="search"
+                    value={search} onChange={e => setSearch(e.target.value)}
+                    className="h-11 w-full rounded-[13px] pl-10 pr-4 text-[13.5px] font-[500] text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                  />
+                </div>
 
-              {/* Search */}
-              <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-sm">
-                <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input aria-label="Search clients or trainers"
-                  type="text" placeholder="Search clients or trainers…"
-                  value={search} onChange={e => setSearch(e.target.value)}
-                  className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] text-gray-900 outline-none transition-all duration-200 placeholder:text-slate-400"
-                  style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)' }}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(163,55,87,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(163,55,87,0.08)'; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = ''; }}
-                />
+                <span className="ml-auto shrink-0 text-[11.5px] font-[600] text-[var(--text-muted)]">
+                  <span className="font-[800] text-[var(--text-primary)]">{total}</span>
+                  {total === 1 ? ' client' : ' clients'}
+                </span>
               </div>
 
               {/* Filter row — horizontal scroll on mobile */}
-              <div className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 sm:w-auto sm:overflow-visible">
-                {/* Status filter pills */}
-                <div className="flex shrink-0 gap-1 rounded-[12px] p-1"
-                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                  {STATUS_FILTERS.map(f => (
-                    <button key={f.value} onClick={() => setStatusFilter(f.value)}
-                      className="rounded-[8px] px-3.5 py-2 text-[11px] font-[700] transition-all duration-200"
-                      style={statusFilter === f.value
-                        ? { background: `linear-gradient(135deg, ${f.from}, ${f.to})`, color: '#fff', boxShadow: `0 2px 10px ${f.from}40` }
-                        : { color: 'rgb(100,116,139)' }}>
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* No view toggle and no Refresh button. One list, one layout —
-                    the toggle only ever chose between two renderings of the
-                    same rows, and PullToRefresh above already refetches on
-                    the gesture people actually use here. */}
-                <span className="ml-auto shrink-0 text-[11px] font-[600] text-slate-500">
-                  <span className="text-gray-700">{total}</span>
-                  {total === 1 ? ' client' : ' clients'}
-                </span>
+              <div className="flex w-full items-center gap-1 overflow-x-auto rounded-full p-1"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                {STATUS_FILTERS.map(f => (
+                  <button key={f.value} type="button" onClick={() => setStatusFilter(f.value)}
+                    aria-pressed={statusFilter === f.value}
+                    className="shrink-0 rounded-full px-3.5 py-2 text-[11.5px] font-[700] transition-all duration-200"
+                    style={statusFilter === f.value
+                      ? { background: 'var(--gradient-brand)', color: '#fff', boxShadow: 'var(--shadow-sm)' }
+                      : { color: 'var(--text-muted)' }}>
+                    {f.label}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* ── THE LIST ── */}
-            <div className="overflow-hidden rounded-[20px]"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+            <div className="overflow-hidden rounded-[22px]"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
                       {[
-                        { label: 'Client', cls: '' },
+                        { label: 'Client', cls: 'pl-4 sm:pl-5' },
                         { label: 'Trainer', cls: 'hidden sm:table-cell' },
                         { label: 'Package', cls: 'hidden md:table-cell' },
                         { label: 'Status', cls: '' },
-                        { label: 'Balance', cls: '' },
-                        { label: 'Commission', cls: 'hidden xl:table-cell' },
-                        { label: 'Days', cls: '' },
+                        { label: 'Balance', cls: 'text-right' },
+                        { label: 'Commission', cls: 'hidden text-right xl:table-cell' },
+                        { label: 'Days', cls: 'text-right pr-4 sm:pr-5' },
                       ].map(col => (
-                        <th key={col.label} className={`px-4 py-3.5 text-[9px] font-[700] uppercase tracking-[0.12em] text-slate-500 ${col.cls}`}>
+                        <th key={col.label} className={`px-3 py-3 text-[9px] font-[750] uppercase tracking-[0.12em] text-[var(--text-muted)] ${col.cls}`}>
                           {col.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
+                    {rows.map(c => <ClientTableRow key={c.id} client={c} />)}
                   </tbody>
                 </table>
               </div>
               {rows.length === 0 && !clients.loading && (
-                <div className="p-6">
-                  <EmptyState search={search} statusFilter={statusFilter} onNew={() => router.push('/pt-os/new-client')} />
-                </div>
+                <EmptyState
+                  icon={<Users size={22} />}
+                  title={search || statusFilter !== 'all' ? 'No clients found' : 'Add your first client'}
+                  description={search || statusFilter !== 'all'
+                    ? 'Try adjusting your search or filters.'
+                    : 'The roster fills up as soon as your first client enrols.'}
+                  action={!search && statusFilter === 'all'
+                    ? <Button iconLeft={<UserPlus size={14} />} onClick={() => router.push('/pt-os/new-client')}>New Client</Button>
+                    : undefined}
+                  className="py-14"
+                />
               )}
               {total > PAGE_SIZE && (
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3.5"
                   style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-[11.5px] font-[600] text-slate-500">
+                  <span className="text-[11.5px] font-[600] text-[var(--text-muted)]">
                     Showing {firstRow}–{lastRow} of {total}
                   </span>
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={!hasPrev}
-                      className="h-[36px] rounded-[10px] px-3.5 text-[12px] font-[700] disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--fg)' }}>
+                    <Button size="sm" variant="secondary" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={!hasPrev}>
                       Previous
-                    </button>
-                    <button type="button" onClick={() => setPage(p => p + 1)} disabled={!hasNext}
-                      className="h-[36px] rounded-[10px] px-3.5 text-[12px] font-[700] disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--fg)' }}>
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => setPage(p => p + 1)} disabled={!hasNext}>
                       Next
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -418,61 +412,27 @@ export default function PtClientsPage() {
 
             {/* ── ERROR — a failed load must never read as an empty roster ── */}
             {clients.error && !clients.data && (
-              <div role="alert" className="flex items-center gap-2.5 rounded-[16px] border border-red-200 bg-red-50 p-4">
-                <span className="flex-1 text-[13px] font-[600] text-red-700">
+              <div role="alert" className="flex items-center gap-2.5 rounded-[16px] p-4"
+                style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)' }}>
+                <span className="flex-1 text-[13px] font-[600] text-[var(--danger-text)]">
                   Couldn&apos;t load clients. Check your connection and try again.
                 </span>
-                <button
-                  onClick={() => void clients.refetch()}
-                  className="inline-flex h-[40px] cursor-pointer items-center rounded-[12px] px-4 text-[13px] font-[700] text-white"
-                  style={{ background: '#dc2626' }}
-                >
+                <Button size="sm" variant="danger" onClick={() => void clients.refetch()}>
                   Retry
-                </button>
+                </Button>
               </div>
             )}
 
-            {/* ── LOADING ── */}
+            {/* ── LOADING — skeleton rows, so the page does not jump when the
+                   list arrives. ── */}
             {clients.loading && !clients.data && (
-              <div className="flex flex-col items-center justify-center gap-4 py-24">
-                <div className="relative h-12 w-12">
-                  <div className="absolute inset-0 rounded-full"
-                    style={{ border: '2px solid rgba(163,55,87,0.12)', borderTopColor: '#852E4E', animation: 'spin 0.9s linear infinite' }} />
-                </div>
-                <p className="text-[13px] font-[500] text-slate-500">Loading clients…</p>
+              <div className="space-y-2" aria-busy="true" aria-label="Loading clients">
+                {[0, 1, 2, 3, 4].map(i => <Skeleton key={i} height={68} className="rounded-[18px]" />)}
               </div>
             )}
           </m.div>
         </PageContainer>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </PullToRefresh>
     </Guard>
-  );
-}
-
-function EmptyState({ search, statusFilter, onNew }: { search: string; statusFilter: string; onNew: () => void }) {
-  const isFiltered = !!search || statusFilter !== 'all';
-  return (
-    <div className="flex flex-col items-center justify-center gap-4 py-20">
-      <div className="flex h-20 w-20 items-center justify-center rounded-[24px]"
-        style={{ background: 'rgba(163,55,87,0.07)', border: '1px solid rgba(163,55,87,0.15)' }}>
-        <Users size={32} style={{ color: '#852E4E' }} />
-      </div>
-      <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">
-        {isFiltered ? 'No PT clients found' : 'Add your first client'}
-      </p>
-      {isFiltered && (
-        <p className="max-w-[320px] text-center text-[13px] text-slate-500">
-          Try adjusting your search or filters
-        </p>
-      )}
-      {!isFiltered && (
-        <button onClick={onNew}
-          className="mt-2 inline-flex items-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:-translate-y-0.5"
-          style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 24px rgba(163,55,87,0.35)' }}>
-          <UserPlus size={14} />New Client
-        </button>
-      )}
-    </div>
   );
 }

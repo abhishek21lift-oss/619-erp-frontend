@@ -75,6 +75,11 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
 
   return (
     <div className="space-y-3">
+      {/* Once every step is done the list is eight green "Done" chips saying
+          what the attention strip already said. Collapse it to the next-step
+          block, so the card stops being a third "all good" signal. */}
+      {journey.next !== null && (
+        <>
       <div className="flex items-center gap-3">
         <div className="h-[6px] flex-1 overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}
           role="progressbar" aria-valuemin={0} aria-valuemax={journey.steps.length} aria-valuenow={done}
@@ -118,6 +123,8 @@ export default function ClientJourneyCard({ clientId }: { clientId: string }) {
           );
         })}
       </ol>
+        </>
+      )}
 
       {journey.next === null ? (
         <div className="space-y-2 rounded-[14px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>

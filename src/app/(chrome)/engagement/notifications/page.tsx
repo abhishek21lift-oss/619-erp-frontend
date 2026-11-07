@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
-import { PullToRefresh, PageContainer, PageHero } from '@/components/ui';
+import { Button, PullToRefresh, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { Bell, Send, Users, CheckCircle2, Clock, Plus, Trash2, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -110,15 +110,14 @@ function NContent() {
       <PageHero
         icon={<Bell size={20} />}
         title="Notifications"
-
-        actions={
-          <button type="button" onClick={()=>setShowForm(v=>!v)}
-            className="inline-flex items-center gap-1.5 rounded-full h-9 px-3.5 text-[12px] font-semibold transition active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff' }}>
-            <Plus size={14}/> {showForm?'Cancel':'Compose'}
-          </button>
-        }
       />
+      <PageActions>
+        <Button variant={showForm ? 'secondary' : 'primary'}
+          onClick={()=>setShowForm(v=>!v)}
+          iconLeft={<Plus size={14} />}>
+          {showForm?'Cancel':'Compose'}
+        </Button>
+      </PageActions>
 
       {error && (
         <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -182,7 +181,6 @@ function NContent() {
               {(field) => (
                 <TextField
                   field={field} label="Title" required density="compact"
-                  placeholder="e.g. Your membership expires soon!"
                   maxLength={NOTIFICATION_LIMITS.title} showCount
                   serverError={f.errors.fieldErrors.title}
                 />
@@ -192,7 +190,6 @@ function NContent() {
               {(field) => (
                 <TextAreaField
                   field={field} label="Message" required density="compact" rows={4}
-                  placeholder="Write your notification message…"
                   maxLength={NOTIFICATION_LIMITS.body} showCount
                   serverError={f.errors.fieldErrors.body}
                 />

@@ -5,8 +5,8 @@
  *
  * ── Why this exists ────────────────────────────────────────────────────────
  *
- * The dashboard has a hero: an indigo Aurora panel with rounded corners,
- * sitting `pt-1` under the top bar and inside the shell's own gutter. Every
+ * The dashboard has a hero: a dark, lit slab with rounded corners, sitting
+ * `pt-1` under the top bar and inside the shell's own gutter. Every
  * report page had grown its own version of the idea instead — a pale
  * `--bg-subtle` slab with `borderRadius: '0 0 36px 36px'` and
  * `padding: '52px 32px 40px'`, followed by a content block with
@@ -30,13 +30,18 @@
  * The dashboard hero runs a sheen sweep on an infinite repeat. One perpetual
  * animation on the screen you land on is a flourish; the same animation on
  * every report page you open is motion for its own sake, and the guidance is
- * one or two animated elements per view. The gradient, the glow, the grid and
- * the shape are all here — the loop is not.
+ * one or two animated elements per view. The slab, the light and the shape
+ * are all here — the loop is not.
+ *
+ * The paint itself lives in heroTheme.ts, because the dashboard and the client
+ * profile wear the same one and three copies would drift.
  */
 
 import * as React from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { cn } from './cn';
+import { PAGE_ACCENTS, type PageAccent } from './pageAccents';
+import { heroBackground, heroCompactBackground, heroCompactShadow, heroShadow } from './heroTheme';
 
 export interface PageHeroProps {
   title: string;
@@ -44,8 +49,6 @@ export interface PageHeroProps {
   icon?: React.ReactNode;
   /** Controls that belong to the page as a whole — tabs, a date range. */
   children?: React.ReactNode;
-  /** Right-aligned actions, beside the title on desktop. */
-  actions?: React.ReactNode;
   className?: string;
   /**
    * The short, light treatment: no gradient slab, no glow, no grid, no
@@ -62,95 +65,26 @@ export interface PageHeroProps {
    */
   compact?: boolean;
   /**
-   * A page's own colour for the full hero, in place of the navy: its CSS
-   * `background` and the glow under it. The shape, grid, spacing and layout
-   * stay the shared hero's — only the paint changes, and the navy's gold and
-   * blue glows step aside so they do not muddy it. The colours come from the
-   * page's token file (e.g. components/attendance/attendanceTheme.ts).
+   * A page's own paint, in place of the house slab: its CSS `background` and
+   * the glow under it. The shape, the bevel, the grain, the spacing and the
+   * layout stay the shared hero's — only the paint changes. The colours come
+   * from the page's token file (e.g. components/attendance/attendanceTheme.ts).
    */
   surface?: { background: string; shadow: string };
   /**
-   * The arrival treatment: an emerald aurora with concentric rings, a large
-   * glass icon tile and the page's actions as pills under the title. Opt-in,
-   * so every existing caller keeps the hero it has.
+   * A section's own light on the house slab, from components/ui/pageAccents.ts.
+   * It tints the spotlight and the shadow, never the surface behind the text —
+   * the hero stays dark and legible at every accent. Omitted keeps the hero's
+   * amber; `surface` wins when both are given, because it is the more specific
+   * escape hatch an existing page already relies on.
    */
-  showcase?: boolean;
+  accent?: PageAccent;
 }
 
-export function PageHero({ title, subtitle, icon, children, actions, className, compact, surface, showcase }: PageHeroProps) {
+export function PageHero({ title, subtitle, icon, children, className, compact, surface, accent }: PageHeroProps) {
   const reduce = useReducedMotion();
-
-  if (showcase) {
-    return (
-      <m.div
-        initial={reduce ? false : { opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={cn('relative overflow-hidden rounded-[28px] p-5 sm:rounded-[34px] sm:p-8', className)}
-        style={{
-          background:
-            'radial-gradient(80% 95% at 18% 0%, rgba(255,255,255,0.16) 0%, transparent 60%),'
-            + 'radial-gradient(60% 78% at 100% 104%, rgba(133,46,78,0.62) 0%, transparent 64%),'
-            + 'radial-gradient(120% 140% at 84% 16%, #10B981 0%, transparent 58%),'
-            + 'linear-gradient(118deg, #047857 0%, #059669 44%, #10B981 78%, #047857 100%)',
-          boxShadow:
-            '0 24px 52px -30px rgba(6,78,59,0.55), 0 8px 24px rgba(4,120,87,0.20),'
-            + 'inset 0 1px 0 rgba(255,255,255,0.22)',
-        }}
-      >
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          {[440, 640, 850].map((size) => (
-            <div
-              key={size}
-              className="absolute rounded-full"
-              style={{
-                width: size,
-                height: size,
-                right: -size * 0.34,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                border: '1px solid rgba(255,255,255,0.10)',
-              }}
-            />
-          ))}
-          <div
-            className="absolute inset-0"
-            style={{ background: 'radial-gradient(120% 130% at 42% 30%, transparent 46%, rgba(3,46,32,0.20) 100%)' }}
-          />
-        </div>
-
-        <div className="relative z-10 flex flex-col gap-6 sm:gap-7">
-          <div className="flex min-w-0 items-center gap-4">
-            {icon && (
-              <span
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-white sm:h-[72px] sm:w-[72px] sm:rounded-[22px]"
-                style={{
-                  background: 'rgba(255,255,255,0.13)',
-                  border: '1px solid rgba(255,255,255,0.26)',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)',
-                }}
-              >
-                {icon}
-              </span>
-            )}
-            <div className="min-w-0">
-              <h1 className="text-[26px] font-[800] leading-tight tracking-[-0.025em] text-white sm:text-[34px]">
-                {title}
-              </h1>
-              {subtitle && (
-                <p className="mt-1 text-[12.5px] leading-snug sm:text-[13.5px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
-                  {subtitle}
-                </p>
-              )}
-            </div>
-          </div>
-          {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}
-          {children && <div>{children}</div>}
-        </div>
-      </m.div>
-    );
-  }
+  // `surface` outranks `accent`: Attendance paints its own mesh through it.
+  const tint = !surface && accent ? PAGE_ACCENTS[accent] : null;
 
   if (compact) {
     return (
@@ -158,35 +92,56 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
         initial={reduce ? false : { opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduce ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className={cn('pt-1', className)}
+        className={cn(
+          surface || tint
+            ? 'relative isolate overflow-hidden rounded-[20px] px-4 py-3.5 text-white'
+            : 'pt-1',
+          className,
+        )}
+        style={surface
+          ? { background: surface.background, boxShadow: `0 16px 34px -20px ${surface.shadow}` }
+          : tint
+            ? { background: heroCompactBackground(tint.spot), boxShadow: heroCompactShadow(tint.glow) }
+            : undefined}
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            {icon && (
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white"
-                style={{ background: 'var(--gradient-brand)' }}
-              >
-                {icon}
-              </span>
-            )}
-            <div className="min-w-0">
-              <h1
-                className="truncate text-[20px] font-[800] leading-tight sm:text-[23px]"
-                style={{ color: 'var(--text-primary)', letterSpacing: '-0.022em' }}
-              >
-                {title}
-              </h1>
-              {subtitle && (
-                <p className="mt-0.5 truncate text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-                  {subtitle}
-                </p>
+        {/* A 64px strip has room for the surface cues, not a light rig: the
+            grain and the bevel, and nothing that would smear under the title. */}
+        {(surface || tint) && (
+          <>
+            <span aria-hidden className="hero-grain" />
+            <span aria-hidden className="hero-bevel" />
+          </>
+        )}
+        <div className="relative flex min-w-0 items-center gap-3">
+          {icon && (
+            <span
+              className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white',
+                (surface || tint) && 'hero-tile',
               )}
-            </div>
+              style={surface || tint ? undefined : { background: 'var(--gradient-brand)' }}
+            >
+              {icon}
+            </span>
+          )}
+          <div className="min-w-0">
+            <h1
+              className={cn('truncate text-[20px] font-[800] leading-tight sm:text-[23px]', (surface || tint) && 'text-white')}
+              style={{ ...(surface || tint ? undefined : { color: 'var(--text-primary)' }), letterSpacing: '-0.022em' }}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              // Two lines, then ellipsis: `truncate` cut a subtitle mid-word on
+              // a phone, which hid the one sentence explaining the page.
+              <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug"
+                style={{ color: surface || tint ? 'rgba(255,255,255,0.78)' : 'var(--text-muted)' }}>
+                {subtitle}
+              </p>
+            )}
           </div>
-          {actions && <div className="shrink-0">{actions}</div>}
         </div>
-        {children && <div className="mt-3">{children}</div>}
+        {children && <div className="relative mt-3">{children}</div>}
       </m.div>
     );
   }
@@ -196,70 +151,50 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
       initial={reduce ? false : { opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className={cn('relative overflow-hidden rounded-[24px] p-5 sm:rounded-[30px] sm:p-7', className)}
-      style={surface ? {
-        background: surface.background,
-        boxShadow: `0 26px 56px -24px ${surface.shadow}, inset 0 1px 0 rgba(255,255,255,0.14)`,
-      } : {
-        background:
-          'radial-gradient(130% 150% at 50% -25%, #FB9590 0%, transparent 58%),'
-          + 'linear-gradient(128deg, #6B2440 0%, #A33757 46%, #852E4E 100%)',
-        boxShadow:
-          '0 24px 64px -14px rgba(107,36,64,0.55), 0 8px 26px rgba(163,55,87,0.24),'
-          + 'inset 0 1px 0 rgba(255,255,255,0.12)',
+      className={cn('relative isolate overflow-hidden rounded-[24px] p-5 sm:rounded-[30px] sm:p-7', className)}
+      style={{
+        background: surface ? surface.background : heroBackground(tint?.spot),
+        boxShadow: surface
+          ? `0 26px 56px -24px ${surface.shadow}, inset 0 1px 0 rgba(255,255,255,0.14)`
+          : heroShadow(tint?.glow),
       }}
     >
-      {/* Decorative layers, matching the dashboard hero. All non-interactive
-          and all behind the content — a hero you cannot read is not a hero. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        {!surface && (
-          <>
-            <div
-              className="absolute -right-14 -top-20 h-60 w-60 rounded-full opacity-35"
-              style={{ background: 'radial-gradient(circle, #FF853D 0%, transparent 70%)', filter: 'blur(46px)' }}
-            />
-            <div
-              className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
-              style={{ background: 'radial-gradient(circle, #20BFA4 0%, transparent 70%)', filter: 'blur(54px)' }}
-            />
-          </>
-        )}
-        <svg className="absolute inset-0 h-full w-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="ph-grid" width="34" height="34" patternUnits="userSpaceOnUse">
-              <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#ph-grid)" />
-        </svg>
-        <div
-          className="absolute inset-0"
-          style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(15,23,42,${surface ? 0.22 : 0.38}) 100%)` }}
-        />
-      </div>
+      {/* The depth layers, in paint order: the glassy sweep, the film grain,
+          the vignette that darkens the corners, then the warm hairlines and
+          the 1px bevel on the edge. All non-interactive and all behind the
+          content — a hero you cannot read is not a hero. `isolate` on the root
+          keeps the grain's overlay blend inside the card.
 
-      {/* One flex-wrap row rather than two copies of the actions. The actions
-          used to render twice — beside the title for desktop, again under the
-          children for phones — with one copy hidden by CSS: two of every
-          button in the DOM, two tab stops for a keyboard, and two matches for
-          anything that looks a button up by name. `order` moves the single
-          copy instead: beside the title from `sm` up, last on a phone. */}
+          A page with its own paint keeps its own lighter vignette: the house
+          one is tuned for near-black and would swallow a bright mesh. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <span className="hero-spec" />
+        {surface ? (
+          <span
+            className="absolute inset-0"
+            style={{ background: `radial-gradient(120% 120% at 50% 38%, transparent 52%, ${surface.shadow} 100%)` }}
+          />
+        ) : (
+          <span className="hero-vignette" />
+        )}
+        {/* Grain last: it is the surface's texture, so it has to sit over the
+            vignette as well as the paint, or the dark corners read as smooth. */}
+        <span className="hero-grain" />
+      </div>
+      <span aria-hidden className="hero-hair-t" />
+      <span aria-hidden className="hero-hair-b" />
+      <span aria-hidden className="hero-bevel" />
+
+      {/* One row: icon, title, then any page controls on their own line
+          underneath. The page's actions are not here — they are `PageActions`
+          below the hero. */}
       <div className="relative z-10 flex flex-wrap items-start gap-x-3.5 gap-y-4">
         {icon && (
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white sm:h-12 sm:w-12"
-            style={{
-              background: 'rgba(255,255,255,0.12)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              backdropFilter: 'blur(6px)',
-            }}
-          >
+          <span className="hero-tile flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white sm:h-12 sm:w-12">
             {icon}
           </span>
         )}
         <div className="min-w-0 flex-1">
-          {/* Wraps. These titles are two and three words and the old markup
-              let them run into the actions on a narrow screen. */}
           <h1 className="text-[21px] font-[800] leading-tight tracking-[-0.02em] text-white sm:text-[26px]">
             {title}
           </h1>
@@ -269,7 +204,6 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
             </p>
           )}
         </div>
-        {actions && <div className="order-last w-full sm:order-none sm:w-auto sm:shrink-0">{actions}</div>}
         {children && <div className="w-full">{children}</div>}
       </div>
     </m.div>
@@ -277,52 +211,19 @@ export function PageHero({ title, subtitle, icon, children, actions, className, 
 }
 
 /**
- * A button for the hero's `actions` slot.
+ * The page's actions, in one wrapping row immediately below the hero.
  *
- * The hero is saturated indigo in both themes, so the app's own Button
- * variants — built for the page surface — read as grey slabs on it. Pages had started styling
- * their hero buttons by hand, each slightly differently. This is that styling
- * in one place: `solid` (white, the page's primary action) and `glass`
- * (a translucent secondary, e.g. Refresh).
+ * `PageHero` used to take an `actions` slot, so the page's primary control
+ * shared a line with the title — squeezed against it on a phone, and gone
+ * from the first screenful once the hero grew. Actions now live here, at the
+ * same width as the content below them, in the same place on every page.
+ *
+ * Use the app's own `Button` inside: `primary` for the page's one main
+ * action, `secondary`/`outline` for the rest.
  */
-export interface HeroButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'solid' | 'glass';
-  /** The taller pill used by the showcase hero. */
-  size?: 'default' | 'lg';
-  icon?: React.ReactNode;
+export function PageActions({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn('flex flex-wrap items-center gap-2', className)}>{children}</div>;
 }
-
-export const HeroButton = React.forwardRef<HTMLButtonElement, HeroButtonProps>(function HeroButton(
-  { variant = 'solid', size = 'default', icon, className, children, type = 'button', style, ...rest }, ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      className={cn(
-        'inline-flex cursor-pointer items-center justify-center gap-1.5 font-[700]',
-        'transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
-        size === 'lg'
-          ? 'min-h-[52px] rounded-full px-6 text-[15px]'
-          : 'min-h-[40px] rounded-[12px] px-4 text-[13px]',
-        variant === 'glass' && 'text-white hover:bg-white/20',
-        variant === 'solid' && 'hover:bg-white/90',
-        className,
-      )}
-      style={{
-        ...(variant === 'solid'
-          ? { background: '#fff', color: '#0F172A' }
-          : { background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }),
-        ...style,
-      }}
-      {...rest}
-    >
-      {icon}
-      {children}
-    </button>
-  );
-});
 
 /** A small glass pill for facts in the hero's children — a goal, a cadence. */
 export function HeroChip({ children, icon, className }: { children: React.ReactNode; icon?: React.ReactNode; className?: string }) {

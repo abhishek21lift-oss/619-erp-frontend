@@ -112,11 +112,11 @@ export function StepMeasureTarget({
 
         {metric === 'lift' && (
           <div className="space-y-4">
-            <FloatInput label="Exercise" maxLength={100} value={form.targetExercise} onChange={(v) => set('targetExercise', v)} placeholder="Back Squat" />
+            <FloatInput label="Exercise" maxLength={100} value={form.targetExercise} onChange={(v) => set('targetExercise', v)} />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FloatInput label="Current lift" numeric="decimal" value={form.targetStart} onChange={(v) => set('targetStart', v)} />
               <FloatInput label="Target lift" numeric="decimal" value={form.targetValue} onChange={(v) => set('targetValue', v)} />
-              <FloatInput label="Unit" maxLength={20} value={form.targetUnit} onChange={(v) => set('targetUnit', v)} placeholder="kg" />
+              <FloatInput label="Unit" maxLength={20} value={form.targetUnit} onChange={(v) => set('targetUnit', v)} />
             </div>
           </div>
         )}
@@ -130,11 +130,11 @@ export function StepMeasureTarget({
 
         {metric === 'custom' && (
           <div className="space-y-4">
-            <FloatInput label="What is measured?" maxLength={100} value={form.customMetric} onChange={(v) => set('customMetric', v)} placeholder="Waist, push-ups, 5k time…" />
+            <FloatInput label="What is measured?" maxLength={100} value={form.customMetric} onChange={(v) => set('customMetric', v)} />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FloatInput label="Current value (optional)" numeric="decimal" value={form.targetStart} onChange={(v) => set('targetStart', v)} />
               <FloatInput label="Target value" numeric="decimal" value={form.targetValue} onChange={(v) => set('targetValue', v)} />
-              <FloatInput label="Unit" maxLength={20} value={form.targetUnit} onChange={(v) => set('targetUnit', v)} placeholder="cm / reps / min" />
+              <FloatInput label="Unit" maxLength={20} value={form.targetUnit} onChange={(v) => set('targetUnit', v)} />
             </div>
           </div>
         )}
@@ -150,7 +150,6 @@ export function StepMeasureTarget({
             label={metric ? 'Success metric (optional)' : 'Success metric'}
             maxLength={200}
             value={form.successMetric} onChange={(v) => set('successMetric', v)}
-            placeholder="e.g. 78 kg at 18% body fat, or 5 strict pull-ups"
           />
           <p className="mt-1.5 text-[11.5px]" style={{ color: gray[500] }}>
             {metric

@@ -33,7 +33,7 @@
  * Not "acceptable for now" — these are controls where a wrapper would be worse:
  *
  *   search   a magnifier beside a box reading "Search clients…" is the correct
- *            presentation; FORM-SYSTEM.md already settled this and SearchField
+ *            presentation; docs/audits/FORM-SYSTEM.md already settled this and SearchField
  *            exists for the accessible-name half.
  *   file     the picker is a browser affordance; the app's own validation runs
  *            on what it returns (lib/forms/files.ts), which is the part that

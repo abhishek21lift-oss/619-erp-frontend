@@ -38,38 +38,36 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
         subtitle="Step 3 of 7 — choose an assessment method."
       />
 
-      <div className="mb-5">
-        <SearchableSelect
-          label="Assessment Method" allowCustom={false} hideLabel
-          value={form.bodyCompMethod}
-          onChange={(v) => set('bodyCompMethod', v)}
-          options={METHODS}
-        />
-      </div>
-
       {(gender === null || gender === 'Other') && (
         <p className="mb-4 rounded-[14px] px-4 py-3 text-[12px] leading-snug" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: 'var(--text-secondary)' }}>
           Body Composition score needs a male/female reference range, so it is not computed for this client — body-fat % and the other measurements are still recorded. No score is invented.
         </p>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Body Fat %" numeric="decimal" value={form.bodyFatPct} onChange={(v) => set('bodyFatPct', v)} />
-        <FloatInput label="Muscle Mass %" numeric="decimal" value={form.muscleMassPct} onChange={(v) => set('muscleMassPct', v)} />
-        <FloatInput label="Lean Body Mass (kg)" value={leanBodyMass != null ? String(leanBodyMass) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Fat Mass (kg)" value={fatMass != null ? String(fatMass) : ''} onChange={() => {}} disabled />
-        <FloatInput label="Visceral Fat" numeric="integer" value={form.visceralFat} onChange={(v) => set('visceralFat', v)} />
-        <FloatInput label="Subcutaneous Fat %" numeric="decimal" value={form.subcutaneousFatPct} onChange={(v) => set('subcutaneousFatPct', v)} />
-        <FloatInput label="Body Water %" numeric="decimal" value={form.bodyWaterPct} onChange={(v) => set('bodyWaterPct', v)} />
-        <FloatInput label="Bone Mass (kg)" numeric="decimal" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
-        <div>
-          <FloatInput label="BMR (kcal)" numeric="integer" value={form.bmr} onChange={(v) => set('bmr', v)} />
-          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            {suggestedBmr != null
-              ? `Leave blank to auto-suggest ${suggestedBmr} kcal (Mifflin-St Jeor).`
-              : 'Leave blank to auto-suggest via Mifflin-St Jeor.'}
-          </p>
+
+      <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+        <div className="mb-4">
+          <SearchableSelect
+            label="Assessment Method" allowCustom={false}
+            value={form.bodyCompMethod}
+            onChange={(v) => set('bodyCompMethod', v)}
+            options={METHODS}
+          />
         </div>
-        <FloatInput label="Metabolic Age" numeric="integer" value={form.metabolicAge} onChange={(v) => set('metabolicAge', v)} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FloatInput label="Body Fat %" numeric="decimal" value={form.bodyFatPct} onChange={(v) => set('bodyFatPct', v)} />
+          <FloatInput label="Muscle Mass %" numeric="decimal" value={form.muscleMassPct} onChange={(v) => set('muscleMassPct', v)} />
+          <FloatInput label="Lean Body Mass (kg)" value={leanBodyMass != null ? String(leanBodyMass) : ''} onChange={() => {}} disabled />
+          <FloatInput label="Fat Mass (kg)" value={fatMass != null ? String(fatMass) : ''} onChange={() => {}} disabled />
+          <FloatInput label="Visceral Fat" numeric="integer" value={form.visceralFat} onChange={(v) => set('visceralFat', v)} />
+          <FloatInput label="Subcutaneous Fat %" numeric="decimal" value={form.subcutaneousFatPct} onChange={(v) => set('subcutaneousFatPct', v)} />
+          <FloatInput label="Body Water %" numeric="decimal" value={form.bodyWaterPct} onChange={(v) => set('bodyWaterPct', v)} />
+          <FloatInput label="Bone Mass (kg)" numeric="decimal" value={form.boneMassKg} onChange={(v) => set('boneMassKg', v)} />
+          <div>
+            <FloatInput label="BMR (kcal)" numeric="integer" value={form.bmr} onChange={(v) => set('bmr', v)} />
+          </div>
+          <FloatInput label="Metabolic Age" numeric="integer" value={form.metabolicAge} onChange={(v) => set('metabolicAge', v)} />
+        </div>
       </div>
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}

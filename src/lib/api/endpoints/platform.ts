@@ -8,7 +8,7 @@ import { http, apiBase } from '../../http';
 import { qsOf } from '../qs';
 import type {
   SubPlan,
-  ActiveSession, ActivityEntry, AiModelRate, AiModelUsage, AiOverview, AiRouting,
+  ActiveSession, ActivityEntry, AiHealthResponse, AiModelRate, AiModelUsage, AiOverview, AiRouting,
   AiSettings, AiStudioUsage, AiTrendPoint, Announcement, AnnouncementInput,
   AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
@@ -16,7 +16,7 @@ import type {
   MeProfile, MeCoach, MeMembership, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
-  MeFormCheck,
+  MeFormCheck, SessionFeedback, SessionFeedbackInput,
   MeBooking, MeBookingAvailability,
   ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
   ProgressHabitPreferences, ProgressDashboard,
@@ -561,6 +561,9 @@ export const superAdmin = {
   aiByModel: (days = 30) => http<{ data: AiModelUsage[] }>(`/api/platform/ai/by-model?days=${days}`),
   aiTrend: (days = 30) => http<{ data: AiTrendPoint[] }>(`/api/platform/ai/trend?days=${days}`),
   aiSettings: () => http<{ data: AiSettings }>('/api/platform/ai/settings'),
+  /** One short completion per tier. Operator-only; the studio page no longer
+   *  exposes it, so a 403 here means the session is not a platform operator. */
+  aiHealth: () => http<{ data: AiHealthResponse }>('/api/platform/ai/health'),
 
   /**
    * Which MODEL each tier routes to — separate from aiSettings, which governs
@@ -657,11 +660,15 @@ export const superAdmin = {
   getSubscription: (orgId: string) =>
     http<{ data: SubDetail }>(`/api/platform/organizations/${orgId}/subscription`),
   activateSubscription: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string; period_months?: number }) =>
-    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
+    http<{ data: {
+      plan_code: string; amount_inr: number; gross_amount_inr: number;
+      period_end: string; invoice_number: string;
+      founder_granted: boolean; founder_number: number | null;
+    } }>(`/api/platform/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
   freezeSubscription: (orgId: string, reason?: string) =>
     http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/freeze`, { method: 'POST', body: JSON.stringify({ reason }) }),
-  reactivateSubscription: (orgId: string) =>
-    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({}) }),
+  reactivateSubscription: (orgId: string, reason?: string) =>
+    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({ reason }) }),
   cancelSubscription: (orgId: string) =>
     http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/cancel`, { method: 'POST', body: JSON.stringify({}) }),
   changeExpiry: (orgId: string, body: { trial_ends_at?: string | null; current_period_end?: string | null }) =>
@@ -703,7 +710,10 @@ export const superAdmin = {
    *  time on the current plan and restarts the period from now (never use activateSubscription
    *  for this: it stacks time on top instead of crediting it, double-granting days). */
   changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
-    http<{ data: unknown }>(`/api/platform/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
+    http<{ data: {
+      plan_code: string; amount_inr: number; period_end: string; invoice_number: string;
+      new_plan: { code: string; name: string };
+    } }>(`/api/platform/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
 
   // ── Command Centre Phase 5 — home-screen KPIs, tenancy health, studio 360, search ──
   // Every endpoint here is server-gated by PLATFORM_GUARD; the client treats
@@ -982,6 +992,19 @@ export const me = {
     form.append('video', file, 'lift.mp4');
     return http<{ data: MeFormCheck }>('/api/me/form-checks', { method: 'POST', body: form });
   },
+
+  /**
+   * Post-session feedback. `pending` is what still needs an answer; the
+   * submitted rows are the member's own history. Identity is the session's —
+   * no route takes a client id.
+   */
+  feedback: (status: 'pending' | 'submitted' | 'all' = 'all') =>
+    http<{ data: SessionFeedback[] }>(`/api/me/feedback?status=${status}`),
+  /** The one submission. 409 means this session was already rated. */
+  submitFeedback: (id: string, body: SessionFeedbackInput) =>
+    http<{ data: SessionFeedback }>(`/api/me/feedback/${encodeURIComponent(id)}`, {
+      method: 'POST', body: JSON.stringify(body),
+    }),
   /** Records and streaks. */
   achievements: () => http<{ data: MeAchievements }>('/api/me/achievements'),
   /** Latest PAR-Q and informed consent. */

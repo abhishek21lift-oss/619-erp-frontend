@@ -25,6 +25,10 @@ vi.mock('@/components/ui', () => ({
   PullToRefresh: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+// The first render in this file pays for loading every chart and motion
+// module; under a parallel run that alone outlives the 5s default.
+vi.setConfig({ testTimeout: 15000 });
+
 const client = (over: Record<string, unknown>) => ({
   assignment_id: 'a1',
   client_name: 'Client',
@@ -84,16 +88,18 @@ describe('when somebody is mid-session', () => {
     expect(row.textContent).not.toMatch(/next/i);
   });
 
-  it('says the one behind them is next', async () => {
+  it('says the one behind them is next when it is a real booking', async () => {
+    roster[1] = client({ client_id: 'next', client_name: 'Vipul Bhatia', start_time: '07:30', source: 'booked' });
     render(<PtOsDashboard />);
     const row = await rowFor('Vipul Bhatia');
     expect(row.textContent).toMatch(/next/i);
     expect(row.textContent).not.toMatch(/on the floor/i);
   });
 
-  it('offers Resume for the open log and Start for the one not begun', async () => {
+  it('offers Resume for the open log and Start for the booked one not begun', async () => {
     // Pressing Start on a session already running is how a trainer ends up
     // with two logs for one workout.
+    roster[1] = client({ client_id: 'next', client_name: 'Vipul Bhatia', start_time: '07:30', source: 'booked' });
     render(<PtOsDashboard />);
     expect((await rowFor('Stuti Yadav')).textContent).toMatch(/resume/i);
     expect((await rowFor('Vipul Bhatia')).textContent).toMatch(/start/i);
@@ -108,25 +114,30 @@ describe('when nothing has been started', () => {
     ];
   });
 
-  it('calls the first one next, not live', async () => {
-    // The case the position-based version got wrong on most mornings.
+  // These rows are programme days (the server's `source`), not booked
+  // appointments. The card used to promote the first one to "Next" and offer
+  // "Start" — a booking the studio never took, and the contradiction the
+  // Next Best Action card reported a screen below as "unbooked".
+  it('calls a programme day a programme day, not next', async () => {
     render(<PtOsDashboard />);
     const row = await rowFor('Stuti Yadav');
-    expect(row.textContent).toMatch(/next/i);
+    expect(row.textContent).toMatch(/programme day/i);
+    expect(row.textContent).not.toMatch(/next/i);
     expect(row.textContent).not.toMatch(/on the floor/i);
   });
 
-  it('labels nobody else', async () => {
+  it('does not promote the second programme row either', async () => {
     render(<PtOsDashboard />);
     const row = await rowFor('Vipul Bhatia');
     expect(row.textContent).not.toMatch(/next/i);
     expect(row.textContent).not.toMatch(/on the floor/i);
   });
 
-  it('offers Start on both', async () => {
+  it('offers Open, not Start, because nothing is booked', async () => {
     render(<PtOsDashboard />);
-    expect((await rowFor('Stuti Yadav')).textContent).toMatch(/start/i);
-    expect((await rowFor('Vipul Bhatia')).textContent).toMatch(/start/i);
+    expect((await rowFor('Stuti Yadav')).textContent).toMatch(/open/i);
+    expect((await rowFor('Vipul Bhatia')).textContent).toMatch(/open/i);
+    expect((await rowFor('Stuti Yadav')).textContent).not.toMatch(/start/i);
     await waitFor(() => expect(screen.queryByText(/resume/i)).toBeNull());
   });
 });
@@ -136,7 +147,7 @@ describe('the sequence moves up as sessions finish', () => {
     roster = [
       client({ client_id: 'done', client_name: 'Finished Person', session_status: 'completed' }),
       client({ client_id: 'run', client_name: 'Stuti Yadav', session_status: 'in_progress' }),
-      client({ client_id: 'next', client_name: 'Vipul Bhatia' }),
+      client({ client_id: 'next', client_name: 'Vipul Bhatia', start_time: '07:30', source: 'booked' }),
     ];
     render(<PtOsDashboard />);
 

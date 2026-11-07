@@ -9,7 +9,7 @@ import {
   Users, Trophy, CalendarDays, Sparkles, X, ShieldAlert, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageContainer, PageHero, HeroButton } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, PageActions, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { WorkoutPlan, LibraryExercise, TrainingBrief, WorkoutPlanAssignment } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -319,59 +319,53 @@ function Inner() {
     <div style={{ minHeight: '100%', position: 'relative' }}>
       <PageContainer>
         {/* ── Hero ──
-            The green aurora panel: glass icon tile, the page's name, and the
-            actions as pills beneath it. PageHero owns the layout so this page
-            still shares the one header every other page uses. */}
+            The shared arrival slab: the page's name, its icon and the one
+            control that belongs to it. The page's actions sit in the row
+            below, like every other page. It used to carry its own emerald
+            aurora, which made this the one page whose header was a different
+            object from every other page's. */}
         <PageHero
-          showcase
-          icon={<Dumbbell size={30} />}
+          icon={<Dumbbell size={20} />}
           title={briefClient?.name ?? 'Workout Plans'}
-          actions={(
-            <div className="flex w-full flex-wrap items-center gap-2.5">
-              <HeroButton
-                size="lg"
-                onClick={openCreate}
-                icon={<Plus size={18} />}
-                className="flex-1 sm:flex-none"
-              >
-                New Plan
-              </HeroButton>
-
-              {/* AI, at the weight it deserves: a quiet secondary beside the
-                  primary, replacing the 52px floating button that used to sit
-                  on top of the plan cards. */}
-              <HeroButton
-                size="lg"
-                variant="glass"
-                onClick={() => setAiPanelOpen(true)}
-                aria-label="Open AI Assist"
-                icon={<Sparkles size={17} />}
-                style={{ background: 'rgba(3,46,32,0.32)' }}
-              >
-                <span className="hidden sm:inline">AI Assist</span>
-              </HeroButton>
-
-              {/* View toggle — compact, and only where a grid exists to toggle. */}
-              <div
-                className="ml-auto flex shrink-0 gap-0.5 rounded-full p-1"
-                style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)' }}
-              >
-                {(['grid', 'list'] as const).map((v) => (
-                  <button key={v} type="button" onClick={() => setView(v)}
-                    aria-pressed={view === v}
-                    aria-label={v === 'grid' ? 'Grid view' : 'List view'}
-                    className="flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                    style={{
-                      background: view === v ? '#FFFFFF' : 'transparent',
-                      color: view === v ? '#047857' : 'rgba(255,255,255,0.72)',
-                    }}>
-                    {v === 'grid' ? <LayoutGrid size={16} /> : <List size={16} />}
-                  </button>
-                ))}
-              </div>
+        >
+          {/* View toggle — compact, and only where a grid exists to toggle.
+              A layout control, not a call to action, so it stays on the hero. */}
+          <div className="flex justify-end">
+            <div
+              className="flex shrink-0 gap-0.5 rounded-full p-1"
+              style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)' }}
+            >
+              {(['grid', 'list'] as const).map((v) => (
+                <button key={v} type="button" onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  aria-label={v === 'grid' ? 'Grid view' : 'List view'}
+                  className="flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  style={{
+                    background: view === v ? '#FFFFFF' : 'transparent',
+                    color: view === v ? '#047857' : 'rgba(255,255,255,0.72)',
+                  }}>
+                  {v === 'grid' ? <LayoutGrid size={16} /> : <List size={16} />}
+                </button>
+              ))}
             </div>
-          )}
-        />
+          </div>
+        </PageHero>
+        <PageActions>
+          <Button onClick={openCreate} iconLeft={<Plus size={18} />}>
+            New Plan
+          </Button>
+          {/* AI, at the weight it deserves: a quiet secondary beside the
+              primary, replacing the 52px floating button that used to sit on
+              top of the plan cards. */}
+          <Button
+            variant="secondary"
+            onClick={() => setAiPanelOpen(true)}
+            aria-label="Open AI Assist"
+            iconLeft={<Sparkles size={17} />}
+          >
+            AI Assist
+          </Button>
+        </PageActions>
 
         {/* ── KPI cards ──
             Out of the hero and onto the page, as cards like every other KPI
@@ -590,7 +584,7 @@ function Inner() {
               <div className="mb-4 flex flex-col gap-3">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--border)' }}>
                   <Search size={13} color="var(--text-disabled)" />
-                  <input aria-label="Search exercises" placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                  <input aria-label="Search exercises" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                     style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }} />
                   {searchQuery && <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={13} /></button>}
                 </div>
@@ -763,7 +757,7 @@ function AssignClientModal({
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 12px', border: '1px solid var(--border)' }}>
           <Search size={14} color="var(--text-disabled)" />
           <input aria-label="Search clients"
-            autoFocus placeholder="Search clients…" value={search} onChange={(e) => setSearch(e.target.value)}
+            autoFocus value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13 }}
           />
         </div>

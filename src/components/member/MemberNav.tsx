@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Apple, ClipboardCheck, Dumbbell, Home, UserRound, Wallet } from 'lucide-react';
+import { Apple, CalendarPlus, ClipboardCheck, Dumbbell, Home, Receipt, UserRound, Wallet } from 'lucide-react';
 import { loadMemberNotifications } from './memberNotifications';
 import { palette } from '@/lib/palette';
 import { NAV_GROUPS, isVisibleForFeature } from '@/lib/nav-config';
@@ -60,12 +60,14 @@ const MEMBER_ICONS: Record<string, typeof Home> = {
   Dumbbell,
   Apple,
   ClipboardCheck,
+  CalendarPlus,
+  Receipt,
   Wallet,
   UserRound,
 };
 
 /** Pages reached from More: the More tab lights up on each of them. */
-const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/habits', '/member/photos', '/member/form-check', '/member/notifications', '/member/forms', '/member/account', '/member/coach'];
+const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/habits', '/member/photos', '/member/form-check', '/member/feedback', '/member/notifications', '/member/forms', '/member/account', '/member/coach'];
 
 /** Reserve this much above the bar so the last card clears it. */
 export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px))';

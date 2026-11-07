@@ -420,7 +420,6 @@ export default function ClientAiPanel({
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask anything…"
             disabled={busy}
             autoComplete="off"
             className="min-w-0 flex-1 rounded-[12px] px-3.5 text-[12.5px] outline-none"

@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   UserSearch, Plus, Search, Phone, Mail, Calendar, Pencil, Trash2,
-  ArrowRightCircle, X, Check, Loader2, Users, TrendingUp, Target, PhoneCall,
+  ArrowRightCircle, X, Check, Users, TrendingUp, Target, PhoneCall,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, EmptyState, PageContainer, PageHero, PullToRefresh } from '@/components/ui';
+import {
+  Button, EmptyState, KpiCard, PageActions, PageContainer, PageHero, PullToRefresh, Skeleton,
+} from '@/components/ui';
 import { ChartDataTable, PremiumBarChart, semantic, series as chartPalette } from '@/components/visualizations';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LeadFormFields, SOURCE_OPTIONS, emptyLeadForm } from '@/components/pt-os/leads/LeadFormFields';
@@ -21,11 +23,11 @@ import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  new:             { label: 'New',             color: '#852E4E', bg: 'rgba(163,55,87,0.12)' },
-  contacted:       { label: 'Contacted',        color: '#852E4E', bg: 'rgba(163,55,87,0.12)' },
-  trial_scheduled: { label: 'Trial Scheduled',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  converted:       { label: 'Converted',        color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  lost:            { label: 'Lost',             color: '#94a3b8', bg: 'rgba(148,163,184,0.14)' },
+  new:             { label: 'New',             color: 'var(--info-text)', bg: 'var(--info-soft)' },
+  contacted:       { label: 'Contacted',        color: 'var(--accent-warm-text)', bg: 'var(--accent-warm-soft)' },
+  trial_scheduled: { label: 'Trial Scheduled',  color: 'var(--warning-text)', bg: 'var(--warning-soft)' },
+  converted:       { label: 'Converted',        color: 'var(--success-text)', bg: 'var(--success-soft)' },
+  lost:            { label: 'Lost',             color: 'var(--text-muted)', bg: 'var(--bg-subtle)' },
 };
 
 const STATUS_FILTERS = [
@@ -60,20 +62,20 @@ function LeadCard({
     <m.div
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 8) * 0.03, duration: 0.3 }}
-      className="rounded-[18px] p-4 sm:p-5"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
+      className="rounded-[20px] p-4 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] sm:p-5"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px] text-[12px] font-[800] text-white"
-            style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)' }}
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[800] text-white"
+            style={{ background: 'var(--gradient-brand)', boxShadow: 'var(--shadow-brand)' }}
           >
             {initials || '?'}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[13.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>{lead.name}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2.5">
+            <p className="truncate text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>{lead.name}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
               {lead.mobile && (
                 <span className="flex items-center gap-1 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                   <Phone size={11} />{lead.mobile}
@@ -97,23 +99,24 @@ function LeadCard({
 
       <div className="mt-3.5 flex flex-wrap items-center gap-2">
         <span
-          className="rounded-[8px] px-2.5 py-1 text-[11px] font-[650] capitalize"
+          className="rounded-full px-2.5 py-1 text-[11px] font-[650] capitalize"
           style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
         >
           {SOURCE_OPTIONS.find((s) => s.value === lead.source)?.label || lead.source}
         </span>
         {lead.interested_package && (
-          <span className="rounded-[8px] px-2.5 py-1 text-[11px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
             {lead.interested_package}
           </span>
         )}
         {lead.trainer_name && (
-          <span className="rounded-[8px] px-2.5 py-1 text-[11px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
             {lead.trainer_name}
           </span>
         )}
         {followUp && (
-          <span className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-[650]" style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>
+          <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-[650]"
+            style={{ background: 'var(--warning-soft)', color: 'var(--warning-text)' }}>
             <Calendar size={11} />Follow up {followUp}
           </span>
         )}
@@ -126,15 +129,14 @@ function LeadCard({
       <div className="mt-4 flex items-center gap-2 border-t pt-3.5" style={{ borderColor: 'var(--border)' }}>
         {!isConverted ? (
           <Button
-            variant="primary" iconLeft={converting ? undefined : <ArrowRightCircle size={14} />}
+            variant="success" iconLeft={converting ? undefined : <ArrowRightCircle size={14} />}
             loading={converting} disabled={converting}
             onClick={onConvert}
-            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}
           >
             Convert to Client
           </Button>
         ) : (
-          <span className="flex items-center gap-1.5 text-[12px] font-[700]" style={{ color: '#10b981' }}>
+          <span className="flex items-center gap-1.5 text-[12px] font-[700]" style={{ color: 'var(--success-text)' }}>
             <Check size={13} />Converted{lead.converted_at ? ` on ${fmtDate(lead.converted_at)}` : ''}
           </span>
         )}
@@ -142,18 +144,18 @@ function LeadCard({
           {!isConverted && (
             <button
               type="button" onClick={onEdit} aria-label="Edit lead"
-              className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
+              className="flex h-10 w-10 items-center justify-center rounded-[11px] transition-colors hover:bg-[var(--bg-hover)]"
               style={{ border: '1px solid var(--border)' }}
             >
-              <Pencil size={13} style={{ color: 'var(--text-muted)' }} />
+              <Pencil size={14} style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
           <button
             type="button" onClick={onDelete} aria-label="Delete lead"
-            className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
+            className="flex h-10 w-10 items-center justify-center rounded-[11px] transition-colors hover:bg-[var(--bg-hover)]"
             style={{ border: '1px solid var(--border)' }}
           >
-            <Trash2 size={13} style={{ color: '#ef4444' }} />
+            <Trash2 size={14} style={{ color: 'var(--danger-text)' }} />
           </button>
         </div>
       </div>
@@ -274,236 +276,192 @@ export default function LeadsPage() {
     }
   };
 
+  const filteredView = !!search || statusFilter !== 'all';
+
   return (
     <Guard>
       <PullToRefresh onRefresh={leads.refetch}>
         {/* max-w-7xl, exactly as the dashboard — this was
             max-w-[1600px] with mt-1. */}
         <PageContainer>
+          <PageHero
+            accent="amber"
+            icon={<UserSearch size={20} />}
+            title="Leads"
+          />
+          <PageActions>
+            <LeadFollowupAction />
+            <Button iconLeft={<Plus size={15} />} onClick={() => router.push('/pt-os/leads/new')}>
+              Add Lead
+            </Button>
+          </PageActions>
 
-            {/* The app-wide compact hero, like every other list page: the
-                Leads-only saturated card this used to render was the one
-                page in the studio that did not speak the shared hero's
-                language. The two actions stay, beside the title. */}
-            <PageHero
-              compact
-              icon={<UserSearch size={18} />}
-              title="Leads"
-              actions={(
-                <div className="flex shrink-0 items-center gap-2">
-                  <LeadFollowupAction />
-                  <Button iconLeft={<Plus size={15} />} onClick={() => router.push('/pt-os/leads/new')}>
-                    Add Lead
-                  </Button>
-                </div>
-              )}
-            />
+          {/* KPIs — 2x2 on a phone, 4 across from `sm`. Each takes its own
+              accent rather than four of the same, and the semantics drive the
+              choice: In Progress is work outstanding so it is amber,
+              Converted is a success so it is emerald. Counts come from the
+              loaded leads and the status values the backend actually uses —
+              nothing here is hardcoded, so a zero is a real zero. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Total Leads', value: counts.total, icon: <Users size={17} />, accent: 'blue' as const },
+              { label: 'New', value: counts.new, icon: <Target size={17} />, accent: 'orange' as const },
+              { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={17} />, accent: 'amber' as const },
+              { label: 'Converted', value: counts.converted, icon: <TrendingUp size={17} />, accent: 'emerald' as const },
+            ].map((c) => (
+              <KpiCard
+                key={c.label}
+                label={c.label}
+                value={leads.data ? c.value : '—'}
+                icon={c.icon}
+                accent={c.accent}
+                loading={leads.loading && !leads.data}
+              />
+            ))}
+          </div>
 
-            {/* KPIs — 2x2 on a phone, 4 across from `sm`, which is the
-                reference's arrangement. Each card takes its OWN
-                accent rather than three-of-the-same-blue, which is
-                what makes the row read as colourful once the hero's
-                saturation is spent. Semantics drive the choice: In
-                Progress is work outstanding so it is amber, Converted
-                is a success so it is emerald, the two that are just
-                "leads we have" stay in blue at different tones. Counts
-                come from the loaded leads and the status values the
-                backend actually uses — nothing here is hardcoded, so a
-                zero is a real zero. */}
-            <div className="mt-4 grid grid-cols-2 gap-3.5 sm:mt-5 sm:grid-cols-4 sm:gap-4">
-              {[
-                { label: 'Total Leads', value: counts.total, icon: <Users size={21} className="text-white" strokeWidth={2.1} />, from: '#A33757', to: '#A33757' },
-                { label: 'New', value: counts.new, icon: <Target size={21} className="text-white" strokeWidth={2.1} />, from: '#FB9590', to: '#A33757' },
-                { label: 'In Progress', value: counts.inProgress, icon: <PhoneCall size={21} className="text-white" strokeWidth={2.1} />, from: '#F59E0B', to: '#D97706' },
-                { label: 'Converted', value: counts.converted, icon: <TrendingUp size={21} className="text-white" strokeWidth={2.1} />, from: '#10B981', to: '#059669' },
-              ].map((c) => (
-                <div
-                  key={c.label}
-                  className="relative overflow-hidden rounded-[22px] p-4 sm:p-5"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    // Two-part shadow: a tight contact shadow plus a
-                    // wider tinted one, which is what lifts a white card
-                    // off a light grey page without the heavy drop
-                    // shadow the old card used.
-                    boxShadow: `0 1px 2px rgba(15,23,42,0.04), 0 10px 24px -14px ${c.to}59`,
-                  }}
-                >
-                  {/* A hairline of the card's own accent along the top
-                      edge. Sits behind the content and is clipped by
-                      the radius. */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
-                    style={{ background: `linear-gradient(90deg, ${c.from}, ${c.to})` }}
-                  />
-
-                  {/* Frosted tile: translucent over the card, ringed,
-                      blurred — the same material cue as the hero icon,
-                      at card scale. */}
-                  <div
-                    className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-[15px] text-white"
-                    style={{
-                      background: `linear-gradient(140deg, ${c.from}, ${c.to})`,
-                      boxShadow: `0 8px 18px -8px ${c.to}, inset 0 1px 0 rgba(255,255,255,0.32)`,
-                    }}
-                  >
-                    {c.icon}
-                  </div>
-                  <p className="text-[28px] font-[820] leading-none tracking-[-0.03em] sm:text-[30px]" style={{ color: 'var(--text-primary)' }}>
-                    {leads.data ? c.value : '—'}
-                  </p>
-                  <p className="mt-1.5 text-[11.5px] font-[700] uppercase tracking-[0.055em] sm:text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                    {c.label}
-                  </p>
-                </div>
-              ))}
+          {leads.error && (
+            <div
+              role="alert"
+              className="flex items-center gap-3 rounded-[16px] px-4 py-3 text-[12.5px]"
+              style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)' }}
+            >
+              <span className="flex-1">The lead list did not come back — this is unknown, not empty.</span>
+              <Button size="sm" variant="secondary" onClick={() => { void leads.refetch(); }}>Retry</Button>
             </div>
+          )}
 
-            {leads.error && (
-              <div
-                role="alert"
-                className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3 text-[12.5px]"
-                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#b91c1c' }}
-              >
-                <span className="flex-1">The lead list did not come back — this is unknown, not empty.</span>
-                <Button size="sm" variant="secondary" onClick={() => { void leads.refetch(); }}>Retry</Button>
-              </div>
-            )}
-
-            {/* Whole-pipeline counts, independent of search and status filters.
-                The list endpoint returns every lead, so these are exact; the
-                chart is the same data the KPI row above already trusts.
-                shortcut: counts come from the full list because /leads is
-                uncapped. If it ever paginates, move the counts server-side. */}
-            <PremiumBarChart
-              data={counts.total > 0
-                ? [
-                    { stage: 'New', leads: byStatus.new ?? 0, color: semantic.info },
-                    { stage: 'Contacted', leads: byStatus.contacted ?? 0, color: chartPalette[0] },
-                    { stage: 'Trial', leads: byStatus.trial_scheduled ?? 0, color: chartPalette[3] },
-                    { stage: 'Converted', leads: byStatus.converted ?? 0, color: semantic.success },
-                    { stage: 'Lost', leads: byStatus.lost ?? 0, color: chartPalette[6] },
-                  ]
-                : []}
-              xKey="stage"
-              bars={[{ key: 'leads', label: 'Leads', color: semantic.info, colorKey: 'color' }]}
-              showLegend={false}
-              title="Lead funnel"
-              subtitle="Every lead by current stage — states, not cumulative conversion"
-              height={240}
-              className="mt-4 sm:mt-5"
-              loading={leads.loading && !leads.data}
-              error={!leads.data ? (leads.error?.message ?? null) : null}
-              onRetry={() => { void leads.refetch(); }}
-              emptyTitle="No leads yet"
-              emptyDescription="Capture a lead to start the pipeline."
-              ariaLabel={`Lead stages: ${byStatus.new ?? 0} new, ${byStatus.contacted ?? 0} contacted, ${byStatus.trial_scheduled ?? 0} trial scheduled, ${byStatus.converted ?? 0} converted, ${byStatus.lost ?? 0} lost.`}
-            />
-
-            <ChartDataTable
-              title="Lead funnel"
-              caption="Every lead counted once by its current stage; stages are not cumulative"
-              columns={[{ header: 'Stage' }, { header: 'Leads' }]}
-              rows={counts.total > 0
-                ? [
-                    { key: 'new', cells: ['New', byStatus.new ?? 0] },
-                    { key: 'contacted', cells: ['Contacted', byStatus.contacted ?? 0] },
-                    { key: 'trial', cells: ['Trial', byStatus.trial_scheduled ?? 0] },
-                    { key: 'converted', cells: ['Converted', byStatus.converted ?? 0] },
-                    { key: 'lost', cells: ['Lost', byStatus.lost ?? 0] },
-                  ]
-                : []}
-              footer={counts.total > 0 ? ['Total', counts.total] : undefined}
-              emptyMessage={leads.data ? 'No leads yet.' : 'The lead list did not come back.'}
-              className="mt-4 sm:mt-5"
-            />
-
-            {/* Search — full width on a phone, as in the reference. It was
-                capped at `sm:max-w-sm` and shared a row with the filters; the
-                reference stacks them, which is also what stops the filter pills
-                wrapping under a cramped input. */}
-            <div className="relative mt-4 sm:mt-5">
-              <Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          {/* Search and filters come before the pipeline chart. The list is
+              what the page is for; the chart summarises the whole pipeline
+              regardless of either control. */}
+          <div className="space-y-2.5">
+            <div className="relative">
+              <Search size={18} aria-hidden className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 aria-label="Search leads"
-                type="text" placeholder="Search leads…" value={search}
+                type="search" value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-[52px] w-full rounded-[15px] pl-12 pr-4 text-[15px] font-[500] outline-none transition-all focus:border-[#FB9590] sm:max-w-sm"
+                className="h-[52px] w-full rounded-[15px] pl-11 pr-4 text-[15px] font-[500] outline-none transition-all focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] sm:max-w-md"
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
                   color: 'var(--text-primary)',
-                  boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 8px 20px -16px rgba(15,23,42,0.30)',
+                  boxShadow: 'var(--shadow-xs)',
                 }}
               />
             </div>
 
-            {/* Status filters — their own rounded light-slate container,
-                wrapping onto a second line exactly as the reference does.
-                The internal values are unchanged: they are the status strings
-                the API returns, only the labels are display text. */}
-            <div
-              className="mt-3.5 flex flex-wrap gap-1 rounded-[16px] p-2"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-            >
-              {STATUS_FILTERS.map((f) => (
-                <button key={f.value} onClick={() => setStatusFilter(f.value)}
-                  aria-pressed={statusFilter === f.value}
-                  className="rounded-[11px] px-2.5 py-2 text-[11.5px] font-[700] transition-all active:scale-[0.97] sm:px-3.5 sm:text-[13px]"
-                  style={statusFilter === f.value
-                    ? { background: 'linear-gradient(140deg, #A33757, #852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
-                    : { color: 'var(--text-secondary)' }}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
-            {/* List */}
-            {leads.loading && !leads.data && (
-              <div className="flex flex-col items-center justify-center gap-3 py-20">
-                <Loader2 size={26} className="animate-spin" style={{ color: '#852E4E' }} />
-                <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>Loading leads…</p>
-              </div>
-            )}
-
-            {!leads.loading && !leads.error && filtered.length === 0 && (
-              <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-                <EmptyState
-                  icon={<UserSearch size={22} />}
-                  title={search || statusFilter !== 'all' ? 'No leads found' : 'No leads yet'}
-                  description={search || statusFilter !== 'all'
-                    ? 'Try adjusting your search or filters.'
-                    : 'Capture a walk-in, referral, or enquiry here before they enrol.'}
-                />
-                {!search && statusFilter === 'all' && (
-                  <div className="mt-4 flex justify-center">
-                    <Button iconLeft={<Plus size={14} />} onClick={() => router.push('/pt-os/leads/new')}>Add Lead</Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {filtered.length > 0 && (
-              <div className="space-y-3">
-                {filtered.map((lead, i) => (
-                  <LeadCard
-                    key={lead.id} lead={lead} index={i}
-                    onEdit={() => openEdit(lead)}
-                    onConvert={() => handleConvert(lead)}
-                    onDelete={() => handleDelete(lead)}
-                    converting={convertingId === lead.id}
-                  />
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="flex flex-wrap gap-1 rounded-full p-1"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+              >
+                {STATUS_FILTERS.map((f) => (
+                  <button key={f.value} type="button" onClick={() => setStatusFilter(f.value)}
+                    aria-pressed={statusFilter === f.value}
+                    className="rounded-full px-2.5 py-2 text-[11.5px] font-[700] transition-all active:scale-[0.97] sm:px-3.5 sm:text-[13px]"
+                    style={statusFilter === f.value
+                      ? { background: 'var(--gradient-brand)', color: '#fff', boxShadow: 'var(--shadow-sm)' }
+                      : { color: 'var(--text-secondary)' }}>
+                    {f.label}
+                  </button>
                 ))}
               </div>
-            )}
+              <span className="ml-auto text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+                {filteredView
+                  ? <><span className="font-[800] text-[var(--text-primary)]">{filtered.length}</span> of {counts.total}</>
+                  : <><span className="font-[800] text-[var(--text-primary)]">{counts.total}</span> {counts.total === 1 ? 'lead' : 'leads'}</>}
+              </span>
+            </div>
+          </div>
+
+          {/* List */}
+          {leads.loading && !leads.data && (
+            <div className="space-y-3" aria-busy="true" aria-label="Loading leads">
+              {[0, 1, 2].map((i) => <Skeleton key={i} height={168} className="rounded-[20px]" />)}
+            </div>
+          )}
+
+          {!leads.loading && !leads.error && filtered.length === 0 && (
+            <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
+              <EmptyState
+                icon={<UserSearch size={22} />}
+                title={filteredView ? 'No leads found' : 'No leads yet'}
+                description={filteredView
+                  ? 'Try adjusting your search or filters.'
+                  : 'Capture a walk-in, referral, or enquiry here before they enrol.'}
+                action={!filteredView
+                  ? <Button iconLeft={<Plus size={14} />} onClick={() => router.push('/pt-os/leads/new')}>Add Lead</Button>
+                  : undefined}
+              />
+            </div>
+          )}
+
+          {filtered.length > 0 && (
+            <div className="space-y-3">
+              {filtered.map((lead, i) => (
+                <LeadCard
+                  key={lead.id} lead={lead} index={i}
+                  onEdit={() => openEdit(lead)}
+                  onConvert={() => handleConvert(lead)}
+                  onDelete={() => handleDelete(lead)}
+                  converting={convertingId === lead.id}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Whole-pipeline counts, independent of search and status filters.
+              The list endpoint returns every lead, so these are exact; the
+              chart is the same data the KPI row above already trusts.
+              shortcut: counts come from the full list because /leads is
+              uncapped. If it ever paginates, move the counts server-side. */}
+          <PremiumBarChart
+            data={counts.total > 0
+              ? [
+                  { stage: 'New', leads: byStatus.new ?? 0, color: semantic.info },
+                  { stage: 'Contacted', leads: byStatus.contacted ?? 0, color: chartPalette[0] },
+                  { stage: 'Trial', leads: byStatus.trial_scheduled ?? 0, color: chartPalette[3] },
+                  { stage: 'Converted', leads: byStatus.converted ?? 0, color: semantic.success },
+                  { stage: 'Lost', leads: byStatus.lost ?? 0, color: chartPalette[6] },
+                ]
+              : []}
+            xKey="stage"
+            bars={[{ key: 'leads', label: 'Leads', color: semantic.info, colorKey: 'color' }]}
+            showLegend={false}
+            title="Lead funnel"
+            subtitle="Every lead by current stage — states, not cumulative conversion"
+            height={240}
+            loading={leads.loading && !leads.data}
+            error={!leads.data ? (leads.error?.message ?? null) : null}
+            onRetry={() => { void leads.refetch(); }}
+            emptyTitle="No leads yet"
+            emptyDescription="Capture a lead to start the pipeline."
+            ariaLabel={`Lead stages: ${byStatus.new ?? 0} new, ${byStatus.contacted ?? 0} contacted, ${byStatus.trial_scheduled ?? 0} trial scheduled, ${byStatus.converted ?? 0} converted, ${byStatus.lost ?? 0} lost.`}
+          />
+
+          <ChartDataTable
+            title="Lead funnel"
+            caption="Every lead counted once by its current stage; stages are not cumulative"
+            columns={[{ header: 'Stage' }, { header: 'Leads' }]}
+            rows={counts.total > 0
+              ? [
+                  { key: 'new', cells: ['New', byStatus.new ?? 0] },
+                  { key: 'contacted', cells: ['Contacted', byStatus.contacted ?? 0] },
+                  { key: 'trial', cells: ['Trial', byStatus.trial_scheduled ?? 0] },
+                  { key: 'converted', cells: ['Converted', byStatus.converted ?? 0] },
+                  { key: 'lost', cells: ['Lost', byStatus.lost ?? 0] },
+                ]
+              : []}
+            footer={counts.total > 0 ? ['Total', counts.total] : undefined}
+            emptyMessage={leads.data ? 'No leads yet.' : 'The lead list did not come back.'}
+          />
         </PageContainer>
       </PullToRefresh>
 
       {/* Add / Edit dialog */}
       {/*
-        Built to the same language as the page behind it — the violet gradient
+        Built to the same language as the page behind it — the brand gradient
         badge, the uppercase micro-labels and the card radii all come from the
         header and KPI row above, so opening the dialog does not feel like
         landing in a different product.
@@ -535,10 +493,10 @@ export default function LeadsPage() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
-              style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', boxShadow: '0 6px 20px rgba(163,55,87,0.32)' }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white"
+              style={{ background: 'var(--gradient-brand)', boxShadow: 'var(--shadow-brand)' }}
             >
-              <UserSearch size={19} className="text-white" />
+              <UserSearch size={19} />
             </div>
             {/* pr-8 keeps the title clear of the dialog's own close button. */}
             <div className="min-w-0 pr-8">
@@ -570,7 +528,6 @@ export default function LeadsPage() {
               type="button" loading={saving} disabled={saving}
               iconLeft={!saving ? <Check size={15} /> : undefined}
               onClick={handleSave}
-              style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
             >
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>

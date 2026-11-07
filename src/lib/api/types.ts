@@ -1985,7 +1985,7 @@ export type PlatformUserQuery = {
   q?: string;
   /** A studio role, or 'platform' for the operators. */
   role?: string;
-  status?: 'active' | 'inactive' | 'deleted';
+  status?: 'active' | 'inactive' | 'deleted' | 'dormant' | 'never';
   /** Organization id — the only way to scope the directory to one studio. */
   org?: string;
   limit?: number;
@@ -3232,6 +3232,8 @@ export type SubStudio = {
   requested_at?: string | null;
   requested_plan_code?: string | null; requested_plan_name?: string | null;
   requested_direction?: string | null;
+  /** When the studio was last frozen, and why (manual, trial_expired, or operator text). */
+  frozen_at?: string | null; frozen_reason?: string | null;
 };
 export type SubKpis = {
   studios: number; trial: number; active: number; frozen: number; founders: number;
@@ -3974,6 +3976,8 @@ export type AiModelStat = {
 
 export type AiHealthResponse = {
   configured: boolean;
+  /** Why the provider is not configured, when `configured` is false. */
+  reason?: string | null;
   overall?: string;
   models: {
     primary:   { model: string; status: string; latency_ms?: number; error?: string };
@@ -4431,6 +4435,9 @@ export type AiProgressDataCounts = {
   checkins: number;
   strength_logs: number;
   goals: number;
+  /** Optional so a frontend deployed ahead of the backend still renders. */
+  sessions?: number;
+  photos?: number;
 };
 
 export type AiWeightPoint = { date: string; weight_kg: number };
@@ -5106,6 +5113,73 @@ export interface TrainerFormCheck {
   comment_count?: number;
   /** Present in the detail read. */
   comments?: FormCheckComment[];
+}
+
+// ── Post-session feedback and trainer rating ─────────────────────────────────
+//
+// One request per completed PT session. `pending` has no answers; `submitted`
+// has all five and the server-computed `score` (0–5, two decimals). A trainer
+// never writes here — only the owning client submits.
+export type SessionFeedbackStatus = 'pending' | 'submitted';
+export type TrainerBehaviour = 'excellent' | 'good' | 'average' | 'poor';
+export type FormTechnique = 'always' | 'mostly' | 'sometimes' | 'no';
+export type WorkoutIntensity = 'perfect' | 'too_easy' | 'too_hard';
+export type MotivationGuidance = 'absolutely' | 'somewhat' | 'not_really';
+
+export interface SessionFeedback {
+  id: string;
+  session_id: string;
+  client_id: string;
+  trainer_id: string | null;
+  completed_at: string;
+  status: SessionFeedbackStatus;
+  trainer_behaviour: TrainerBehaviour | null;
+  form_technique: FormTechnique | null;
+  workout_intensity: WorkoutIntensity | null;
+  motivation_guidance: MotivationGuidance | null;
+  overall_stars: number | null;
+  additional_feedback: string | null;
+  /** Numeric in the database; node-postgres returns NUMERIC as a string. */
+  score: number | string | null;
+  submitted_at: string | null;
+  session_title: string | null;
+  session_date: string;
+  start_time: string | null;
+  client_name: string;
+  trainer_name: string | null;
+}
+
+export interface SessionFeedbackInput {
+  trainer_behaviour: TrainerBehaviour;
+  form_technique: FormTechnique;
+  workout_intensity: WorkoutIntensity;
+  motivation_guidance: MotivationGuidance;
+  overall_stars: number;
+  additional_feedback?: string;
+}
+
+export interface SessionFeedbackFilters {
+  trainer_id?: string;
+  client_id?: string;
+  from?: string;
+  to?: string;
+  min_score?: number;
+  max_score?: number;
+  flagged?: boolean;
+  status?: SessionFeedbackStatus | 'all';
+  limit?: number;
+  offset?: number;
+}
+
+export interface SessionFeedbackSummary {
+  rated_count: number;
+  /** Null when nothing has been rated yet — never a fabricated zero. */
+  average_score: number | null;
+  five_star_count: number;
+  low_rating_count: number;
+  pending_count: number;
+  distribution: Array<{ stars: number; count: number }>;
+  trend: Array<{ month: string; average: number; count: number }>;
 }
 
 // ── Hostinger hosting console (platform control plane) ───────────────────────

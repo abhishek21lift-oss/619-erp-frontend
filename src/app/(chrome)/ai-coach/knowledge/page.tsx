@@ -7,7 +7,7 @@ import {
   AlertTriangle, Loader2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
-import { Button, FormField, PullToRefresh, PageContainer, PageHero, TextInput } from '@/components/ui';
+import { Button, FormField, PageActions, PullToRefresh, PageContainer, PageHero, TextInput } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { useToast } from '@/lib/toast';
 import { api, AiKnowledgeDocument } from '@/lib/api';
@@ -157,15 +157,12 @@ export default function AiKnowledgeBasePage() {
           <PageHero
             icon={<BookOpen size={20} />}
             title="Knowledge Base"
-
-            actions={
-              <button type="button" onClick={() => setUploadOpen(true)}
-                className="inline-flex h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-[700] transition-transform active:scale-95 sm:w-auto"
-                style={{ background: '#fff', color: '#0F172A' }}>
-                <Upload size={16} /> Upload Document
-              </button>
-            }
           />
+          <PageActions>
+            <Button onClick={() => setUploadOpen(true)} iconLeft={<Upload size={16} />}>
+              Upload Document
+            </Button>
+          </PageActions>
 
         <div className="mx-auto w-full max-w-4xl">
 
@@ -256,7 +253,7 @@ export default function AiKnowledgeBasePage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <FormField label="Title" className="min-w-0">
-                <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Gym Cleaning SOP" />
+                <TextInput value={title} onChange={(e) => setTitle(e.target.value)} />
               </FormField>
 
               <div>

@@ -124,7 +124,6 @@ export function ExerciseCommandPalette({ open, onClose, onSelect }: ExerciseComm
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search exercises…"
             className="flex-1 bg-transparent text-[16px] font-[500] text-[var(--text-primary)] outline-none placeholder:text-slate-400 dark:placeholder:text-white/25"
           />
           <kbd className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-[650] text-[var(--text-muted)] dark:bg-white/10 sm:block">

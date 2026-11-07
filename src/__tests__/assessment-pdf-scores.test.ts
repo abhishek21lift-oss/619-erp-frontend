@@ -164,7 +164,7 @@ describe('assessment report — K11 strength percentiles', () => {
 
   it('states the K11 basis and the two supplied lifts', () => {
     const html = generateAssessmentReportHTML(withStrength('Average', 50), 'Test Client');
-    expect(html).toContain('K11 relative strength (1RM ÷ body weight)');
+    expect(html).toContain('Relative strength (1RM ÷ body weight)');
     expect(html).toContain('Bench Press and Leg Press only');
   });
 });

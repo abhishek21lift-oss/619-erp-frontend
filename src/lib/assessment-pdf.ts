@@ -226,7 +226,7 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Test 2', v(assessment.strength_exercise_2)),
     field('Test 2 Classification', strengthClassification(assessment.strength_category_2, sd.test2)),
     field('Combined Strength Score', scoreLabel(assessment.strength_score_computed)),
-    field('Norm', 'K11 relative strength (1RM ÷ body weight), by sex and age at testing. Supplied tables cover Bench Press and Leg Press only.'),
+    field('Norm', 'Relative strength (1RM ÷ body weight), by sex and age at testing. Supplied tables cover Bench Press and Leg Press only.'),
   ].join(''));
 
   const endurance = section('Muscular Endurance', [

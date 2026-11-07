@@ -92,7 +92,7 @@ function FormCheckBody() {
     }
   };
 
-  const title = <PageTitle accent="workout" icon={<Video size={20} />} title="Form check"
+  const title = <PageTitle accent="progress" icon={<Video size={20} />} title="Form check"
     sub="Send a lift. Your trainer comments at the exact second." />;
 
   if (failed) return <>{title}<LoadError what="form checks" /></>;
@@ -142,7 +142,6 @@ function FormCheckBody() {
             <TextField
               field={exerciseField}
               label="Lift"
-              placeholder="e.g. Back squat, 80 kg"
               required
               maxLength={120}
               showCount
@@ -151,7 +150,6 @@ function FormCheckBody() {
             <TextAreaField
               field={noteField}
               label="Anything they should know (optional)"
-              placeholder="e.g. Third set — lower back felt tight."
               rows={2}
               maxLength={500}
               showCount

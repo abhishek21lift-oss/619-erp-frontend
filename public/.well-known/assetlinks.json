@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.myptstudio.studio",
+      "sha256_cert_fingerprints": [
+        "15:00:6A:A0:59:E2:25:66:20:64:6C:34:10:5D:41:16:B6:3B:C9:C8:14:25:E0:FA:33:F9:23:CA:0A:F2:9B:49"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.myptstudio.member",
+      "sha256_cert_fingerprints": [
+        "FD:CD:A3:17:73:5F:C3:13:82:77:78:30:B5:F7:64:9C:24:62:F4:ED:C0:CB:95:BF:CE:92:D1:0B:17:03:20:9E"
+      ]
+    }
+  }
+]

@@ -80,7 +80,6 @@ interface FloatInputProps {
   value: string;
   onChange: (v: string) => void;
   onBlur?: () => void;
-  placeholder?: string;
   /** Native bounds, meaningful for `type="date"` and numeric fields. */
   min?: string;
   max?: string;
@@ -168,7 +167,6 @@ export function FloatInput({
   value,
   onChange,
   onBlur,
-  placeholder,
   min,
   max,
   suffix,
@@ -243,7 +241,6 @@ export function FloatInput({
               ref={textareaRef}
               rows={autoGrow ? 1 : rows}
               value={value}
-              placeholder={placeholder}
               onChange={handleChange}
               onBlur={onBlur}
               disabled={disabled}
@@ -257,7 +254,6 @@ export function FloatInput({
               type={renderedType}
               inputMode={renderedInputMode}
               value={value}
-              placeholder={placeholder}
               min={min}
               max={max}
               onChange={handleChange}

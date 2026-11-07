@@ -335,23 +335,23 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
         </FormField>
         <FormField label="Avoid movement patterns">
           <TextInput value={avoidPatterns} onChange={(e) => setAvoidPatterns(e.target.value)}
-            placeholder="Squat, Hinge (comma separated)" />
+            />
         </FormField>
         <FormField label="Avoid muscles">
           <TextInput value={avoidMuscles} onChange={(e) => setAvoidMuscles(e.target.value)}
-            placeholder="Shoulders, Lower Back" />
+            />
         </FormField>
         <FormField label="Available equipment">
           <TextInput value={equipment} onChange={(e) => setEquipment(e.target.value)}
-            placeholder="Barbell, Dumbbell (blank = all)" />
+            />
         </FormField>
         <FormField label="Days per week">
           <TextInput inputMode="numeric" min={1} max={7} value={daysPerWeek}
-            onChange={(e) => setDaysPerWeek(e.target.value)} placeholder="Use client record" />
+            onChange={(e) => setDaysPerWeek(e.target.value)} />
         </FormField>
         <FormField label="Session minutes">
           <TextInput inputMode="numeric" min={20} max={180} value={sessionMinutes}
-            onChange={(e) => setSessionMinutes(e.target.value)} placeholder="Use client record" />
+            onChange={(e) => setSessionMinutes(e.target.value)} />
         </FormField>
         <FormField label="Periodisation">
           <SelectInput value={periodization} onChange={(e) => setPeriodization(e.target.value)}>
@@ -362,12 +362,12 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
         {periodization === 'powerlifting_block' ? (
           <FormField label="Block length (weeks)">
             <TextInput inputMode="numeric" min={1} max={24} value={blockWeeks}
-              onChange={(e) => setBlockWeeks(e.target.value)} placeholder="12" />
+              onChange={(e) => setBlockWeeks(e.target.value)} />
           </FormField>
         ) : (
           <FormField label="Plan length (weeks)">
             <TextInput inputMode="numeric" min={1} max={52} value={durationWeeks}
-              onChange={(e) => setDurationWeeks(e.target.value)} placeholder="4" />
+              onChange={(e) => setDurationWeeks(e.target.value)} />
           </FormField>
         )}
       </div>
@@ -425,9 +425,9 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <FormField label="Cardio minutes">
             <TextInput inputMode="numeric" min={0} max={180} value={cardio}
-              onChange={(e) => setCardio(e.target.value)} placeholder="Goal default" />
+              onChange={(e) => setCardio(e.target.value)} />
           </FormField>
-          <FormField label="K11 intensity">
+          <FormField label="Intensity">
             <SelectInput value={cardioIntensity} onChange={(e) => setCardioIntensity(e.target.value)}>
               <option value="">Application default (moderate)</option>
               {K11_INTENSITY_BANDS.map((band) => (
@@ -444,7 +444,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
           </FormField>
           <FormField label="Frequency per week">
             <TextInput inputMode="numeric" min={1} max={14} value={cardioFrequency}
-              onChange={(e) => setCardioFrequency(e.target.value)} placeholder="Application default (3)" />
+              onChange={(e) => setCardioFrequency(e.target.value)} />
           </FormField>
           <FormField label="Programme type">
             <SelectInput value={cardioProgram} onChange={(e) => setCardioProgram(e.target.value)}>
@@ -456,15 +456,15 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
           </FormField>
           <FormField label="Age (MHR estimate)">
             <TextInput inputMode="numeric" min={1} max={120} value={age}
-              onChange={(e) => setAge(e.target.value)} placeholder="Not supplied" />
+              onChange={(e) => setAge(e.target.value)} />
           </FormField>
           <FormField label="Resting HR">
             <TextInput inputMode="numeric" min={1} value={restingHr}
-              onChange={(e) => setRestingHr(e.target.value)} placeholder="Not supplied" />
+              onChange={(e) => setRestingHr(e.target.value)} />
           </FormField>
           <FormField label="Measured max HR">
             <TextInput inputMode="numeric" min={1} value={measuredMhr}
-              onChange={(e) => setMeasuredMhr(e.target.value)} placeholder="Not supplied" />
+              onChange={(e) => setMeasuredMhr(e.target.value)} />
           </FormField>
         </div>
       </section>
@@ -647,7 +647,7 @@ function SessionCard({ session, index, total }: { session: GeneratedSession; ind
           </p>
           {defaultLabels.length > 0 && (
             <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              {defaultLabels.join(', ')} {defaultVerb} application defaults, not K11 limits.
+              {defaultLabels.join(', ')} {defaultVerb} application defaults, not physiological limits.
             </p>
           )}
           {(session.conditioning.warnings?.length ?? 0) > 0 && (

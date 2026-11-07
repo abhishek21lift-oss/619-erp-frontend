@@ -28,8 +28,8 @@
 // field and commits on blur like every other number in the builder.
 
 import { useEffect, useRef, useState } from 'react';
-import { m } from 'framer-motion';
-import { TrendingUp } from 'lucide-react';
+import { m, useReducedMotion } from 'framer-motion';
+import { ChevronDown, TrendingUp } from 'lucide-react';
 import type { ProgressionType, WorkoutPlan } from '@/lib/api';
 import { FormField, SelectInput, TextInput } from '@/components/ui/form';
 
@@ -60,6 +60,8 @@ export default function ProgressionRule({ plan, onChange }: ProgressionRuleProps
   const type = plan.progression_type ?? 'none';
   const every = plan.progression_every_weeks ?? 1;
   const rule = RULES[type];
+  const reduce = useReducedMotion();
+  const [open, setOpen] = useState(false);
 
   const committed = plan.progression_amount == null ? '' : String(plan.progression_amount);
   const [amount, setAmount] = useState(committed);
@@ -76,10 +78,9 @@ export default function ProgressionRule({ plan, onChange }: ProgressionRuleProps
       return;
     }
     // A rule with no amount cannot progress anything, and the database rejects
-    // the pair outright — so picking a rule seeds its usual step rather than
-    // leaving the trainer with an invalid programme and an error toast.
-    const seeded = Number(amount);
-    const value = Number.isFinite(seeded) && seeded > 0 ? seeded : RULES[next].step;
+    // the pair outright. Each rule has its own unit and usual step, so changing
+    // the type resets the amount: 2.5 was kilos, not 2.5 reps.
+    const value = RULES[next].step;
     last.current = String(value);
     setAmount(String(value));
     onChange({ progression_type: next, progression_amount: value, progression_every_weeks: every });
@@ -97,100 +98,140 @@ export default function ProgressionRule({ plan, onChange }: ProgressionRuleProps
     onChange({ progression_type: type, progression_amount: n, progression_every_weeks: every });
   };
 
+  const summary = type === 'none'
+    ? 'Stays the same every week'
+    : `${rule.label} ${committed || rule.step} ${rule.unit} ${every === 1 ? 'every week' : `every ${every} weeks`}`;
+
   return (
     <div
-      className="mb-4 rounded-[20px] p-4"
+      className="rounded-[20px]"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
-      <div className="flex items-center gap-2">
-        <TrendingUp size={15} style={{ color: 'var(--brand)' }} />
-        <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-          Each week, the programme…
-        </p>
-      </div>
+      {/* The rule is a setting, not the work. One line says what it is; the
+          controls only appear when the trainer opens them. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="progression-rule-body"
+        className="flex min-h-[56px] w-full items-center gap-2.5 px-4 py-2.5 text-left"
+      >
+        <TrendingUp size={15} style={{ color: 'var(--brand)' }} aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            Progression
+          </span>
+          <span className="block truncate text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+            {summary}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1 text-[12px] font-[700]" style={{ color: 'var(--brand)' }}>
+          {open ? 'Done' : 'Change'}
+          <ChevronDown
+            size={14}
+            aria-hidden
+            style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s' }}
+          />
+        </span>
+      </button>
 
-      {/* Chips rather than a <select>: four options is few enough to show, and
-          the choice is the whole point of the card. */}
-      <div className="mt-2.5 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Progression rule">
-        {ORDER.map((t) => {
-          const active = t === type;
-          return (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => pickType(t)}
-              className="flex h-[44px] items-center rounded-[14px] px-3.5 text-[12.5px] font-[700] transition-[background,box-shadow]"
-              style={{
-                background: active ? 'linear-gradient(135deg, #A33757, #852E4E)' : 'var(--bg-subtle)',
-                color: active ? '#fff' : 'var(--text-muted)',
-                border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
-                boxShadow: active ? '0 4px 14px -4px rgba(163,55,87,0.5)' : 'none',
-              }}
-            >
-              {RULES[t].label}
-            </button>
-          );
-        })}
-      </div>
-
-      {type === 'none' ? (
-        <p className="mt-2.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          {rule.hint}
-        </p>
-      ) : (
+      {open && (
         <m.div
-          initial={{ opacity: 0, y: -4 }}
+          id="progression-rule-body"
+          initial={reduce ? false : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.16 }}
-          className="mt-3"
+          transition={{ duration: reduce ? 0 : 0.16 }}
+          className="border-t px-4 pb-4 pt-3"
+          style={{ borderColor: 'var(--border)' }}
         >
-          <div className="flex flex-wrap items-end gap-2">
-            <FormField label="By" density="compact">
-              <div
-                className="flex w-[104px] items-center overflow-hidden rounded-[12px]"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-              >
-                <TextInput
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  onBlur={commitAmount}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur();
-                    if (e.key === 'Escape') { setAmount(last.current); e.currentTarget.blur(); }
-                  }}
-                  inputMode="decimal"
-                  aria-label={`Amount to add per step, in ${rule.unit}`}
-                  className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-2 text-center text-[14px] font-[700]"
-                  style={{ background: 'transparent', border: 'none', borderRadius: 0, color: 'var(--text-primary)' }}
-                />
-                <span className="shrink-0 pr-2 text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                  {rule.unit}
-                </span>
-              </div>
-            </FormField>
-
-            <FormField label="Every" density="compact">
-              <SelectInput
-                value={every}
-                onChange={(e) => onChange({
-                  progression_type: type,
-                  progression_amount: plan.progression_amount ?? null,
-                  progression_every_weeks: Number(e.target.value),
-                })}
-                className="h-[44px] rounded-[12px] px-2.5 pr-8 text-[13px] font-[700]"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              >
-                {[1, 2, 3, 4].map((n) => (
-                  <option key={n} value={n}>{n === 1 ? 'week' : `${n} weeks`}</option>
-                ))}
-              </SelectInput>
-            </FormField>
-          </div>
-          <p className="mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            {rule.hint} Week 1 is always the numbers you type below.
+          <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+            Each week, the programme…
           </p>
+
+          {/* Two rows of two rather than three-then-one: four rules in a wrap
+              left a lone chip on its own line, which reads as a mistake. */}
+          <div className="mt-2.5 grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Progression rule">
+            {ORDER.map((t) => {
+              const active = t === type;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => pickType(t)}
+                  className="flex h-[44px] items-center justify-center rounded-[14px] px-3 text-[12.5px] font-[700] transition-[background,box-shadow]"
+                  style={{
+                    background: active ? 'var(--gradient-brand)' : 'var(--bg-subtle)',
+                    color: active ? '#fff' : 'var(--text-muted)',
+                    border: `1px solid ${active ? 'transparent' : 'var(--border)'}`,
+                    boxShadow: active ? '0 4px 14px -4px rgba(163,55,87,0.5)' : 'none',
+                  }}
+                >
+                  {RULES[t].label}
+                </button>
+              );
+            })}
+          </div>
+
+          {type === 'none' ? (
+            <p className="mt-2.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              {rule.hint}
+            </p>
+          ) : (
+            <m.div
+              initial={reduce ? false : { opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduce ? 0 : 0.16 }}
+              className="mt-3"
+            >
+              <div className="flex flex-wrap items-end gap-2">
+                <FormField label="By" density="compact">
+                  <div
+                    className="flex w-[104px] items-center overflow-hidden rounded-[12px]"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+                  >
+                    <TextInput
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      onBlur={commitAmount}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                        if (e.key === 'Escape') { setAmount(last.current); e.currentTarget.blur(); }
+                      }}
+                      inputMode="decimal"
+                      aria-label={`Amount to add per step, in ${rule.unit}`}
+                      className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-2 text-center text-[14px] font-[700]"
+                      style={{ background: 'transparent', border: 'none', borderRadius: 0, color: 'var(--text-primary)' }}
+                    />
+                    <span className="shrink-0 pr-2 text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>
+                      {rule.unit}
+                    </span>
+                  </div>
+                </FormField>
+
+                <FormField label="Every" density="compact">
+                  <SelectInput
+                    value={every}
+                    onChange={(e) => onChange({
+                      progression_type: type,
+                      progression_amount: plan.progression_amount ?? null,
+                      progression_every_weeks: Number(e.target.value),
+                    })}
+                    className="h-[44px] rounded-[12px] px-2.5 pr-8 text-[13px] font-[700]"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  >
+                    {[1, 2, 3, 4].map((n) => (
+                      <option key={n} value={n}>{n === 1 ? 'week' : `${n} weeks`}</option>
+                    ))}
+                  </SelectInput>
+                </FormField>
+              </div>
+              <p className="mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                {rule.hint} Week 1 is always the numbers you type below.
+              </p>
+            </m.div>
+          )}
         </m.div>
       )}
     </div>

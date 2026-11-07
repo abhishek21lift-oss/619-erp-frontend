@@ -43,6 +43,7 @@ import { Availability } from './Availability';
 import { Silences } from './Silences';
 import { ObservabilityBar } from './ObservabilityBar';
 import { AiOperations } from './AiOperations';
+import type { QueuesTelemetry } from '@/lib/api';
 import { surface, toneFor } from './tokens';
 
 type Deck = 'operations' | 'ai' | 'guardian' | 'recovery' | 'logs';
@@ -159,7 +160,7 @@ export const MissionControl: React.FC = () => {
         {/* Reads the snapshot already held here: no poll of its own. */}
         {deck === 'ai' && <AiOperations snap={snap} onRefresh={handleRefresh} />}
         {deck === 'guardian' && <Guardian />}
-        {deck === 'recovery' && <CommandPanel />}
+        {deck === 'recovery' && <CommandPanel queueTelemetry={(snap.cards.queues?.data ?? null) as QueuesTelemetry | null} />}
         {deck === 'logs' && <LiveLogs />}
       </m.div>
 

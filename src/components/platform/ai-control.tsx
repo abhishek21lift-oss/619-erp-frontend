@@ -20,11 +20,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bot, Loader2, AlertTriangle, Coins, Zap, Building2, Timer,
-  ShieldAlert, Info, Save, Settings2, RotateCcw, Route,
+  ShieldAlert, Info, Save, Settings2, RotateCcw, Route, Activity,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
-  AiOverview, AiStudioUsage, AiModelUsage, AiTrendPoint, AiSettings, AiRouting,
+  AiHealthResponse, AiOverview, AiStudioUsage, AiModelUsage, AiTrendPoint, AiSettings, AiRouting,
 } from '@/lib/api';
 import { Panel, SectionLabel, Reveal } from './console';
 import { CcBars, CcCard, CcDonut, CcStat } from './cc-viz';
@@ -277,7 +277,7 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <FormField label="Default monthly tokens" density="compact" className="w-40">
           <TextInput
-            value={dflt} onChange={(e) => setDflt(e.target.value)} placeholder="unlimited"
+            value={dflt} onChange={(e) => setDflt(e.target.value)}
             inputMode="numeric" className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
         </FormField>
@@ -289,7 +289,7 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
         </FormField>
         <FormField label="Monthly cost budget (₹)" density="compact" className="w-44">
           <TextInput
-            value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="no budget"
+            value={budget} onChange={(e) => setBudget(e.target.value)}
             inputMode="decimal" className="h-9 rounded-[9px] px-2.5 text-[12.5px]" style={field}
           />
         </FormField>
@@ -406,7 +406,6 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
                 <TextInput
                   value={draft[tier]}
                   onChange={(e) => setDraft((d) => ({ ...d, [tier]: e.target.value }))}
-                  placeholder={routing.from_env[tier] ?? routing.defaults[tier]}
                   spellCheck={false} autoComplete="off"
                   className="rounded-[10px] px-3 py-2 text-[12.5px]"
                   style={{
@@ -452,6 +451,89 @@ function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: (
             : 'Never changed — every tier is following the deploy'}
         </span>
       </div>
+    </Panel>
+  );
+}
+
+/* ── Model health ────────────────────────────────────────────────────────── */
+/**
+ * The check the studio integrations page used to offer. It lives here because
+ * only the operator can act on a failing model — a trainer cannot change a
+ * routing override or a provider key. It pings each tier once per click; it
+ * never runs on mount, because three completions are real spend.
+ */
+function HealthPanel() {
+  const { toast } = useToast();
+  const [health, setHealth] = useState<AiHealthResponse | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
+
+  const check = async () => {
+    setChecking(true);
+    try {
+      setHealth((await api.superAdmin.aiHealth()).data);
+      setCheckedAt(new Date().toLocaleTimeString());
+    } catch (e) {
+      toast.error(errorMessage(e, 'Health check failed.'));
+    } finally { setChecking(false); }
+  };
+
+  const tiers = health
+    ? (['primary', 'secondary', 'fallback'] as const).map((tier) => ({ tier, ...health.models[tier] }))
+    : [];
+  const okCount = tiers.filter((t) => t.status === 'ok').length;
+
+  return (
+    <Panel>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          Sends one short completion to each tier. Studio users cannot run this check.
+        </p>
+        <button
+          onClick={check} disabled={checking}
+          className="flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white disabled:opacity-50"
+          style={{ background: 'var(--brand)' }}
+        >
+          {checking ? <Loader2 size={13} className="animate-spin" /> : <Activity size={13} />}
+          {checking ? 'Pinging models…' : 'Check model health'}
+        </button>
+      </div>
+
+      {health && !health.configured && (
+        <p className="mt-3 rounded-[10px] p-2.5 text-[11.5px] leading-relaxed"
+          style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: '#b45309' }}>
+          {health.reason ?? 'The provider key is not set on this server.'}
+        </p>
+      )}
+
+      {tiers.length > 0 && (
+        <div className="mt-3 flex flex-col gap-2">
+          {tiers.map((t) => (
+            <div key={t.tier} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="w-20 shrink-0 text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
+                {t.tier}
+              </span>
+              <code className="min-w-0 flex-1 truncate text-[11px]" style={{ color: 'var(--text-secondary)' }}>{t.model}</code>
+              <span className="shrink-0 text-[10.5px] font-[700]"
+                style={{ color: t.status === 'ok' ? '#059669' : t.status === 'unconfigured' ? 'var(--text-disabled)' : '#dc2626' }}>
+                {t.status === 'ok' ? `● ${t.latency_ms}ms` : t.status === 'unconfigured' ? 'not configured' : '✕ failed'}
+              </span>
+              {t.error && (
+                <p className="w-full text-[10px] leading-snug sm:pl-[88px]" style={{ color: '#dc2626', wordBreak: 'break-word' }}>
+                  {t.error.slice(0, 160)}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {checkedAt && tiers.length > 0 && (
+        <p className="mt-2 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
+          {okCount === tiers.length ? `All ${okCount} models healthy` : `${okCount} / ${tiers.length} models healthy`}
+          {' · checked at '}{checkedAt}
+        </p>
+      )}
     </Panel>
   );
 }
@@ -627,6 +709,11 @@ export default function AiControlCentre() {
           <Reveal delay={0.22}><RoutingPanel routing={routing} onChanged={load} /></Reveal>
         </div>
       )}
+
+      <div>
+        <SectionLabel hint="one ping per tier, on demand">Model health</SectionLabel>
+        <Reveal delay={0.24}><HealthPanel /></Reveal>
+      </div>
 
       <p className="flex items-start gap-1.5 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
         <Building2 size={11} className="mt-0.5 shrink-0" />

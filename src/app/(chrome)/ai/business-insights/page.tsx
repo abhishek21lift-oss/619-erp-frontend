@@ -21,9 +21,9 @@ const PERIODS = [
 ];
 
 function TrendIcon({ direction }: { direction: string }) {
-  if (direction === 'up' || direction === 'increasing') return <TrendingUp className="h-4 w-4 text-green-500" />;
+  if (direction === 'up' || direction === 'increasing') return <TrendingUp className="h-4 w-4 text-emerald-500" />;
   if (direction === 'down' || direction === 'decreasing') return <TrendingDown className="h-4 w-4 text-red-500" />;
-  return <Minus className="h-4 w-4 text-gray-400" />;
+  return <Minus className="h-4 w-4 text-[var(--text-disabled)]" />;
 }
 
 /** Null is "no basis", never zero — a missing KPI renders as an em dash. */
@@ -85,7 +85,9 @@ export default function BusinessInsightsPage() {
       } else if (status === 422 || code === 'AI_UNPARSEABLE') {
         setError('The model replied but did not return a usable report. Retry — if it keeps failing, switch the fallback model in Settings → AI.');
       } else if (status === 503 || code === 'AI_UNAVAILABLE') {
-        setError('The AI service is unavailable right now. Your previous report is still shown below. Retry in a moment.');
+        setError(insights
+          ? 'The AI service is unavailable right now. Your previous report is still shown below. Retry in a moment.'
+          : 'The AI service is unavailable right now. Nothing was generated — retry in a moment.');
       } else {
         setError(msg);
       }
@@ -113,9 +115,9 @@ export default function BusinessInsightsPage() {
       <div className="mx-auto w-full max-w-4xl space-y-5">
 
         {/* Controls */}
-        <div className="space-y-4 rounded-[20px] border border-gray-200 bg-white p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
+        <div className="space-y-4 rounded-[20px] border border-[var(--border)] bg-[var(--bg-card)] p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
           <div className="space-y-1">
-            <span id="analysis-period-label" className="text-sm font-medium text-gray-800">Analysis Period</span>
+            <span id="analysis-period-label" className="text-sm font-medium text-[var(--text-primary)]">Analysis Period</span>
             <div role="group" aria-labelledby="analysis-period-label" className="flex flex-wrap gap-2">
               {PERIODS.map((p) => (
                 <button
@@ -123,7 +125,7 @@ export default function BusinessInsightsPage() {
                   onClick={() => setPeriod(p.value)}
                   disabled={loading}
                   aria-pressed={period === p.value}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${period === p.value ? 'bg-brand-500 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${period === p.value ? 'bg-brand-500 text-white' : 'border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'}`}
                 >
                   {p.label}
                 </button>
@@ -165,10 +167,10 @@ export default function BusinessInsightsPage() {
         {/* Loading skeleton — only when there is nothing to show yet */}
         {loading && !insights && (
           <div className="space-y-4" aria-label="Loading insights">
-            <div className="h-24 animate-pulse rounded-[20px] bg-gray-100" />
+            <div className="h-24 animate-pulse rounded-[20px] bg-[var(--bg-subtle)]" />
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-24 animate-pulse rounded-[20px] bg-gray-100" />
+                <div key={i} className="h-24 animate-pulse rounded-[20px] bg-[var(--bg-subtle)]" />
               ))}
             </div>
           </div>
@@ -179,7 +181,7 @@ export default function BusinessInsightsPage() {
             {/* Freshness. The report is the trainer's, not a billboard for
                 the engine behind it — no model or provider identifiers are
                 shown. */}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
               {updatedAt && <span>Updated {updatedAt}</span>}
               <button
                 onClick={handleGenerate}
@@ -217,12 +219,12 @@ export default function BusinessInsightsPage() {
 
             {/* Executive summary */}
             {!isEmpty && (insights.executive_summary || insights.summary) && (
-              <div className="rounded-[20px] border border-gray-200 bg-white p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
-                <h2 className="text-lg font-bold text-gray-900">Executive Summary</h2>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{insights.executive_summary || insights.summary}</p>
+              <div className="rounded-[20px] border border-[var(--border)] bg-[var(--bg-card)] p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
+                <h2 className="text-lg font-bold text-[var(--text-primary)]">Executive Summary</h2>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{insights.executive_summary || insights.summary}</p>
                 {(insights.period || raw?.period) && (
-                  <div className="mt-2 text-xs text-gray-400">
-                    Period: <strong className="text-gray-700">
+                  <div className="mt-2 text-xs text-[var(--text-disabled)]">
+                    Period: <strong className="text-[var(--text-secondary)]">
                       {raw?.period ? `${raw.period.from} → ${raw.period.to}` : insights.period}
                     </strong>
                   </div>
@@ -241,7 +243,7 @@ export default function BusinessInsightsPage() {
                 ].map((k) => (
                   <div
                     key={k.label}
-                    className="relative overflow-hidden rounded-[20px] border border-gray-200 bg-white p-4"
+                    className="relative overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg-card)] p-4"
                     style={{ boxShadow: 'var(--shadow-xs)' }}
                   >
                     <span
@@ -249,9 +251,9 @@ export default function BusinessInsightsPage() {
                       className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
                       style={{ background: `linear-gradient(90deg, ${k.from}, ${k.to})` }}
                     />
-                    <div className="text-xl font-bold tracking-tight text-gray-900">{k.value}</div>
-                    <div className="mt-1 text-xs font-semibold text-gray-700">{k.label}</div>
-                    <div className="text-xs text-gray-400">{k.sub}</div>
+                    <div className="text-xl font-bold tracking-tight text-[var(--text-primary)]">{k.value}</div>
+                    <div className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">{k.label}</div>
+                    <div className="text-xs text-[var(--text-disabled)]">{k.sub}</div>
                   </div>
                 ))}
               </div>
@@ -272,9 +274,9 @@ export default function BusinessInsightsPage() {
                     ['Renewal rate', pct(raw.renewals.renewal_rate)],
                     ['Active share', pct(raw.renewals.active_share_pct)],
                   ].map(([term, val]) => (
-                    <div key={term} className="rounded-xl bg-white px-3 py-2">
-                      <dt className="text-xs text-gray-500">{term}</dt>
-                      <dd className="text-sm font-bold text-gray-900">{val}</dd>
+                    <div key={term} className="rounded-xl bg-[var(--bg-card)] px-3 py-2">
+                      <dt className="text-xs text-[var(--text-secondary)]">{term}</dt>
+                      <dd className="text-sm font-bold text-[var(--text-primary)]">{val}</dd>
                     </div>
                   ))}
                 </dl>
@@ -295,24 +297,24 @@ export default function BusinessInsightsPage() {
 
             {/* Trends — AI estimates: direction + reading, magnitudes only with a baseline */}
             {!isEmpty && insights.trends?.length ? (
-              <div className="space-y-3 rounded-[20px] border border-gray-200 bg-white p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
-                <h3 className="font-semibold text-gray-900">Trends <span className="ml-1 text-xs font-medium text-gray-400">(AI estimates)</span></h3>
+              <div className="space-y-3 rounded-[20px] border border-[var(--border)] bg-[var(--bg-card)] p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
+                <h3 className="font-semibold text-[var(--text-primary)]">Trends <span className="ml-1 text-xs font-medium text-[var(--text-disabled)]">(AI estimates)</span></h3>
                 {insights.trends.map((t, i) => (
-                  <div key={i} className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-0">
+                  <div key={i} className="flex items-center gap-3 border-b border-[var(--border)] py-2 last:border-0">
                     <TrendIcon direction={t.direction} />
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-800">{t.metric}</div>
-                      <div className="text-xs text-gray-500">{t.insight}</div>
+                      <div className="text-sm font-medium text-[var(--text-primary)]">{t.metric}</div>
+                      <div className="text-xs text-[var(--text-secondary)]">{t.insight}</div>
                     </div>
                     {Number.isFinite(t.change_pct) ? (
                       <span
                         title="AI estimate — no prior-period baseline was supplied"
-                        className={`text-sm font-semibold ${t.direction === 'up' || t.direction === 'increasing' ? 'text-green-600' : t.direction === 'down' || t.direction === 'decreasing' ? 'text-red-600' : 'text-gray-400'}`}
+                        className={`text-sm font-semibold ${t.direction === 'up' || t.direction === 'increasing' ? 'text-emerald-600' : t.direction === 'down' || t.direction === 'decreasing' ? 'text-red-600' : 'text-[var(--text-disabled)]'}`}
                       >
                         ~{(t.change_pct as number) > 0 ? '+' : ''}{t.change_pct}%
                       </span>
                     ) : (
-                      <span className="text-xs font-medium text-gray-400" title="No prior-period baseline was supplied">no baseline</span>
+                      <span className="text-xs font-medium text-[var(--text-disabled)]" title="No prior-period baseline was supplied">no baseline</span>
                     )}
                   </div>
                 ))}
@@ -320,14 +322,14 @@ export default function BusinessInsightsPage() {
             ) : null}
 
             {!isEmpty && insights.opportunities?.length ? (
-              <div className="space-y-3 rounded-[20px] border border-green-200 bg-green-50 p-5">
-                <h3 className="font-semibold text-green-700">Growth Opportunities</h3>
+              <div className="space-y-3 rounded-[20px] border border-emerald-200 bg-emerald-50 p-5">
+                <h3 className="font-semibold text-emerald-700">Growth Opportunities</h3>
                 {insights.opportunities.map((o, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-700">{i + 1}</div>
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">{i + 1}</div>
                     <div>
-                      <div className="text-sm font-medium text-green-800">{o.opportunity}</div>
-                      <div className="mt-0.5 flex gap-4 text-xs text-gray-500">
+                      <div className="text-sm font-medium text-emerald-800">{o.opportunity}</div>
+                      <div className="mt-0.5 flex gap-4 text-xs text-[var(--text-secondary)]">
                         <span>Impact: {o.estimated_impact || '—'}</span>
                         <span>Effort: {o.effort || '—'}</span>
                       </div>
@@ -338,41 +340,41 @@ export default function BusinessInsightsPage() {
             ) : null}
 
             {!isEmpty && insights.risks?.length ? (
-              <div className="rounded-[20px] border border-yellow-200 bg-yellow-50 p-5">
-                <div className="flex items-center gap-2 font-semibold text-yellow-700">
+              <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-5">
+                <div className="flex items-center gap-2 font-semibold text-amber-700">
                   <AlertTriangle className="h-4 w-4" />
                   Business Risks
                 </div>
                 {insights.risks.map((r, i) => (
-                  <div key={i} className="border-b border-yellow-200 pb-3 pt-3 last:border-0 last:pb-0">
+                  <div key={i} className="border-b border-amber-200 pb-3 pt-3 last:border-0 last:pb-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-yellow-800">{r.risk}</span>
+                      <span className="text-sm font-medium text-amber-800">{r.risk}</span>
                       {r.severity && (
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${r.severity === 'high' ? 'bg-red-100 text-red-700' : r.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${r.severity === 'high' ? 'bg-red-100 text-red-700' : r.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)]'}`}>
                           {r.severity}
                         </span>
                       )}
                     </div>
-                    {r.recommended_action && <p className="mt-1 text-xs text-yellow-700">{r.recommended_action}</p>}
+                    {r.recommended_action && <p className="mt-1 text-xs text-amber-700">{r.recommended_action}</p>}
                   </div>
                 ))}
               </div>
             ) : null}
 
             {!isEmpty && insights.recommendations?.length ? (
-              <div className="space-y-3 rounded-[20px] border border-gray-200 bg-white p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
-                <h3 className="font-semibold text-gray-900">Action Plan</h3>
+              <div className="space-y-3 rounded-[20px] border border-[var(--border)] bg-[var(--bg-card)] p-5" style={{ boxShadow: 'var(--shadow-xs)' }}>
+                <h3 className="font-semibold text-[var(--text-primary)]">Action Plan</h3>
                 {insights.recommendations
                   .slice()
                   .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
                   .map((r, i) => (
-                  <div key={i} className="flex items-start gap-3 border-b border-gray-100 py-2 last:border-0">
+                  <div key={i} className="flex items-start gap-3 border-b border-[var(--border)] py-2 last:border-0">
                     <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-xs font-bold text-brand-700">{r.priority ?? '–'}</div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-800">{r.action}</div>
-                      {r.rationale && <div className="mt-0.5 text-xs text-gray-500">{r.rationale}</div>}
+                      <div className="text-sm font-medium text-[var(--text-primary)]">{r.action}</div>
+                      {r.rationale && <div className="mt-0.5 text-xs text-[var(--text-secondary)]">{r.rationale}</div>}
                     </div>
-                    {r.timeframe && <div className="shrink-0 text-xs text-gray-400">{r.timeframe}</div>}
+                    {r.timeframe && <div className="shrink-0 text-xs text-[var(--text-disabled)]">{r.timeframe}</div>}
                   </div>
                 ))}
               </div>

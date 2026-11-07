@@ -65,6 +65,11 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
   // cannot prove.
   const cohortKey = targets.map((c) => c.id).join('|');
   const [sent, setSent] = useState({ key: cohortKey, cursor: 0 });
+  // Opening WhatsApp or the dialer is not proof anything was sent. The card
+  // asks before moving the cursor, so a backed-out message never counts as
+  // "contacted" and the next client is not skipped.
+  const [confirmFor, setConfirmFor] = useState<string | null>(null);
+  const confirming = confirmFor === cohortKey;
   const cursor = sent.key === cohortKey ? sent.cursor : 0;
 
   const next = targets[Math.min(cursor, Math.max(targets.length - 1, 0))] ?? null;
@@ -128,24 +133,46 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
                   ? <>Next: <span style={{ color: palette.blue[600] }}>{next.name}</span> · {remaining} of {targets.length} left</>
                   : 'Everyone on this list has been contacted.'}
               </p>
-              <div className="flex gap-2">
-                {whatsapp && remaining > 0 && (
-                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" onClick={advance}
-                    aria-label={`Send WhatsApp to ${next.name}`}
-                    className="transition active:scale-[0.98]"
-                    style={{ ...primary, background: `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.emerald[600]})`, boxShadow: `0 6px 16px ${rgba(palette.emerald[500], 0.34)}` }}>
-                    <MessageCircle size={15} /> Send WhatsApp
-                  </a>
-                )}
-                {tel && remaining > 0 && (
-                  <a href={tel} onClick={advance}
-                    aria-label={`Call ${next.name}`}
-                    className="transition active:scale-[0.98]"
-                    style={{ ...primary, background: `linear-gradient(135deg, ${palette.blue[450]}, ${palette.blue[600]})`, boxShadow: `0 6px 16px ${rgba(palette.blue[500], 0.34)}` }}>
-                    <Phone size={15} /> Call
-                  </a>
-                )}
-              </div>
+              {confirming ? (
+                <div role="group" aria-label="Confirm contact" className="rounded-[12px] p-2.5"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                  <p className="text-[11.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>
+                    Did you contact {next.name}?
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" onClick={() => { advance(); setConfirmFor(null); }}
+                      className="flex min-h-[44px] flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[780] text-white transition active:scale-[0.98]"
+                      style={{ background: 'var(--action)' }}>
+                      Yes, next
+                    </button>
+                    <button type="button" onClick={() => setConfirmFor(null)}
+                      className="flex min-h-[44px] flex-1 items-center justify-center rounded-[10px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                      Not yet
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  {whatsapp && remaining > 0 && (
+                    <a href={whatsapp} target="_blank" rel="noopener noreferrer"
+                      onClick={() => setConfirmFor(cohortKey)}
+                      aria-label={`Send WhatsApp to ${next.name}`}
+                      className="transition active:scale-[0.98]"
+                      style={{ ...primary, background: palette.emerald[700], boxShadow: `0 6px 16px ${rgba(palette.emerald[500], 0.34)}` }}>
+                      <MessageCircle size={15} /> Send WhatsApp
+                    </a>
+                  )}
+                  {tel && remaining > 0 && (
+                    <a href={tel} onClick={() => setConfirmFor(cohortKey)}
+                      aria-label={`Call ${next.name}`}
+                      className="transition active:scale-[0.98]"
+                      style={{ ...primary, background: `linear-gradient(135deg, ${palette.blue[500]}, ${palette.blue[600]})`, boxShadow: `0 6px 16px ${rgba(palette.blue[500], 0.34)}` }}>
+                      <Phone size={15} /> Call
+                    </a>
+                  )}
+                </div>
+              )}
             </>
           ) : (
             <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
@@ -158,7 +185,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
           <Link href={top.href}
             className="mt-2.5 flex min-h-[44px] items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
-            Open list <ChevronRight size={14} />
+            {top.id === 'unbooked' ? 'Book a session' : 'Open list'} <ChevronRight size={14} />
           </Link>
         </div>
       </div>

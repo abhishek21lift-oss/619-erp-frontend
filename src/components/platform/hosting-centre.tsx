@@ -203,7 +203,6 @@ function CredentialCard({ status, onChanged }: { status: HostingerStatus; onChan
               type="password"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              placeholder="Paste the token from hPanel → Account → API"
               aria-label="Hostinger API token"
               autoComplete="new-password"
               spellCheck={false}
@@ -212,7 +211,6 @@ function CredentialCard({ status, onChanged }: { status: HostingerStatus; onChan
             <TextInput
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="Label (optional) — what this token is for"
               aria-label="Credential label"
             />
           </div>
@@ -327,7 +325,14 @@ function WebsitesCard({ dashboard }: { dashboard: HostingerDashboard }) {
 function DomainsCard({ dashboard }: { dashboard: HostingerDashboard }) {
   const domains = rows(slotData(dashboard.domains));
   const error = slotError(dashboard.domains);
-  const soon = domains.filter((d) => {
+  // The provider can return the same registration twice (a domain attached to
+  // more than one site). It is one renewal, so it gets one row; the key also
+  // stops React reusing a sibling when two rows share a name.
+  const unique = domains.filter((d, i) => {
+    const k = `${str(d.domain) ?? ''}|${str(d.expires_at) ?? ''}|${str(d.status) ?? ''}`;
+    return domains.findIndex((x) => `${str(x.domain) ?? ''}|${str(x.expires_at) ?? ''}|${str(x.status) ?? ''}` === k) === i;
+  });
+  const soon = unique.filter((d) => {
     const expires = str(d.expires_at);
     if (!expires) return false;
     const days = (new Date(expires).getTime() - Date.now()) / 86400000;
@@ -342,13 +347,13 @@ function DomainsCard({ dashboard }: { dashboard: HostingerDashboard }) {
         <p className="py-4 text-[12px]" style={{ color: 'var(--text-muted)' }}>No domains in the portfolio.</p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {domains.slice(0, 12).map((d, i) => {
+          {unique.slice(0, 12).map((d, i) => {
             const domain = str(d.domain) ?? `domain ${i + 1}`;
             const expires = str(d.expires_at);
             const days = expires ? (new Date(expires).getTime() - Date.now()) / 86400000 : null;
             const urgent = days !== null && days < 45;
             return (
-              <div key={domain} className="flex items-center justify-between gap-2 rounded-[11px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
+              <div key={`${domain}-${expires ?? ''}-${i}`} className="flex items-center justify-between gap-2 rounded-[11px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
                 <p className="min-w-0 truncate text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>{domain}</p>
                 <p className="shrink-0 text-[10.5px]" style={{ color: urgent ? '#b45309' : 'var(--text-disabled)' }}>
                   {str(d.status) ?? 'status not reported'}{expires ? ` · expires ${fmtDate(expires)}` : ''}
@@ -356,8 +361,8 @@ function DomainsCard({ dashboard }: { dashboard: HostingerDashboard }) {
               </div>
             );
           })}
-          {domains.length > 12 && (
-            <SampleNote text={`Showing the first 12 of ${domains.length}. DNS and renewal detail per domain is in the catalogue below.`} />
+          {unique.length > 12 && (
+            <SampleNote text={`Showing the first 12 of ${unique.length}. DNS and renewal detail per domain is in the catalogue below.`} />
           )}
         </div>
       )}
@@ -438,6 +443,16 @@ function BillingCard({ dashboard }: { dashboard: HostingerDashboard }) {
     .sort((a, b) => new Date(a.at as string).getTime() - new Date(b.at as string).getTime());
 
   const error = slotError(dashboard.subscriptions) ?? slotError(dashboard.payment_methods);
+  // A live subscription with no default card is a payment failure waiting to
+  // happen at the next renewal, even though no card is expired or suspended
+  // yet. Counting only expired cards let "Attention 0 · all usable" appear
+  // while there was no card to charge at all.
+  const missingDefault = subs.length > 0 && !defaultMethod;
+  const attention = expired.length + (missingDefault ? 1 : 0);
+  const attentionSub = [
+    expired.length ? `${expired.length} expired or suspended` : '',
+    missingDefault ? 'no default payment method' : '',
+  ].filter(Boolean).join(' · ') || 'all usable';
 
   return (
     <CcCard title="Billing" eyebrow="Subscriptions and cards" icon={<CreditCard size={15} />} tone="orange">
@@ -447,7 +462,7 @@ function BillingCard({ dashboard }: { dashboard: HostingerDashboard }) {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <CcStat label="Subscriptions" value={nf(subs.length)} sub={orders.length ? `${orders.length} orders` : 'no orders'} icon={<CreditCard size={14} />} tone="orange" />
           <CcStat label="Payment methods" value={nf(methods.length)} sub={defaultMethod ? `default ••••${str(defaultMethod.identifier)?.slice(-4) ?? '?'}` : 'no default'} icon={<CreditCard size={14} />} tone="teal" />
-          <CcStat label="Attention" value={nf(expired.length)} tone={expired.length ? 'pink' : 'green'} sub={expired.length ? 'expired or suspended' : 'all usable'} icon={<AlertTriangle size={14} />} />
+          <CcStat label="Attention" value={nf(attention)} tone={attention ? 'pink' : 'green'} sub={attentionSub} icon={<AlertTriangle size={14} />} />
         </div>
       )}
       {soonRenewal.length > 0 && (

@@ -29,7 +29,7 @@ import { ProfessionalSection, WorkingHoursEditor } from '@/components/profile/Pr
 import { EducationSection } from '@/components/profile/EducationSection';
 import { AchievementsSection } from '@/components/profile/AchievementsSection';
 import { CompletionPanel } from '@/components/profile/CompletionPanel';
-import { tones, tabTones, gradient, type ToneName } from '@/components/profile/profileTheme';
+import { tones, gradient, type ToneName } from '@/components/profile/profileTheme';
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { useFounder } from '@/lib/use-founder';
 import { PortfolioSkeleton } from '@/components/profile/PortfolioSection';
@@ -301,7 +301,6 @@ function CertificateRow({ cert, index, issues, saved, onChange, onRemove }: {
               field={name}
               label="Certification"
               density="compact"
-              placeholder="Certification name"
               maxLength={PROFILE_LIMITS.certificationName}
             />
             {meta && (
@@ -332,11 +331,11 @@ function CertificateRow({ cert, index, issues, saved, onChange, onRemove }: {
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <TextField
             field={issuer} label="Issuing body" density="compact"
-            placeholder="NASM, ACE, K11…" maxLength={PROFILE_LIMITS.certificationIssuer}
+            maxLength={PROFILE_LIMITS.certificationIssuer}
           />
           <TextField
             field={credentialId} label="Credential ID" density="compact"
-            placeholder="Optional" maxLength={PROFILE_LIMITS.credentialId}
+            maxLength={PROFILE_LIMITS.credentialId}
           />
           <DateFieldControl field={issuedOn} label="Issued" density="compact" />
           <DateFieldControl field={expiresOn} label="Expires" density="compact" />
@@ -378,7 +377,7 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
             <button
               onClick={() => onChange(value.filter((x) => x !== sp))}
               aria-label={`Remove ${sp}`}
-              className="rounded-full p-0.5 transition-opacity hover:opacity-70"
+              className="flex h-7 w-7 items-center justify-center rounded-full transition-opacity hover:opacity-70"
             >
               <XCircle size={13} />
             </button>
@@ -399,7 +398,6 @@ function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: 
             if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
           }}
           onBlur={() => commit(draft)}
-          placeholder="Add a specialisation and press Enter"
           className="rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560]"
           style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
         />
@@ -424,12 +422,13 @@ function SectionHeader({ icon, title, subtitle, tone = 'indigo' }: {
     <div className="mb-5 flex items-center gap-3">
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-white"
+        aria-hidden
         style={{ background: gradient(t), boxShadow: `0 6px 16px -6px ${t.glow}, inset 0 1px 0 rgba(255,255,255,0.35)` }}
       >
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[15px] font-[800] tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{title}</p>
+        <h2 className="text-[15px] font-[800] tracking-[-0.015em]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
         {subtitle && <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
       </div>
     </div>
@@ -444,36 +443,48 @@ function SectionHeader({ icon, title, subtitle, tone = 'indigo' }: {
 /* ─────────────────────────────────────────
    IOS TOGGLE
 ───────────────────────────────────────── */
-function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+function Toggle({ enabled, onChange, disabled, label }: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  /** The control's accessible name. A switch with no name is a mystery. */
+  label: string;
+}) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!enabled)}
-      className="relative flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-      style={{
-        width: 44, height: 26,
-        borderRadius: 999,
-        // iOS: on is green. Mint rather than the emerald family, which on
-        // this app means a completed state, not a switch position.
-        background: enabled ? gradient(tones.mint) : 'var(--border-3)',
-        boxShadow: enabled ? `0 0 14px ${tones.mint.glow}` : 'none',
-        border: 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'background 250ms, box-shadow 250ms',
-      }}
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50"
+      style={{ background: 'transparent', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer' }}
     >
-      <m.span
-        animate={{ x: enabled ? 20 : 2 }}
-        transition={{ type: 'spring', stiffness: 600, damping: 32 }}
+      {/* A 44px target around a 26px track. The visual stays iOS-sized; the
+          thing a thumb has to hit does not. */}
+      <span
+        aria-hidden
+        className="relative block rounded-full transition-colors"
         style={{
-          position: 'absolute',
-          top: 3, width: 20, height: 20,
-          borderRadius: 999,
-          background: 'white',
-          boxShadow: '0 1px 4px rgba(15,23,42,0.18)',
+          width: 44, height: 26,
+          background: enabled ? 'var(--brand)' : 'var(--border-3)',
+          boxShadow: enabled ? '0 0 14px rgba(163,55,87,0.35)' : 'none',
         }}
-      />
+      >
+        <m.span
+          aria-hidden
+          animate={{ x: enabled ? 20 : 2 }}
+          transition={{ type: 'spring', stiffness: 600, damping: 32 }}
+          style={{
+            position: 'absolute',
+            top: 3, left: 0, width: 20, height: 20,
+            borderRadius: 999,
+            background: 'white',
+            boxShadow: '0 1px 4px rgba(15,23,42,0.18)',
+          }}
+        />
+      </span>
     </button>
   );
 }
@@ -687,7 +698,7 @@ function StickySaveBar({ open, dirty, saving, onSave, onDiscard, msg }: {
             onClick={onDiscard}
             disabled={!dirty || saving}
             className="rounded-xl px-3 py-1.5 text-[12px] font-[620] transition-colors disabled:opacity-45"
-            style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+            style={{ minHeight: 44, color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
           >
             Discard
           </button>
@@ -697,6 +708,7 @@ function StickySaveBar({ open, dirty, saving, onSave, onDiscard, msg }: {
             disabled={saving || !dirty}
             className="flex items-center gap-2 rounded-xl px-4 py-1.5 text-[12px] font-[700] transition-all"
             style={{
+              minHeight: 44,
               background: 'linear-gradient(135deg,#A33757,#852E4E)',
               color: 'white',
               boxShadow: '0 2px 12px rgba(163,55,87,0.40)',
@@ -731,7 +743,6 @@ const FREQUENCY_OPTIONS: { value: string; label: string }[] = [
 ];
 
 const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; description: string }[] = [
-  { key: 'email_logins', label: 'Login Alerts (Email)', description: 'Email me on new sign-ins to my account' },
   { key: 'email_payments', label: 'Payment Emails', description: 'Receipts and payment confirmations' },
   { key: 'email_reports', label: 'Report Emails', description: 'Scheduled business reports' },
   { key: 'email_marketing', label: 'Marketing Emails', description: 'Product news and offers' },
@@ -740,6 +751,9 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
   { key: 'push_mentions', label: 'Mention Push', description: 'When someone mentions you' },
   { key: 'whatsapp_alerts', label: 'WhatsApp Alerts', description: 'Critical alerts via WhatsApp' },
 ];
+
+/** The page's tabs: the three scored profile tabs, then the account tabs. */
+type ProfileTabId = ProfileTab | 'security' | 'preferences' | 'upi';
 
 /* ─────────────────────────────────────────
    PAGE
@@ -760,7 +774,13 @@ function ProfilePageInner() {
   // named separately. UPI Payments is the studio's collection settings, so it
   // is the trainer's alone.
   const isTrainer = user?.role === 'trainer';
-  const [tab, setTab] = useState<ProfileTab | 'security' | 'preferences' | 'upi'>('overview');
+  const [tab, setTab] = useState<ProfileTabId>('overview');
+  // The UPI panel owns its own draft. It is mounted on first visit and then
+  // kept mounted (hidden) across tab changes, so switching to Security no
+  // longer throws away a half-typed VPA or a staged switch.
+  const [upiVisited, setUpiVisited] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
   // ?tab= opens a tab directly, so the avatar menu's "Security" lands on the
   // security panel (it replaced a second, thinner /settings page). Keyed on
   // the query, not read once: following that link while already on this page
@@ -770,8 +790,38 @@ function ProfilePageInner() {
     const t = tabParam;
     if (t === 'overview' || t === 'credentials' || t === 'portfolio' || t === 'security' || t === 'preferences') setTab(t);
     // /finance/payment-settings redirects here with ?tab=upi.
-    else if (t === 'upi' && isTrainer) setTab('upi');
+    else if (t === 'upi' && isTrainer) { setTab('upi'); setUpiVisited(true); }
   }, [tabParam, isTrainer]);
+
+  // Two visual groups, one tablist. The split is the point: a trainer looking
+  // for 2FA or payments should not have to swipe a segmented-looking strip to
+  // discover them.
+  const tabs: { id: ProfileTabId; label: string; icon: React.ReactElement<{ size?: number }>; group: 'profile' | 'settings' }[] = [
+    { id: 'overview', label: 'Overview', icon: <User size={14} />, group: 'profile' },
+    { id: 'credentials', label: 'Credentials', icon: <Award size={14} />, group: 'profile' },
+    { id: 'portfolio', label: 'Portfolio', icon: <Images size={14} />, group: 'profile' },
+    { id: 'security', label: 'Security', icon: <Lock size={14} />, group: 'settings' },
+    { id: 'preferences', label: 'Preferences', icon: <Settings size={14} />, group: 'settings' },
+    ...(isTrainer ? [{ id: 'upi' as const, label: 'UPI', icon: <QrCode size={14} />, group: 'settings' as const }] : []),
+  ];
+  const tabOrder = tabs.map(t => t.id);
+  const selectTab = (id: ProfileTabId) => {
+    setTab(id);
+    if (id === 'upi') setUpiVisited(true);
+  };
+  const focusTab = (id: ProfileTabId) => {
+    selectTab(id);
+    document.getElementById(`profile-tab-${id}`)?.focus();
+  };
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, id: ProfileTabId) => {
+    const i = tabOrder.indexOf(id);
+    let next: ProfileTabId | undefined;
+    if (e.key === 'ArrowRight') next = tabOrder[(i + 1) % tabOrder.length];
+    else if (e.key === 'ArrowLeft') next = tabOrder[(i - 1 + tabOrder.length) % tabOrder.length];
+    else if (e.key === 'Home') next = tabOrder[0];
+    else if (e.key === 'End') next = tabOrder[tabOrder.length - 1];
+    if (next) { e.preventDefault(); focusTab(next); }
+  };
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -836,6 +886,15 @@ function ProfilePageInner() {
     || JSON.stringify(workingHours) !== originalRef.current.workingHours
     || JSON.stringify(education) !== originalRef.current.education
     || JSON.stringify(achievements) !== originalRef.current.achievements;
+
+  // The form state survives tab changes, so this is only for the two ways it
+  // does not: a reload or a closed tab.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
 
   /** Load a server row into the form and reset the dirty baseline together. */
   const hydrate = useCallback((row: ProfileMe) => {
@@ -930,9 +989,9 @@ function ProfilePageInner() {
   const pwMatch = confirmPw.length > 0 && newPw === confirmPw;
   const pwMismatch = confirmPw.length > 0 && newPw !== confirmPw;
 
-  const eyeBtn = (show: boolean, toggle: () => void) => (
-    <button type="button" onClick={toggle}
-      className="flex h-6 w-6 items-center justify-center rounded-lg transition-colors hover:opacity-70">
+  const eyeBtn = (show: boolean, toggle: () => void, label: string) => (
+    <button type="button" onClick={toggle} aria-label={label}
+      className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:opacity-70">
       {show
         ? <EyeOff size={13} style={{ color: 'var(--text-disabled)' }} />
         : <Eye size={13} style={{ color: 'var(--text-disabled)' }} />}
@@ -1049,7 +1108,7 @@ function ProfilePageInner() {
       if (emailChanged) {
         toast.success('Sign-in email changed. A notice was sent to your previous address.');
       }
-      setSaveMsg({ type: 'success', text: 'Profile saved successfully' });
+      setSaveMsg({ type: 'success', text: 'All changes saved' });
       setTimeout(() => setSaveMsg(null), 3000);
     } catch (err: unknown) {
       const code = err instanceof ApiError ? err.code : undefined;
@@ -1374,17 +1433,11 @@ function ProfilePageInner() {
           as a grey block inset from the page edges. The banded sections
           below keep their own backgrounds and inner padding — those are
           deliberate bands, not a page wrapper. */}
-      {/* The breadcrumb, the "My Profile" heading and its subtitle used to
-          sit in a bordered band here. All three said what the page already
-          says: the card immediately below carries the user's name, photo,
-          role and studio, so the title was a label for something already
-          labelled, costing about a fifth of a phone screen before any
-          content.
-
-          Only the band is gone. .shell-main's own padding stays, because it
-          is the same small gap every other hero in the app sits below —
-          cancelling it here made this page sit tighter than the rest of the
-          product for no reason a reader could see. */}
+      {/* A compact title row returns here for two reasons: the page needs an
+          h1, and "Preview as member" belongs where the public profile starts.
+          The old bordered breadcrumb band stays gone. .shell-main's own
+          padding stays, because it is the same small gap every other hero in
+          the app sits below. */}
       <div>
 
         {/* ── MAIN ── */}
@@ -1393,6 +1446,28 @@ function ProfilePageInner() {
             both with no way to scroll further. Matches the pattern the
             dashboard and Leads pages already use. */}
         <div className="mx-auto max-w-screen-xl pb-[calc(var(--bottom-nav-h,4rem)+env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-10">
+
+          {/* ── TITLE + PREVIEW ── */}
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-[22px] font-[880] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
+                My Profile
+              </h1>
+              <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                What members see, and how your account works.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl px-4 text-[12.5px] font-[720] transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              <Eye size={14} style={{ color: 'var(--brand)' }} />
+              <span className="hidden sm:inline">Preview as member</span>
+              <span className="sm:hidden">Preview</span>
+            </button>
+          </div>
 
           {/* ── HERO ── */}
           {/* Reads `me`, not the form state: this is who the server says you
@@ -1442,51 +1517,67 @@ function ProfilePageInner() {
           </FadeUp>
 
           {/* ── TABS ── */}
-          <FadeUp delay={0.1}>
-            {/* `inline-flex` shrank the strip to its content and then clipped
-                it: a fourth tab was cut mid-word with no scrollbar and no
-                hint there was anything past it. Full width scrolls properly,
-                and the tabs no longer shrink below their labels. */}
-            <div className="mb-7 flex w-full gap-1 overflow-x-auto rounded-[20px] p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
-              {([
-                { id: 'overview', label: 'Overview', icon: <User size={14} /> },
-                { id: 'credentials', label: 'Credentials', icon: <Award size={14} /> },
-                { id: 'portfolio', label: 'Portfolio', icon: <Images size={14} /> },
-                { id: 'security', label: 'Security', icon: <Lock size={14} /> },
-                { id: 'preferences', label: 'Preferences', icon: <Settings size={14} /> },
-                ...(isTrainer ? [{ id: 'upi', label: 'UPI Payments', icon: <QrCode size={14} /> }] as const : []),
-              ] as const).map(t => {
-                // Each tab wears its own colour, and so do its sections: the
-                // strip doubles as a legend for the page below it.
-                const tt = tones[tabTones[t.id]];
-                const on = tab === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setTab(t.id)}
-                    aria-pressed={on}
-                    className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[14px] px-4 py-2.5 text-[12.5px] font-[720] transition-colors"
-                    style={{ color: on ? '#fff' : 'var(--text-secondary)' }}
-                  >
-                    {on && (
-                      <m.span layoutId="profile-tab-pill" aria-hidden
-                        className="absolute inset-0 rounded-[14px]"
-                        transition={{ type: 'spring', stiffness: 520, damping: 38 }}
-                        style={{ background: gradient(tt), boxShadow: `0 8px 18px -8px ${tt.glow}` }} />
-                    )}
-                    <span className="relative grid h-5 w-5 place-items-center rounded-[7px]"
-                      style={on ? undefined : { background: gradient(tt), color: '#fff' }}>
-                      {React.cloneElement(t.icon, { size: on ? 14 : 12 })}
-                    </span>
-                    <span className="relative">{t.label}</span>
-                  </button>
-                );
-              })}
+          {/* Sticky, wrapped, and grouped. The old strip was a horizontal
+              scroller with a hidden scrollbar: on a phone the last three tabs
+              were off-screen with no cue. Two rows of three fit every width;
+              the active tab is solid brand, not a per-tab gradient. */}
+          <div className="below-topbar sticky z-30 mb-7" style={{ background: 'var(--bg-canvas)', paddingBottom: 8 }}>
+            <div
+              role="tablist"
+              aria-label="My Profile and Settings"
+              aria-orientation="horizontal"
+              className="flex flex-col gap-1.5 rounded-[20px] p-1.5 sm:flex-row sm:items-center"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}
+            >
+              {(['profile', 'settings'] as const).map((group) => (
+                <React.Fragment key={group}>
+                  {group === 'settings' && (
+                    <>
+                      <p aria-hidden className="px-1 pt-1 text-[9.5px] font-[760] uppercase tracking-[0.12em] sm:hidden" style={{ color: 'var(--text-disabled)' }}>
+                        Settings
+                      </p>
+                      <span aria-hidden className="mx-1 hidden w-px self-stretch sm:block" style={{ background: 'var(--border)' }} />
+                    </>
+                  )}
+                  <div role="presentation" className="grid flex-1 grid-cols-3 gap-1 sm:flex">
+                    {tabs.filter((t) => t.group === group).map((t) => {
+                      const on = tab === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          id={`profile-tab-${t.id}`}
+                          role="tab"
+                          aria-selected={on}
+                          aria-controls="profile-tabpanel"
+                          tabIndex={on ? 0 : -1}
+                          onClick={() => selectTab(t.id)}
+                          onKeyDown={(e) => onTabKeyDown(e, t.id)}
+                          className="relative flex min-h-[44px] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] px-2 text-[11.5px] font-[720] transition-colors sm:flex-none sm:gap-2 sm:px-3.5 sm:text-[12.5px]"
+                          style={{ color: on ? '#fff' : 'var(--text-secondary)' }}
+                        >
+                          {on && (
+                            <m.span layoutId="profile-tab-pill" aria-hidden
+                              className="absolute inset-0 rounded-[14px]"
+                              transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+                              style={{ background: 'var(--brand)', boxShadow: '0 8px 18px -8px rgba(163,55,87,0.45)' }} />
+                          )}
+                          <span className="relative grid h-5 w-5 place-items-center rounded-[7px]"
+                            style={on ? undefined : { background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+                            {React.cloneElement(t.icon, { size: on ? 14 : 12 })}
+                          </span>
+                          <span className="relative">{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
-          </FadeUp>
+          </div>
 
           {/* ── TAB CONTENT ── */}
+          <div id="profile-tabpanel" role="tabpanel" aria-labelledby={`profile-tab-${tab}`} tabIndex={0}
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2">
           <AnimatePresence mode="wait">
 
             {/* ═══ OVERVIEW ═══ */}
@@ -1518,7 +1609,22 @@ function ProfilePageInner() {
                       <FloatInput tone="brand" upperLifted label="Email Address" type="email" value={email} onChange={setEmail} required />
                       <FloatInput tone="brand" upperLifted label="Phone Number" value={phone} onChange={setPhone} />
                       <FloatInput tone="brand" upperLifted label="Location" value={location} onChange={setLocation} />
-                      <FloatInput tone="brand" upperLifted label="Bio" value={bio} onChange={setBio} multiline />
+                      {/* One editor for the bio, on Credentials. A second
+                          textarea here looked like a second source of truth. */}
+                      <div className="rounded-xl px-3.5 py-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[10.5px] font-[760] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>About you</p>
+                          <button type="button" onClick={() => selectTab('credentials')}
+                            className="inline-flex min-h-[24px] items-center text-[11.5px] font-[700]"
+                            style={{ color: 'var(--brand)' }}>
+                            Edit
+                          </button>
+                        </div>
+                        <p className="mt-1 line-clamp-3 text-[12.5px] leading-relaxed"
+                          style={{ color: bio ? 'var(--text-secondary)' : 'var(--text-disabled)' }}>
+                          {bio || 'Add a bio on the Credentials tab so members know how you coach.'}
+                        </p>
+                      </div>
                     </div>
                   </GlassCard>
                 </FadeUp>
@@ -1648,7 +1754,12 @@ function ProfilePageInner() {
                     title="Professional profile"
                   />
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FloatInput tone="brand" upperLifted label="Job title" value={jobTitle} onChange={setJobTitle} />
+                    <div>
+                      <FloatInput tone="brand" upperLifted label="Job title" value={jobTitle} onChange={setJobTitle} />
+                      <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                        Used when no designation is set.
+                      </p>
+                    </div>
                     <div>
                       <FormField label="Coaching since">
                         <TextInput
@@ -1815,14 +1926,6 @@ function ProfilePageInner() {
               </m.div>
             )}
 
-            {/* ═══ UPI PAYMENTS ═══ */}
-            {tab === 'upi' && isTrainer && (
-              <m.div key="upi" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <UpiSettingsPanel />
-              </m.div>
-            )}
-
             {tab === 'security' && (
               <m.div key="security" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -1904,6 +2007,7 @@ function ProfilePageInner() {
                     <div className="flex flex-col gap-3">
                       <SettingRow label="Login Alerts" description="Email me on new sign-ins" accent>
                         <Toggle
+                          label="Login alerts by email"
                           enabled={!!notifications?.email_logins}
                           disabled={!notifications}
                           onChange={v => toggleNotification('email_logins', v)}
@@ -1925,11 +2029,22 @@ function ProfilePageInner() {
                         className="flex items-center justify-between gap-4 rounded-2xl p-4 transition-colors hover:bg-[var(--bg-hover)]"
                         style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                         <span>
-                          <span className="block text-[13px] font-[660]" style={{ color: 'var(--text-primary)' }}>Passkeys &amp; Face ID</span>
+                          <span className="block text-[13px] font-[660]" style={{ color: 'var(--text-primary)' }}>Passkeys &amp; Security</span>
                           <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>Sign in without a password on this device</span>
                         </span>
                         <ChevronRight size={15} aria-hidden style={{ color: 'var(--text-muted)' }} />
                       </Link>
+                      {isTrainer && (
+                        <Link href="/settings/biometrics"
+                          className="flex items-center justify-between gap-4 rounded-2xl p-4 transition-colors hover:bg-[var(--bg-hover)]"
+                          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                          <span>
+                            <span className="block text-[13px] font-[660]" style={{ color: 'var(--text-primary)' }}>Member Passkey Setup</span>
+                            <span className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>See, revoke and audit every passkey in your studio</span>
+                          </span>
+                          <ChevronRight size={15} aria-hidden style={{ color: 'var(--text-muted)' }} />
+                        </Link>
+                      )}
                     </div>
                   </GlassCard>
                 </FadeUp>
@@ -1941,9 +2056,9 @@ function ProfilePageInner() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-3">
                         <FloatInput tone="brand" upperLifted label="Current Password" type={showCur ? 'text' : 'password'} value={currentPw} onChange={setCurrentPw}
-                          suffix={eyeBtn(showCur, () => setShowCur(v => !v))} required />
+                          suffix={eyeBtn(showCur, () => setShowCur(v => !v), showCur ? 'Hide current password' : 'Show current password')} required />
                         <FloatInput tone="brand" upperLifted label="New Password" type={showNew ? 'text' : 'password'} value={newPw} onChange={setNewPw}
-                          suffix={eyeBtn(showNew, () => setShowNew(v => !v))} required />
+                          suffix={eyeBtn(showNew, () => setShowNew(v => !v), showNew ? 'Hide new password' : 'Show new password')} required />
                         {newPw.length > 0 && (
                           <div>
                             <div className="flex gap-1 mb-1.5">
@@ -1961,7 +2076,7 @@ function ProfilePageInner() {
                             <div className="flex items-center gap-1.5">
                               {pwMatch && <CheckCircle2 size={13} style={{ color: '#10b981' }} />}
                               {pwMismatch && <XCircle size={13} style={{ color: '#ef4444' }} />}
-                              {eyeBtn(showConf, () => setShowConf(v => !v))}
+                              {eyeBtn(showConf, () => setShowConf(v => !v), showConf ? 'Hide confirm password' : 'Show confirm password')}
                             </div>
                           } />
                         {pwMismatch && <p className="pl-1 text-[11px]" style={{ color: '#ef4444' }}>Passwords do not match</p>}
@@ -2074,7 +2189,7 @@ function ProfilePageInner() {
                           <SelectRow label="Date Format" description="How dates display" value={preferences.dateFormat}
                             options={DATE_FORMAT_OPTIONS} onChange={v => setPreference('dateFormat', v)} />
                           <SettingRow label="Compact Mode" description="Denser spacing across the app">
-                            <Toggle enabled={preferences.compactMode} onChange={v => setPreference('compactMode', v)} />
+                            <Toggle label="Compact mode" enabled={preferences.compactMode} onChange={v => setPreference('compactMode', v)} />
                           </SettingRow>
                         </>
                       )}
@@ -2109,7 +2224,7 @@ function ProfilePageInner() {
                         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                           {NOTIFICATION_ROWS.map(n => (
                             <SettingRow key={n.key} label={n.label} description={n.description}>
-                              <Toggle enabled={notifications[n.key] as boolean} onChange={v => toggleNotification(n.key, v)} />
+                              <Toggle label={n.label} enabled={notifications[n.key] as boolean} onChange={v => toggleNotification(n.key, v)} />
                             </SettingRow>
                           ))}
                         </div>
@@ -2125,13 +2240,118 @@ function ProfilePageInner() {
             )}
 
           </AnimatePresence>
+
+          {/* Mounted on first visit, then hidden rather than unmounted. The
+              panel owns a draft and a staged switch; a tab change must not
+              throw them away. */}
+          {isTrainer && upiVisited && (
+            <div className={tab === 'upi' ? '' : 'hidden'}>
+              <UpiSettingsPanel />
+            </div>
+          )}
+          </div>
         </div>
 
         {/* ── STICKY SAVE BAR ── */}
+        {/* Hidden on UPI: that panel owns its own draft and Save button, and
+            two stacked save bars would ask the trainer which one commits. */}
         <StickySaveBar
-          open={isDirty || !!saveMsg} dirty={isDirty} saving={saving}
-          onSave={() => { void handleSave(); }} onDiscard={handleDiscard} msg={saveMsg}
+          open={tab !== 'upi' && (isDirty || !!saveMsg)} dirty={isDirty} saving={saving}
+          onSave={() => { void handleSave(); }} onDiscard={() => setDiscardOpen(true)} msg={saveMsg}
         />
+
+        {/* ── DISCARD CONFIRM ── */}
+        <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Discard unsaved changes?</DialogTitle>
+            </DialogHeader>
+            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+              This resets every field on Overview and Credentials to the last saved values. It cannot be undone.
+            </p>
+            <DialogFooter>
+              <button onClick={() => setDiscardOpen(false)}
+                className="min-h-[44px] rounded-[10px] px-4 text-[12.5px] font-[700]"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                Keep editing
+              </button>
+              <button onClick={() => { handleDiscard(); setDiscardOpen(false); }}
+                className="min-h-[44px] rounded-[10px] px-4 text-[12.5px] font-[700] text-white"
+                style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)' }}>
+                Discard changes
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── PREVIEW AS MEMBER ── */}
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Preview as member</DialogTitle>
+            </DialogHeader>
+            <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              Your saved profile. Unsaved edits are not shown.
+            </p>
+            <div className="overflow-hidden rounded-2xl" style={{ border: '1px solid var(--border)' }}>
+              <div className="h-24" style={{ background: gradient(tones.indigo) }} />
+              <div className="px-4 pb-4">
+                <div className="-mt-8 flex items-end gap-3">
+                  {me?.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`${apiBase()}${me.avatarUrl}`} alt=""
+                      className="h-16 w-16 rounded-full object-cover"
+                      style={{ border: '3px solid var(--bg-card)' }} />
+                  ) : (
+                    <span className="grid h-16 w-16 place-items-center rounded-full text-[22px] font-[880] text-white"
+                      style={{ background: gradient(tones.rose), border: '3px solid var(--bg-card)' }}>
+                      {initials(me?.name || '')}
+                    </span>
+                  )}
+                  <div className="min-w-0 pb-1">
+                    <p className="truncate text-[16px] font-[820]" style={{ color: 'var(--text-primary)' }}>
+                      {me?.name || 'Your name'}
+                    </p>
+                    <p className="truncate text-[12px] font-[640]" style={{ color: 'var(--text-muted)' }}>
+                      {me?.designation || me?.jobTitle || 'Personal Trainer'}
+                    </p>
+                  </div>
+                </div>
+                {me?.bio && (
+                  <p className="mt-3 whitespace-pre-line text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    {me.bio}
+                  </p>
+                )}
+                {(me?.specialisations?.length ?? 0) > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {me!.specialisations.slice(0, 5).map((sp) => (
+                      <span key={sp} className="rounded-full px-2.5 py-1 text-[10.5px] font-[680]"
+                        style={{ background: tones.rose.wash, color: tones.rose.ink, border: `1px solid ${tones.rose.glow}` }}>
+                        {sp}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {me?.location && <span className="inline-flex items-center gap-1"><MapPin size={11} />{me.location}</span>}
+                  {user?.organization_name && <span className="inline-flex items-center gap-1"><Briefcase size={11} />{user.organization_name}</span>}
+                  {me && me.credentialSummary.total - me.credentialSummary.expired > 0 && (
+                    <span className="inline-flex items-center gap-1">
+                      <Award size={11} />{me.credentialSummary.total - me.credentialSummary.expired} certifications
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <button onClick={() => setPreviewOpen(false)}
+                className="min-h-[44px] rounded-[10px] px-4 text-[12.5px] font-[700] text-white"
+                style={{ background: 'var(--brand)' }}>
+                Close
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* ── RECOVERY CODES MODAL ── */}
         <Dialog open={!!recoveryCodes} onOpenChange={(open) => { if (!open) setRecoveryCodes(null); }}>

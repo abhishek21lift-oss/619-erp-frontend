@@ -6,9 +6,8 @@
  *   • avatar (to Profile), greeting and name, membership card button
  *   • a line that is about THEM: their streak, their plan running out, or an
  *     invitation when there is nothing to report yet
- *   • three numbers — week streak, visits this month, sessions logged
- *     (days left belongs to the plan card just below, so it is not repeated)
- *   • Start workout, and Check in
+ *   • the one line under the name, the numbers, and nothing else — the next
+ *     actions (Start workout, Check in) sit in their own row under the hero
  *
  * Every number is passed in from what the page already loaded (or null while
  * it loads, or when it failed): a dash, never an invented zero.
@@ -124,21 +123,25 @@ export default function HomeHero({ name, photoUrl, studio, streak, trainedThisWe
         <HeroStat icon={CalendarCheck} label="Visits this month" value={visitsThisMonth} divider />
         <HeroStat icon={Dumbbell} label="Sessions" value={sessions} divider />
       </dl>
-
-      {/* What next */}
-      <div className="relative mt-3 grid grid-cols-[1.4fr_1fr] gap-2.5">
-        <Link href="/member/workout"
-          className="flex h-11 items-center justify-center gap-2 rounded-[14px] text-[14px] font-[800] transition-transform active:scale-[0.98]"
-          style={{ background: '#fff', color: spectrum.violet[700], boxShadow: '0 8px 20px -10px rgba(0,0,0,0.45)' }}>
-          <Dumbbell size={17} aria-hidden /> Start workout
-        </Link>
-        <Link href="/member/checkin"
-          className="flex h-11 items-center justify-center gap-2 rounded-[14px] text-[14px] font-[750] transition-transform active:scale-[0.98]"
-          style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>
-          <ClipboardCheck size={16} aria-hidden /> Check in
-        </Link>
-      </div>
     </m.section>
+  );
+}
+
+/** Start workout / Check in — immediately below the hero, on the page surface. */
+export function HomeActions() {
+  return (
+    <div className="mb-5 flex flex-wrap gap-2.5">
+      <Link href="/member/workout"
+        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[14px] px-4 text-[14px] font-[800] text-white transition-transform active:scale-[0.98]"
+        style={{ background: `linear-gradient(135deg, ${spectrum.violet[600]}, ${spectrum.indigo[600]})`, boxShadow: `0 8px 20px -12px ${rgba(spectrum.violet[700], 0.9)}` }}>
+        <Dumbbell size={17} aria-hidden /> Start workout
+      </Link>
+      <Link href="/member/checkin"
+        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[14px] px-4 text-[14px] font-[750] transition-transform active:scale-[0.98]"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', color: 'var(--text-primary)' }}>
+        <ClipboardCheck size={16} aria-hidden /> Check in
+      </Link>
+    </div>
   );
 }
 

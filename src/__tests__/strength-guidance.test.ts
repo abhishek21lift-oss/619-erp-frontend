@@ -6,11 +6,11 @@ describe('strengthCategoryGap', () => {
     // This is the case the combined panel used to hide: Bench Press classified,
     // Squat not, because only Bench Press and Leg Press have K11 tables.
     expect(strengthCategoryGap('Squat', 150, null, 80, 'Male', 30))
-      .toBe('No K11 percentile reference is supplied for Squat. Bench Press and Leg Press are the only supported tests.');
+      .toBe('No percentile reference is supplied for Squat. Bench Press and Leg Press are the only supported tests.');
   });
 
   it('keeps the missing-table reason even when age is also unsupported', () => {
-    expect(strengthCategoryGap('Deadlift', 150, null, 80, 'Male', 18)).toContain('No K11 percentile reference');
+    expect(strengthCategoryGap('Deadlift', 150, null, 80, 'Male', 18)).toContain('No percentile reference');
   });
 
   it('explains a supported lift with no age band', () => {
@@ -30,6 +30,6 @@ describe('strengthCategoryGap', () => {
   });
 
   it('still explains an unsupported lift before a body weight is entered', () => {
-    expect(strengthCategoryGap('Squat', 150, null, null, 'Male', 30)).toContain('No K11 percentile reference');
+    expect(strengthCategoryGap('Squat', 150, null, null, 'Male', 30)).toContain('No percentile reference');
   });
 });

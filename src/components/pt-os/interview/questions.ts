@@ -73,7 +73,7 @@ interface ControlBase {
 }
 
 export type InterviewControl =
-  | (ControlBase & { kind: 'text'; rows?: number; maxLength?: number; placeholder?: string })
+  | (ControlBase & { kind: 'text'; rows?: number; maxLength?: number })
   | (ControlBase & { kind: 'select'; options: readonly InterviewOption[] })
   | (ControlBase & { kind: 'chips'; options: readonly InterviewOption[] });
 
@@ -163,7 +163,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What type of work do you do?',
         hint: 'Their role, shift pattern, and how many hours they are on their feet.',
-        placeholder: 'e.g. Warehouse team lead, rotating shifts, on feet most of the day',
         rows: 3,
         maxLength: 2000,
       },
@@ -179,7 +178,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Describe their occupation',
         hint: 'In a few words, what do they do.',
-        placeholder: 'What do they do?',
         rows: 2,
         maxLength: 500,
         showWhen: 'occupationOther',
@@ -212,7 +210,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What type of physical activities have you performed previously?',
         hint: 'What they have done, for how long, and how it went.',
-        placeholder: 'e.g. Two years of home workouts, then a long break',
         rows: 3,
         maxLength: 2000,
       },
@@ -221,7 +218,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What are your exercise preferences?',
         hint: 'Exercises, styles, and anything they will not do.',
-        placeholder: 'e.g. Likes free weights, hates running',
         rows: 2,
         maxLength: 1000,
       },
@@ -245,7 +241,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What else gets in the way?',
         hint: 'The barrier they named that is not on the list.',
-        placeholder: 'Describe it in their words',
         rows: 2,
         maxLength: 500,
         showWhen: 'challengeOther',
@@ -256,7 +251,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'What motivates you to start training?',
         hint: 'What brought them in today.',
-        placeholder: 'e.g. Wedding in six months, doctor advised exercise',
         rows: 2,
         maxLength: 2000,
       },
@@ -280,7 +274,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         kind: 'text',
         label: 'Trainer summary',
         hint: 'Your observations, not the client’s answers. This is the only part written by you.',
-        placeholder: 'What the next trainer needs to know.',
         rows: 4,
         maxLength: 2000,
         counted: false,

@@ -368,8 +368,6 @@ function UtrBlock({
               field={field}
               label="UPI reference number (UTR)"
               required
-              placeholder="12 to 16 digits"
-              description="Numbers only."
               maxLength={16}
               showCount
               autoComplete="off"
@@ -387,7 +385,6 @@ function UtrBlock({
               rows={2}
               maxLength={500}
               showCount
-              placeholder="Anything we should know"
               className="mt-4"
               serverError={f.errors.fieldErrors.note}
             />

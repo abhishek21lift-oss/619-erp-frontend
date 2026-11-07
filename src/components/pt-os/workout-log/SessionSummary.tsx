@@ -155,7 +155,6 @@ export default function SessionSummary({ session, open, onCancel, onFinish }: Se
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            placeholder="Form, energy, anything to carry into next session…"
             className="min-h-[88px]"
           />
         </FormField>

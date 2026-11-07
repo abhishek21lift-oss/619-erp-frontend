@@ -44,10 +44,11 @@ import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import TodayCard from '@/components/member/TodayCard';
+import FeedbackPrompt from '@/components/member/FeedbackPrompt';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
 import RenewalBanner from '@/components/member/RenewalBanner';
-import HomeHero from '@/components/member/HomeHero';
+import HomeHero, { HomeActions } from '@/components/member/HomeHero';
 import { accentGradient, spectrum } from '@/components/member/memberTheme';
 import type { Accent } from '@/components/member/memberTheme';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
@@ -183,6 +184,10 @@ function MemberDashboard() {
         daysLeft={left}
         sessions={achievements ? achievements.totals.sessions : null}
       />
+      <HomeActions />
+
+      {/* ── A completed session still waiting for its four taps ────────────── */}
+      <FeedbackPrompt />
 
       {/* ── A renewal offer to pay, or a plan about to run out ──────────────── */}
       <RenewalBanner />

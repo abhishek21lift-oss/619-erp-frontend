@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { Badge, Button, EmptyState, HeroButton, PageContainer, PageHero, Skeleton, cn, FormField, SelectInput } from '@/components/ui';
+import { Badge, Button, EmptyState, PageActions, PageContainer, PageHero, Skeleton, cn, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -185,19 +185,16 @@ function ExerciseLibrary() {
       <PageHero
         icon={<Dumbbell size={20} />}
         title="Exercise Library"
-
-        actions={canAuthor ? (
-          <HeroButton
-            onClick={openCreate}
-            className="h-[44px] w-full rounded-[14px] sm:w-auto"
-            icon={<Plus size={16} />}
-          >
-            New exercise
-          </HeroButton>
-        ) : undefined}
       >
         <div aria-hidden className="h-[3px] w-full max-w-[560px] rounded-full opacity-90" style={{ background: SPECTRUM_RIBBON }} />
       </PageHero>
+      {canAuthor && (
+        <PageActions>
+          <Button onClick={openCreate} iconLeft={<Plus size={16} />}>
+            New exercise
+          </Button>
+        </PageActions>
+      )}
 
       {/* ── Browse by muscle ───────────────────────────────────── */}
       {regions.length > 0 && (
@@ -246,7 +243,6 @@ function ExerciseLibrary() {
           <input
             value={filters.q}
             onChange={(e) => { setFilter('q', e.target.value); setSeededQ(e.target.value); }}
-            placeholder="Search by name, muscle, equipment…"
             aria-label="Search exercises"
             className="h-12 w-full rounded-2xl border border-slate-200/70 bg-white py-2.5 pl-11 pr-24 text-[14px] text-[var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-all placeholder:text-slate-400 focus:border-[rgba(163,55,87,0.5)] focus:shadow-[0_0_0_4px_rgba(163,55,87,0.12)] dark:border-white/10 dark:bg-white/[0.05] dark:placeholder:text-white/30"
           />

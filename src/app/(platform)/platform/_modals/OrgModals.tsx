@@ -56,19 +56,19 @@ export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; on
     <Modal title="New Studio" onClose={onClose}>
       <div className="space-y-4">
         <FormField label="Studio name">
-          <TextInput value={form.name} placeholder="e.g. Riya's Fitness Studio"
+          <TextInput value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
         </FormField>
         <FormField label="Owner name">
-          <TextInput value={form.trainer_name} placeholder="Defaults to studio name"
+          <TextInput value={form.trainer_name}
             onChange={(e) => setForm((f) => ({ ...f, trainer_name: e.target.value }))} />
         </FormField>
         <FormField label="Login email">
-          <TextInput type="email" value={form.email} placeholder="owner@example.com"
+          <TextInput type="email" value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
         </FormField>
         <FormField label="Mobile number">
-          <TextInput type="tel" value={form.mobile} placeholder="Optional"
+          <TextInput type="tel" value={form.mobile}
             onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))} />
         </FormField>
 

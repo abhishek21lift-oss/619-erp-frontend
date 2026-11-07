@@ -26,7 +26,7 @@ import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
-import { Button, HeroButton, PageHero } from '@/components/ui';
+import { Button, PageActions, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { identity } from '@/lib/palette';
@@ -359,13 +359,12 @@ function SchedulePageContent() {
           <PageHero
             icon={<Calendar size={20} />}
             title="Schedule Session"
-
-            actions={
-              <HeroButton className="w-full sm:w-auto" onClick={() => setShowCreateModal(true)} icon={<Plus size={15} />}>
-                Book Session
-              </HeroButton>
-            }
           />
+          <PageActions className="mt-3">
+            <Button onClick={() => setShowCreateModal(true)} iconLeft={<Plus size={15} />}>
+              Book Session
+            </Button>
+          </PageActions>
 
           {/* View Toggles */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -397,7 +396,6 @@ function SchedulePageContent() {
               style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
               <Search size={12} style={{ color: 'var(--text-disabled)' }} />
               <input aria-label="Search sessions" value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search sessions…"
                 className="flex-1 bg-transparent text-[12px] font-[500] outline-none" style={{ color: 'var(--text-primary)' }} />
             </div>
 
@@ -911,7 +909,6 @@ function CreateSessionModal({
                 type="text"
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}
-                placeholder="Search clients…"
                 className="mb-2 h-[44px] w-full rounded-[10px] px-3 text-[12.5px] outline-none"
                 style={{ background: '#f8fafc', border: '1.5px solid rgba(15,23,42,0.09)', color: 'var(--text-primary)' }}
               />
@@ -1017,7 +1014,6 @@ function CreateSessionModal({
           <form.Field name="notes">
             {(field) => (
               <TextAreaField field={field} label="Notes"
-                placeholder="Session focus, client notes, or instructions…"
                 maxLength={MAX_SESSION_NOTES}
                 serverError={f.errors.fieldErrors.notes} />
             )}

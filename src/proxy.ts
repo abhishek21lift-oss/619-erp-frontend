@@ -25,10 +25,12 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   '/pwa-early.js',
   '/offline.html',
   '/theme-init.js',
-  '/no-zoom.js',
   '/sitemap.xml',
   '/robots.txt',
   '/llms.txt',
+  // Digital Asset Links for the Android Trusted Web Activities. Google's
+  // verifier fetches this with no session; a 307 to /login fails the app.
+  '/.well-known',
   '/icons',
   '/images',
 ];
@@ -88,7 +90,7 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
 
 const HOST_NEUTRAL_PREFIXES = [
   '/_next', '/api', '/models', '/icons', '/images', '/favicon.ico',
-  '/manifest.json', '/platform-manifest.json', '/theme-init.js', '/no-zoom.js',
+  '/manifest.json', '/platform-manifest.json', '/theme-init.js',
   '/sitemap.xml', '/robots.txt',
 ];
 

@@ -76,9 +76,9 @@ describe('every panel the client profile opens is coloured, not just the tabs', 
 
   it('finds panels at all — a passing test on an empty list proves nothing', () => {
     const panels = [...page.matchAll(/<(?:LinkPanel|EmptyPanel)\b/g)];
-    // Five: Payments, Training, AI, Reports, Screening. Notes stopped being a
-    // LinkPanel when the tab started holding the notes themselves.
-    expect(panels.length).toBeGreaterThanOrEqual(5);
+    // Four: Payments, Training, AI, Screening. Reports was removed and Notes
+    // stopped being a LinkPanel when its tab started holding the notes.
+    expect(panels.length).toBeGreaterThanOrEqual(4);
   });
 
   it('gives every LinkPanel and EmptyPanel a header colour', () => {

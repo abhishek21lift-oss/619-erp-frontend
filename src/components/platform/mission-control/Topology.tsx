@@ -98,6 +98,9 @@ export const Topology: React.FC<{ snap: CommandCenterSnapshot }> = ({ snap }) =>
       </header>
 
       {/* The request path. */}
+      <p className="text-[10.5px] sm:hidden" style={{ color: 'var(--text-disabled)' }}>
+        Swipe sideways to follow the path.
+      </p>
       <div className="flex items-center gap-1 overflow-x-auto pb-1">
         <Node label="API" sub={http?.reason ? 'degraded' : 'serving'} status={http?.status ?? 'unavailable'} />
         <Edge live />

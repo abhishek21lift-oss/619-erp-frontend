@@ -151,7 +151,7 @@ describe('host isolation at the edge', () => {
     // rule. Without the exemption the console would 404 its own theme script
     // and flash the wrong theme on every load — a symptom a long way from
     // anything that would make somebody suspect a hostname check.
-    for (const p of ['/_next/static/chunk.js', '/theme-init.js', '/no-zoom.js', '/manifest.json', '/icons/icon.png', '/api/auth/me']) {
+    for (const p of ['/_next/static/chunk.js', '/theme-init.js', '/manifest.json', '/icons/icon.png', '/api/auth/me']) {
       expect([p, isHostNeutralPath(p)]).toEqual([p, true]);
     }
   });

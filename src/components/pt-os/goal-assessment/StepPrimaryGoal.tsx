@@ -124,7 +124,6 @@ export function StepPrimaryGoal({ form, set, step, today, error }: StepPrimaryGo
               <FloatInput
                 label="Goal" maxLength={200}
                 value={goal.title} onChange={(v) => setSecondary(goal.id, { title: v })}
-                placeholder="Run 5 km without stopping"
               />
 
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -147,7 +146,6 @@ export function StepPrimaryGoal({ form, set, step, today, error }: StepPrimaryGo
                 <FloatInput
                   label="Why it matters (optional)" multiline autoGrow maxLength={500}
                   value={goal.description} onChange={(v) => setSecondary(goal.id, { description: v })}
-                  placeholder="What this unlocks for the client day to day."
                 />
               </div>
             </div>

@@ -90,7 +90,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
             <p className="mt-3 text-[13px]" style={{ color: 'var(--text-muted)' }}>{legacyBlobSummary(blob)}</p>
           )}
           <p className="mt-4 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            The four K11 tests need their own measurements, so this older result cannot be converted. It stays attached to the
+            The four tests need their own measurements, so this older result cannot be converted. It stays attached to the
             assessment unless you re-record with the current protocol.
           </p>
           <Button
@@ -147,7 +147,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
         icon={Move}
         tone={TONE}
         title="Flexibility & Mobility"
-        subtitle="Step 7 of 7 — the K11 four-test battery: quadriceps, hamstrings, hip flexors and YMCA Sit and Reach."
+        subtitle="Step 7 of 7 — the four-test battery: quadriceps, hamstrings, hip flexors and YMCA Sit and Reach."
       />
 
       {typeof view === 'object' ? (
@@ -237,7 +237,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                 multiline
                 autoGrow
                 maxLength={500}
-                placeholder="Why the assessment is being saved without every test"
               />
               <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 Stored as an override on the assessment, with your name and the time.

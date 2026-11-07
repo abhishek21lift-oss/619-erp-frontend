@@ -5,7 +5,7 @@ import {
   LogOut, Bell, Settings,
   User, HelpCircle, ChevronDown, CreditCard,
   Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
-  KeyRound, Fingerprint, Zap, LifeBuoy,
+  Zap, LifeBuoy,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -129,7 +129,7 @@ function AppShellContent({ children }: AppShellProps) {
   // There was a second mechanism here — useVisualViewportAnchor — which
   // measured the layout/visual viewport gap and offset the bottom chrome by
   // it. It is gone: both signs of that measurement moved the nav when nothing
-  // was wrong. BOTTOM-NAV.md has the full account.
+  // was wrong. docs/audits/BOTTOM-NAV.md has the full account.
   useViewportDesyncFix();
 
   const { user, logout } = useAuth();
@@ -199,14 +199,23 @@ function AppShellContent({ children }: AppShellProps) {
 
   // The settings (gear) menu. It was removed on the belief that the sidebar
   // listed these pages; it does not — SETTINGS_GROUP feeds search only — so
-  // Member Passkeys and Integrations became reachable by search alone. It is
-  // back, built from SETTINGS_GROUP so the two cannot drift, and filtered by
-  // role and plan feature like the sidebar (the old hand-written list ignored
-  // feature flags). My Profile, Support and Subscription stay in the avatar
-  // menu. UPI Payment Settings is a tab inside My Profile, not a link here.
+  // Integrations became reachable by search alone. It is back, built from
+  // SETTINGS_GROUP so the two cannot drift, and filtered by role and plan
+  // feature like the sidebar (the old hand-written list ignored feature
+  // flags). My Profile, Support and Subscription stay in the avatar menu.
+  // Passkeys and Member Passkey Setup stay in SETTINGS_GROUP so global search
+  // still finds them, but they are hidden here — they now live inside My
+  // Profile → Security. UPI Payment Settings is a tab inside My Profile, not
+  // a link here.
   const settingsLinks = useMemo(() => {
-    const inAvatarMenu = new Set(['/settings/profile', '/support', '/subscription']);
-    const items = SETTINGS_GROUP.items.filter((i) => !inAvatarMenu.has(i.href));
+    // Profile, Support and Subscription are avatar-menu entries; the passkey
+    // pages moved into the profile Security tab and must not also be a gear
+    // shortcut.
+    const notInGearMenu = new Set([
+      '/settings/profile', '/support', '/subscription',
+      '/settings/passkeys', '/settings/biometrics',
+    ]);
+    const items = SETTINGS_GROUP.items.filter((i) => !notInGearMenu.has(i.href));
     return items
       .filter((i) => isVisibleForRole(i, user?.role) && isVisibleForFeature(i, features))
       .map((i) => ({ href: i.href, label: i.label, icon: SETTINGS_ICONS[i.href] ?? Settings }));
@@ -619,6 +628,7 @@ function AppShellContent({ children }: AppShellProps) {
                   type="button"
                   aria-expanded={profileOpen}
                   aria-controls="topbar-profile-menu"
+                  aria-current={pathname.startsWith('/settings/profile') ? 'page' : undefined}
                   onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'profile' ? null : 'profile')); }}
                   className="topbar-hit flex items-center gap-2.5 pl-3 transition-opacity duration-200 hover:opacity-80"
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
@@ -626,7 +636,9 @@ function AppShellContent({ children }: AppShellProps) {
                       logo, else its letters — never letters when a picture
                       exists. */}
                   <UserPhoto url={user?.avatar_url} name={user?.name} size={32}
-                    ring={`linear-gradient(135deg, ${palette.blue[300]}, ${palette.blue[600]})`}
+                    ring={pathname.startsWith('/settings/profile')
+                      ? 'linear-gradient(135deg, var(--brand), var(--brand-lo))'
+                      : `linear-gradient(135deg, ${palette.blue[300]}, ${palette.blue[600]})`}
                     fallback={<StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />} />
                   <div className="hidden sm:block text-left">
                     <p className={cn('max-w-[150px] truncate text-[12px] font-semibold uppercase leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>{studioName}</p>
@@ -772,8 +784,6 @@ function AppShellContent({ children }: AppShellProps) {
 
 /** Icons for the gear menu, by page. */
 const SETTINGS_ICONS: Record<string, React.ElementType> = {
-  '/settings/passkeys': KeyRound,
-  '/settings/biometrics': Fingerprint,
   '/settings/integrations': Zap,
 };
 
