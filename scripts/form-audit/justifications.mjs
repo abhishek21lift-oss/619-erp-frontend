@@ -443,6 +443,19 @@ export const JUSTIFIED = {
       'editing. Rewriting it as a FormField would either duplicate the ' +
       'canonical component or lose the native date semantics.',
   },
+
+  'src/app/(chrome)/ai/workout-generator/page.tsx': {
+    allow: 0,
+    allowStateCoercions: 1,
+    reason:
+      '`Number(form.duration_weeks)` is read once, behind ' +
+      '`form.duration_weeks ? … : {}` — a blank means the key is OMITTED, so ' +
+      '`Number(\'\')` is never reached. The control is a SelectField whose ' +
+      'options are exactly \'\', 4, 6, 8, 12 and 16, a closed set the browser ' +
+      'cannot extend, so the typed value is one of five numbers and nothing ' +
+      'else; the server clamps it to 52 weeks anyway. It is an instruction, ' +
+      'not a client fact, which is why it is not in the form schema.',
+  },
 };
 
 export function justificationFor(rel) {
