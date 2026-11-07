@@ -192,7 +192,6 @@ function Inner() {
             <input
               type="search"
               aria-label="Search member or coach"
-              placeholder="Search member or coach"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-11 w-full rounded-xl pl-9 pr-3 text-[13px] outline-none"

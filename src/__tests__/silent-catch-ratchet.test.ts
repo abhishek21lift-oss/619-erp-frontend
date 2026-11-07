@@ -130,11 +130,10 @@ const KNOWN = [
   'components/LandingPage.tsx:63',
   'components/LandingPage.tsx:70',
   'components/TrialBanner.tsx:19',
-  // 130/136 -> 151/157 -> 184/190 -> 188/194: the day prefill, the
-  // record-backed form and then the generation's client id added helpers
-  // above them. Same two statements, same file and count.
-  'components/fitness/AiCoachPanel.tsx:197',
-  'components/fitness/AiCoachPanel.tsx:203',
+  // Same two client reads as before; the line numbers moved when the inline
+  // generate path was removed.
+  'components/fitness/AiCoachPanel.tsx:104',
+  'components/fitness/AiCoachPanel.tsx:110',
   // The hosting console reads the operation allow-list beside the reads that
   // carry the page: `hostingerCatalogue()` is a local lookup on the server, and
   // if it fails the screen keeps its compiled-in safety labels and the spec line

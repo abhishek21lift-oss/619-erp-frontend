@@ -64,19 +64,19 @@ describe('the accessible-name audit itself', () => {
 });
 
 describe('the label wrappers wrap', () => {
-  // The two AI generator pages are no longer here, and their absence is the
-  // outcome rather than an omission: both local `Field` wrappers are gone,
-  // because every control on those pages is now a design-system field with a
-  // real `htmlFor`. A wrapper that correctly wraps a `<label>` is the fix for
-  // a page that still hand-rolls its inputs; not needing one is better.
+  // The AI generator pages and the coach panel are no longer here, and their
+  // absence is the outcome rather than an omission: their local `Field`
+  // wrappers are gone, because every control is now either a design-system
+  // field or a named native control. A wrapper that correctly wraps a
+  // `<label>` is the fix for a page that still hand-rolls its inputs; not
+  // needing one is better.
   //
   // Nothing is lost by dropping them. `audit.nameless` below covers every
   // control in the tree with no threshold at all, and it is the check with
-  // teeth — if either page ever went back to a nameless input it would fail
+  // teeth — if a page ever went back to a nameless input it would fail
   // there, wrapper or no wrapper.
   const wrappers: [string, string[]][] = [
     ['app/(platform)/platform/_shared/ui.tsx', ['export function Field']],
-    ['components/fitness/AiCoachPanel.tsx', ['function Field']],
   ];
 
   it.each(wrappers)('%s renders a <label> around its children', (file, [marker]) => {
