@@ -40,6 +40,7 @@ function write(store: Storage, key: string, value: string): void {
 export default function PasskeySetupPrompt() {
   const { user } = useAuth();
   const { enabled } = useFeatures();
+  const passkeysEnabled = enabled('passkeys');
   const { register, loading, error, clearError } = useWebAuthn();
   const [visible, setVisible] = useState(false);
   const [done, setDone] = useState(false);
@@ -47,10 +48,17 @@ export default function PasskeySetupPrompt() {
   // string is read even if the hook itself did not change a value we render.
   const [failed, setFailed] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
   }, []);
+
+  // Move focus with the message so a keyboard user does not lose it when the
+  // action buttons disappear.
+  useEffect(() => {
+    if (done) statusRef.current?.focus();
+  }, [done]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,8 +66,13 @@ export default function PasskeySetupPrompt() {
     // Never enroll a passkey into an impersonated account: it would be a
     // durable login factor for the customer created on the operator's device.
     if (getImpersonation()) return;
+    // Also covers the first render before feature flags load: no probe and no
+    // credential call until the flag is known to be on.
+    if (!passkeysEnabled) {
+      setVisible(false);
+      return;
+    }
     if (read(sessionStorage, checkedKey(user.id)) === '1') return;
-    if (!enabled('passkeys')) return;
     if (!isWebAuthnSupported()) return;
 
     const snoozedAt = Number(read(localStorage, snoozedKey(user.id)) || 0);
@@ -79,7 +92,7 @@ export default function PasskeySetupPrompt() {
     })();
 
     return () => { cancelled = true; };
-  }, [user?.id, enabled]);
+  }, [user?.id, passkeysEnabled]);
 
   const handleEnable = useCallback(async () => {
     if (!user?.id) return;
@@ -105,7 +118,7 @@ export default function PasskeySetupPrompt() {
 
   return (
     <section
-      aria-label="Fingerprint login"
+      aria-label="Passkey login"
       className="mb-4 rounded-2xl p-4"
       style={{
         background: 'var(--bg-card)',
@@ -122,18 +135,24 @@ export default function PasskeySetupPrompt() {
           <Fingerprint size={20} />
         </span>
         <div className="min-w-0 flex-1">
-          {done ? (
-            <p role="status" className="text-[14px] font-[650]" style={{ color: 'var(--text-primary)' }}>
-              Fingerprint login enabled.
-            </p>
-          ) : (
+          {/* Always mounted so the live region exists before its text changes. */}
+          <p
+            ref={statusRef}
+            role="status"
+            tabIndex={-1}
+            className={done ? 'text-[14px] font-[650]' : 'sr-only'}
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {done ? 'Passkey login enabled.' : ''}
+          </p>
+          {!done && (
             <>
               <p className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>
-                Sign in faster with fingerprint
+                Sign in faster on this device
               </p>
               <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                Enable fingerprint login on this phone and skip your password next time.
-                Your fingerprint never leaves this device.
+                Enable passkey login and skip your password next time. Your fingerprint,
+                face, or screen lock stays on this device.
               </p>
               {(error || failed) && (
                 <p role="alert" className="mt-2 text-[12.5px] font-[600]" style={{ color: 'var(--danger-text)' }}>
@@ -148,7 +167,7 @@ export default function PasskeySetupPrompt() {
                   onClick={handleEnable}
                   iconLeft={<Fingerprint size={15} />}
                 >
-                  Enable fingerprint
+                  Enable passkey
                 </Button>
                 <Button
                   size="md"

@@ -75,7 +75,7 @@ Eligibility, checked once per signed-in user per browser session:
 
 State:
 
-- `Enable fingerprint` → `useWebAuthn().register(deviceName)` with
+- `Enable passkey` → `useWebAuthn().register(deviceName)` with
   `deviceName` derived from the user agent (`Android phone` / `This device`).
 - Success → short confirmation, card hides, session is marked checked.
 - Failure → inline `webAuthnError(err)` and the card stays, so the user can
@@ -104,11 +104,14 @@ the card is a labelled region, and the fingerprint icon is decorative.
 
 ### Copy
 
-- Title: "Sign in faster with fingerprint"
-- Body: "Enable fingerprint login on this phone and skip your password next
-  time. Your fingerprint never leaves this device."
-- Actions: "Enable fingerprint" / "Not now"
-- Success: "Fingerprint login enabled."
+The prompt appears on any platform authenticator, including Windows Hello and
+Touch ID, so the copy names the device rather than a phone fingerprint.
+
+- Title: "Sign in faster on this device"
+- Body: "Enable passkey login and skip your password next time. Your
+  fingerprint, face, or screen lock stays on this device."
+- Actions: "Enable passkey" / "Not now"
+- Success: "Passkey login enabled."
 
 ## Verification
 
