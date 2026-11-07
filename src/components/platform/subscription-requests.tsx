@@ -325,6 +325,7 @@ function ActionDialog({
         await api.superAdmin.rejectSubscriptionRequest(row.id, reason, note.trim() || undefined);
         toast.success('Rejected. The studio can submit a corrected reference.');
       }
+      window.dispatchEvent(new Event('subscription-requests-changed'));
       await onDone();
     } catch (err) {
       // A 409 means someone else already handled it — information, not failure.

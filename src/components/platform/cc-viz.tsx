@@ -37,7 +37,7 @@ export const inrCompact = (n: number) => `₹${compact(n)}`;
 
 // ── Hero ────────────────────────────────────────────────────────────────────
 
-export function CcHero({ tone, eyebrow, title, subtitle, icon, children }: {
+export function CcHero({ tone, eyebrow, title, subtitle, icon, children, compactOnMobile }: {
   tone: Tone;
   eyebrow: string;
   title: string;
@@ -45,6 +45,8 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, children }: {
   icon?: React.ReactNode;
   /** A row of hero stats under the title. */
   children?: React.ReactNode;
+  /** The console header already names the screen; drop the repeated block on phones. */
+  compactOnMobile?: boolean;
 }) {
   const t = T(tone);
   return (
@@ -54,7 +56,7 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, children }: {
     >
       <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full blur-3xl" style={{ background: t.to, opacity: 0.45 }} />
       <span aria-hidden className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full blur-3xl" style={{ background: t.from, opacity: 0.35 }} />
-      <div className="relative flex flex-wrap items-start justify-between gap-4">
+      <div className={`relative items-start justify-between gap-4 ${compactOnMobile ? 'hidden sm:flex sm:flex-wrap' : 'flex flex-wrap'}`}>
         <div className="flex min-w-0 items-start gap-3.5">
           {icon && (
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px]" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(10px)' }}>
@@ -68,7 +70,7 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, children }: {
           </div>
         </div>
       </div>
-      {children && <div className="relative mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">{children}</div>}
+      {children && <div className={`relative grid grid-cols-2 gap-2.5 sm:grid-cols-4 ${compactOnMobile ? 'mt-0 sm:mt-5' : 'mt-5'}`}>{children}</div>}
     </section>
   );
 }
