@@ -30,7 +30,7 @@ import {
 import { api } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { semantic, rgba } from '@/lib/palette';
-import type { CommandCenterCommand } from '@/lib/api';
+import type { CommandCenterCommand, QueuesTelemetry } from '@/lib/api';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
 import { FormField, SelectInput, TextInput } from '@/components/ui';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
@@ -181,8 +181,11 @@ function ConfirmDialog({
 
 // ── One command row ─────────────────────────────────────────────────────────
 
+/** One queue's telemetry, as the snapshot reports it. */
+type QueueStats = NonNullable<QueuesTelemetry['queues']>[number];
+
 function CommandRow({
-  cmd, queue, onQueue, onRun, running, outcome,
+  cmd, queue, onQueue, onRun, running, outcome, stats,
 }: {
   cmd: CommandCenterCommand;
   queue: string;
@@ -190,6 +193,7 @@ function CommandRow({
   onRun: () => void;
   running: boolean;
   outcome: Outcome | undefined;
+  stats?: QueueStats;
 }) {
   const blocked = Boolean(cmd.unavailable_reason);
   const [showDesc, setShowDesc] = useState(false);
@@ -243,19 +247,29 @@ function CommandRow({
 
         <div className="flex flex-shrink-0 items-center gap-2">
           {cmd.accepts_queue && !blocked && (
-            <FormField label={`Queue for ${cmd.label}`} labelHidden className="flex-1 sm:flex-none">
-              <SelectInput
-                /* flex-1 on the phone so the queue picker and Run share the row
-                   instead of the picker collapsing to its longest option. */
-                value={queue}
-                onChange={(e) => onQueue(e.target.value)}
-                className="text-[12px] font-[600] sm:text-[11.5px]"
-              >
-                {/* Straight from the server's QUEUE_NAMES — the client never
-                    invents a queue name, and an unknown one is a 400 anyway. */}
-                {(cmd.queues ?? []).map((q) => <option key={q} value={q}>{q}</option>)}
-              </SelectInput>
-            </FormField>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-none">
+              <FormField label={`Queue for ${cmd.label}`} labelHidden className="flex-1 sm:flex-none">
+                <SelectInput
+                  /* flex-1 on the phone so the queue picker and Run share the row
+                     instead of the picker collapsing to its longest option. */
+                  value={queue}
+                  onChange={(e) => onQueue(e.target.value)}
+                  className="text-[12px] font-[600] sm:text-[11.5px]"
+                >
+                  {/* Straight from the server's QUEUE_NAMES — the client never
+                      invents a queue name, and an unknown one is a 400 anyway. */}
+                  {(cmd.queues ?? []).map((q) => <option key={q} value={q}>{q}</option>)}
+                </SelectInput>
+              </FormField>
+              {/* What this queue is holding RIGHT NOW, before a clear/pause
+                  lands. The select alone names the target but not the blast
+                  radius; "3 failed" is the number the operator came for. */}
+              {stats && (
+                <p className="text-[10px] tabular-nums" style={{ color: stats.failed ? semantic.danger : 'var(--text-tertiary)' }}>
+                  {stats.waiting ?? 0} waiting · {stats.active ?? 0} active · {stats.failed ?? 0} failed{stats.paused ? ' · paused' : ''}
+                </p>
+              )}
+            </div>
           )}
 
           <button
@@ -307,7 +321,7 @@ function CommandRow({
 
 // ── The panel ───────────────────────────────────────────────────────────────
 
-export default function CommandPanel({ onRan }: { onRan?: () => void }) {
+export default function CommandPanel({ onRan, queueTelemetry }: { onRan?: () => void; queueTelemetry?: QueuesTelemetry | null }) {
   const [commands, setCommands] = useState<CommandCenterCommand[] | null>(null);
   const [error, setError] = useState('');
   const [queues, setQueues] = useState<Record<string, string>>({});
@@ -472,6 +486,7 @@ export default function CommandPanel({ onRan }: { onRan?: () => void }) {
             onRun={() => execute(c)}
             running={running === c.name}
             outcome={outcomes[c.name]}
+            stats={queueTelemetry?.queues?.find((q) => q.name === queues[c.name])}
           />
         ))}
       </div>

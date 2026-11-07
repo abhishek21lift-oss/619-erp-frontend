@@ -169,10 +169,12 @@ function AlertRow({
               style={{ color: 'var(--text-tertiary)' }}>
               <span className="flex items-center gap-1">
                 <Clock size={10} />
-                {/* Both, on purpose: "twice in 4 minutes" and "1,204 times over
-                    9 hours" are the same alert to a list that shows only the
-                    latest timestamp, and completely different to a human. */}
-                seen {alert.occurrences.toLocaleString('en-IN')}×, first {ago(alert.first_seen_at)}
+                {/* `occurrences` counts SNAPSHOT TICKS in which the condition
+                    was still true, not separate incidents: a static
+                    misconfiguration accrues one per poll and reads as
+                    "33,844 times seen" when nothing happened 33,844 times.
+                    Labelled as what it is; first/last carry the real story. */}
+                present in {alert.occurrences.toLocaleString('en-IN')} snapshots, first {ago(alert.first_seen_at)}
               </span>
               <span>last {ago(alert.last_seen_at)}</span>
               <span>source: {alert.source}</span>

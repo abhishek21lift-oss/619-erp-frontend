@@ -161,6 +161,10 @@ export function metric(data: unknown, key: string): { value: number; unit: strin
 
 export function fmtMetric(m: { value: number; unit: string | null } | null): string {
   if (!m) return 'not reported';
+  // Hostinger reports RAM in bytes. Printing the raw integer next to a CPU
+  // percentage read as a second percentage; scale it like every other byte
+  // figure on the screen.
+  if (m.unit === 'bytes') return fmtBytes(m.value);
   const unit = m.unit === '%' ? '%' : m.unit ? ` ${m.unit}` : '';
   return `${m.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}${unit}`;
 }
