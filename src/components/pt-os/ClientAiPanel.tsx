@@ -3,10 +3,10 @@
 // Ask AI — the conversational assistant for ONE client, opened from that
 // client's profile.
 //
-// Distinct from AiCoachPanel, which generates artefacts (a workout, a diet) and
-// picks its own client. This answers questions about the client already on
-// screen, and cannot generate or change anything. Two different jobs; merging
-// them would mean one component with two modes and two sets of failure states.
+// Distinct from AiCoachPanel, which is a general chat surface and picks its own
+// client. This answers questions about the client already on screen, and cannot
+// generate or change anything. Two different jobs; merging them would mean one
+// component with two modes and two sets of failure states.
 //
 // The client is fixed by the page and is never selectable here. That is
 // deliberate: a picker inside this panel would imply the panel decides what you

@@ -2,36 +2,24 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
-  Square, AlertTriangle,
+  Sparkles, X, Brain, Dumbbell, Salad, Send, User, RotateCcw, BookOpen, Database,
+  Square, AlertTriangle, ArrowRight,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { streamAiChat } from '@/lib/ai-stream';
 import type { Client } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
-import { errorMessage, generationErrorMessage } from '@/lib/forms/errors';
-import { aiWorkoutInputSchema } from '@/lib/forms/schemas/aiGenerator';
-import { clampNumericText } from '@/components/ui/FloatInput';
+import { errorMessage } from '@/lib/forms/errors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AiCoachPanelProps {
-  /** 'general' is a plain open-ended coach — used when opened from the AI Coach
-   *  hub page rather than from a workout/diet-specific context. It hides the
-   *  Generate Plan tab (that form is shaped for one specialization or the
-   *  other) and opens straight into Chat. */
   type: 'workout' | 'diet' | 'general';
   onClose?: () => void;
   clientId?: string;
-  /** Which tab to open on. Defaults to 'generate' for existing callers
-   *  (workout/diet plan pages); the hub page's chat launcher passes 'chat'. */
-  initialMode?: Mode;
 }
-
-type Mode = 'generate' | 'chat';
 
 interface Message {
   id: string;
@@ -53,58 +41,6 @@ interface Message {
 // panel only reacts to the parsed events it gets from streamAiChat. Keeping a
 // local copy of the shape here would be a second parser waiting to drift.
 
-function computeAge(dob?: string): number | undefined {
-  if (!dob) return undefined;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return undefined;
-  const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
-  return age > 0 && age < 120 ? age : undefined;
-}
-
-/**
- * The member's recorded weekly frequency, as the day box should start.
- *
- * Blank when the record holds neither: blank is not zero days, it is "the
- * server reads the same columns and decides". This box used to start at '4',
- * which the server accepted as a trainer-stated value whenever the record was
- * thin — every unnamed client was programmed for four days.
- */
-function recordedTrainingDays(c: Client | null): string {
-  const sessions = Number(c?.sessions_per_week);
-  if (Number.isInteger(sessions) && sessions >= 1 && sessions <= 7) return String(sessions);
-  const preferred = typeof c?.preferred_training_days === 'string'
-    ? c.preferred_training_days.split(',').filter((d) => d.trim()).length
-    : 0;
-  return preferred >= 1 && preferred <= 7 ? String(preferred) : '';
-}
-
-/**
- * The profile's goal/experience as this form's labels, or blank.
- *
- * The server prefers the record to anything this form sends. Showing the
- * record in the field — rather than a trainer's pick the server will ignore —
- * is what makes the panel honest about which programme it will generate.
- */
-function recordedGoal(c: Client | null): string {
-  const raw = typeof c?.goal === 'string' ? c.goal.trim() : '';
-  if (!raw) return '';
-  const key = raw.toLowerCase().replace(/[\s-]+/g, '_');
-  return WORKOUT_GOALS.find((g) => g.toLowerCase().replace(/ /g, '_') === key)
-    ?? raw.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
-}
-
-function recordedExperience(c: Client | null): string {
-  const raw = typeof c?.workout_experience_level === 'string' ? c.workout_experience_level.trim() : '';
-  if (!raw) return '';
-  return EXPERIENCE_LEVELS.find((l) => l.toLowerCase() === raw.toLowerCase())
-    ?? raw.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
-}
-
-// ─── Workout Goals ───────────────────────────────────────────────────────────
-
-const WORKOUT_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength', 'Endurance'];
-const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
-
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
 const ACCENT = 'linear-gradient(135deg, #A33757 0%, #852E4E 100%)';
@@ -112,39 +48,13 @@ const VIOLET = '#FFBB94';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPanelProps) {
-  // Only the workout specialist still generates a plan in this panel. Diet
-  // plans have their own page with a real save/assign step, so this panel is
-  // chat-only for diet and general.
-  const chatOnly = type !== 'workout';
-  const router = useRouter();
-  const [mode, setMode] = useState<Mode>(chatOnly ? 'chat' : (initialMode ?? 'generate'));
-
+export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
   // Client selection state
   const [clientList, setClientList] = useState<Client[]>([]);
   const [clientQuery, setClientQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [clientLocked, setClientLocked] = useState(false);
-
-  // Generate plan state (workout specialist only)
-  const [goal, setGoal] = useState('');
-  const [experience, setExperience] = useState('');
-  const [trainingDays, setTrainingDays] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationResult, setGenerationResult] = useState<string | null>(null);
-  const [generationError, setGenerationError] = useState<string | null>(null);
-  // The ledger id the preview came from. Without it the panel generated a
-  // plan it could never save; the trainer copied the text somewhere else.
-  const [generationId, setGenerationId] = useState<string | null>(null);
-  // Whose plan the preview is. The trainer can change the picker between the
-  // request and its answer; a preview saved against whoever is selected then
-  // would file one member's programme under another's name.
-  const [generationClientId, setGenerationClientId] = useState<string | null>(null);
-  // Critical findings are the server's refusal reason; hiding the button here
-  // stops the trainer walking into it.
-  const [generationCritical, setGenerationCritical] = useState(0);
-  const [savingPlan, setSavingPlan] = useState(false);
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([
@@ -170,8 +80,8 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   const lastUserTextRef = useRef('');
 
   useEffect(() => {
-    if (mode === 'chat') chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping, mode]);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   // Close on Escape
   // Escape, focus trap and focus restore, replacing a bespoke Escape listener.
@@ -189,9 +99,6 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     api.clients.get(clientId)
       .then(c => {
         setSelectedClient(c);
-        setGoal(recordedGoal(c));
-        setExperience(recordedExperience(c));
-        setTrainingDays(recordedTrainingDays(c));
         setClientLocked(true);
       })
       .catch(() => {});
@@ -206,136 +113,6 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
   const filteredClients = clientList.filter(c =>
     c.name.toLowerCase().includes(clientQuery.toLowerCase())
   );
-
-  // ── Generate plan ──────────────────────────────────────────────────────────
-
-  async function handleGenerate() {
-    if (!goal || !selectedClient) return;
-    // Captured, not read after the await: the picker is live during the call.
-    const clientIdForGeneration = selectedClient.id;
-    setIsGenerating(true);
-    setGenerationResult(null);
-    setGenerationError(null);
-    setGenerationId(null);
-    setGenerationClientId(null);
-    setGenerationCritical(0);
-
-    // Unknown stays unknown. These used to fall back to invented defaults
-    // (30/male/75/175), which reached the server marked as trainer-stated
-    // facts and programmed a stranger's body. Omitting them lets the server
-    // refuse with "missing data" instead — the trainer then fills the real
-    // record rather than approving a plan built on fiction.
-    const age = computeAge(selectedClient.dob);
-    const gender = selectedClient.gender || undefined;
-    const weight_kg = selectedClient.weight ?? undefined;
-    const height_cm = selectedClient.height ?? undefined;
-
-    /*
-     * §8 — validated BEFORE the model is invoked.
-     *
-     * The two dedicated generator pages have always parsed their inputs
-     * through these schemas. This panel is the third door to the same model
-     * call and went straight to the network: `parseInt(trainingDays, 10) || 4`
-     * turned a blank or mistyped box into four days without saying so, and the
-     * client's stored weight and height were forwarded whatever they were — so
-     * a record holding 750kg produced a programme written around 750kg.
-     *
-     * Refusing here is not only correctness. A generation is a billed model
-     * call, and an obviously impossible input is one nobody should pay for.
-     */
-    const facts = {
-      age: String(age),
-      weight_kg: String(weight_kg),
-      height_cm: String(height_cm),
-    };
-
-    /**
-     * Says WHERE the impossible number came from.
-     *
-     * Age, weight and height are read off the client's record here rather than
-     * typed into this panel, so a bare "Weight must be at most 400 kg" sends
-     * the trainer hunting for a box that is not on the screen.
-     */
-    const refuse = (issues: { message: string; path: PropertyKey[] }[]) => {
-      const first = issues[0];
-      const fromRecord = ['age', 'weight_kg', 'height_cm'].includes(String(first?.path[0]));
-      setGenerationError(
-        fromRecord
-          ? `${first.message} Check the client\u2019s profile — this is read from their record.`
-          : (first?.message ?? 'Check the details before generating.'),
-      );
-      setIsGenerating(false);
-    };
-
-    try {
-      const parsed = aiWorkoutInputSchema.safeParse({
-        ...facts, training_days: trainingDays, injuries: '',
-      });
-      if (!parsed.success) return refuse(parsed.error.issues);
-      const v = parsed.data;
-      const res = await api.ai.generateWorkout({
-        age, gender, weight_kg, height_cm,
-        goal: goal.toLowerCase().replace(/ /g, '_'),
-        // Blank stays blank. Sending "beginner" for a lead the studio has not
-        // assessed marked an invented value as the trainer's own statement.
-        experience_level: experience.toLowerCase() || undefined,
-        // The parsed value, not `parseInt(...) || 4`. A blank box is now a
-        // refusal above rather than a silent four.
-        training_days: v.training_days ?? undefined,
-        client_id: clientIdForGeneration,
-      });
-      const plan = res.data;
-      setGenerationId(res.generation_id ?? null);
-      setGenerationClientId(clientIdForGeneration);
-      setGenerationCritical((res.audit?.violations ?? [])
-        .filter((v) => v.severity === 'critical').length);
-      // Names the library does not hold are dropped on save, so a preview that
-      // showed them as usable would promise sessions nobody can save.
-      const unverified = [...new Set((res.audit?.unverified ?? []).map((u) => u.name))];
-      const summary = [
-        `📋 ${plan.name}`,
-        `🎯 Goal: ${plan.goal} | Level: ${plan.level} | ${plan.weeks} weeks, ${plan.days_per_week}×/week`,
-        '',
-        ...Object.entries(plan.weekly_schedule ?? {}).map(([day, d]) =>
-          `${day.toUpperCase()}: ${d.name} — ${d.exercises?.map(e => e.name).join(', ')}`
-        ),
-        '',
-        unverified.length
-          ? `⚠️ ${unverified.length} exercise${unverified.length === 1 ? '' : 's'} not found in your Exercise Library — replace ${unverified.length === 1 ? 'it' : 'them'} with a library exercise before saving: ${unverified.slice(0, 5).join(', ')}${unverified.length > 5 ? '…' : ''}`
-          : '',
-        plan.progression_notes ? `📈 ${plan.progression_notes}` : '',
-        plan.nutrition_notes ? `🥗 ${plan.nutrition_notes}` : '',
-      ].filter(Boolean).join('\n');
-      setGenerationResult(summary);
-    } catch (err) {
-      setGenerationError(generationErrorMessage(err, 'Failed to generate plan. Please try again.'));
-    } finally {
-      setIsGenerating(false);
-    }
-  }
-
-  /**
-   * Turn this preview into a real programme.
-   *
-   * The save reads the proposal back from the ledger by id, so this panel
-   * cannot smuggle in edits — and the trainer lands in the builder where the
-   * rest of the work already happens.
-   */
-  async function saveGeneratedPlan() {
-    if (!generationId || !selectedClient || generationClientId !== selectedClient.id || savingPlan) return;
-    setSavingPlan(true);
-    setGenerationError(null);
-    try {
-      const out = await api.workouts.plans.saveFromGeneration({ generation_id: generationId });
-      setGenerationId(null);
-      onClose?.();
-      router.push(`/pt-os/workout-plans/${out.plan_id}/builder`);
-    } catch (err) {
-      setGenerationError(errorMessage(err, 'Could not save this programme'));
-    } finally {
-      setSavingPlan(false);
-    }
-  }
 
   // ── Chat send (real SSE streaming to /api/ai/chat) ──────────────────────────
 
@@ -429,15 +206,9 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
   }
 
-  const canGenerate = Boolean(goal && selectedClient) && !isGenerating;
   // Retry belongs on the newest bubble only; an older one has been answered
   // over and re-sending its question would fork the conversation.
   const lastMessageId = messages[messages.length - 1]?.id;
-  // Values the record already holds. The server prefers them over the body,
-  // so the form shows them read-only rather than inviting a pick it discards.
-  const goalFromRecord = Boolean(recordedGoal(selectedClient));
-  const experienceFromRecord = Boolean(recordedExperience(selectedClient));
-  const daysFromRecord = Boolean(recordedTrainingDays(selectedClient));
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -530,213 +301,20 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
               </m.button>
             )}
           </div>
-
-          {/* Segmented mode toggle — only the workout specialist still has a
-              Generate form. Diet and general open straight into Chat; diet
-              plans are generated and saved on their own page. */}
-          {type === 'workout' && (
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 11, padding: 3, gap: 2 }}>
-            {(['generate', 'chat'] as const).map(m_ => (
-              <button
-                key={m_}
-                onClick={() => setMode(m_)}
-                style={{
-                  flex: 1, padding: '8px 0', minHeight: 44, borderRadius: 8, border: 'none',
-                  fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                  background: mode === m_ ? ACCENT : 'transparent',
-                  color: mode === m_ ? '#fff' : 'rgba(255,255,255,0.52)',
-                  boxShadow: mode === m_ ? '0 4px 14px rgba(163,55,87,0.35)' : 'none',
-                  transition: 'all 0.18s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}
-              >
-                {m_ === 'generate' ? <><Zap size={13} /> Generate Plan</> : <><Brain size={13} /> Chat</>}
-              </button>
-            ))}
-          </div>
-          )}
         </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          <AnimatePresence mode="wait">
-            {mode === 'generate' && type === 'workout' ? (
-              <m.div
-                key="generate"
-                initial={{ opacity: 0, x: -14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -14 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  height: '100%', overflowY: 'auto',
-                  padding: '20px 18px calc(24px + env(safe-area-inset-bottom))',
-                  display: 'flex', flexDirection: 'column', gap: 16,
-                }}
-              >
-                {/* Client select */}
-                <Field label="Client">
-                  <ClientPicker
-                    clientLocked={clientLocked}
-                    selectedClient={selectedClient}
-                    clientQuery={clientQuery}
-                    showClientDropdown={showClientDropdown}
-                    filteredClients={filteredClients}
-                    onFocus={() => { setShowClientDropdown(true); if (selectedClient) { setSelectedClient(null); setClientQuery(''); } }}
-                    onQueryChange={(v) => { setClientQuery(v); setSelectedClient(null); setShowClientDropdown(true); }}
-                    onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
-                    onSelect={(c) => {
-                      setSelectedClient(c);
-                      // The member's own record decides these values. The
-                      // server prefers the record anyway; showing a trainer's
-                      // pick it will ignore was the lie this fixes. Blank
-                      // stays blank so the server uses the record or refuses.
-                      setGoal(recordedGoal(c));
-                      setExperience(recordedExperience(c));
-                      setTrainingDays(recordedTrainingDays(c));
-                      setClientQuery(c.name);
-                      setShowClientDropdown(false);
-                    }}
-                  />
-                </Field>
-
-                {/* Goal select */}
-                <Field label="Goal">
-                  <SelectInput value={goal} onChange={setGoal} disabled={goalFromRecord} ariaLabel="Goal">
-                    {goal && !WORKOUT_GOALS.includes(goal) && <option value={goal}>{goal}</option>}
-                    {WORKOUT_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
-                  </SelectInput>
-                  {goalFromRecord && <RecordNote />}
-                </Field>
-
-                <Field label="Experience Level">
-                  <SelectInput value={experience} onChange={setExperience} disabled={experienceFromRecord} ariaLabel="Experience level">
-                    {experience && !EXPERIENCE_LEVELS.includes(experience) && <option value={experience}>{experience}</option>}
-                    {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                  </SelectInput>
-                  {experienceFromRecord && <RecordNote />}
-                </Field>
-
-                <Field label="Training Days per Week">
-                  <input
-                    type="text" inputMode="numeric" min={1} max={7} value={trainingDays}
-                    aria-label="Training days per week"
-                    readOnly={daysFromRecord}
-                    onChange={e => setTrainingDays(clampNumericText(e.target.value, 'integer'))}
-                    style={{ ...inputStyle, ...(daysFromRecord ? { cursor: 'default', opacity: 0.85 } : {}) }}
-                  />
-                  {daysFromRecord && <RecordNote />}
-                </Field>
-
-                {!selectedClient && (
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', margin: '-4px 0 0' }}>
-                    Select a client and a goal to generate a plan.
-                  </p>
-                )}
-
-                {/* Generate button */}
-                <m.button
-                  onClick={handleGenerate}
-                  disabled={!canGenerate}
-                  whileHover={canGenerate ? { scale: 1.02 } : {}}
-                  whileTap={canGenerate ? { scale: 0.98 } : {}}
-                  style={{
-                    marginTop: 2, padding: '13px 0', borderRadius: 11, border: 'none',
-                    background: canGenerate ? ACCENT : 'rgba(163,55,87,0.22)',
-                    color: canGenerate ? '#fff' : 'rgba(255,255,255,0.35)',
-                    fontSize: 13.5, fontWeight: 700,
-                    cursor: canGenerate ? 'pointer' : 'not-allowed',
-                    boxShadow: canGenerate ? '0 8px 22px rgba(163,55,87,0.35)' : 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                    transition: 'all 0.18s',
-                  }}
-                >
-                  {isGenerating
-                    ? <><span>Generating your plan</span><AnimatedDots /></>
-                    : <><Sparkles size={15} /> Generate Plan</>}
-                </m.button>
-
-                <AnimatePresence>
-                  {isGenerating && (
-                    <m.p
-                      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                      style={{ fontSize: 12, color: 'rgba(255,187,148,0.80)', textAlign: 'center', margin: 0 }}
-                    >
-                      Your AI coach is crafting a personalised plan…
-                    </m.p>
-                  )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                  {generationError && (
-                    <m.div
-                      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
-                      style={{ padding: '12px 14px', borderRadius: 11, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
-                    >
-                      <p style={{ fontSize: 12, color: '#f87171', margin: 0 }}>{generationError}</p>
-                    </m.div>
-                  )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                  {generationResult && generationClientId === selectedClient?.id && (
-                    <m.div
-                      initial={{ opacity: 0, y: 10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      style={{
-                        padding: '14px 16px', borderRadius: 13,
-                        background: 'linear-gradient(135deg, rgba(163,55,87,0.14) 0%, rgba(163,55,87,0.14) 100%)',
-                        border: '1px solid rgba(255,187,148,0.25)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 8 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: VIOLET }}>
-                          <Sparkles size={13} /> Plan Generated
-                        </span>
-                        <button
-                          onClick={() => { setGenerationResult(null); setGenerationId(null); setGenerationClientId(null); setGenerationCritical(0); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 11.5, cursor: 'pointer' }}
-                        >
-                          <RotateCcw size={11} /> New
-                        </button>
-                      </div>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 240, overflowY: 'auto' }}>
-                        {generationResult}
-                      </p>
-                      {generationCritical > 0 ? (
-                        <p style={{ margin: '10px 0 0', fontSize: 11.5, color: '#f87171', lineHeight: 1.5 }}>
-                          {`Cannot save — ${generationCritical} critical safety finding${generationCritical === 1 ? '' : 's'}. Regenerate the programme.`}
-                        </p>
-                      ) : generationId && (
-                        <button
-                          onClick={saveGeneratedPlan}
-                          disabled={savingPlan}
-                          style={{
-                            marginTop: 10, width: '100%', padding: '10px 0', borderRadius: 9, border: 'none',
-                            background: savingPlan ? 'rgba(163,55,87,0.35)' : ACCENT,
-                            color: '#fff', fontSize: 12.5, fontWeight: 700,
-                            cursor: savingPlan ? 'wait' : 'pointer',
-                          }}
-                        >
-                          {savingPlan ? 'Saving…' : 'Save & open builder'}
-                        </button>
-                      )}
-                    </m.div>
-                  )}
-                </AnimatePresence>
-              </m.div>
-            ) : (
               <m.div
                 key="chat"
                 initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }}
                 transition={{ duration: 0.2 }}
                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
               >
-                {/* Client selection — chat used to have no way to attach a
-                    client at all unless one was already picked in Generate
-                    mode or the panel was opened directly from a client's own
-                    page (clientLocked). Ask about a client with none set and
-                    the AI has nothing client-specific to answer from — which
-                    is exactly the "I don't have access" reply this fixes. */}
+                {/* Client selection — a chat opened without attaching a
+                    client has nothing client-specific to answer from. The
+                    picker stays available unless the panel was opened from a
+                    client's own page (clientLocked). */}
                 {selectedClient ? (
                   <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: VIOLET, background: 'rgba(255,187,148,0.12)', border: '1px solid rgba(255,187,148,0.22)', borderRadius: 999, padding: '4px 10px' }}>
@@ -764,10 +342,6 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                       onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
                       onSelect={(c) => {
                         setSelectedClient(c);
-                        // The member's own record decides the starting value.
-                        // The trainer can still type over it; blank stays blank
-                        // so the server uses the record or refuses.
-                        setTrainingDays(recordedTrainingDays(c));
                         setClientQuery(c.name);
                         setShowClientDropdown(false);
                       }}
@@ -778,9 +352,25 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                   </div>
                 )}
 
-                {/* Diet plans are generated, reviewed and saved on their own
-                    page. This panel never saved one, and the old Generate form
-                    here was a second, weaker door to the same model call. */}
+                {/* Plans are generated, reviewed and saved on their own
+                    dedicated pages; this panel is the chat door only. */}
+                {type === 'workout' && (
+                  <div style={{ padding: '10px 16px 0' }}>
+                    <Link
+                      href={`/ai/workout-generator${selectedClient ? `?client_id=${encodeURIComponent(String(selectedClient.id))}` : ''}`}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 11px', borderRadius: 9, textDecoration: 'none',
+                        fontSize: 11.5, fontWeight: 650, color: VIOLET,
+                        background: 'rgba(255,187,148,0.10)',
+                        border: '1px solid rgba(255,187,148,0.22)',
+                      }}
+                    >
+                      <Sparkles size={12} /> Open the full generator <ArrowRight size={13} />
+                    </Link>
+                  </div>
+                )}
+
                 {type === 'diet' && (
                   <div style={{ padding: '10px 16px 0' }}>
                     <Link
@@ -954,8 +544,6 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
                   )}
                 </div>
               </m.div>
-            )}
-          </AnimatePresence>
         </div>
       </m.div>
     </>
@@ -965,11 +553,9 @@ export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPa
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 /**
- * The client search/select field — shared between Generate mode and Chat
- * mode. It used to exist only in Generate mode: a chat opened without ever
- * visiting Generate first had no way to attach a client at all, so
- * client_id stayed undefined on every message and the AI, quite correctly,
- * had nothing client-specific to answer from.
+ * The client search/select field. A chat opened without ever attaching a
+ * client had no way to do so, so client_id stayed undefined on every message
+ * and the AI, quite correctly, had nothing client-specific to answer from.
  */
 function ClientPicker({
   clientLocked, selectedClient, clientQuery, showClientDropdown, filteredClients,
@@ -1029,63 +615,6 @@ function ClientPicker({
         </div>
       )}
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    // Wrapper, not sibling — see the note in ai/diet-generator's Field.
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function RecordNote() {
-  return (
-    <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.38)', marginTop: -2 }}>
-      From the client record — edit the profile to change it.
-    </span>
-  );
-}
-
-function SelectInput({
-  value, onChange, ariaLabel, children, disabled = false,
-}: { value: string; onChange: (v: string) => void; ariaLabel: string; children: React.ReactNode; disabled?: boolean }) {
-  return (
-    <div style={{ position: 'relative' }}>
-      <select aria-label={ariaLabel}
-        value={value}
-        disabled={disabled}
-        onChange={e => onChange(e.target.value)}
-        style={{ ...inputStyle, paddingRight: 34, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.85 : 1, color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}
-      >
-        <option value="" />
-        {children}
-      </select>
-      <ChevronDown
-        size={15}
-        style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }}
-      />
-    </div>
-  );
-}
-
-function AnimatedDots() {
-  return (
-    <span style={{ display: 'inline-flex', gap: 3, alignItems: 'center', marginLeft: 2 }}>
-      {[0, 1, 2].map(i => (
-        <m.span
-          key={i}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2, ease: 'easeInOut' }}
-          style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }}
-        />
-      ))}
-    </span>
   );
 }
 

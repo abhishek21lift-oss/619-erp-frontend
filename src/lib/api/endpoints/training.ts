@@ -384,7 +384,7 @@ export const workoutGenerator = {
     http<{
       data: {
         client: { id: string; name: string };
-        draft: import('../../workout-generator').GeneratedWorkout;
+        draft: import('../../generated-workout').GeneratedWorkout;
         poolSize: number;
         validation: { ok: boolean; problems: string[] };
       };

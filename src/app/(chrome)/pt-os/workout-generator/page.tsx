@@ -26,7 +26,7 @@ import {
   K11_INTENSITY_BANDS,
   getK11IntensityBand,
 } from '@/lib/cardio-calculations';
-import type { GeneratedSession, GeneratedWorkout } from '@/lib/workout-generator';
+import type { GeneratedSession, GeneratedWorkout } from '@/lib/generated-workout';
 import type { TrainingMaxLift } from '@/lib/api/endpoints/training';
 
 const GOALS = [
