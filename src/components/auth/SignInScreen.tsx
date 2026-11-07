@@ -29,6 +29,7 @@ import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
 import { Wordmark } from '@/components/landing/Wordmark';
 import AuthShell, { AuthCard, StageBackdrop, type AuthAside } from '@/components/landing/AuthShell';
 import AuthInput, { RevealButton } from '@/components/landing/AuthField';
+import GoogleSignInButton, { googleSignInConfigured } from '@/components/auth/GoogleSignInButton';
 import { C, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/components/landing/tokens';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Mail, ArrowRight, Fingerprint, Loader2, Lock, Check, AlertTriangle } from 'lucide-react';
@@ -128,7 +129,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
   // Set when the server says the credentials were right but this is the wrong
   // sign-in page. Turns the error box into a way out rather than a wall.
   const [wrongPortal, setWrongPortal] = useState(false);
-  const { user, login, loginWithPasskey, logout, loading } = useAuth();
+  const { user, login, loginWithGoogle, linkGoogle, loginWithPasskey, logout, loading } = useAuth();
   const router = useRouter();
   const reduce = useReducedMotion();
 
@@ -153,6 +154,17 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
   const [passkeyReady, setPasskeyReady] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
 
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleCredential, setGoogleCredential] = useState('');
+  const [googleLinkRequired, setGoogleLinkRequired] = useState(false);
+  const [googleLinkPassword, setGoogleLinkPassword] = useState('');
+
+  // The button is a trainer-door feature in this change. The passkey divider
+  // follows whether the Google block is actually on screen, not whether a client
+  // id happens to be configured for another door.
+  const googleConfigured = googleSignInConfigured();
+  const showGoogle = portal === 'trainer' && googleConfigured && !mfaRequired;
+
   /**
    * Whether a sign-in attempt is already running.
    *
@@ -164,12 +176,24 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
   const pwRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const mfaRef = useRef<HTMLInputElement>(null);
+  const googleLinkPwRef = useRef<HTMLInputElement>(null);
 
   // Move focus to the code box when the server asks for it — an effect rather
   // than autoFocus, so it happens when the challenge appears, not on mount.
   useEffect(() => {
     if (mfaRequired) mfaRef.current?.focus();
   }, [mfaRequired]);
+
+  // Same for the password-confirm step of linking an existing account.
+  useEffect(() => {
+    if (googleLinkRequired) googleLinkPwRef.current?.focus();
+  }, [googleLinkRequired]);
+
+  // A failed link attempt shakes (and remounts) the card, so the field the
+  // user was typing in is a new node — put the cursor back in it.
+  useEffect(() => {
+    if (googleLinkRequired && error) googleLinkPwRef.current?.focus();
+  }, [shakeKey, googleLinkRequired, error]);
 
   // Device passkey capability
   useEffect(() => {
@@ -241,6 +265,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     setShakeKey((k) => k + 1);
     setBusy(false);
     setPasskeyBusy(false);
+    setGoogleBusy(false);
     inFlight.current = false;
   }
 
@@ -310,6 +335,111 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     } catch (err: unknown) {
       fail(webAuthnError(err));
     }
+  }
+
+  async function handleGoogle(credential: string) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setError('');
+    setGoogleBusy(true);
+    try {
+      const signedIn = await loginWithGoogle(credential, 'trainer');
+      persistRemember(signedIn);
+      setOk(true);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      if (code === 'GOOGLE_NO_ACCOUNT') {
+        setGoogleBusy(false);
+        inFlight.current = false;
+        router.push('/start-free');
+        return;
+      }
+      if (code === 'GOOGLE_LINK_REQUIRED') {
+        setGoogleCredential(credential);
+        setGoogleLinkRequired(true);
+        setGoogleLinkPassword('');
+        setGoogleBusy(false);
+        inFlight.current = false;
+        return;
+      }
+      if (code === 'WRONG_PORTAL') {
+        setWrongPortal(true);
+        return fail(errorMessage(err, 'Wrong sign-in page for this account.'));
+      }
+      if (code === 'ACCOUNT_DISABLED') {
+        return fail('This account is disabled. Contact your studio.');
+      }
+      if (code === 'ACCOUNT_MISCONFIGURED') {
+        return fail('This account cannot sign in. Contact support.');
+      }
+      if (code === 'GOOGLE_ALREADY_LINKED') {
+        fail('This Google account is already linked to another account. Sign in with that Google account or with your password.');
+        return;
+      }
+      if (code === 'GOOGLE_ACCOUNT_NOT_SUPPORTED') {
+        fail('Google sign-in is for studio accounts. Use password login with your authenticator code.');
+        return;
+      }
+      fail(mapSignInError(err, 'Google sign-in was cancelled or failed. Try again.'));
+    }
+  }
+
+  async function handleGoogleLink(e: FormEvent) {
+    e.preventDefault();
+    if (inFlight.current) return;
+    if (!googleLinkPassword) {
+      googleLinkPwRef.current?.focus();
+      return fail('Enter your account password to link Google.');
+    }
+    inFlight.current = true;
+    setError('');
+    setGoogleBusy(true);
+    try {
+      const signedIn = await linkGoogle(googleCredential, googleLinkPassword, 'trainer');
+      persistRemember(signedIn);
+      setOk(true);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      if (code === 'GOOGLE_LINK_INVALID_PASSWORD') {
+        return fail('That password is incorrect.');
+      }
+      if (code === 'GOOGLE_LINK_UNAVAILABLE') {
+        return fail('This account cannot link Google. Sign in with your password instead.');
+      }
+      if (code === 'WRONG_PORTAL') {
+        setWrongPortal(true);
+        return fail(errorMessage(err, 'Wrong sign-in page for this account.'));
+      }
+      if (code === 'ACCOUNT_DISABLED') {
+        return fail('This account is disabled. Contact your studio.');
+      }
+      if (code === 'ACCOUNT_MISCONFIGURED') {
+        return fail('This account cannot sign in. Contact support.');
+      }
+      if (code === 'GOOGLE_ALREADY_LINKED') {
+        return fail('This Google account is already linked to another account. Sign in with that Google account or with your password.');
+      }
+      if (code === 'GOOGLE_ACCOUNT_NOT_SUPPORTED') {
+        return fail('Google sign-in is for studio accounts. Use password login with your authenticator code.');
+      }
+      if (code === 'GOOGLE_NO_ACCOUNT') {
+        setGoogleBusy(false);
+        inFlight.current = false;
+        setGoogleLinkRequired(false);
+        router.push('/start-free');
+        return;
+      }
+      fail(mapSignInError(err, 'Google could not be linked. Try again.'));
+    }
+  }
+
+  function cancelGoogleLink() {
+    setGoogleLinkRequired(false);
+    setGoogleCredential('');
+    setGoogleLinkPassword('');
+    setGoogleBusy(false);
+    inFlight.current = false;
+    pwRef.current?.focus();
   }
 
   const onPwKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -588,27 +718,81 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
               </AnimatePresence>
             </button>
 
-            {/* Passkey — only on a device with a platform authenticator */}
-            {passkeyReady && (
-              <>
-                <div className="flex items-center gap-3" aria-hidden>
+          </form>
+
+          {showGoogle && (
+            <>
+              <div className="mt-6 flex items-center gap-3" aria-hidden>
+                <span className="h-px flex-1" style={{ background: C.lineSoft }} />
+                <span className="text-[11px] font-[600] uppercase tracking-[0.14em]" style={{ color: C.muted }}>
+                  or continue with
+                </span>
+                <span className="h-px flex-1" style={{ background: C.lineSoft }} />
+              </div>
+              <div className="mt-4">
+                <GoogleSignInButton
+                  onCredential={handleGoogle}
+                  onError={() => fail('Google sign-in was cancelled or failed. Try again.')}
+                  disabled={busy || ok || googleBusy}
+                />
+              </div>
+            </>
+          )}
+
+          {googleLinkRequired && (
+            <form onSubmit={handleGoogleLink} noValidate className="mt-4 space-y-3 rounded-[14px] px-4 py-4" style={{ background: C.canvasAlt }}>
+              <p className="text-[13.5px] leading-relaxed" style={{ color: C.body }}>
+                An account with this Google email already uses a password. Enter that password to link Google.
+                We never merge accounts automatically.
+              </p>
+              <AuthInput
+                label="Account password"
+                icon={Lock}
+                inputRef={googleLinkPwRef}
+                type={showPw ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={googleLinkPassword}
+                onChange={(e) => setGoogleLinkPassword(e.target.value)}
+                trailing={<RevealButton shown={showPw} onToggle={() => setShowPw((s) => !s)} />}
+              />
+              <button type="submit" disabled={googleBusy || ok} className={`${PRIMARY_BUTTON} h-11 w-full text-[14px]`}>
+                {googleBusy
+                  ? <><Loader2 size={16} className="animate-spin" /> Linking…</>
+                  : 'Link Google and sign in'}
+              </button>
+              <button
+                type="button"
+                onClick={cancelGoogleLink}
+                className="w-full text-center text-[13px] font-[600] underline underline-offset-2"
+                style={{ color: C.blueHi }}
+              >
+                Use password instead
+              </button>
+            </form>
+          )}
+
+          {/* Passkey — only on a device with a platform authenticator */}
+          {passkeyReady && (
+            <>
+              {!showGoogle && (
+                <div className="mt-6 flex items-center gap-3" aria-hidden>
                   <span className="h-px flex-1" style={{ background: C.lineSoft }} />
                   <span className="text-[12px]" style={{ color: C.muted }}>or</span>
                   <span className="h-px flex-1" style={{ background: C.lineSoft }} />
                 </div>
-                <button
-                  type="button"
-                  onClick={handlePasskey}
-                  disabled={passkeyBusy || busy || ok}
-                  className={`${SECONDARY_BUTTON} h-12 w-full text-[14px] disabled:opacity-70`}
-                >
-                  {passkeyBusy
-                    ? <><Loader2 size={17} className="animate-spin" /> Waiting for biometric…</>
-                    : <><Fingerprint size={18} style={{ color: C.blueHi }} /> Sign in with Face ID / Fingerprint</>}
-                </button>
-              </>
-            )}
-          </form>
+              )}
+              <button
+                type="button"
+                onClick={handlePasskey}
+                disabled={passkeyBusy || busy || ok || googleBusy}
+                className={`${SECONDARY_BUTTON} ${showGoogle ? 'mt-4' : 'mt-3'} h-12 w-full text-[14px] disabled:opacity-70`}
+              >
+                {passkeyBusy
+                  ? <><Loader2 size={17} className="animate-spin" /> Waiting for biometric…</>
+                  : <><Fingerprint size={18} style={{ color: C.blueHi }} /> Sign in with Face ID / Fingerprint</>}
+              </button>
+            </>
+          )}
         </AuthCard>
       </m.div>
     </AuthShell>

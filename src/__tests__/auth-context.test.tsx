@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => ({
   mockHttp: vi.fn(),
   mockLoginApi: vi.fn(),
   mockLogoutApi: vi.fn(),
+  mockGoogleLogin: vi.fn(),
+  mockGoogleLink: vi.fn(),
   mockRouterReplace: vi.fn(),
   mockResetLock: vi.fn(),
   mockRefreshSession: vi.fn(),
@@ -33,7 +35,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/api', () => ({
-  api: { auth: { login: mocks.mockLoginApi, logout: mocks.mockLogoutApi } },
+  api: {
+    auth: {
+      login: mocks.mockLoginApi,
+      logout: mocks.mockLogoutApi,
+      googleLogin: mocks.mockGoogleLogin,
+      googleLink: mocks.mockGoogleLink,
+    },
+  },
   http: mocks.mockHttp,
 }));
 
@@ -185,6 +194,37 @@ describe('AuthProvider', () => {
     await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
     expect(screen.getByTestId('user').textContent).toBe('none');
   });
+
+  it('google login adopts the session and returns the user', async () => {
+    mocks.mockGoogleLogin.mockResolvedValue({ user: FRESH });
+    mocks.mockHttp.mockResolvedValue({ user: null });
+
+    wrap(<CaptureApi />);
+    await waitFor(() => expect(captured()).toBeTruthy());
+
+    let signedIn;
+    await act(async () => { signedIn = await captured().loginWithGoogle('cred-1', 'trainer'); });
+
+    expect(mocks.mockGoogleLogin).toHaveBeenCalledWith('cred-1', 'trainer');
+    expect(signedIn).toEqual(FRESH);
+    expect(captured().user).toEqual(FRESH);
+  });
+
+  it('google link adopts the session and returns the user', async () => {
+    mocks.mockGoogleLink.mockResolvedValue({ user: FRESH });
+    mocks.mockHttp.mockResolvedValue({ user: null });
+
+    wrap(<CaptureApi />);
+    await waitFor(() => expect(captured()).toBeTruthy());
+
+    let signedIn;
+    await act(async () => { signedIn = await captured().linkGoogle('cred-1', 'pw', 'trainer'); });
+
+    expect(mocks.mockGoogleLink).toHaveBeenCalledWith({
+      credential: 'cred-1', password: 'pw', portal: 'trainer',
+    });
+    expect(signedIn).toEqual(FRESH);
+  });
 });
 
 // ── Impersonation must not outlive the session it was minted under ──────────
@@ -245,14 +285,14 @@ describe('impersonation does not survive a session change', () => {
     const src = await import('node:fs').then((fs) =>
       fs.readFileSync('src/lib/auth-context.tsx', 'utf8'));
 
-    // One adoption routine, used by all three — asserted on the source because
+    // One adoption routine, used by all four — asserted on the source because
     // exercising Google and passkey needs their whole SDK surface mocked, and a
     // test that heavy tends to be the one that gets deleted.
     expect(src).toMatch(/const _adoptSession = useCallback/);
-    // Three call sites: password, Google, passkey. The definition itself is
-    // `= useCallback` and the dep arrays carry no paren, so this counts calls
-    // and nothing else.
-    expect(src.match(/_adoptSession\(/g) ?? []).toHaveLength(3);
+    // Four call sites: password, Google login, Google link, passkey. The
+    // definition itself is `= useCallback` and the dep arrays carry no paren,
+    // so this counts calls and nothing else.
+    expect(src.match(/_adoptSession\(/g) ?? []).toHaveLength(4);
     // No sign-in path may still write the cache itself — that is the shape the
     // triplication had, and the shape a fourth login would copy.
     const logins = src.slice(src.indexOf('const login ='));

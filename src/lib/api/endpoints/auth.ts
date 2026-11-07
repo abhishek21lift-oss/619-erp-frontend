@@ -44,10 +44,24 @@ export const auth = {
         ...(portal ? { portal } : {}),
       },
     }),
-  googleLogin: (credential: string) =>
+  googleLogin: (credential: string, portal?: 'trainer' | 'member' | 'platform') =>
     http<{ user: User }>('/api/auth/google-login', {
       method: 'POST',
-      body: { credential },
+      // A 401 here is a rejected credential, not an expired session: do not
+      // spend a refresh round-trip and re-POST (which would double the bcrypt
+      // work and the audit rows). The sign-in pages are sessionless anyway.
+      skipAuth: true,
+      body: { credential, ...(portal ? { portal } : {}) },
+    }),
+  googleLink: (body: {
+    credential: string;
+    password: string;
+    portal?: 'trainer' | 'member' | 'platform';
+  }) =>
+    http<{ user: User }>('/api/auth/google-link', {
+      method: 'POST',
+      skipAuth: true,
+      body,
     }),
   me: () => http<{ user: User }>('/api/auth/me'),
   logout: () => http('/api/auth/logout', { method: 'POST' }).catch((_err) => console.warn('[api] logout failed', _err)),
