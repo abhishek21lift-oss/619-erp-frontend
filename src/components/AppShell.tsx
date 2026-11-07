@@ -27,6 +27,7 @@ import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
+import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
 import useViewportDesyncFix from '@/hooks/useViewportDesyncFix';
 import { clearSearchHistory } from '@/components/search/recent';
@@ -730,6 +731,9 @@ function AppShellContent({ children }: AppShellProps) {
           <main id="main-content" className="flex-1 min-w-0 overflow-x-clip shell-main"
           >
             {pathname === '/' && <TrialBanner />}
+            <div className="mx-auto w-full max-w-7xl">
+              <PasskeySetupPrompt />
+            </div>
             {/* Keyed on pathname so each route fades in on arrival. There is
                 deliberately no AnimatePresence and no exit animation here.
                 There used to be one — `mode="popLayout"`, a 0.1s fade out —
