@@ -43,7 +43,7 @@ vi.mock('@/hooks/useWebAuthn', () => ({
 
 import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
 
-const TITLE = /sign in faster with fingerprint/i;
+const TITLE = /sign in faster on this device/i;
 
 // Lets every already-started promise continuation run, so a "no API call"
 // assertion cannot pass before the effect's async branch is reached.
@@ -150,9 +150,27 @@ it('checks credentials once per browser session, not on every remount', async ()
 
 it('registers a passkey on Enable', async () => {
   render(<PasskeySetupPrompt />);
-  fireEvent.click(await screen.findByRole('button', { name: /enable fingerprint/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /enable passkey/i }));
   await waitFor(() => expect(state.register).toHaveBeenCalledWith('This device'));
-  expect(await screen.findByText(/fingerprint login enabled/i)).toBeInTheDocument();
+  const status = await screen.findByRole('status');
+  expect(status).toHaveTextContent(/passkey login enabled/i);
+  expect(status).toHaveFocus();
+});
+
+it('does not refetch when the provider re-renders with the same flags', async () => {
+  const { rerender } = render(<PasskeySetupPrompt />);
+  await screen.findByText(TITLE);
+  rerender(<PasskeySetupPrompt />);
+  await flushMicrotasks();
+  expect(state.listCredentials).toHaveBeenCalledTimes(1);
+});
+
+it('hides the card when the passkeys feature turns off', async () => {
+  const { rerender } = render(<PasskeySetupPrompt />);
+  await screen.findByText(TITLE);
+  state.featureEnabled = false;
+  rerender(<PasskeySetupPrompt />);
+  await waitFor(() => expect(screen.queryByText(TITLE)).not.toBeInTheDocument());
 });
 
 it('names Android devices in the passkey label', async () => {
@@ -162,7 +180,7 @@ it('names Android devices in the passkey label', async () => {
   });
   try {
     render(<PasskeySetupPrompt />);
-    fireEvent.click(await screen.findByRole('button', { name: /enable fingerprint/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /enable passkey/i }));
     await waitFor(() => expect(state.register).toHaveBeenCalledWith('Android phone'));
   } finally {
     delete (window.navigator as { userAgent?: string }).userAgent;
@@ -176,7 +194,7 @@ it('keeps the card and shows the hook error when registration fails', async () =
     return false;
   });
   render(<PasskeySetupPrompt />);
-  fireEvent.click(await screen.findByRole('button', { name: /enable fingerprint/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /enable passkey/i }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Request timed out.');
   expect(screen.getByText(TITLE)).toBeInTheDocument();
 });
@@ -184,23 +202,23 @@ it('keeps the card and shows the hook error when registration fails', async () =
 it('can retry after a failed attempt', async () => {
   state.registerResult = false;
   render(<PasskeySetupPrompt />);
-  fireEvent.click(await screen.findByRole('button', { name: /enable fingerprint/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /enable passkey/i }));
   expect(await screen.findByRole('alert')).toBeInTheDocument();
 
   state.registerResult = true;
-  fireEvent.click(screen.getByRole('button', { name: /enable fingerprint/i }));
-  expect(await screen.findByText(/fingerprint login enabled/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /enable passkey/i }));
+  expect(await screen.findByText(/passkey login enabled/i)).toBeInTheDocument();
   expect(state.register).toHaveBeenCalledTimes(2);
 });
 
 it('hides the success card after four seconds', async () => {
   render(<PasskeySetupPrompt />);
-  const enable = await screen.findByRole('button', { name: /enable fingerprint/i });
+  const enable = await screen.findByRole('button', { name: /enable passkey/i });
 
   vi.useFakeTimers();
   fireEvent.click(enable);
   await flushMicrotasks();
-  expect(screen.getByText(/fingerprint login enabled/i)).toBeInTheDocument();
+  expect(screen.getByText(/passkey login enabled/i)).toBeInTheDocument();
 
   act(() => { vi.advanceTimersByTime(4000); });
   expect(screen.queryByText(TITLE)).not.toBeInTheDocument();
