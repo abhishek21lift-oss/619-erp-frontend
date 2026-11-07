@@ -4068,6 +4068,12 @@ export type AiWorkoutParams = {
    * a trainer ever starting a new block.
    */
   mode?: 'new' | 'adapt';
+  /**
+   * The trainer's explicit override for a client with no PAR-Q on file. The
+   * route answers 409 CLEARANCE_REQUIRED until this is true, and records the
+   * decision — nobody may generate an unscreened programme by accident.
+   */
+  acknowledge_unscreened?: boolean;
   age?: number;
   gender?: string;
   weight_kg?: number;
@@ -4092,6 +4098,8 @@ export type AiWorkoutExercise = {
 export type AiWorkoutDay = {
   name: string;
   focus: string;
+  /** The whole session including warm-up and cool-down, when the model stated it. */
+  estimated_minutes?: number;
   exercises: AiWorkoutExercise[];
 };
 
@@ -4103,8 +4111,10 @@ export type AiWorkoutPlan = {
   weeks: number;
   days_per_week: number;
   equipment: string[];
-  warm_up: string;
-  cool_down: string;
+  /** Ordered steps as the prompt asks for, or one string from older prompts. */
+  warm_up: string | string[];
+  mobility?: string[];
+  cool_down: string | string[];
   progression_notes: string;
   weekly_schedule: Record<string, AiWorkoutDay>;
   nutrition_notes: string;

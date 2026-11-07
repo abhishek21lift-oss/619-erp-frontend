@@ -30,6 +30,10 @@ vi.mock('@/lib/api', () => ({
       getAll: (...a: unknown[]) => settingsGetAll(...a),
       update: (...a: unknown[]) => settingsUpdate(...a),
     },
+    clients: {
+      list: async () => [],
+      search: async () => [],
+    },
   },
 }));
 
@@ -37,8 +41,11 @@ vi.mock('@/components/Guard', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+const prefillState: { facts: null; loading: boolean; failed: boolean } = {
+  facts: null, loading: false, failed: false,
+};
 vi.mock('@/lib/ai-client-prefill', () => ({
-  useAiClientPrefill: () => ({ facts: null, loading: false, failed: false }),
+  useAiClientPrefill: () => prefillState,
   applyFacts: (form: Record<string, string>) => form,
   hasAnyFact: () => false,
 }));
@@ -50,6 +57,7 @@ vi.mock('@/lib/toast', () => ({
 import WorkoutGeneratorPage from '@/app/(chrome)/ai/workout-generator/page';
 
 beforeEach(() => {
+  prefillState.failed = false;
   generateWorkout.mockReset().mockResolvedValue({
     data: { weekly_schedule: {} }, model: 'm', generation_id: 'g1',
   });
@@ -69,7 +77,10 @@ describe('the standalone AI workout generator', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Generate Workout Plan/i }));
 
     await waitFor(() => expect(generateWorkout).toHaveBeenCalledTimes(1));
-    expect(generateWorkout).toHaveBeenCalledWith({ client_id: 'c1' });
+    expect(generateWorkout).toHaveBeenCalledWith(
+      { client_id: 'c1' },
+      expect.any(AbortSignal),
+    );
   });
 
   it('offers body recomposition as a goal', async () => {
@@ -122,6 +133,74 @@ describe('the standalone AI workout generator', () => {
     expect(await screen.findByText(/Foundation is active/i)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: new RegExp(label, 'i') }));
 
-    await waitFor(() => expect(generateWorkout).toHaveBeenLastCalledWith({ client_id: 'c1', mode }));
+    await waitFor(() => expect(generateWorkout).toHaveBeenLastCalledWith(
+      { client_id: 'c1', mode },
+      expect.any(AbortSignal),
+    ));
+  });
+
+  it('shows the screen, rule check, quality and second opinion the server sent', async () => {
+    generateWorkout.mockResolvedValue({
+      data: { weekly_schedule: {} }, model: 'm', generation_id: 'g1',
+      quality: { score: 80, max: 100, components: {}, basis: 'no critical findings' },
+      screen: {
+        screened: false, sources: [],
+        constraints: [], referrals: [], excluded_exercises: [], not_assessed: [],
+        gate: { status: 'unknown', cleared: false },
+      },
+      critique: [{ severity: 'high', point: 'No horizontal pull', because: 'Push/pull imbalance' }],
+    });
+
+    render(<WorkoutGeneratorPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Generate Workout Plan/i }));
+
+    expect(await screen.findByText(/Not screened against this client/i)).toBeTruthy();
+    expect(screen.getByText(/Quality 80\/100/)).toBeTruthy();
+    expect(screen.getByText(/No horizontal pull/i)).toBeTruthy();
+  });
+
+  it('says so when the proposal could not be recorded', async () => {
+    generateWorkout.mockResolvedValue({ data: { weekly_schedule: {} }, model: 'm', generation_id: null });
+
+    render(<WorkoutGeneratorPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Generate Workout Plan/i }));
+
+    expect(await screen.findByText(/could not be recorded/i)).toBeTruthy();
+  });
+
+  it('offers the trainer override when nobody has screened the client', async () => {
+    generateWorkout
+      .mockRejectedValueOnce(Object.assign(new Error('This client has no health screening on file'), {
+        status: 409, code: 'CLEARANCE_REQUIRED',
+      }))
+      .mockResolvedValueOnce({ data: { weekly_schedule: {} }, model: 'm', generation_id: 'g2' });
+
+    render(<WorkoutGeneratorPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /Generate Workout Plan/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Generate without a screen/i }));
+
+    await waitFor(() => expect(generateWorkout).toHaveBeenLastCalledWith(
+      { client_id: 'c1', acknowledge_unscreened: true },
+      expect.any(AbortSignal),
+    ));
+  });
+
+  it('sends the block length the trainer chose', async () => {
+    render(<WorkoutGeneratorPage />);
+
+    fireEvent.change(await screen.findByLabelText('Programme Length'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /Generate Workout Plan/i }));
+
+    await waitFor(() => expect(generateWorkout).toHaveBeenCalledWith(
+      { client_id: 'c1', duration_weeks: 12 },
+      expect.any(AbortSignal),
+    ));
+  });
+
+  it('gives the client picker back when the linked client cannot be read', async () => {
+    prefillState.failed = true;
+    render(<WorkoutGeneratorPage />);
+
+    expect(await screen.findByLabelText('Search clients by name')).toBeTruthy();
   });
 });
