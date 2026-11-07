@@ -238,3 +238,16 @@ it('does not snooze another account on the same device', async () => {
   rerender(<PasskeySetupPrompt />);
   expect(await screen.findByText(TITLE)).toBeInTheDocument();
 });
+
+it('hides the card when a different account signs in on the same tab', async () => {
+  const { rerender } = render(<PasskeySetupPrompt />);
+  expect(await screen.findByText(TITLE)).toBeInTheDocument();
+
+  // The new account already has a passkey, so its own eligibility check
+  // returns early. Without a reset the previous account's card stays up.
+  state.userId = 'u2';
+  state.credentials = [{ id: 'cred-2', is_active: true }];
+  rerender(<PasskeySetupPrompt />);
+
+  await waitFor(() => expect(screen.queryByText(TITLE)).not.toBeInTheDocument());
+});

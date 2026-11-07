@@ -49,10 +49,26 @@ export default function PasskeySetupPrompt() {
   const [failed, setFailed] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const statusRef = useRef<HTMLParagraphElement | null>(null);
+  const lastUserId = useRef<string | null>(null);
 
   useEffect(() => () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
   }, []);
+
+  // A different account in the same tab must not inherit the previous
+  // account's card, success message, or pending hide timer. Runs before the
+  // eligibility effect below so the new account can still show its own card.
+  useEffect(() => {
+    if (lastUserId.current === (user?.id ?? null)) return;
+    lastUserId.current = user?.id ?? null;
+    setVisible(false);
+    setDone(false);
+    setFailed(false);
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+  }, [user?.id]);
 
   // Move focus with the message so a keyboard user does not lose it when the
   // action buttons disappear.
