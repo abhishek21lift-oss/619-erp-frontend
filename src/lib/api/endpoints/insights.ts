@@ -188,13 +188,14 @@ export const ai = {
   workoutContext: (clientId: string) =>
     http<AiWorkoutContext>(`/api/ai/workout/context/${encodeURIComponent(clientId)}`),
 
-  generateWorkout: (params: AiWorkoutParams) =>
+  generateWorkout: (params: AiWorkoutParams, signal?: AbortSignal) =>
     // The result carries more than the plan: the safety screen that shaped it,
     // the rule audit of what came back, and the generation_id that lets a save
     // be linked to the proposal it came from.
     httpSSE<AiWorkoutGenerationResult>('/api/ai/workout/generate', {
       method: 'POST',
       body: JSON.stringify(params),
+      signal,
     }),
 
   generateDiet: (params: AiDietParams) =>
