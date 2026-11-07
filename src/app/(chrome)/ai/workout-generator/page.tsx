@@ -7,7 +7,7 @@ import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Flame, 
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
 import type {
-  AiGenerationAudit, AiKnowledgeGrounding, AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise, SavedFromGeneration,
+  AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise, AiWorkoutGenerationResult, SavedFromGeneration,
 } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
@@ -18,7 +18,7 @@ import {
 import { aiWorkoutInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
 import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
 import { applyFacts, hasAnyFact, useAiClientPrefill } from '@/lib/ai-client-prefill';
-import { GroundingLine } from '@/components/pt-os/GenerationEvidence';
+import GenerationEvidence from '@/components/pt-os/GenerationEvidence';
 
 const ACCENT = '#A33757';
 const ACCENT_SOFT = '#A33757';
@@ -37,7 +37,17 @@ const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
 const INITIAL_FORM = {
   age: '', gender: '', weight_kg: '', height_cm: '',
   goal: '', experience_level: '', injuries: '', training_days: '',
+  // Not a fact about the client: how long a block the trainer wants. Blank
+  // until they say, so the server's own default applies.
+  duration_weeks: '',
 };
+
+/** The parts of a generation result this page keeps and shows. */
+type Meta = Pick<
+  AiWorkoutGenerationResult,
+  'model' | 'tier' | 'used_fallback' | 'grounding' | 'audit'
+  | 'quality' | 'critique' | 'critique_verdict' | 'screen'
+>;
 
 // The nine goals the programming engines and workout_plans.goal share.
 const GOALS = [
@@ -135,13 +145,17 @@ function DayCard({ dayKey, day, index }: { dayKey: string; day: AiWorkoutDay; in
   );
 }
 
-function NoteCard({ title, text, index }: { title: string; text: string; index: number }) {
+function NoteCard({ title, text, index }: { title: string; text: string | string[]; index: number }) {
+  // The prompt asks for these as ordered lists; an older string contract is
+  // still accepted. `whitespace-pre-line` keeps the steps on separate lines.
+  const body = (Array.isArray(text) ? text.join('\n') : text).trim();
+  if (!body) return null;
   return (
     <m.div variants={fadeUp} initial="hidden" animate="show" custom={index}
       className="rounded-[18px] px-5 py-4"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="mb-2 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: ACCENT }}>{title}</div>
-      <p className="m-0 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{text}</p>
+      <p className="m-0 whitespace-pre-line text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{body}</p>
     </m.div>
   );
 }
@@ -165,6 +179,23 @@ function activeProgramFrom(err: unknown): { message: string } | null {
   };
 }
 
+/**
+ * The other 409 this page can answer: nobody has screened this client. The
+ * server accepts an explicit trainer override (`acknowledge_unscreened`), and
+ * refusing here would leave every client without a PAR-Q unable to generate at
+ * all. The decision stays with the trainer — it is a button, not a default.
+ */
+function clearanceFrom(err: unknown): { message: string } | null {
+  const e = err as { status?: number; code?: string };
+  if (e?.status !== 409 || e.code !== 'CLEARANCE_REQUIRED') return null;
+  return {
+    message: 'This client has no health screening on file. Generate anyway only if you have assessed them yourself — the programme will be written without a screen.',
+  };
+}
+
+/** A cancel is not a failure. */
+const isAbort = (err: unknown) => (err as { name?: string })?.name === 'AbortError';
+
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function WorkoutGeneratorPage() {
   // ── This page needs a client, and used to pretend otherwise ──────────────
@@ -181,22 +212,26 @@ export default function WorkoutGeneratorPage() {
   // opened bare from the nav or the landing page, where no client is known.
   const linkedClientId = useSearchParams().get('client_id');
   const [pickedClient, setPickedClient] = useState<AiClientOption | null>(null);
-  const clientId = linkedClientId ?? (pickedClient ? String(pickedClient.id) : null);
+  // A pick beats the query string: when the linked id no longer resolves (the
+  // client was deleted, the link is stale) the picker is the only way out, and
+  // it can only work if choosing actually changes the id.
+  const clientId = pickedClient ? String(pickedClient.id) : linkedClientId;
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [plan, setPlan] = useState<AiWorkoutPlan | null>(null);
-  const [meta, setMeta] = useState<{
-    model?: string; tier?: string; used_fallback?: boolean;
-    grounding?: AiKnowledgeGrounding;
-    audit?: AiGenerationAudit;
-  } | null>(null);
+  const [meta, setMeta] = useState<Meta | null>(null);
   const [generationId, setGenerationId] = useState<string | null>(null);
   const [saved, setSaved] = useState<SavedFromGeneration | null>(null);
   const [savingPlan, setSavingPlan] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [activeProgram, setActiveProgram] = useState<{ message: string } | null>(null);
+  const [clearance, setClearance] = useState<{ message: string } | null>(null);
   const [error, setError] = useState('');
+  /** Stops the trainer waiting; the server finishes the call it was billed for. */
+  const abortRef = useRef<AbortController | null>(null);
+  /** The action that produced the last request, so an override repeats it. */
+  const lastModeRef = useRef<'new' | 'adapt' | undefined>(undefined);
   /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   /**
@@ -272,6 +307,7 @@ export default function WorkoutGeneratorPage() {
     setSaved(null);
     setSaveError('');
     setActiveProgram(null);
+    setClearance(null);
     setError('');
   }, [clientId]);
 
@@ -293,6 +329,7 @@ export default function WorkoutGeneratorPage() {
   const genderField = useStandaloneField('gender', form.gender, (v: string) => set('gender', v), { error: fieldErrors.gender });
   const experienceField = useStandaloneField('experience_level', form.experience_level, (v: string) => set('experience_level', v), { error: fieldErrors.experience_level });
   const trainingDaysField = useStandaloneField('training_days', form.training_days, (v: string) => set('training_days', v), { error: fieldErrors.training_days });
+  const durationField = useStandaloneField('duration_weeks', form.duration_weeks, (v: string) => set('duration_weeks', v));
 
   useEffect(() => {
     if (!loading) { setLoadStep(0); return; }
@@ -305,12 +342,13 @@ export default function WorkoutGeneratorPage() {
    * live programme and "progress it" or "start a new one" is the trainer's
    * call, not a default this page may invent.
    */
-  const handleGenerate = async (mode?: 'new' | 'adapt') => {
+  const handleGenerate = async (mode?: 'new' | 'adapt', acknowledgeUnscreened = false) => {
     if (generatingRef.current) return;
     if (!clientId) {
       setError('Select a client above — a programme is written for a specific client.');
       return;
     }
+    lastModeRef.current = mode;
 
     /*
      * Everything below `client_id` is OPTIONAL and means one thing: the
@@ -344,13 +382,17 @@ export default function WorkoutGeneratorPage() {
     setFieldErrors({});
 
     generatingRef.current = true;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setError(''); setLoading(true); setPlan(null); setMeta(null);
-    setGenerationId(null); setSaved(null); setSaveError(''); setActiveProgram(null);
+    setGenerationId(null); setSaved(null); setSaveError(''); setActiveProgram(null); setClearance(null);
     try {
       const v = parsed.data;
       const res = await api.ai.generateWorkout({
         client_id: clientId,
         ...(mode ? { mode } : {}),
+        ...(acknowledgeUnscreened ? { acknowledge_unscreened: true } : {}),
+        ...(form.duration_weeks ? { duration_weeks: Number(form.duration_weeks) } : {}),
         // A blank box is omitted, not sent as zero — omission is what tells
         // the server to keep whatever its own record holds.
         age: stated(v.age), gender: form.gender || undefined,
@@ -358,21 +400,25 @@ export default function WorkoutGeneratorPage() {
         goal: form.goal || undefined, experience_level: form.experience_level || undefined,
         injuries: v.injuries ?? undefined,
         training_days: stated(v.training_days),
-      });
+      }, controller.signal);
       setPlan(res.data);
       setGenerationId(res.generation_id ?? null);
       setMeta({
         model: res.model, tier: res.tier, used_fallback: res.used_fallback,
         grounding: res.grounding, audit: res.audit,
+        screen: res.screen, quality: res.quality,
+        critique: res.critique, critique_verdict: res.critique_verdict,
       });
     } catch (e: unknown) {
-      // The one refusal this page can answer. Anything else is an error the
-      // trainer can only read.
+      // Two refusals this page can answer, and nothing else.
       const active = activeProgramFrom(e);
+      const unscreened = clearanceFrom(e);
       if (active) setActiveProgram(active);
-      else setError(generationErrorMessage(e, 'Failed to generate workout plan.'));
+      else if (unscreened) setClearance(unscreened);
+      else if (!isAbort(e)) setError(generationErrorMessage(e, 'Failed to generate workout plan.'));
     } finally {
       generatingRef.current = false;
+      abortRef.current = null;
       setLoading(false);
     }
   };
@@ -439,10 +485,10 @@ export default function WorkoutGeneratorPage() {
             </div>
           </div>
 
-          {/* Shown only on a bare entry (nav, landing, unattached Coach):
-              with ?client_id= the client is already known and this stays out
-              of the way. */}
-          {!linkedClientId && (
+          {/* Shown on a bare entry (nav, landing, unattached Coach), and again
+              when a ?client_id= no longer resolves: a stale link must not be a
+              dead end with no way to choose somebody else. */}
+          {(!linkedClientId || prefill.failed) && (
             <AiClientPicker selected={pickedClient} onSelect={setPickedClient} />
           )}
 
@@ -458,7 +504,7 @@ export default function WorkoutGeneratorPage() {
                 : prefill.failed
                   ? 'Could not load the saved details — fill in what you know.'
                   : prefill.facts && hasAnyFact(prefill.facts.workout)
-                    ? `Prefilled from ${prefill.facts.clientName}’s record — edit anything before generating.`
+                    ? `Prefilled from ${prefill.facts.clientName}’s record. Where the record already holds a value the server uses it — this form only fills the gaps.`
                     : 'Nothing saved for this client yet — fill in what you know.'}
             </div>
           )}
@@ -494,6 +540,16 @@ export default function WorkoutGeneratorPage() {
               field={trainingDaysField} legend="Training Days / Week" density="compact"
               className="sm:col-span-2"
               options={['2', '3', '4', '5', '6'].map((d) => ({ value: d, label: d }))}
+            />
+            {/* How long a block to write. Blank lets the server's own default
+                (8 weeks, or the active programme's length) apply. */}
+            <SelectField
+              field={durationField} label="Programme Length" density="compact"
+              description="Applies to a new programme. Continuing an existing block keeps its own length."
+              options={[
+                { value: '', label: 'Studio default' },
+                ...[4, 6, 8, 12, 16].map((w) => ({ value: String(w), label: `${w} weeks` })),
+              ]}
             />
             {/* Never defaulted to "none" anywhere in this system: the server's
                 own comment explains that the old `|| 'none'` printed a clean
@@ -566,6 +622,21 @@ export default function WorkoutGeneratorPage() {
             </div>
           )}
 
+          {clearance && (
+            <div role="alert"
+              className="mt-4 rounded-[12px] px-4 py-3 text-[13px] font-[600]"
+              style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', color: '#92400e' }}>
+              <div>{clearance.message}</div>
+              <div className="mt-3">
+                <button onClick={() => handleGenerate(lastModeRef.current, true)} disabled={loading}
+                  className="rounded-[10px] px-3.5 py-2 text-[12.5px] font-[700]"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  Generate without a screen
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <button onClick={() => handleGenerate()} disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-[14px] px-7 py-3 text-[14px] font-[750] text-white transition-all sm:w-auto"
@@ -581,7 +652,7 @@ export default function WorkoutGeneratorPage() {
             {plan && (
               <button onClick={() => {
                 setPlan(null); setMeta(null); setGenerationId(null);
-                setSaved(null); setSaveError(''); setActiveProgram(null);
+                setSaved(null); setSaveError(''); setActiveProgram(null); setClearance(null);
               }}
                 className="flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-[13.5px] font-[650] sm:w-auto"
                 style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
@@ -610,17 +681,36 @@ export default function WorkoutGeneratorPage() {
                   style={{ background: i <= loadStep ? ACCENT : 'var(--border)' }} />
               ))}
             </div>
+            {/* shortcut: stops the wait, not the billed call — the server has
+                already started generating. Upgrade if the provider gains a
+                cancel endpoint. */}
+            <button onClick={() => abortRef.current?.abort()}
+              className="rounded-[12px] px-4 py-2 text-[13px] font-[700]"
+              style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              Cancel
+            </button>
           </m.div>
         )}
 
         {/* ── Results ── */}
         {plan && (
           <div className="flex flex-col gap-5">
-            {generationId && (
+            {meta && (
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
                 className="rounded-[22px] p-5 sm:p-6"
                 style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                {saved ? (
+                {!generationId ? (
+                  // Generation is never blocked on its own bookkeeping, so a
+                  // failed ledger write still returns a plan. Without an id
+                  // there is nothing to save; saying nothing left the trainer
+                  // with a plan and no way to keep it.
+                  <div role="status" className="text-[13px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[14px] font-[750]">This plan could not be recorded</div>
+                    <p className="mb-0 mt-1" style={{ color: 'var(--text-muted)' }}>
+                      The proposal was not written to the ledger, so there is nothing to save. Generate again to get a plan you can keep.
+                    </p>
+                  </div>
+                ) : saved ? (
                   <div role="status" className="text-[13px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                     <div className="text-[14px] font-[750]">
                       {saved.assigned === false
@@ -680,7 +770,6 @@ export default function WorkoutGeneratorPage() {
                 {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B45309', opacity: 0.7 }}>(fallback)</span>}
               </m.div>
             )}
-            {meta?.grounding && <GroundingLine grounding={meta.grounding} />}
 
             {/* Overview */}
             <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
@@ -703,6 +792,16 @@ export default function WorkoutGeneratorPage() {
                   </div>
                 ))}
               </div>
+              {/* What the engine checked before proposing this plan. The
+                  client card has always shown it; this page threw the screen,
+                  the rule audit, the quality score and the second opinion away
+                  and asked the trainer to approve with less than the server
+                  knew. */}
+              {meta && (
+                <div className="px-6 pb-5">
+                  <GenerationEvidence result={meta} />
+                </div>
+              )}
             </m.div>
 
             {plan.warm_up && <NoteCard title="Warm-Up Protocol" text={plan.warm_up} index={2} />}
