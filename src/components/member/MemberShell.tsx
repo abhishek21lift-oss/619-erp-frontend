@@ -1,6 +1,7 @@
 'use client';
 
 import MemberNav, { MEMBER_NAV_CLEARANCE } from './MemberNav';
+import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
 
 /**
  * The member portal's page shell: status-bar inset, then the page, then the
@@ -38,6 +39,7 @@ export default function MemberShell({
           paddingBottom: MEMBER_NAV_CLEARANCE,
         }}
       >
+        <PasskeySetupPrompt />
         {children}
       </div>
       <MemberNav />
