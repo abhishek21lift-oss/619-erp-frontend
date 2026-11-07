@@ -11,6 +11,7 @@ import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
 // the two had drifted onto different keys in different stores.
 import { readCachedUser, writeCachedUser, clearCachedUser } from './session-cache';
 import { signInPathFor } from './public-paths';
+import type { Portal } from './portals';
 import type { Role } from './roles';
 export type { Role } from './roles';
 
@@ -18,7 +19,8 @@ interface Ctx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform') => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithGoogle: (credential: string, portal?: Portal) => Promise<User>;
+  linkGoogle: (credential: string, password: string, portal?: Portal) => Promise<User>;
   loginWithPasskey: (email?: string) => Promise<void>;
   logout: () => void;
   /**
@@ -33,7 +35,8 @@ const AuthContext = createContext<Ctx>({
   user: null,
   loading: true,
   login: async () => {},
-  loginWithGoogle: async () => {},
+  loginWithGoogle: async () => { throw new Error('AuthProvider is not mounted'); },
+  linkGoogle: async () => { throw new Error('AuthProvider is not mounted'); },
   loginWithPasskey: async () => {},
   logout: () => {},
   updateUser: () => {},
@@ -262,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * one login and not the other two would have left the bug reachable through
    * whichever path nobody tested.
    */
-  const _adoptSession = useCallback(function (u: User) {
+  const _adoptSession = useCallback(function (u: User): User {
     resetRedirectLock();
     loggedInRef.current = true;
     // Signing in is a new identity, whatever this tab was doing before. A
@@ -280,6 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(u);
     writeCachedUser(cacheable(u));
     setLoading(false);
+    return u;
   }, []);
 
   const login = useCallback(async function (
@@ -289,9 +293,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     _adoptSession(data.user);
   }, [_adoptSession]);
 
-  const loginWithGoogle = useCallback(async function (credential: string): Promise<void> {
-    const data = await api.auth.googleLogin(credential);
-    _adoptSession(data.user);
+  const loginWithGoogle = useCallback(async function (
+    credential: string, portal?: Portal,
+  ): Promise<User> {
+    const data = await api.auth.googleLogin(credential, portal);
+    return _adoptSession(data.user);
+  }, [_adoptSession]);
+
+  const linkGoogle = useCallback(async function (
+    credential: string, password: string, portal?: Portal,
+  ): Promise<User> {
+    const data = await api.auth.googleLink({ credential, password, portal });
+    return _adoptSession(data.user);
   }, [_adoptSession]);
 
   const loginWithPasskey = useCallback(async function (email?: string): Promise<void> {
@@ -312,7 +325,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [_clearSession, backToSignIn]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithPasskey, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, linkGoogle, loginWithPasskey, logout, updateUser }}>
       <DraftScopeContext.Provider value={draftScopeFor(user)}>
         {children}
       </DraftScopeContext.Provider>
