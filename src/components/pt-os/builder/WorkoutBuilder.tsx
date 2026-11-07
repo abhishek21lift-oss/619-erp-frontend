@@ -457,7 +457,6 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
       <PageContainer>
         <div className="mx-auto w-full max-w-screen-md space-y-3.5">
           <PageHero
-            compact
             icon={<Dumbbell size={20} />}
             title="Workout"
             subtitle="This programme could not be loaded"
@@ -494,7 +493,6 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
     <PageContainer>
       <div className="mx-auto w-full max-w-screen-md space-y-3.5 pb-20 sm:space-y-4 md:pb-0">
         <PageHero
-          compact
           icon={<Dumbbell size={20} />}
           title={plan?.name ?? 'Workout'}
           subtitle={`${forDay.length} exercise${forDay.length === 1 ? '' : 's'} on ${dayLabel}`}
