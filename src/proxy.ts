@@ -29,6 +29,9 @@ const PUBLIC_ASSET_PREFIXES: string[] = [
   '/sitemap.xml',
   '/robots.txt',
   '/llms.txt',
+  // Digital Asset Links for the Android Trusted Web Activities. Google's
+  // verifier fetches this with no session; a 307 to /login fails the app.
+  '/.well-known',
   '/icons',
   '/images',
 ];
