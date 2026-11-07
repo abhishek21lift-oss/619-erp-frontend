@@ -142,7 +142,7 @@ const KNOWN = [
   // says it fell back to "the API revision this console was built against".
   // A general outage still surfaces — `hostingerStatus()`/`hostingerVps()` in
   // the same Promise.all rejects into the screen's error state and retry.
-  'components/platform/hosting-centre.tsx:679',
+  'components/platform/hosting-centre.tsx:696',
   'components/platform/hosting-vps.tsx:75',
   'components/pt-os/builder/NewProgrammeForm.tsx:135',
   'components/pt-os/builder/NewProgrammeForm.tsx:138',
