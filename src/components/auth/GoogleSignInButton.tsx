@@ -48,7 +48,7 @@ export default function GoogleSignInButton({ onCredential, onError, disabled }: 
       ref={wrapRef}
       inert={disabled || undefined}
       aria-disabled={disabled || undefined}
-      className={`w-full overflow-hidden rounded-[12px] border border-[#E5E7EB] bg-white [color-scheme:light] ${
+      className={`w-full overflow-hidden rounded-[12px] border border-[var(--border)] bg-white [color-scheme:light] ${
         disabled ? 'pointer-events-none opacity-60' : ''
       }`}
     >

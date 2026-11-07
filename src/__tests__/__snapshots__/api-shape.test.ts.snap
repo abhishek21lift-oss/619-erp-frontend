@@ -96,6 +96,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "attendance.update → /api/attendance/",
   "auth.changePassword → /api/auth/change-password",
   "auth.forgotPassword → /api/auth/forgot-password",
+  "auth.googleLink → /api/auth/google-link",
   "auth.googleLogin → /api/auth/google-login",
   "auth.login → /api/auth/login",
   "auth.logout → /api/auth/logout",

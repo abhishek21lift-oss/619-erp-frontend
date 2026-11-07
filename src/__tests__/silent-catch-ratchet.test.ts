@@ -147,8 +147,8 @@ const KNOWN = [
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
   'components/pt-os/workout-log/ExercisePicker.tsx:283',
   'components/pt-os/workout-log/ExercisePicker.tsx:297',
-  'lib/auth-context.tsx:214',
-  'lib/auth-context.tsx:216',
+  'lib/auth-context.tsx:217',
+  'lib/auth-context.tsx:219',
 ].sort();
 
 describe('silent catches are listed, and the list only shrinks', () => {
