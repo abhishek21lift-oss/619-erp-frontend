@@ -30,7 +30,7 @@ import type { FinanceSubTab } from '../_shared/types';
 import { Center, ConfirmDialog, ErrorState, IconBtn, MiniStat, Modal } from '../_shared/ui';
 import { clientLabel, daysOverdue, filterStudios, needsAction, planPrice } from '../_shared/billing';
 import type { BillingFilter, BillingSort } from '../_shared/billing';
-import { FormField, SelectInput, TextInput } from '@/components/ui/form';
+import { FormField, SearchField, SelectInput, TextInput } from '@/components/ui/form';
 import { CouponsTab } from './CouponsTab';
 import { errorMessage } from '@/lib/forms/errors';
 import { clampNumericText } from '@/components/ui/FloatInput';
@@ -236,30 +236,28 @@ export function BillingTab() {
       {studios.length > 0 && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search studios by name or plan" placeholder="Search studios or plans"
-              className="w-full rounded-xl py-2.5 pl-9 pr-3 text-[14px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-              style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-2)', minHeight: 44 }} />
+            <SearchField label="Search studios by name or plan" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <select aria-label="Filter by billing state" value={filter} onChange={(e) => setFilter(e.target.value as BillingFilter)}
-              className="min-h-[44px] flex-1 rounded-xl px-3 text-[13px] font-[650] sm:flex-none"
-              style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-2)' }}>
-              <option value="all">All states</option>
-              <option value="needs_action">Needs action</option>
-              <option value="active">Active</option>
-              <option value="trial">Trial</option>
-              <option value="frozen">Frozen</option>
-              <option value="expired">Expired</option>
-            </select>
-            <select aria-label="Sort studios" value={sort} onChange={(e) => setSort(e.target.value as BillingSort)}
-              className="min-h-[44px] flex-1 rounded-xl px-3 text-[13px] font-[650] sm:flex-none"
-              style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-2)' }}>
-              <option value="attention">Attention first</option>
-              <option value="name">Name A–Z</option>
-              <option value="expiry">Expiry soonest</option>
-            </select>
+            <FormField label="Filter by billing state" labelHidden className="flex-1 sm:flex-none">
+              <SelectInput value={filter} onChange={(e) => setFilter(e.target.value as BillingFilter)}
+                className="min-h-[44px] text-[13px] font-[650]">
+                <option value="all">All states</option>
+                <option value="needs_action">Needs action</option>
+                <option value="active">Active</option>
+                <option value="trial">Trial</option>
+                <option value="frozen">Frozen</option>
+                <option value="expired">Expired</option>
+              </SelectInput>
+            </FormField>
+            <FormField label="Sort studios" labelHidden className="flex-1 sm:flex-none">
+              <SelectInput value={sort} onChange={(e) => setSort(e.target.value as BillingSort)}
+                className="min-h-[44px] text-[13px] font-[650]">
+                <option value="attention">Attention first</option>
+                <option value="name">Name A–Z</option>
+                <option value="expiry">Expiry soonest</option>
+              </SelectInput>
+            </FormField>
           </div>
         </div>
       )}
@@ -683,7 +681,7 @@ export function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStud
                   set, so access stays open until you freeze or cancel it again. This is logged with your reason.
                 </p>
                 <FormField label="Reason (required)">
-                  <TextInput value={compReason} onChange={(e) => setCompReason(e.target.value)} maxLength={500} placeholder="e.g. Goodwill after payment outage" />
+                  <TextInput value={compReason} onChange={(e) => setCompReason(e.target.value)} maxLength={500} />
                 </FormField>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" className="min-h-[44px]" onClick={() => { setCompOpen(false); setCompReason(''); }} disabled={compBusy}>Cancel</Button>

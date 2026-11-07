@@ -125,7 +125,7 @@ const KNOWN = [
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
   'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:598',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:596',
   'app/(platform)/platform/_tabs/StudiosTab.tsx:375',
   'components/LandingPage.tsx:63',
   'components/LandingPage.tsx:70',
