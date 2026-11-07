@@ -120,11 +120,14 @@ function StudioTable({ rows }: { rows: StorageStudio[] }) {
   const max = Math.max(...rows.map((r) => r.bytes), 1);
   return (
     <Panel padded={false} className="overflow-hidden">
+      <p className="px-4 pt-3 text-[10.5px] sm:hidden" style={{ color: 'var(--text-disabled)' }}>
+        Swipe the table sideways for all columns.
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[620px] text-left">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              {['Studio', 'Stored', 'Objects', 'Reclaimable', 'Last upload'].map((h, i) => (
+              {['Studio', 'Stored', 'Objects', 'Deleted', 'Last upload'].map((h, i) => (
                 <th
                   key={h}
                   className={`px-4 py-2.5 text-[10px] font-[750] uppercase ${i === 0 ? '' : 'text-right'}`}
@@ -190,6 +193,9 @@ function LargestTable({ rows }: { rows: StorageObject[] }) {
   }
   return (
     <Panel padded={false} className="overflow-hidden">
+      <p className="px-4 pt-3 text-[10.5px] sm:hidden" style={{ color: 'var(--text-disabled)' }}>
+        Swipe the table sideways for all columns.
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[620px] text-left">
           <thead>
@@ -327,11 +333,12 @@ export default function StorageCentre() {
             icon={<TrendingUp size={15} />}
           />
           <CcStat tone={overview.deleted_bytes > 0 ? 'pink' : 'teal'}
-            label="Reclaimable" value={fmtBytes(overview.deleted_bytes)}
-            // Deleted here means "the app deleted it and the row was kept".
-            // Whether the bytes have actually left the bucket is R2's business,
-            // so this is framed as what could be reclaimed, not what was.
-            sub={`${nf(overview.deleted_objects)} deleted object${overview.deleted_objects === 1 ? '' : 's'}`}
+            label="Deleted · retained" value={fmtBytes(overview.deleted_bytes)}
+            // A soft delete keeps the row (and its bytes in the ledger), so this
+            // is "what the app deleted and kept the record of" — not a promise
+            // that the bytes are still in the bucket. It can legitimately exceed
+            // live storage when everything has been deleted.
+            sub={`${nf(overview.deleted_objects)} deleted object${overview.deleted_objects === 1 ? '' : 's'} kept`}
             icon={<Trash2 size={15} />}
           />
           <CcStat

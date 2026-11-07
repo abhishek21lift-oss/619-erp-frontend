@@ -162,7 +162,7 @@ describe('the AI operations deck', () => {
     expect(within(routing).getAllByText('llama-3.3-70b-versatile').length).toBeGreaterThan(0);
     // Where each tier's model came from.
     expect(within(routing).getByText('environment variable')).toBeTruthy();
-    expect(within(routing).getByText('Control Centre override')).toBeTruthy();
+    expect(within(routing).getByText('AI Control override')).toBeTruthy();
     // Catalog verdict per tier.
     expect(within(routing).getAllByText('Unavailable · cooldown').length).toBeGreaterThan(0);
   });
@@ -200,6 +200,28 @@ describe('the AI operations deck', () => {
     expect(within(gw).getByText('Cooling down')).toBeTruthy();
     expect(within(gw).getByText('4/4')).toBeTruthy();
     expect(within(gw).getByText('0/3')).toBeTruthy();
+  });
+
+  it('does not present an empty catalog as a confident "0 of 0"', () => {
+    const empty = gwData({
+      models: {
+        source: 'GET /v1/models', exposed: true, reason: null,
+        total: 0, available: 0, unavailable: 0, routers: [], by_provider: [], configured: [],
+      },
+      providers: {
+        source: 'GET /v1/providers', exposed: true, reason: null,
+        total: 2, healthy: 1, rate_limited: 1, invalid: 0, unknown: 0,
+        items: [
+          { id: 'google', name: 'Google AI Studio', status: 'healthy', enabled_keys: 2, resume_at: null, last_error: null, requests_remaining_pct: null, models_total: 0, models_available: 0 },
+          { id: 'groq', name: 'Groq', status: 'rate_limited', enabled_keys: 1, resume_at: NOW, last_error: '429 from upstream', requests_remaining_pct: 0, models_total: 0, models_available: 0 },
+        ],
+      },
+    });
+    render(<AiOperations snap={snap({ ai: card('ai', 'healthy', aiData()), freellmapi: card('freellmapi', 'healthy', empty) })} onRefresh={() => {}} />);
+    const gw = screen.getByText('Gateway, providers and keys').closest('section')!;
+    expect(within(gw).queryByText('0 of 0')).toBeNull();
+    expect(within(gw).getByText('None listed')).toBeTruthy();
+    expect(within(gw).getByText(/catalog listed no models.*served by llama-3\.3-70b-versatile/)).toBeTruthy();
   });
 
   it('reports key COUNTS and says per-key health is unavailable, never inferring it', () => {

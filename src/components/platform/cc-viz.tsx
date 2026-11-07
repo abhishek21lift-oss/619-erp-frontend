@@ -157,7 +157,7 @@ export function CcStat({ label, value, sub, icon, tone, onClick }: {
     <>
       <span aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl" style={{ background: t.to, opacity: 0.16 }} />
       <div className="relative flex items-start justify-between gap-2">
-        <p className="min-w-0 truncate text-[10.5px] font-[800] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <p className="line-clamp-2 min-w-0 text-[10.5px] font-[800] uppercase leading-tight tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>{label}</p>
         <CcIcon tone={tone} size={32}>{icon}</CcIcon>
       </div>
       <p className="relative mt-2 truncate text-[26px] font-[850] tabular-nums tracking-[-0.04em]" style={{ color: 'var(--text-primary)' }}>{value}</p>
