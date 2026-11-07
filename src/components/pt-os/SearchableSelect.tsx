@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
-import { Check, ChevronDown, Plus } from 'lucide-react';
+import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
 import { openWithKeyboard } from '@/lib/search-field-focus';
 
@@ -20,20 +20,21 @@ interface SearchableSelectProps {
   /** `readonly` so an `as const` list can be passed without a defensive copy —
    *  the component only maps over it. */
   options: readonly (SearchableSelectOption | string)[];
-  placeholder?: string;
   error?: string;
   required?: boolean;
   /** When true (default), unmatched search text can be used as a freeform value. */
   allowCustom?: boolean;
   /** Hides the visible uppercase label above the field — `label` still drives
-   *  the accessible name and the closed-state placeholder ("Select …"), so a
-   *  screen reader and an empty field both still say what it is. */
+   *  the accessible name. */
   hideLabel?: boolean;
+  /** Shows a "Clear selection" action once a value is set. */
+  allowClear?: boolean;
 }
 
 /** A closed dropdown with an in-list filter input, and an optional freeform fallback. */
 export function SearchableSelect({
-  label, value, onChange, options, placeholder, error, required, allowCustom = true, hideLabel = false,
+  label, value, onChange, options, error, required, allowCustom = true, hideLabel = false,
+  allowClear = false,
 }: SearchableSelectProps) {
   const normalized: SearchableSelectOption[] = options.map((o) =>
     typeof o === 'string' ? { value: o, label: o } : o,
@@ -85,8 +86,8 @@ export function SearchableSelect({
   return (
     <div className="relative" ref={wrapRef}>
       {!hideLabel && (
-        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-          {label} {required && <span style={{ color: '#852E4E' }}>*</span>}
+        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: '#475569' }}>
+          {label} {required && <span style={{ color: 'var(--danger-text)' }}>*</span>}
         </p>
       )}
       <button
@@ -110,7 +111,7 @@ export function SearchableSelect({
         }}
       >
         <span className={cn('flex-1 text-[13px] font-[500]', value ? 'text-[rgb(15,23,42)]' : 'text-[rgb(148,163,184)]')}>
-          {selected ? <>{selected.icon && <span className="mr-1.5" aria-hidden>{selected.icon}</span>}{selected.label}</> : (value || placeholder || `Select ${label}`)}
+          {selected ? <>{selected.icon && <span className="mr-1.5" aria-hidden>{selected.icon}</span>}{selected.label}</> : value}
         </span>
         <ChevronDown size={14} style={{ color: 'rgb(148,163,184)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms', flexShrink: 0 }} />
       </button>
@@ -137,7 +138,6 @@ export function SearchableSelect({
                 ref={searchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search..."
                 className="w-full rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
                 style={{ background: 'var(--bg-subtle)', color: 'rgb(15,23,42)' }}
               />
@@ -152,6 +152,16 @@ export function SearchableSelect({
               className="max-h-56 overflow-y-auto overscroll-contain p-1"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
+              {allowClear && value && (
+                <button
+                  type="button"
+                  onClick={() => { onChange(''); setOpen(false); setQuery(''); }}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
+                  style={{ color: 'rgb(100,116,139)' }}
+                >
+                  <X size={12} aria-hidden /> Clear selection
+                </button>
+              )}
               {filtered.map((opt) => (
                 <button
                   key={opt.value} type="button"

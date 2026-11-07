@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
-import { Button, EmptyState, HeroButton, PageHero, PullToRefresh } from '@/components/ui';
+import { Button, EmptyState, PageActions, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
@@ -64,9 +64,9 @@ function fmtDayLabel(ymd: string): string {
    the database will accept. Note the underscore in no_show. */
 const STATUS_META: Record<PtSessionStatus, { label: string; color: string; bg: string }> = {
   scheduled: { label: 'Scheduled', color: '#852E4E', bg: 'rgba(163,55,87,0.12)' },
-  completed: { label: 'Completed', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  completed: { label: 'Completed', color: '#047857', bg: 'rgba(16,185,129,0.12)' },
   cancelled: { label: 'Cancelled', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  no_show:   { label: 'No Show',   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  no_show:   { label: 'No Show',   color: '#B45309', bg: 'rgba(245,158,11,0.12)' },
 };
 
 const WEEKDAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -449,17 +449,16 @@ export default function MySchedulePage() {
         <div className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] pb-6">
 
             <PageHero
-              className="mb-5"
+              className="mb-3"
               icon={<CalendarCheck size={20} />}
               title="My Schedule"
-
-              actions={
-                <HeroButton className="w-full sm:w-auto" icon={<CalendarPlus size={15} />}
-                  onClick={() => router.push('/pt-os/schedule-session')}>
-                  Book Session
-                </HeroButton>
-              }
             />
+            <PageActions className="mb-5">
+              <Button className="min-h-11" iconLeft={<CalendarPlus size={15} />}
+                onClick={() => router.push('/pt-os/schedule-session')}>
+                Book Session
+              </Button>
+            </PageActions>
 
             {/* The trainer owns the studio, so their schedule is the studio's
                 sessions — there is no "login not linked to a trainer profile"
@@ -470,20 +469,20 @@ export default function MySchedulePage() {
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <button type="button" onClick={() => shiftWeek(-1)} aria-label="Previous week"
-                      className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
+                      className="flex h-11 w-11 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ border: '1px solid var(--border)' }}>
                       <ChevronLeft size={15} style={{ color: 'var(--text-muted)' }} />
                     </button>
                     <div className="flex items-center gap-2.5">
                       <span className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{monthLabel}</span>
                       <button type="button" onClick={jumpToToday}
-                        className="rounded-full px-2.5 py-1 text-[10.5px] font-[750] uppercase tracking-wide transition-opacity hover:opacity-80"
+                        className="inline-flex min-h-[44px] items-center rounded-full px-3 text-[10.5px] font-[750] uppercase tracking-wide transition-opacity hover:opacity-80"
                         style={{ background: 'rgba(163,55,87,0.12)', color: '#852E4E' }}>
                         Today
                       </button>
                     </div>
                     <button type="button" onClick={() => shiftWeek(1)} aria-label="Next week"
-                      className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
+                      className="flex h-11 w-11 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ border: '1px solid var(--border)' }}>
                       <ChevronRight size={15} style={{ color: 'var(--text-muted)' }} />
                     </button>
@@ -525,8 +524,8 @@ export default function MySchedulePage() {
                   {[
                     { label: 'On This Day', value: dayStats.total, color: '#852E4E' },
                     { label: 'To Do', value: dayStats.toDo, color: '#852E4E' },
-                    { label: 'Completed', value: dayStats.done, color: '#10b981' },
-                    { label: 'Missed', value: dayStats.missed, color: '#f59e0b' },
+                    { label: 'Completed', value: dayStats.done, color: '#047857' },
+                    { label: 'Missed', value: dayStats.missed, color: '#B45309' },
                   ].map((s) => (
                     <div key={s.label} className="rounded-[14px] px-4 py-3"
                       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>

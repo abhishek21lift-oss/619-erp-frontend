@@ -123,6 +123,32 @@ describe('roster signals card', () => {
     expect(screen.queryByText('Finished Farhan')).not.toBeInTheDocument();
   });
 
+  it('does not count an info-only sweep as anyone to call', async () => {
+    // The server's `clients_with_signals` includes info rows, so a roster with
+    // one finished term and nothing urgent read "1 to call" over a list with no
+    // call to make. The count and the tile are for actionable rows only.
+    resolve(sweep({
+      clients: 1,
+      clients_detail: [client({
+        client_id: 'q1',
+        client_name: 'Finished Farhan',
+        worst: 'info',
+        signals: [{
+          id: 'term_ended_inactive',
+          severity: 'info',
+          headline: 'Term finished, not training',
+          evidence: 'term ended 2025-11-30',
+          recommendation: 'Win-back, not a chase.',
+        }],
+      })],
+    }));
+    render(<RosterSignalsCard />);
+
+    expect(await screen.findByText('1 swept')).toBeInTheDocument();
+    expect(screen.queryByText('to call')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1 with nothing urgent/i })).toBeInTheDocument();
+  });
+
   it('puts the info findings behind a disclosure that says what they are', async () => {
     resolve(sweep({
       clients_detail: [

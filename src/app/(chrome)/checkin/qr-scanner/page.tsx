@@ -168,13 +168,13 @@ function HeaderStat({ icon, value, label, loading }: {
 }) {
   return (
     <div className="flex items-center gap-2.5 rounded-[18px] px-3.5 py-2.5"
-      style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+      style={{ background: 'rgba(2,6,23,0.28)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(255,255,255,0.2)' }}>
         {icon}
       </span>
       <div className="min-w-0">
         <p className="text-[22px] font-[850] leading-none tabular-nums tracking-[-0.03em]">{loading ? '—' : value}</p>
-        <p className="mt-1 text-[10px] font-[750] uppercase tracking-[0.1em] text-white/75">{label}</p>
+        <p className="mt-1 text-[10px] font-[750] uppercase tracking-[0.1em] text-white">{label}</p>
       </div>
     </div>
   );
@@ -183,7 +183,7 @@ function HeaderStat({ icon, value, label, loading }: {
 function RoundButton({ label, onClick, href, pressed, children }: {
   label: string; onClick?: () => void; href?: string; pressed?: boolean; children: React.ReactNode;
 }) {
-  const cls = 'grid h-10 w-10 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95';
+  const cls = 'grid h-11 w-11 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95';
   const style = { background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.24)' };
   return href
     ? <Link href={href} aria-label={label} className={cls} style={style}>{children}</Link>

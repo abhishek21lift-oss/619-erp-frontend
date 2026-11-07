@@ -27,9 +27,13 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // a calendar rather than a dumbbell — it opens a schedule, not a workout.
 const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
   { href: '/',                   icon: Home,          label: 'Home'     },
-  { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
-  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite'   },
-  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
+  { href: '/pt-os/clients',      icon: Users,         label: 'Clients',  alsoActive: ['/pt-os/new-client'] },
+  // The AI Suite spans two route prefixes: `/ai-coach` and the `/ai` analysis
+  // tools. Without the extra matches the tab goes dark on the generator
+  // pages, which is exactly where a trainer is most likely to be.
+  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite',
+    alsoActive: ['/ai/workout-generator', '/ai/diet-generator', '/ai/progress-analysis', '/ai/business-insights'] },
+  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Sessions', alsoActive: ['/pt-os/today', '/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
   { href: '/checkin/qr-scanner', icon: ScanFace,      label: 'Check-in', feature: 'attendance' },
 ];
 
@@ -74,7 +78,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
     <m.nav
       // `bottom` comes from .mobile-bottom-nav rather than Tailwind's
       // bottom-0, so exactly one rule in the app decides where this bar sits.
-      // That rule is `bottom: 0`. See BOTTOM-NAV.md for the two attempts at
+      // That rule is `bottom: 0`. See docs/audits/BOTTOM-NAV.md for the two attempts at
       // making it cleverer than that, and why both were wrong.
       className="mobile-bottom-nav fixed left-0 right-0 z-40 lg:hidden"
       data-no-pull-refresh
@@ -159,7 +163,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   the bar's height is fixed — letting it stack onto two lines
                   would push it out of the row. */}
               <span
-                className="relative z-10 select-none whitespace-nowrap text-[9.5px] font-bold uppercase leading-none"
+                className="relative z-10 select-none whitespace-nowrap text-[10.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
                   color: isActive ? BOTTOM_NAV_COLORS.activeLabel : BOTTOM_NAV_COLORS.inactiveLabel,

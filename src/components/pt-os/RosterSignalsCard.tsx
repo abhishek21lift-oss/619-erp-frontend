@@ -206,7 +206,7 @@ export default function RosterSignalsCard() {
   return (
     <Shell
       swept={sweep.clients}
-      flagged={sweep.clients_with_signals}
+      flagged={sweep.critical + sweep.warning}
       urgent={sweep.critical}
       accent={accent}
     >
@@ -233,7 +233,7 @@ export default function RosterSignalsCard() {
                   hidden rows are finished terms and stalled lifts can decide
                   whether to open them; "3 more" tells them nothing. */}
               <span className="flex-1 text-[12px] font-[700]">
-                {quiet.length} more with nothing urgent &mdash; finished terms and training notes
+                {quiet.length}{urgent.length ? ' more' : ''} with nothing urgent &mdash; finished terms and training notes
               </span>
             </button>
             {showQuiet && quiet.map((c, i) => (
@@ -315,12 +315,12 @@ function Shell({
           </div>
           <Link
             href="/pt-os/clients/at-risk"
-            className="shrink-0 self-center rounded-lg px-2 py-1.5 text-[11.5px] font-[700] hover:underline"
+            className="flex min-h-[44px] shrink-0 items-center self-center rounded-lg px-2 text-[11.5px] font-[700] hover:underline"
             style={{ color: 'var(--text-secondary)' }}
           >
             View all
           </Link>
-          {flagged !== undefined && (
+          {!!flagged && (
             <div
               className="flex shrink-0 flex-col items-center rounded-[16px] px-3.5 py-2"
               style={{ background: rgba(accent, 0.12), border: `1px solid ${rgba(accent, 0.18)}` }}

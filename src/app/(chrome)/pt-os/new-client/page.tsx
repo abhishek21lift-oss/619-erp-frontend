@@ -114,10 +114,10 @@ function Section({ kicker, title, subtitle, last, children }: SectionProps) {
   return (
     <div className={last ? '' : 'pb-10 mb-10 border-b'} style={last ? undefined : { borderColor: 'var(--border)' }}>
       {kicker && (
-        <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: '#F59E0B' }}>{kicker}</p>
+        <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: '#B45309' }}>{kicker}</p>
       )}
       <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">{title}</h2>
-      {subtitle && <p className="text-[13px] text-slate-400 mt-1.5 mb-7">{subtitle}</p>}
+      {subtitle && <p className="text-[13px] text-slate-500 mt-1.5 mb-7">{subtitle}</p>}
       {!subtitle && <div className="mb-7" />}
       {children}
     </div>
@@ -341,7 +341,7 @@ function NewClientForm() {
               </div>
             )}
             <Button
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #B45309, #92400E)', color: '#fff' }}
               onClick={() => router.push(`/pt-os/welcome-tour?client_id=${createdId}`)}
             >
               <Sparkles size={17} className="mr-2" />
@@ -442,8 +442,8 @@ function NewClientForm() {
                 through three toggle buttons is honest and works today.
               */}
               <div role="group" aria-labelledby="gender-label" aria-describedby={errors.gender ? 'gender-error' : undefined}>
-                <p id="gender-label" className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                  Gender <span style={{ color: '#F59E0B' }}>*</span>
+                <p id="gender-label" className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: '#475569' }}>
+                  Gender <span style={{ color: 'var(--danger-text)' }}>*</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {GENDERS.map((g) => (
@@ -451,7 +451,7 @@ function NewClientForm() {
                       key={g} type="button"
                       aria-pressed={form.gender === g}
                       onClick={() => { set('gender', g); setErrors((e) => { const n = { ...e }; delete n.gender; return n; }); }}
-                      className="rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
+                      className="min-h-[44px] rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
                       style={{
                         background: form.gender === g ? '#0f172a' : '#f8fafc',
                         color: form.gender === g ? '#fff' : '#64748b',
@@ -505,7 +505,7 @@ function NewClientForm() {
                   error={errors.whatsapp}
                   disabled={form.whatsappSameAsMobile}
                 />
-                <label className="mt-2 flex items-center gap-2 cursor-pointer select-none">
+                <label className="mt-2 flex min-h-[44px] cursor-pointer select-none items-center gap-2">
                   <input
                     type="checkbox" checked={form.whatsappSameAsMobile}
                     onChange={(e) => handleWhatsappToggle(e.target.checked)}
@@ -522,12 +522,8 @@ function NewClientForm() {
                 error={errors.email}
               />
 
-              {/* The placeholder used to read "e.g. spouse, parent, friend",
-                  which asked for the relationship in the field that wants the
-                  name — the two are separate questions now, so it asks for a
-                  name. */}
               <FloatInput
-                label="Emergency Contact Name" placeholder="e.g. Meera Rao" value={form.emergencyContact}
+                label="Emergency Contact Name" value={form.emergencyContact}
                 onChange={(v) => set('emergencyContact', v)}
               />
 
@@ -540,7 +536,6 @@ function NewClientForm() {
 
               <SearchableSelect
                 label="Relationship"
-                placeholder="Relationship to the emergency contact"
                 required={hasEmergencyContact(form)}
                 value={form.emergencyRelationship}
                 onChange={(v) => { set('emergencyRelationship', v); setErrors((e) => { const n = { ...e }; delete n.emergencyRelationship; return n; }); }}
@@ -551,7 +546,6 @@ function NewClientForm() {
               {/* Closed list — allowCustom off. See CLIENT_SOURCES above. */}
               <SearchableSelect
                 label="Client Source"
-                placeholder="How did they find us?"
                 value={form.clientSource}
                 onChange={(v) => set('clientSource', v)}
                 options={CLIENT_SOURCES}
@@ -568,16 +562,16 @@ function NewClientForm() {
 
               {/* Profile Photo */}
               <div className="sm:col-span-2">
-                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Profile Photo</p>
+                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-500">Profile Photo</p>
                 {form.photoDataUrl ? (
                   <div className="flex items-center gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={form.photoDataUrl} alt="Client preview" className="h-20 w-20 rounded-full object-cover shadow-lg" />
                     <div className="flex flex-col gap-1.5">
-                      <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: '#F59E0B' }}>
+                      <button type="button" onClick={() => setCropModalOpen(true)} className="flex min-h-[44px] items-center text-left text-[12.5px] font-[640]" style={{ color: '#B45309' }}>
                         Change Photo
                       </button>
-                      <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640] text-slate-400">
+                      <button type="button" onClick={() => set('photoDataUrl', null)} className="flex min-h-[44px] items-center text-left text-[12.5px] font-[640] text-slate-500">
                         Remove
                       </button>
                     </div>
@@ -600,9 +594,9 @@ function NewClientForm() {
                       <Camera size={20} style={{ color: photoDragOver ? '#F59E0B' : '#94a3b8' }} />
                     </div>
                     <p className="text-[13px] font-[640] text-slate-500">
-                      {photoDragOver ? 'Drop here' : 'Drag & drop, browse, or use your camera'}
+                      {photoDragOver ? 'Drop here' : 'Tap to browse or use your camera'}
                     </p>
-                    <p className="text-[11.5px] mt-1 text-slate-400">JPG or PNG — optional</p>
+                    <p className="text-[11.5px] mt-1 text-slate-500">JPG or PNG — optional</p>
                   </div>
                 )}
               </div>
@@ -615,14 +609,15 @@ function NewClientForm() {
       {/* ── STICKY FOOTER ── */}
       <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
-          <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+          <Button variant="outline" className="min-h-11" onClick={handleCancel}>Cancel</Button>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={handleSaveDraft}>Save Draft</Button>
+            <Button variant="ghost" className="min-h-11" onClick={handleSaveDraft}>Save Draft</Button>
             <Button
+              className="min-h-11"
               iconLeft={!saving ? <Check size={14} /> : undefined}
               loading={saving} disabled={saving}
               onClick={handleSubmit}
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #B45309, #92400E)', color: '#fff' }}
             >
               {saving ? 'Creating...' : 'Create Client'}
             </Button>

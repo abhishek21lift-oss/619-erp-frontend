@@ -79,4 +79,26 @@ describe('the mobile bottom bar', () => {
     expect(screen.getByRole('link', { name: /home/i })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: /clients/i })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('keeps AI Coach current on the /ai analysis tools', () => {
+    pathname.current = '/ai/progress-analysis';
+    render(<MobileBottomNav />);
+
+    expect(screen.getByRole('link', { name: /ai coach/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('keeps Sessions current on the Today queue', () => {
+    pathname.current = '/pt-os/today';
+    render(<MobileBottomNav />);
+
+    expect(screen.getByRole('link', { name: /sessions/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /home/i })).not.toHaveAttribute('aria-current');
+  });
+
+  it('keeps Clients current while onboarding a new client', () => {
+    pathname.current = '/pt-os/new-client';
+    render(<MobileBottomNav />);
+
+    expect(screen.getByRole('link', { name: /clients/i })).toHaveAttribute('aria-current', 'page');
+  });
 });
