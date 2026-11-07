@@ -114,6 +114,31 @@ export const CARDIO_GOALS: readonly { key: string; label: string }[] = [
   { key: 'performance', label: 'Performance' },
 ];
 
+/** Record goals → the cardio goals above. Only unambiguous ones map. */
+const CARDIO_GOAL_BY_RECORD: Record<string, string> = {
+  weight_loss: 'fat-loss',
+  fat_loss: 'fat-loss',
+  endurance: 'endurance',
+  general_fitness: 'general-fitness',
+  recovery: 'recovery',
+  performance: 'performance',
+};
+
+function recordToken(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+export function mapCardioGoal(value: unknown): string {
+  return CARDIO_GOAL_BY_RECORD[recordToken(value)] ?? '';
+}
+
+/** athlete is the record's fourth level; the K11 ladder has three. */
+export function mapCardioExperience(value: unknown): CardioTraineeLevel | '' {
+  const key = recordToken(value);
+  if (key === 'beginner' || key === 'intermediate' || key === 'advanced') return key;
+  return key === 'athlete' ? 'advanced' : '';
+}
+
 export const CARDIO_PROGRAM_TYPES: readonly {
   key: CardioProgramType;
   label: string;

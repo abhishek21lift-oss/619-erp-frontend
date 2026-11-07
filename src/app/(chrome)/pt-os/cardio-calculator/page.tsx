@@ -21,6 +21,8 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
+import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
+import { useClientTrainingFacts } from '@/lib/client-training-facts';
 import { HeartPulse, Save, Trash2, TriangleAlert } from 'lucide-react';
 import {
   CARDIO_FREQUENCY_LIMITS,
@@ -45,6 +47,8 @@ import {
   getK11IntensityBand,
   getProgressionPhase,
   isCardioIntensity,
+  mapCardioExperience,
+  mapCardioGoal,
   readCardioPlanDraft,
   resolveHeartRateInputs,
   toCardioPlanConfig,
@@ -165,6 +169,11 @@ function SectionHeading({
 }
 
 export default function CardioCalculatorPage() {
+  // Optional client. The calculator works without one; picking one replaces
+  // the record-derived inputs below with what that record actually holds.
+  const [client, setClient] = useState<AiClientOption | null>(null);
+  const prefill = useClientTrainingFacts(client ? String(client.id) : null);
+
   // Client inputs
   const [age, setAge] = useState('');
   const [measuredMhr, setMeasuredMhr] = useState('');
@@ -194,6 +203,20 @@ export default function CardioCalculatorPage() {
   useEffect(() => {
     setSavedDraft(readCardioPlanDraft());
   }, []);
+
+  // Replace, never merge: a field the new client's record does not hold must
+  // not keep the previous client's number. Measured max HR is cleared too —
+  // it is not on file, and it belonged to the client that was selected before.
+  useEffect(() => {
+    const facts = prefill.facts;
+    if (!facts) return;
+    setAge(facts.age);
+    setMeasuredMhr('');
+    setRhr(facts.restingHeartRate);
+    setTraineeLevel(mapCardioExperience(facts.experienceLevel) || 'intermediate');
+    setGoal(mapCardioGoal(facts.goal) || 'general-fitness');
+    setFrequency(facts.trainingDays || '3');
+  }, [prefill.facts]);
 
   // ── Client heart-rate inputs ──────────────────────────────────────────────
   const ageNumber = parseWhole(age);
@@ -433,6 +456,17 @@ export default function CardioCalculatorPage() {
             <SectionHeading step="1" title="Client inputs and assessment values">
               Measured max HR is preferred; the age estimate is used only when it is absent.
             </SectionHeading>
+
+            <AiClientPicker selected={client} onSelect={setClient} />
+            {client && (
+              <p className="-mt-3 mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                {prefill.loading
+                  ? `Reading ${client.name}'s record…`
+                  : prefill.failed
+                    ? `Could not read ${client.name}'s record. Values were not changed.`
+                    : `Filled from ${client.name}'s record where available. Missing fields are blank or at the page default.`}
+              </p>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField label="Age (estimate only)" error={ageError ?? undefined}>

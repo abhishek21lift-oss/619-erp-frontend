@@ -27,6 +27,23 @@ vi.mock('@/components/ui', () => ({
     <select {...rest}>{children as React.ReactNode}</select>
   ),
 }));
+vi.mock('@/components/ai/AiClientPicker', () => ({
+  AiClientPicker: ({ onSelect }: { onSelect: (c: { id: string; name: string }) => void }) => (
+    <button onClick={() => onSelect({ id: 'c1', name: 'Amit' })}>Pick Amit</button>
+  ),
+}));
+vi.mock('@/lib/client-training-facts', () => ({
+  useClientTrainingFacts: (id: string | null) => (id
+    ? {
+      facts: {
+        name: 'Amit', age: '34', restingHeartRate: '62',
+        experienceLevel: 'advanced', goal: 'weight_loss', trainingDays: '4',
+      },
+      loading: false,
+      failed: false,
+    }
+    : { facts: null, loading: false, failed: false }),
+}));
 
 import CardioCalculatorPage from '@/app/(chrome)/pt-os/cardio-calculator/page';
 
@@ -67,6 +84,16 @@ describe('<CardioCalculatorPage />', () => {
     // 180 × 0.60 = 108, 180 × 0.70 = 126 — the K11 Moderate band.
     expect(screen.getByText('108–126 BPM')).toBeTruthy();
     expect(screen.getByText(/THR = 180 × 60%–70% = 108–126/)).toBeTruthy();
+  });
+
+  it('fills the calculator from the selected client record', () => {
+    render(<CardioCalculatorPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pick Amit' }));
+
+    expect((age() as HTMLInputElement).value).toBe('34');
+    expect((resting() as HTMLInputElement).value).toBe('62');
+    expect((screen.getByLabelText('Sessions per week') as HTMLInputElement).value).toBe('4');
+    expect(screen.getByText(/from Amit's record/i)).toBeTruthy();
   });
 
   it('switches to Karvonen without moving the band percentages off %MHR', () => {

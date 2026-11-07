@@ -1,27 +1,20 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
-import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
-import { PageHero } from '@/components/ui';
-import { Sparkles, Users, UserCheck, Weight, TrendingUp, Search, ArrowUpRight, ArrowDownRight, Minus, Target, Trophy, Activity } from 'lucide-react';
+import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import {
+  Card, CardBody, CardHeader, CardTitle, EmptyState, KpiCard,
+  PageContainer, PageHero, Skeleton,
+} from '@/components/ui';
+import { metricTone } from '@/components/visualizations';
 import { api, type TransformationRow } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
-import { PremiumMetricCardStandard, MetricGroup, metricTone } from '@/components/visualizations';
 import { errorMessage } from '@/lib/forms/errors';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } }
-};
-
-const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'var(--text-muted)' };
-const td = { padding: '12px 16px', fontSize: 13 };
+import {
+  Activity, ArrowDownRight, ArrowUpRight, Minus, Search, Sparkles,
+  Target, TrendingUp, Trophy, UserCheck, Users, Weight,
+} from 'lucide-react';
 
 /** A drop in weight is the good direction here, so the tone is inverted
  *  from a plain "up is good" trend — a gain reads as the concerning one.
@@ -51,6 +44,19 @@ function WeightChange({ current, change }: { current: number | null; change: num
         {change > 0 ? '+' : ''}{change.toFixed(1)}
       </span>
     </span>
+  );
+}
+
+function Metric({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </p>
+      <div className="mt-0.5 whitespace-nowrap text-[13px]" style={{ color: 'var(--text-primary)' }}>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -123,143 +129,170 @@ function Inner() {
   }, [tracked]);
 
   return (
-    <>
-      {/* No side padding of its own: the shell already provides the gutter,
-          and 32px on top of it squeezed the KPI grid on a phone (see PageHero). */}
-      <div style={{ paddingTop: 4, maxWidth: 1400, margin: '0 auto' }}>
-        <PageHero
-          className="mb-5"
-          icon={<Sparkles size={20} />}
-          title="Transformations"
+    <PageContainer>
+      <PageHero
+        className="mb-5"
+        icon={<Sparkles size={20} />}
+        title="Transformations"
+      />
 
+      {error && (
+        <div
+          role="alert"
+          className="rounded-[14px] border px-3 py-2.5 text-[12px]"
+          style={{ background: 'var(--danger-soft)', borderColor: 'var(--danger-soft)', color: 'var(--danger-text)' }}
+        >
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard label="Active Members" value={rows.length} icon={<Users size={16} />} accent="blue" loading={loading} />
+        <KpiCard label="Active Coaches" value={coaches} icon={<UserCheck size={16} />} accent="emerald" loading={loading} />
+        <KpiCard label="Avg Weight" value={avgWeight > 0 ? `${avgWeight.toFixed(0)} kg` : '—'} icon={<Weight size={16} />} accent="amber" loading={loading} />
+        {/* "Being tracked" is the honest denominator for everything below:
+            a client measured once has a weight, not a transformation. */}
+        <KpiCard label="Being Tracked" value={tracked.length} icon={<TrendingUp size={16} />} accent="purple" loading={loading} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <KpiCard
+          label="Net Weight Lost" icon={<Activity size={16} />} accent="emerald" loading={loading}
+          value={tracked.length ? `${netLost >= 0 ? '' : '+'}${Math.abs(netLost).toFixed(1)} kg` : '—'}
         />
+        <KpiCard
+          label="Trending Down" icon={<Target size={16} />} accent="blue" loading={loading}
+          value={losingPct === null ? '—' : `${losingPct}%`}
+        />
+        <KpiCard
+          label="Biggest Loss" icon={<Trophy size={16} />} accent="amber" loading={loading}
+          value={topPerformer
+            ? `${topPerformer.name ?? '—'} (${Math.abs(topPerformer.weight_change ?? 0).toFixed(1)} kg)`
+            : '—'}
+        />
+      </div>
 
-        {error && (
-          <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 18px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>
-            {error}
-          </m.div>
-        )}
-
-        {/* ── KPI Grid ── */}
-        <div style={{ marginBottom: 28 }}>
-          <MetricGroup columns={4}>
-            <PremiumMetricCardStandard label="Active Members" value={rows.length} icon={<Users size={16} />} loading={loading} />
-            <PremiumMetricCardStandard label="Active Coaches" value={coaches} icon={<UserCheck size={16} />} loading={loading} />
-            <PremiumMetricCardStandard label="Avg Weight" value={avgWeight > 0 ? `${avgWeight.toFixed(0)} kg` : '—'} icon={<Weight size={16} />} loading={loading} />
-            {/* "Being tracked" is the honest denominator for everything below:
-                a client measured once has a weight, not a transformation. */}
-            <PremiumMetricCardStandard label="Being Tracked" value={tracked.length} icon={<TrendingUp size={16} />} loading={loading} />
-          </MetricGroup>
-        </div>
-
-        {/* ── Quick Stats Row ── */}
-        <div style={{ marginBottom: 28 }}>
-          <MetricGroup columns={3}>
-            <PremiumMetricCardStandard
-              label="Net Weight Lost" icon={<Activity size={14} />} loading={loading}
-              value={tracked.length ? `${netLost >= 0 ? '' : '+'}${Math.abs(netLost).toFixed(1)} kg` : '—'}
+      <Card>
+        <CardHeader className="flex-wrap gap-3 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <CardTitle>Active Members</CardTitle>
+            <span
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]"
+              style={{ background: 'var(--action-soft)', color: 'var(--action-text)' }}
+            >
+              {filtered.length}
+            </span>
+          </div>
+          <div className="relative w-full sm:w-[260px]">
+            <Search
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: 'var(--text-disabled)' }}
             />
-            <PremiumMetricCardStandard
-              label="Trending Down" icon={<Target size={14} />} loading={loading}
-              value={losingPct === null ? '—' : `${losingPct}%`}
+            <input
+              type="search"
+              aria-label="Search member or coach"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-11 w-full rounded-xl pl-9 pr-3 text-[13px] outline-none"
+              style={{
+                border: '1.5px solid var(--border)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+              }}
             />
-            <PremiumMetricCardStandard
-              label="Biggest Loss" icon={<Trophy size={14} />} loading={loading}
-              value={topPerformer
-                ? `${topPerformer.name ?? '—'} (${Math.abs(topPerformer.weight_change ?? 0).toFixed(1)} kg)`
-                : '—'}
-            />
-          </MetricGroup>
-        </div>
+          </div>
+        </CardHeader>
 
-        {/* ── Members Table ── */}
-        <m.div variants={containerVariants} initial="hidden" animate="visible">
-          <m.div variants={itemVariants}
-            style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', background: 'var(--bg-card)' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: 'var(--bg-subtle)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 4, height: 18, borderRadius: 3, background: 'linear-gradient(180deg, #A33757, #852E4E)', display: 'inline-block' }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Active Members</span>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'rgba(163,55,87,0.1)', color: '#A33757', border: '1px solid rgba(163,55,87,0.2)' }}>{filtered.length}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid #cbd5e1' }}>
-                  <Search size={13} color="#94a3b8" />
-                  <input aria-label="Search member or coach" value={search} onChange={(e) => setSearch(e.target.value)}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, width: 200 }} />
+        <CardBody className="p-0">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 border-b px-4 py-4 last:border-0 sm:px-6"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <Skeleton variant="circle" width={40} height={40} />
+                <div className="flex-1 space-y-2">
+                  <Skeleton height={12} width="40%" />
+                  <Skeleton height={10} width="25%" />
                 </div>
               </div>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg-subtle)' }}>
-                    {['ID', 'Member Name', 'Coach', 'Start Weight', 'Current Weight', 'Joined Date', 'Action'].map((h) => (
-                      <th key={h} style={th}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i}><td colSpan={7} style={{ padding: '14px 16px' }}>
-                        <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-                          style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} />
-                      </td></tr>
-                    ))
-                  ) : filtered.length === 0 ? (
-                    <tr><td colSpan={7} style={{ padding: 50, textAlign: 'center' }}>
-                      <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(163,55,87,0.12), rgba(163,55,87,0.06))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(163,55,87,0.15)' }}>
-                          <Sparkles size={28} color="#A33757" />
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-secondary)' }}>Ready to start tracking?</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-disabled)', maxWidth: 360, lineHeight: 1.5 }}>Add members to start tracking.</div>
-                      </m.div>
-                    </td></tr>
-                  ) : (
-                    filtered.map((c, i) => (
-                      <m.tr key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                        style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f8fafc' : '#fff' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.04)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f8fafc' : '#fff'; }}>
-                        <td style={td}>
-                          <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: 'rgba(163,55,87,0.08)', color: '#A33757', border: '1px solid rgba(163,55,87,0.15)' }}>{c.client_id || '—'}</span>
-                        </td>
-                        <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <ClientAvatar name={c.name ?? ''} photoUrl={c.photo_url}
-                              style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#A33757','#10b981','#f59e0b','#A33757','#A33757','#A33757'][Math.abs((c.name ?? '').split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #A33757)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }} />
-                            {c.name ?? '—'}
-                          </span>
-                        </td>
-                        <td style={{ ...td, color: 'var(--text-muted)' }}>{c.trainer_name || '—'}</td>
-                        <td style={{ ...td, color: 'var(--text-muted)' }}>
-                          {c.start_weight !== null
-                            ? `${c.start_weight.toFixed(1)} kg`
-                            : <span style={{ color: 'var(--text-disabled)' }}>—</span>}
-                        </td>
-                        <td style={td}><WeightChange current={c.current_weight} change={c.weight_change} /></td>
-                        <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.created_at ?? undefined)}</td>
-                        <td style={td}>
-                          <Link href={`/pt-os/clients/${c.id}`}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(163,55,87,0.08)', color: '#A33757', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(163,55,87,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.15)'; e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(163,55,87,0.15)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(163,55,87,0.08)'; e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                            Log Progress <ArrowUpRight size={12} />
-                          </Link>
-                        </td>
-                      </m.tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </m.div>
-        </m.div>
-      </div>
-    </>
+            ))
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={<Sparkles size={22} />}
+              title="Ready to start tracking?"
+              description="Add members to start tracking."
+            />
+          ) : (
+            <ul>
+              {filtered.map((c) => (
+                <li
+                  key={c.id}
+                  className="border-b transition-colors last:border-0 hover:bg-[var(--bg-hover)]"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <ClientAvatar
+                        name={c.name ?? ''}
+                        photoUrl={c.photo_url}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          flexShrink: 0,
+                          borderRadius: 12,
+                          background: 'linear-gradient(135deg, #A33757, #852E4E)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          color: '#fff',
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-[600]" style={{ color: 'var(--text-primary)' }}>
+                          {c.name ?? '—'}
+                        </p>
+                        <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                          {c.client_id || '—'}{c.trainer_name ? ` · ${c.trainer_name}` : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 sm:flex sm:items-center sm:gap-6">
+                      <Metric label="Start">
+                        {c.start_weight !== null
+                          ? `${c.start_weight.toFixed(1)} kg`
+                          : <span style={{ color: 'var(--text-disabled)' }}>—</span>}
+                      </Metric>
+                      <Metric label="Current">
+                        <WeightChange current={c.current_weight} change={c.weight_change} />
+                      </Metric>
+                      <Metric label="Joined">{fmtDate(c.created_at ?? undefined)}</Metric>
+                    </div>
+
+                    <Link
+                      href={`/pt-os/clients/${c.id}`}
+                      aria-label={`Log progress for ${c.name ?? 'member'}`}
+                      className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[12px] font-[600] transition-colors sm:shrink-0"
+                      style={{
+                        background: 'var(--action-soft)',
+                        color: 'var(--action-text)',
+                        border: '1px solid var(--border)',
+                      }}
+                    >
+                      Log Progress <ArrowUpRight size={13} />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+    </PageContainer>
   );
 }

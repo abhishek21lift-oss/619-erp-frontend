@@ -420,17 +420,13 @@ export const JUSTIFIED = {
   },
 
   'src/components/fitness/AiCoachPanel.tsx': {
-    allow: 3,
+    allow: 1,
     reason:
       'This panel is hard-coded white-on-dark glass, not the theme-aware ' +
       'chrome surface: its controls use rgba(255,255,255,…) text and fills, so ' +
       'FormField/TextInput would put theme-aware text on a fixed dark panel. ' +
-      'Its local Field component wraps each control in a <label> with the ' +
-      'visible caption, the numeric input is type="text" with inputMode, an ' +
-      'aria-label and a readOnly record state, the local select carries its ' +
-      'own aria-label, and the chat composer now carries one too. No error ' +
-      'state exists here to wire. The fourth input is the client search, ' +
-      'native by kind.',
+      'It now holds only the chat composer and the client search, both named ' +
+      'with aria-labels; there is no business field or error state to wire.',
   },
 
   'src/lib/insights/date-range.tsx': {

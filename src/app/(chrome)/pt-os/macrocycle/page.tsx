@@ -7,16 +7,18 @@
 // phase's weeks, so the builder and the assignment flow need no new concepts —
 // the trainer writes each phase exactly like a hand-built programme.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
 import { CheckboxField, type FieldLike } from '@/components/ui/form';
+import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
+import { useClientTrainingFacts } from '@/lib/client-training-facts';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { CalendarRange, Loader2, Plus } from 'lucide-react';
 import {
-  MACRO_GOALS, buildMacroCycle, macroPhasePlans, microCycleDays, type MacroGoal,
+  MACRO_GOALS, buildMacroCycle, macroPhasePlans, mapMacroGoal, microCycleDays, type MacroGoal,
 } from '@/lib/macro-programming';
 
 /** Text → an integer inside the range, falling back only when the text is not a number. */
@@ -34,6 +36,10 @@ function weeksLabel(weeks: number[]): string {
 
 export default function MacrocyclePage() {
   const { toast } = useToast();
+  // Optional client. The planner works without one; picking one replaces the
+  // record-derived inputs below with what that record actually holds.
+  const [client, setClient] = useState<AiClientOption | null>(null);
+  const prefill = useClientTrainingFacts(client ? String(client.id) : null);
   const [goal, setGoal] = useState<MacroGoal>('general_fitness');
   const [totalWeeksText, setTotalWeeksText] = useState('12');
   const [daysPerWeekText, setDaysPerWeekText] = useState('3');
@@ -52,6 +58,15 @@ export default function MacrocyclePage() {
     key: string;
     plans: Array<{ id: string; name: string }>;
   } | null>(null);
+
+  // Replace, never merge: a value the new client's record does not hold falls
+  // back to the planner's own default instead of the previous client's entry.
+  useEffect(() => {
+    const facts = prefill.facts;
+    if (!facts) return;
+    setGoal(mapMacroGoal(facts.goal) || 'general_fitness');
+    setDaysPerWeekText(facts.trainingDays || '3');
+  }, [prefill.facts]);
 
   const input = useMemo(
     () => ({ goal, totalWeeks, daysPerWeek, includeDeload }),
@@ -107,6 +122,19 @@ export default function MacrocyclePage() {
           title="Macrocycle"
 
         />
+
+        <div className="mb-3">
+          <AiClientPicker selected={client} onSelect={setClient} />
+          {client && (
+            <p className="mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              {prefill.loading
+                ? `Reading ${client.name}'s record…`
+                : prefill.failed
+                  ? `Could not read ${client.name}'s record. Values were not changed.`
+                  : `Filled from ${client.name}'s record where available. Missing fields use the page default.`}
+            </p>
+          )}
+        </div>
 
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <FormField label="Goal">

@@ -13,7 +13,6 @@ const streamAiChat = vi.fn();
 vi.mock('@/lib/ai-stream', () => ({
   streamAiChat: (...a: unknown[]) => streamAiChat(...a),
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -22,18 +21,10 @@ vi.mock('@/lib/api', () => ({
       search: vi.fn().mockResolvedValue([]),
       get: vi.fn(),
     },
-    ai: {
-      generateWorkout: vi.fn(),
-      generateDiet: vi.fn(),
-    },
-    workouts: {
-      plans: { saveFromGeneration: vi.fn() },
-    },
   },
 }));
 
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
-import { api } from '@/lib/api';
 
 type Handlers = {
   onConversationId?: (id: string) => void;
@@ -275,175 +266,10 @@ describe('<AiCoachPanel />', () => {
     expect(streamAiChat).toHaveBeenCalledTimes(2);
     expect((streamAiChat.mock.calls[1][0] as { message: string }).message).toBe('hi');
   });
-});
 
-describe('<AiCoachPanel type="workout" /> day count', () => {
-  const member = (over: Record<string, unknown> = {}) => ({
-    id: 'c1', name: 'Amit Shukla', dob: '1990-01-01', gender: 'male',
-    weight: 70, height: 175, ...over,
-  });
-
-  async function pick(name = 'Amit Shukla') {
-    const search = screen.getByLabelText('Search clients');
-    fireEvent.focus(search);
-    await waitFor(() => expect(screen.getByText(name)).toBeTruthy());
-    fireEvent.mouseDown(screen.getByText(name));
-  }
-
-  const daysBox = () => screen.getByLabelText('Training days per week') as HTMLInputElement;
-
-  beforeEach(() => {
-    vi.mocked(api.clients.list).mockResolvedValue([]);
-    vi.mocked(api.ai.generateWorkout).mockReset();
-    vi.mocked(api.workouts.plans.saveFromGeneration).mockReset();
-  });
-
-  it('starts from the member\'s recorded sessions, not a guessed four', async () => {
-    vi.mocked(api.clients.list).mockResolvedValue([member({ sessions_per_week: 6 }) as never]);
+  it('links to the standalone generator instead of generating inline', () => {
     render(<AiCoachPanel type="workout" />);
-
-    await pick();
-
-    expect(daysBox().value).toBe('6');
-  });
-
-  it('falls back to the number of preferred training days', async () => {
-    vi.mocked(api.clients.list).mockResolvedValue([
-      member({ sessions_per_week: null, preferred_training_days: 'Mon, Wed, Fri' }) as never,
-    ]);
-    render(<AiCoachPanel type="workout" />);
-
-    await pick();
-
-    expect(daysBox().value).toBe('3');
-  });
-
-  it('stays blank when the record holds no frequency, and sends that blank', async () => {
-    vi.mocked(api.clients.list).mockResolvedValue([member() as never]);
-    vi.mocked(api.ai.generateWorkout).mockResolvedValue({
-      data: {
-        name: 'Plan', goal: 'muscle_gain', level: 'beginner', weeks: 4,
-        days_per_week: 4, weekly_schedule: {},
-      },
-    } as never);
-    render(<AiCoachPanel type="workout" />);
-
-    await pick();
-    expect(daysBox().value).toBe('');
-
-    fireEvent.change(screen.getByLabelText('Goal'), { target: { value: 'Muscle Gain' } });
-    // Two controls carry that name: the mode toggle and the submit button.
-    const generate = screen.getAllByRole('button', { name: /Generate Plan/i });
-    fireEvent.click(generate[generate.length - 1]);
-
-    await waitFor(() => expect(api.ai.generateWorkout).toHaveBeenCalled());
-    const body = vi.mocked(api.ai.generateWorkout).mock.calls[0][0] as Record<string, unknown>;
-    // Blank is omitted, not turned into a number the trainer never chose.
-    expect(body.training_days).toBeUndefined();
-    // Nor is an unassessed client silently called a beginner.
-    expect(body.experience_level).toBeUndefined();
-  });
-
-  it('shows the record\'s goal and experience instead of letting a pick be ignored', async () => {
-    // The server prefers the client record. A trainer selecting "Strength"
-    // for a muscle-gain client was choosing a value the request discarded.
-    vi.mocked(api.clients.list).mockResolvedValue([member({
-      goal: 'muscle_gain', workout_experience_level: 'advanced', sessions_per_week: 4,
-    }) as never]);
-    render(<AiCoachPanel type="workout" />);
-
-    await pick();
-
-    const goal = screen.getByLabelText('Goal') as HTMLSelectElement;
-    const level = screen.getByLabelText('Experience level') as HTMLSelectElement;
-    expect(goal.value).toBe('Muscle Gain');
-    expect(goal.disabled).toBe(true);
-    expect(level.value).toBe('Advanced');
-    expect(level.disabled).toBe(true);
-    expect(daysBox().readOnly).toBe(true);
-  });
-
-  it('saves the preview from the generation id instead of dropping it', async () => {
-    vi.mocked(api.clients.list).mockResolvedValue([member({ goal: 'muscle_gain' }) as never]);
-    vi.mocked(api.ai.generateWorkout).mockResolvedValue({
-      data: {
-        name: 'Plan', goal: 'muscle_gain', level: 'beginner', weeks: 4,
-        days_per_week: 4, weekly_schedule: {},
-      },
-      generation_id: 'gen-42',
-    } as never);
-    vi.mocked(api.workouts.plans.saveFromGeneration).mockResolvedValue({
-      plan_id: 'plan-42', name: 'Plan', saved: 6, unresolved: [],
-    } as never);
-    render(<AiCoachPanel type="workout" />);
-
-    await pick();
-    const generate = screen.getAllByRole('button', { name: /Generate Plan/i });
-    fireEvent.click(generate[generate.length - 1]);
-
-    const save = await screen.findByRole('button', { name: /Save & open builder/i });
-    fireEvent.click(save);
-
-    await waitFor(() => {
-      expect(api.workouts.plans.saveFromGeneration).toHaveBeenCalledWith({ generation_id: 'gen-42' });
-    });
-  });
-
-  it('does not offer Save when the audit found a critical violation', async () => {
-    vi.mocked(api.clients.list).mockResolvedValue([member({ goal: 'muscle_gain' }) as never]);
-    vi.mocked(api.ai.generateWorkout).mockResolvedValue({
-      data: {
-        name: 'Plan', goal: 'muscle_gain', level: 'beginner', weeks: 4,
-        days_per_week: 4, weekly_schedule: {},
-      },
-      generation_id: 'gen-42',
-      audit: {
-        violations: [{
-          severity: 'critical', rule: 'blocked_exercise_prescribed',
-          detail: 'Overhead Press is excluded for this client',
-        }],
-        unverified: [],
-        counts: { exercises: 4, verified: 4, critical: 1, major: 0, minor: 0 },
-        revised: false,
-      },
-    } as never);
-    render(<AiCoachPanel type="workout" />);
-
-    await pick();
-    const generate = screen.getAllByRole('button', { name: /Generate Plan/i });
-    fireEvent.click(generate[generate.length - 1]);
-
-    // The server refuses it; the panel must not invite the attempt.
-    expect(await screen.findByText(/Cannot save — 1 critical safety finding/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Save & open builder/i })).toBeNull();
-    expect(api.workouts.plans.saveFromGeneration).not.toHaveBeenCalled();
-  });
-
-  it('does not offer another member\'s preview after the picker changes', async () => {
-    vi.mocked(api.clients.list).mockResolvedValue([
-      member({ goal: 'muscle_gain' }) as never,
-      member({ id: 'c2', name: 'Ravi Verma', goal: 'strength' }) as never,
-    ]);
-    vi.mocked(api.ai.generateWorkout).mockResolvedValue({
-      data: {
-        name: 'Plan', goal: 'muscle_gain', level: 'beginner', weeks: 4,
-        days_per_week: 4, weekly_schedule: {},
-      },
-      generation_id: 'gen-42',
-    } as never);
-    render(<AiCoachPanel type="workout" />);
-
-    await pick();
-    const generate = screen.getAllByRole('button', { name: /Generate Plan/i });
-    fireEvent.click(generate[generate.length - 1]);
-    await screen.findByRole('button', { name: /Save & open builder/i });
-
-    // The save reads the generation back by id — it belongs to Amit. The
-    // picker now says Ravi, so offering Save would file it against Ravi.
-    fireEvent.focus(screen.getByLabelText('Search clients'));
-    fireEvent.mouseDown(await screen.findByText('Ravi Verma'));
-
-    expect(screen.queryByRole('button', { name: /Save & open builder/i })).toBeNull();
-    expect(screen.queryByText(/Plan Generated/i)).toBeNull();
+    expect(screen.getByRole('link', { name: /Open the full generator/i }))
+      .toHaveAttribute('href', '/ai/workout-generator');
   });
 });

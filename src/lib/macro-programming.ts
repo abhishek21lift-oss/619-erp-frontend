@@ -57,6 +57,24 @@ export const MACRO_GOALS: Array<{ value: MacroGoal; label: string }> = [
   { value: 'powerlifting', label: 'Powerlifting' },
 ];
 
+const MACRO_GOAL_BY_RECORD: Record<string, MacroGoal> = {
+  strength: 'strength',
+  powerlifting: 'powerlifting',
+  hypertrophy: 'hypertrophy',
+  muscle_gain: 'hypertrophy',
+  endurance: 'endurance',
+  fat_loss: 'fat_loss',
+  weight_loss: 'fat_loss',
+  general_fitness: 'general_fitness',
+};
+
+/** A client-record goal as a macro goal, or '' when the mapping is a guess. */
+export function mapMacroGoal(value: unknown): MacroGoal | '' {
+  const key = String(value ?? '').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  return MACRO_GOAL_BY_RECORD[key] ?? '';
+}
+
 /** workout_plans_goal_check accepts these; the macro vocabulary is finer. */
 const PLAN_GOAL: Record<MacroGoal, string> = {
   strength: 'strength',

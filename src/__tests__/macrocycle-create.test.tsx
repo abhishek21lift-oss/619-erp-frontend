@@ -22,7 +22,12 @@ vi.mock('@/components/ui', () => ({
   ),
   PageContainer: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   PageHero: ({ title }: { title: string }) => <h1>{title}</h1>,
-  FormField: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  FormField: ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <label>
+      <span>{label}</span>
+      {children}
+    </label>
+  ),
   TextInput: (rest: Record<string, unknown>) => <input {...rest} />,
   SelectInput: ({ children, ...rest }: Record<string, unknown>) => (
     <select {...rest}>{children as React.ReactNode}</select>
@@ -30,6 +35,23 @@ vi.mock('@/components/ui', () => ({
 }));
 vi.mock('@/components/ui/form', () => ({
   CheckboxField: () => null,
+}));
+vi.mock('@/components/ai/AiClientPicker', () => ({
+  AiClientPicker: ({ onSelect }: { onSelect: (c: { id: string; name: string }) => void }) => (
+    <button onClick={() => onSelect({ id: 'c1', name: 'Amit' })}>Pick Amit</button>
+  ),
+}));
+vi.mock('@/lib/client-training-facts', () => ({
+  useClientTrainingFacts: (id: string | null) => (id
+    ? {
+      facts: {
+        name: 'Amit', age: '', restingHeartRate: '', experienceLevel: '',
+        goal: 'muscle_gain', trainingDays: '4',
+      },
+      loading: false,
+      failed: false,
+    }
+    : { facts: null, loading: false, failed: false }),
 }));
 
 import MacrocyclePage from '@/app/(chrome)/pt-os/macrocycle/page';
@@ -56,5 +78,13 @@ describe('creating a macrocycle', () => {
     expect(screen.getByRole('link', { name: /Intensification/i })).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain('Only 2 of 3 programmes were created');
     expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('fills goal and training days from the selected client', () => {
+    render(<MacrocyclePage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pick Amit' }));
+
+    expect((screen.getByLabelText('Goal') as HTMLSelectElement).value).toBe('hypertrophy');
+    expect((screen.getByLabelText('Days per week') as HTMLInputElement).value).toBe('4');
   });
 });
