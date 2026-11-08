@@ -4,12 +4,12 @@ import { useMemo } from 'react';
 import { Activity } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
-import { calcLeanBodyMass, calcFatMass, calcBmr } from '@/lib/fitness-calculations';
+import { calcLeanBodyMass, calcFatMass, calcBmr, classifyBodyFat } from '@/lib/fitness-calculations';
 import type { Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
 import { StepHeader } from './StepHeader';
-import { stepTones } from './fitnessTheme';
+import { bodyFatPill, stepTones } from './fitnessTheme';
 
 const METHODS = ['BIA Machine', 'Skinfold', 'DEXA', 'Manual', 'Other'];
 
@@ -24,6 +24,11 @@ interface StepBodyCompositionProps {
 export function StepBodyComposition({ form, set, age, gender, error }: StepBodyCompositionProps) {
   const leanBodyMass = useMemo(() => calcLeanBodyMass(n(form.weight), n(form.bodyFatPct)), [form.weight, form.bodyFatPct]);
   const fatMass = useMemo(() => calcFatMass(n(form.weight), n(form.bodyFatPct)), [form.weight, form.bodyFatPct]);
+  const bodyFatCategory = useMemo(
+    () => classifyBodyFat(n(form.bodyFatPct), gender),
+    [form.bodyFatPct, gender],
+  );
+  const bodyFatTone = bodyFatCategory ? bodyFatPill(bodyFatCategory) : null;
   const suggestedBmr = useMemo(
     () => calcBmr(n(form.weight), n(form.heightCm), age, gender),
     [form.weight, form.heightCm, age, gender],
@@ -72,10 +77,10 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
-      {(leanBodyMass != null || fatMass != null) && (
+      {(leanBodyMass != null || fatMass != null || bodyFatCategory != null) && (
         <div className="mt-6 rounded-[18px] p-5" style={{ background: stepTones[3].wash, border: '1px solid var(--border)' }}>
           <p className="mb-3 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Body Composition Summary</p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div>
               <p className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>Lean Body Mass</p>
               <p className="mt-0.5 text-[18px] font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{leanBodyMass ?? '—'} kg</p>
@@ -84,7 +89,22 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
               <p className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>Fat Mass</p>
               <p className="mt-0.5 text-[18px] font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{fatMass ?? '—'} kg</p>
             </div>
+            <div>
+              <p className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>Body Fat Category</p>
+              {bodyFatCategory && bodyFatTone ? (
+                <span className="mt-1 inline-block rounded-full px-2.5 py-1 text-[11px] font-[700]" style={{ background: bodyFatTone.bg, color: bodyFatTone.color }}>
+                  {bodyFatCategory}
+                </span>
+              ) : (
+                <p className="mt-0.5 text-[18px] font-[780]" style={{ color: 'var(--text-muted)' }}>—</p>
+              )}
+            </div>
           </div>
+          {bodyFatCategory === 'Above Ideal Range' && (
+            <p className="mt-4 text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+              The supplied table leaves this range between its Acceptable and Overfat rows undefined, so it is shown as above ideal without a health-risk label.
+            </p>
+          )}
         </div>
       )}
     </div>

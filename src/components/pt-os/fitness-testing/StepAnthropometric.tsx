@@ -47,20 +47,21 @@ function ClassificationTile({
 }
 
 export function StepAnthropometric({ form, set, error, gender = null }: StepAnthropometricProps) {
-  const { bmi, whr, bmiCategory, waistRisk, whrRisk, waistCm } = useMemo(() => {
+  const { bmi, whr, bmiCategory, waistRisk, whrRisk, waistIliacCm } = useMemo(() => {
     const bmi = calcBmi(n(form.weight), n(form.heightCm));
-    const waistCm = n(form.waistCm);
-    const whr = calcWhr(waistCm, n(form.hipsCm));
+    const waistIliacCm = n(form.waistIliacCm);
+    const whr = calcWhr(n(form.waistCm), n(form.hipsCm));
     return {
       bmi,
       whr,
-      waistCm,
+      waistIliacCm,
       bmiCategory: classifyBmi(bmi),
-      // Uses waistCm only — the iliac-crest reading is a different landmark.
-      waistRisk: classifyWaistRisk(waistCm, gender),
+      // The supplied waist-circumference table measures at the umbilicus/
+      // iliac crest; WHR keeps the narrowest-waist landmark.
+      waistRisk: classifyWaistRisk(waistIliacCm, gender),
       whrRisk: classifyWhrRisk(whr, gender),
     };
-  }, [form.weight, form.heightCm, form.waistCm, form.hipsCm, gender]);
+  }, [form.weight, form.heightCm, form.waistCm, form.waistIliacCm, form.hipsCm, gender]);
 
   const sexUnsupported = gender === null || gender === 'Other';
 
@@ -109,15 +110,15 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
         </p>
       )}
 
-      {(bmi != null || whr != null || waistCm != null) && (
+      {(bmi != null || whr != null || waistIliacCm != null) && (
         <div className="mt-6 rounded-[18px] p-5" style={{ background: stepTones[2].wash, border: '1px solid var(--border)' }}>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <ClassificationTile label="BMI" value={bmi} category={bmiCategory} />
-            <ClassificationTile label="Waist Circumference" value={waistCm} unit="cm" risk={waistRisk} />
+            <ClassificationTile label="Waist Circumference (Iliac)" value={waistIliacCm} unit="cm" risk={waistRisk} />
             <ClassificationTile label="Waist-Hip Ratio" value={whr} risk={whrRisk} />
           </div>
           <p className="mt-4 text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-            BMI uses the adult Asian bands. Waist and WHR use the Waist Narrowest measurement, not Waist Iliac. The published norms define only the low-risk cut-off; a reading at or above it is shown as above that threshold, not given an invented risk band.
+            BMI uses the adult Asian bands. Waist-circumference risk uses Waist Iliac, the table&apos;s umbilicus/iliac landmark; WHR uses Waist Narrowest ÷ Hip. The published norms define only the low-risk cut-off, so a reading at or above it is shown as above that threshold, not given an invented risk band.
           </p>
         </div>
       )}

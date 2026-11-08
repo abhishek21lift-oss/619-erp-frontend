@@ -58,7 +58,7 @@ describe('fitness scoring fixes', () => {
     expect(calc1RM(230, 1, 'epley')).toBe(230);
     expect(calc1RM(100, 5, 'epley')).toBe(116.7);
   });
-  it('stage-2 hypertension wins over a low diastolic', () => {
+  it('resolves mixed readings by the more actionable band', () => {
     expect(classifyBp(160, 58)).toBe('Hypertension Stage 2');
     expect(classifyBp(85, 55)).toBe('Hypotension');
     expect(classifyBp(135, 55)).toBe('Hypotension');

@@ -15,8 +15,8 @@
 // such so it is never mistaken for a measured or published threshold.
 //
 // The canonical five-phase template is 5 + 3 + 20 + 5 + 5 = 38 minutes. The
-// work phase is the main work; warm-up, re-warm-up, cool-down and stretching
-// are separate and must not be added to the FITT main-work time.
+// work phase is the main work; all five phases together are the session that
+// the FITT 20–60 min time reference applies to.
 
 export type CardioModalityCategory =
   | 'weight-bearing-high-impact'
@@ -163,19 +163,22 @@ export const CARDIO_MODALITY_CATEGORIES: readonly {
   {
     key: 'weight-bearing-low-impact',
     label: 'Weight-bearing, non-impact',
-    examples: ['Elliptical', 'Walking', 'Stair climber'],
+    examples: ['Elliptical', 'Walking', 'Stair climber', 'Stationary bike'],
   },
   {
     key: 'non-weight-bearing',
     label: 'Non-weight-bearing, non-impact',
-    examples: ['Cycling', 'Swimming', 'Rowing', 'Ski erg'],
+    examples: ['Swimming', 'Rowing', 'Ski erg'],
   },
 ];
 
-/** FITT reference ranges. Main work excludes warm-up and cool-down. */
+/**
+ * FITT reference ranges. Time is the whole session, including warm-up and
+ * cool-down; the plan's main-work minutes are a separate, narrower parameter.
+ */
 export const K11_FITT_REFERENCE = {
   frequencyPerWeek: { min: 3, max: 5 },
-  mainWorkMinutes: { min: 20, max: 60 },
+  sessionMinutes: { min: 20, max: 60 },
 } as const;
 
 /**
@@ -526,11 +529,11 @@ export const CARDIO_MODALITY_CATEGORY: Record<string, CardioModalityCategory> = 
   hiking: 'weight-bearing-low-impact',
   'stair climber': 'weight-bearing-low-impact',
   'stair mill': 'weight-bearing-low-impact',
-  cycling: 'non-weight-bearing',
+  cycling: 'weight-bearing-low-impact',
   rowing: 'non-weight-bearing',
   swimming: 'non-weight-bearing',
-  'stationary bike': 'non-weight-bearing',
-  'assault bike': 'non-weight-bearing',
+  'stationary bike': 'weight-bearing-low-impact',
+  'assault bike': 'weight-bearing-low-impact',
   'ski erg': 'non-weight-bearing',
 };
 
@@ -541,8 +544,8 @@ export function classifyCardioModality(modality: string): CardioModalityCategory
   if (CARDIO_MODALITY_CATEGORY[key]) return CARDIO_MODALITY_CATEGORY[key];
   // Word-ish matching so "rowing" classifies and "throwing" does not.
   if (/(^|\s)(run|jog|sprint|jump rope|treadmill)(\s|$)/.test(key)) return 'weight-bearing-high-impact';
-  if (/(^|\s)(walk|elliptical|hike|stair|climber)(\s|$)/.test(key)) return 'weight-bearing-low-impact';
-  if (/(^|\s)(cycl|row|swim|bike|erg)(\s|$)/.test(key)) return 'non-weight-bearing';
+  if (/(^|\s)(walk|elliptical|hike|stair|climber|cycl|bike)(\s|$)/.test(key)) return 'weight-bearing-low-impact';
+  if (/(^|\s)(row|swim|erg)(\s|$)/.test(key)) return 'non-weight-bearing';
   return null;
 }
 
@@ -710,12 +713,12 @@ export function buildProgressionPrescription(input: ProgressionPrescriptionInput
   }
   if (
     minutesError == null
-    && (input.minutesPerSession < K11_FITT_REFERENCE.mainWorkMinutes.min
-      || input.minutesPerSession > K11_FITT_REFERENCE.mainWorkMinutes.max)
+    && (input.minutesPerSession < K11_FITT_REFERENCE.sessionMinutes.min
+      || input.minutesPerSession > K11_FITT_REFERENCE.sessionMinutes.max)
   ) {
     warnings.push(
-      `${input.minutesPerSession} min is outside the K11 FITT main-work reference of `
-      + `${K11_FITT_REFERENCE.mainWorkMinutes.min}-${K11_FITT_REFERENCE.mainWorkMinutes.max} min.`,
+      `${input.minutesPerSession} min is outside the K11 FITT session reference of `
+      + `${K11_FITT_REFERENCE.sessionMinutes.min}-${K11_FITT_REFERENCE.sessionMinutes.max} min.`,
     );
   }
 
@@ -810,14 +813,12 @@ export function buildFittPrescription(input: FittPrescriptionInput): {
       + `${K11_FITT_REFERENCE.frequencyPerWeek.min}-${K11_FITT_REFERENCE.frequencyPerWeek.max}.`,
     );
   }
-  if (
-    minutesError == null
-    && (input.mainWorkMinutes < K11_FITT_REFERENCE.mainWorkMinutes.min
-      || input.mainWorkMinutes > K11_FITT_REFERENCE.mainWorkMinutes.max)
-  ) {
+  // Main work is part of the session, so it can only warn above the session
+  // ceiling; a short main work can still sit inside a 20-minute session.
+  if (minutesError == null && input.mainWorkMinutes > K11_FITT_REFERENCE.sessionMinutes.max) {
     warnings.push(
-      `${input.mainWorkMinutes} min is outside the K11 FITT main-work reference of `
-      + `${K11_FITT_REFERENCE.mainWorkMinutes.min}-${K11_FITT_REFERENCE.mainWorkMinutes.max} min.`,
+      `${input.mainWorkMinutes} min of main work already exceeds the K11 FITT `
+      + `${K11_FITT_REFERENCE.sessionMinutes.min}-${K11_FITT_REFERENCE.sessionMinutes.max} min session reference.`,
     );
   }
 

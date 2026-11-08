@@ -371,7 +371,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
           <Row label="Weight" value={s.body.weight_kg != null ? `${s.body.weight_kg} kg` : null} />
           <Row label="Height" value={s.body.height_cm != null ? `${s.body.height_cm} cm` : null} />
           <Row label="BMI" value={s.body.bmi != null ? `${s.body.bmi}${s.body.bmi_category ? ` · ${s.body.bmi_category}` : ''}` : null} />
-          <Row label="Waist" value={s.body.waist_cm != null ? `${s.body.waist_cm} cm${s.body.waist_risk ? ` · ${s.body.waist_risk}` : ''}` : null} />
+          <Row label="Waist (iliac)" value={s.body.waist_iliac_cm != null ? `${s.body.waist_iliac_cm} cm${s.body.waist_risk ? ` · ${s.body.waist_risk}` : ''}` : null} />
           <Row label="Waist-hip ratio" value={s.body.waist_hip_ratio != null ? `${s.body.waist_hip_ratio}${s.body.whr_risk ? ` · ${s.body.whr_risk}` : ''}` : null} />
           <Row label="Body fat" value={s.body.body_fat_pct != null ? `${s.body.body_fat_pct}%` : null} />
           <Row label="Resting HR" value={s.body.resting_hr != null ? `${s.body.resting_hr} bpm${s.body.rhr_category ? ` · ${s.body.rhr_category}` : ''}` : null} />
@@ -628,7 +628,7 @@ export function briefAsText(b: TrainingBrief): string {
     L.push('', 'BODY');
     L.push(`- ${[s.body.weight_kg && `${s.body.weight_kg} kg`, s.body.height_cm && `${s.body.height_cm} cm`,
       s.body.bmi && `BMI ${s.body.bmi}${s.body.bmi_category ? ` (${s.body.bmi_category})` : ''}`,
-      s.body.waist_cm != null && `waist ${s.body.waist_cm} cm${s.body.waist_risk ? ` (${s.body.waist_risk})` : ''}`,
+      s.body.waist_iliac_cm != null && `waist ${s.body.waist_iliac_cm} cm${s.body.waist_risk ? ` (${s.body.waist_risk})` : ''}`,
       s.body.waist_hip_ratio != null && `WHR ${s.body.waist_hip_ratio}${s.body.whr_risk ? ` (${s.body.whr_risk})` : ''}`,
       s.body.body_fat_pct && `${s.body.body_fat_pct}% fat`]
       .filter(Boolean).join(', ') || 'no measurements'}`);

@@ -166,7 +166,7 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
         {showAnthropometric && anthropometric && (
           <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <VitalTile label="BMI" value={bmi} category={anthropometric.bmiCategory} />
-            <VitalTile label="Waist Circumference" value={waist} category={anthropometric.waistRisk} />
+            <VitalTile label="Waist (Iliac)" value={waist} category={anthropometric.waistRisk} />
             <VitalTile label="Waist-Hip Ratio" value={whr} category={anthropometric.whrRisk} />
           </div>
         )}
