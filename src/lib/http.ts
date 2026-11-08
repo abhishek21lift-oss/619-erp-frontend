@@ -15,6 +15,7 @@
 
 import { SESSIONLESS_PAGES } from './public-paths';
 import { clearCachedUser } from './session-cache';
+import { portalForPage, type Portal } from './portals';
 
 export function apiBase(): string {
   if (typeof window === 'undefined') {
@@ -163,7 +164,17 @@ export interface FetchOptions extends Omit<RequestInit, 'body'> {
  */
 export function tenantAuthHeaders(): Record<string, string> {
   const imp = getImpersonation();
-  return imp ? { Authorization: `Bearer ${imp.token}` } : {};
+  return {
+    // Which door this tab is standing at. The server uses it to choose the
+    // cookie namespace; it is never an authorization fact.
+    'X-Portal': currentPortal(),
+    ...(imp ? { Authorization: `Bearer ${imp.token}` } : {}),
+  };
+}
+
+function currentPortal(): Portal {
+  if (typeof window === 'undefined') return 'trainer';
+  return portalForPage(window.location.pathname);
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -378,8 +389,10 @@ function handleSubscriptionInactive(): void {
   window.location.href = '/subscription';
 }
 
-// In-flight refresh promise — deduplicates concurrent 401 retries
-let _refreshPromise: Promise<boolean> | null = null;
+// In-flight refresh promises — deduplicates concurrent 401 retries. Keyed per
+// portal: two doors can be renewing at once, and one door's result must not
+// answer for the other's session.
+const _refreshPromises = new Map<Portal, Promise<boolean>>();
 
 // Renew the access token via the rotating refresh-token cookie. Resilient to
 // transient failures: a 401 means the refresh token is genuinely gone (give up
@@ -387,12 +400,18 @@ let _refreshPromise: Promise<boolean> | null = null;
 // — e.g. a free-tier backend cold-starting after idle — and retried with
 // backoff so a momentary blip doesn't force a full re-login.
 function tryRefreshToken(): Promise<boolean> {
-  if (_refreshPromise) return _refreshPromise;
+  const portal = currentPortal();
+  const existing = _refreshPromises.get(portal);
+  if (existing) return existing;
   const BASE = (() => { try { return apiBase(); } catch { return ''; } })();
-  _refreshPromise = (async () => {
+  const promise = (async () => {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const r = await fetch(`${BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' });
+        const r = await fetch(`${BASE}/api/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'X-Portal': portal },
+        });
         if (r.ok) return true;
         if (r.status === 401 || r.status === 403) return false; // truly unauthenticated
         // 5xx / other → transient, fall through to retry
@@ -400,8 +419,9 @@ function tryRefreshToken(): Promise<boolean> {
       if (attempt < 2) await new Promise((res) => setTimeout(res, 600 * 2 ** attempt));
     }
     return false;
-  })().finally(() => { _refreshPromise = null; });
-  return _refreshPromise;
+  })().finally(() => { _refreshPromises.delete(portal); });
+  _refreshPromises.set(portal, promise);
+  return promise;
 }
 
 /** Proactively renew the session (access token) — called on an interval and on
@@ -461,6 +481,7 @@ export async function http<T = unknown>(
   const body = serializeBody(options.body);
   const isMultipart = isFormDataBody(options.body);
   const imp = getImpersonation();
+  const portal = currentPortal();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
     ...tenantAuthHeaders(),
@@ -469,8 +490,10 @@ export async function http<T = unknown>(
 
   // The impersonated identity scopes results, so it must be part of the GET
   // cache key — otherwise entering or exiting impersonation would serve the
-  // previous identity's cached data.
-  const cacheKey = method === 'GET' ? `${imp ? `imp:${imp.accountId}` : ''}|${url}` : '';
+  // previous identity's cached data. The portal is part of it for the same
+  // reason: one tab can stand at more than one door, and a trainer's cached
+  // list must not be served to the member screen.
+  const cacheKey = method === 'GET' ? `${portal}|${imp ? `imp:${imp.accountId}` : ''}|${url}` : '';
 
   if (cacheKey && ttl) {
     const hit = cache.get(cacheKey);

@@ -8,6 +8,7 @@ import {
   isVerificationFile,
   signInPathFor,
 } from '@/lib/public-paths';
+import { accessCookieName, portalForPage } from '@/lib/portals';
 
 const PUBLIC_ASSET_PREFIXES: string[] = [
   '/checkin',
@@ -85,7 +86,12 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
     loginUrl.searchParams.set('redirect', pathname);
   }
   const res = NextResponse.redirect(loginUrl);
-  if (deleteTokenCookie) res.cookies.delete('token');
+  if (deleteTokenCookie) {
+    // Only this door's cookie. The other doors' sessions are still valid and
+    // a failed check on one of them must not sign the browser out everywhere.
+    res.cookies.delete(accessCookieName(portalForPage(pathname)));
+    res.cookies.delete('token'); // pre-namespace mirror
+  }
   return res;
 }
 
@@ -117,10 +123,17 @@ export function isHostNeutralPath(pathname: string): boolean {
   );
 }
 
-function notFound(req: NextRequest): NextResponse {
-  const url = req.nextUrl.clone();
-  url.pathname = '/_not-found';
-  return NextResponse.rewrite(url);
+function notFound(): NextResponse {
+  // A direct 404, not a rewrite to /_not-found. The rewrite made Next fetch
+  // the page from itself; behind nginx with X-Forwarded-Proto: https that
+  // self-fetch used https against the plain-HTTP server and failed with
+  // EPROTO (500), and without the header the rewritten path was gated again
+  // and redirected to /login. A host-mismatch means "not here" and nothing
+  // more, so it should not reach routing, auth or rendering at all.
+  return new NextResponse('Not Found', {
+    status: 404,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  });
 }
 
 export async function proxy(req: NextRequest) {
@@ -130,7 +143,7 @@ export async function proxy(req: NextRequest) {
   if (ccHost && !isHostNeutralPath(pathname)) {
     const onCommandCenter = requestHost(req) === ccHost;
     if (onCommandCenter !== isCommandCenterPath(pathname)) {
-      return notFound(req);
+      return notFound();
     }
   }
 
@@ -138,7 +151,12 @@ export async function proxy(req: NextRequest) {
     return withReportOnlyCsp(req);
   }
 
+  // One cookie namespace per door, so a tab standing at /member is judged by
+  // the member session even while a trainer session lives in the same browser.
+  // The bare `token` is the pre-namespace mirror and the migration fallback.
+  const portal = portalForPage(pathname);
   const token =
+    req.cookies.get(accessCookieName(portal))?.value ??
     req.cookies.get('token')?.value ??
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
 

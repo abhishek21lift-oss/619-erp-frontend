@@ -66,7 +66,10 @@ describe('every page belongs to exactly one portal', () => {
     // '/platform-login'.startsWith('/platform') is true. Folding the door into
     // the app behind it would make signing in require being signed in.
     expect(isPlatformAppPage('/platform-login')).toBe(false);
-    expect(portalForPage('/platform-login')).toBe('trainer');
+    // The door is still the platform's own: its auth provider must be keyed on
+    // the platform session, or a trainer signed in in the same browser would
+    // be visible behind it and walk into the studio app.
+    expect(portalForPage('/platform-login')).toBe('platform');
   });
 
   it('does not swallow an unrelated page that shares the prefix', () => {
@@ -78,6 +81,7 @@ describe('every page belongs to exactly one portal', () => {
     expect(portalForPage('/pt-os/clients')).toBe('trainer');
     expect(portalForPage('/')).toBe('trainer');
     expect(isMemberAppPage('/member-login')).toBe(false);
+    expect(portalForPage('/member-login')).toBe('member');
   });
 });
 

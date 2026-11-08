@@ -34,7 +34,7 @@ import { C, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/components/landing/tokens
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Mail, ArrowRight, Fingerprint, Loader2, Lock, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { rememberKeys, portalForRole, postSignInPath, safeReturnTo, type Portal } from '@/lib/portals';
+import { rememberKeys, safeReturnTo, type Portal } from '@/lib/portals';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import { errorMessage, mapSignInError } from '@/lib/forms/errors';
 import { signInSchema } from '@/lib/forms/schemas/auth';
@@ -129,7 +129,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
   // Set when the server says the credentials were right but this is the wrong
   // sign-in page. Turns the error box into a way out rather than a wall.
   const [wrongPortal, setWrongPortal] = useState(false);
-  const { user, login, loginWithGoogle, linkGoogle, loginWithPasskey, logout, loading } = useAuth();
+  const { user, login, loginWithGoogle, linkGoogle, loginWithPasskey, loading } = useAuth();
   const router = useRouter();
   const reduce = useReducedMotion();
 
@@ -214,22 +214,11 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     } catch { /* private mode */ }
   }, [LS.email, LS.remember, LS.org]);
 
-  // Which portal the session already in this browser belongs to. The auth
-  // cookie is one per browser, not one per sign-in page, so a trainer who was
-  // already signed in here IS the session /api/auth/me resolves when a client
-  // opens Member Login on the same device.
-  const sessionPortal: Portal | null = user ? portalForRole(user.role) : null;
-  const foreignSession = sessionPortal !== null && sessionPortal !== portal;
-
   // Redirect once authenticated (role-aware) — but only into the portal this
-  // page is the door to.
-  //
-  // Without the foreignSession guard a client who opened /member-login on a
-  // device their trainer had used was sent straight into the trainer's app by
-  // the trainer's still-valid cookie, without touching the form — and a member
-  // session on /login was thrown at /member/dashboard.
+  // page is the door to. The provider is keyed on the same portal, so a
+  // session open at another door is simply not visible here.
   useEffect(() => {
-    if (loading || !user || foreignSession) return;
+    if (loading || !user) return;
     // safeReturnTo honours the `?redirect=` that proxy.ts writes onto this URL
     // when it bounces an expired session, and falls back to postSignInPath for
     // anything it will not follow. Read from window rather than
@@ -240,7 +229,7 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
         ? null
         : new URLSearchParams(window.location.search).get('redirect');
     router.replace(safeReturnTo(returnTo, user.role));
-  }, [user, loading, foreignSession, router]);
+  }, [user, loading, router]);
 
   const emailValid = isValidSignInEmail(email);
   const emailError = touched.email && !email.trim() ? 'Email is required.' : touched.email && !emailValid ? 'Enter a valid email address.' : '';
@@ -457,61 +446,6 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
           </m.div>
           <Loader2 className="animate-spin" size={20} style={{ color: C.blueHi }} />
           <span className="sr-only">Checking your session…</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Somebody else's session is open in this browser. Do not sign them out
-  // silently and do not walk into their app — say whose session it is and make
-  // leaving it a deliberate tap. The name here is the browser's own session,
-  // not a lookup, so there is nothing to leak by showing it.
-  if (foreignSession && user) {
-    const otherLabel = sessionPortal === 'member'
-      ? 'a member account'
-      : sessionPortal === 'platform'
-        ? 'a Command Center account'
-        : 'a trainer account';
-    return (
-      <div
-        className="relative flex min-h-[100dvh] flex-col items-center justify-center"
-        style={{
-          background: C.canvasAlt,
-          color: C.body,
-          fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif",
-          paddingTop: PUBLIC_NAV_CLEARANCE,
-          ...MAIN_PADDING,
-        }}
-      >
-        <PublicNav action="start-free" />
-        <StageBackdrop />
-        <div className="relative z-10 w-full max-w-[420px]">
-          <AuthCard title={copy.title}>
-            <div className="mt-6 flex items-center gap-3.5 rounded-[14px] px-4 py-3.5" style={{ background: C.canvasAlt }}>
-              <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[16px] font-[600] text-white"
-                style={{ background: C.blue }}
-              >
-                {(user.name || '?').slice(0, 1).toUpperCase()}
-              </span>
-              <p className="text-[15px] font-[500] leading-snug" style={{ color: C.ink }}>
-                This device is signed in as {user.name}
-              </p>
-            </div>
-            <p className="mt-4 text-[14px] leading-relaxed" style={{ color: C.muted }}>
-              That is {otherLabel}, so it can&rsquo;t sign in here. Sign it out to
-              continue on {copy.title}.
-            </p>
-            <button type="button" onClick={() => logout()} className={`${PRIMARY_BUTTON} mt-6 h-12 w-full text-[15px]`}>
-              Sign out and continue <ArrowRight size={17} />
-            </button>
-            <Link
-              href={postSignInPath(user.role)}
-              className={`${SECONDARY_BUTTON} mt-3 h-12 w-full text-[14px]`}
-            >
-              Stay signed in as {user.name}
-            </Link>
-          </AuthCard>
         </div>
       </div>
     );

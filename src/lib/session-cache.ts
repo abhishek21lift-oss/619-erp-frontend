@@ -7,19 +7,14 @@
  * refresh paints the header immediately instead of flashing empty for the
  * length of a /api/auth/me round trip. Two places touch that cache: the
  * provider writes and reads it, and http.ts clears it when the server says
- * 401. They each declared their own constant, and the constants disagreed:
+ * 401.
  *
- *   auth-context.tsx  '619_user_minimal_v3'  in sessionStorage
- *   http.ts           '619_user_v2'          in localStorage
+ * ── Why the key is per portal ──
  *
- * Different key AND different storage, so handleUnauthorized() was removing
- * something nobody had ever written. A dead session left the cached user in
- * place, and the next mount restored it and rendered as that person until
- * /api/auth/me came back. This is the same duplication that broke the
- * activation link twice (see public-paths.ts) — one idea, two copies, and
- * only one of them maintained.
- *
- * So the key and the three accessors live here and both sides import them.
+ * Trainer, member and platform sessions now coexist in one browser. A single
+ * key meant the trainer's cached identity painted the member sign-in page —
+ * or worse, the member dashboard's first frame — until /me answered. One key
+ * per door, so a tab only ever restores the identity of the door it is on.
  *
  * ── What may be cached ──
  *
@@ -28,31 +23,43 @@
  * shouldn't already show. And sessionStorage, not localStorage: the cache is
  * a paint optimisation for one tab's lifetime, not a credential to keep.
  */
+import type { Portal } from './portals';
 
-/** Where AuthProvider caches the minimal user. The only copy of this string. */
+/** Base key. The portal is appended by cachedUserKey(). */
 export const SESSION_USER_KEY = '619_user_minimal_v3';
 
-/** Read the cached user JSON, or null. Safe on the server and in private mode. */
-export function readCachedUser(): string | null {
-  if (typeof window === 'undefined') return null;
-  try { return sessionStorage.getItem(SESSION_USER_KEY); } catch { return null; }
+function cachedUserKey(portal: Portal): string {
+  return `${SESSION_USER_KEY}.${portal}`;
 }
 
-/** Cache the minimal user JSON. Silently ignores a full/blocked store. */
-export function writeCachedUser(json: string): void {
+/** Read the cached user JSON for a portal, or null. */
+export function readCachedUser(portal: Portal = 'trainer'): string | null {
+  if (typeof window === 'undefined') return null;
+  try { return sessionStorage.getItem(cachedUserKey(portal)); } catch { return null; }
+}
+
+/** Cache the minimal user JSON for a portal. Ignores a full/blocked store. */
+export function writeCachedUser(json: string, portal: Portal = 'trainer'): void {
   if (typeof window === 'undefined') return;
-  try { sessionStorage.setItem(SESSION_USER_KEY, json); } catch { /* quota */ }
+  try { sessionStorage.setItem(cachedUserKey(portal), json); } catch { /* quota */ }
 }
 
 /**
- * Forget the cached user.
+ * Forget one portal's cached user, or every portal's when no portal is given.
  *
- * Called on logout, on a 401, and when impersonation starts or ends. Every
- * one of those means "the person this tab thinks it is may be wrong" — so
- * this must clear the identity the provider actually wrote, which is the
- * whole reason the key is not declared twice.
+ * Called on logout, on a 401, and when impersonation starts or ends. Clearing
+ * all without an argument is deliberate for those "identity may be wrong"
+ * moments; a normal session check clears only the door it asked about.
  */
-export function clearCachedUser(): void {
+export function clearCachedUser(portal?: Portal): void {
   if (typeof window === 'undefined') return;
-  try { sessionStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
+  try {
+    if (portal) {
+      sessionStorage.removeItem(cachedUserKey(portal));
+      return;
+    }
+    for (const key of ['trainer', 'member', 'platform'] as Portal[]) {
+      sessionStorage.removeItem(cachedUserKey(key));
+    }
+  } catch { /* noop */ }
 }

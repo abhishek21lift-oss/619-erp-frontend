@@ -147,8 +147,11 @@ const KNOWN = [
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
   'components/pt-os/workout-log/ExercisePicker.tsx:283',
   'components/pt-os/workout-log/ExercisePicker.tsx:297',
-  'lib/auth-context.tsx:217',
-  'lib/auth-context.tsx:219',
+  // The portal-aware session init added 17 lines above the keep-alive effect.
+  // File set and per-file count are unchanged (217/219 -> 234/236), so these
+  // are line-number moves, not new or removed catches.
+  'lib/auth-context.tsx:234',
+  'lib/auth-context.tsx:236',
 ].sort();
 
 describe('silent catches are listed, and the list only shrinks', () => {
