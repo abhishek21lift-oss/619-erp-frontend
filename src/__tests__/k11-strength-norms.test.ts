@@ -59,7 +59,7 @@ const NORMS: Record<Sex, Record<Exercise, Record<Band, [number, number][]>>> = {
 };
 
 const CATEGORY_BY_PERCENTILE: Record<number, string> = {
-  90: 'Well Above Average', 80: 'Well Above Average',
+  90: 'Well Above Average', 80: 'Above Average',
   70: 'Above Average', 60: 'Above Average',
   50: 'Average',
   40: 'Below Average', 30: 'Below Average',
@@ -67,7 +67,7 @@ const CATEGORY_BY_PERCENTILE: Record<number, string> = {
 };
 
 const SCORE_BY_PERCENTILE: Record<number, number> = {
-  90: 90, 80: 90, 70: 70, 60: 70, 50: 60, 40: 40, 30: 40, 20: 20, 10: 20,
+  90: 90, 80: 70, 70: 70, 60: 70, 50: 60, 40: 40, 30: 40, 20: 20, 10: 20,
 };
 
 /** Ages inside a band, including both integer edges where the band has them. */
@@ -132,13 +132,13 @@ describe('K11 strength — every supplied threshold', () => {
 });
 
 describe('K11 strength — percentile and category stay separate', () => {
-  it('groups 90/80, 70/60, 40/30 and 20/10 but keeps the percentile detail', () => {
+  it('groups 80/70/60, 40/30 and 20/10 but keeps the percentile detail', () => {
     const at = (percentile: number) => {
       const row = NORMS.Male['Bench Press']['20-29'].find(([p]) => p === percentile)!;
       return classifyStrengthDetail(ratioAt(row[1]), 100, 'Bench Press', 'Male', 25)!;
     };
     expect(at(90).category).toBe('Well Above Average');
-    expect(at(80).category).toBe('Well Above Average');
+    expect(at(80).category).toBe('Above Average');
     expect(at(80).percentile).toBe(80);
     expect(at(70).category).toBe('Above Average');
     expect(at(60).category).toBe('Above Average');

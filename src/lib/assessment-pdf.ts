@@ -187,7 +187,7 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('BMI Classification', v(assessment.bmi_category)),
     field('Waist Narrowest', v(assessment.waist_cm, ' cm')),
     field('Waist Iliac', v(assessment.waist_iliac_cm, ' cm')),
-    field('Waist Circumference Risk', v(assessment.waist_risk)),
+    field('Waist Iliac Risk', v(assessment.waist_risk)),
     field('Hips', v(assessment.hips_cm, ' cm')),
     field('Waist-Hip Ratio', v(assessment.waist_hip_ratio)),
     field('Waist-Hip Ratio Risk', v(assessment.whr_risk)),
@@ -196,12 +196,13 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Right / Left Arm', `${v(assessment.arm_right_cm)} / ${v(assessment.arm_left_cm)} cm`),
     field('Right / Left Thigh', `${v(assessment.thigh_right_cm)} / ${v(assessment.thigh_left_cm)} cm`),
     field('Right / Left Calf', `${v(assessment.calf_right_cm)} / ${v(assessment.calf_left_cm)} cm`),
-    field('Norm', 'BMI uses adult Asian bands. Waist risk uses Waist Narrowest, not Waist Iliac. Waist and WHR risk bands are sex-specific; only the low-risk cut-off is defined.'),
+    field('Norm', 'BMI uses adult Asian bands. Waist risk uses Waist Iliac, the table\'s umbilicus/iliac landmark; WHR uses Waist Narrowest ÷ Hip. Waist and WHR risk bands are sex-specific; only the low-risk cut-off is defined.'),
   ].join(''));
 
   const bodyComp = section('Body Composition', [
     field('Method', v(assessment.body_comp_method)),
     field('Body Fat %', v(assessment.body_fat_pct, '%')),
+    field('Body Fat Classification', v(assessment.body_fat_category)),
     field('Muscle Mass %', v(assessment.muscle_mass_pct, '%')),
     field('Lean Body Mass', v(assessment.lean_body_mass_kg, ' kg')),
     field('Fat Mass', v(assessment.fat_mass_kg, ' kg')),
