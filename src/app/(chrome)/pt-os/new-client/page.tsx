@@ -417,7 +417,11 @@ function NewClientForm() {
 
           {/* ═══ CLIENT INFORMATION ═══ */}
           <Section kicker="Client Information" title="Basic Information" last>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+            {/* Same field container as the fitness-testing steps. */}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-[18px] p-5"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+            >
               <FloatInput
                 label="Full Name" required value={form.name}
                 onChange={(v) => set('name', v)}
@@ -587,7 +591,7 @@ function NewClientForm() {
                     className="flex w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed p-6 text-center transition-all"
                     style={{
                       borderColor: photoDragOver ? 'rgba(245,158,11,0.6)' : 'rgba(15,23,42,0.12)',
-                      background: photoDragOver ? 'rgba(245,158,11,0.05)' : 'var(--bg-subtle)',
+                      background: photoDragOver ? 'rgba(245,158,11,0.05)' : 'var(--bg-card)',
                     }}
                   >
                     <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[14px]" style={{ background: 'var(--bg-subtle)' }}>
