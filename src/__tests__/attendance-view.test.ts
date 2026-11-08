@@ -84,6 +84,12 @@ describe('trends', () => {
     expect(hours.find((h) => h.label === '5–8 AM')).toMatchObject({ count: 2, share: 67 });
     expect(hours.find((h) => h.label === '5–8 PM')).toMatchObject({ count: 1, share: 33 });
   });
+
+  it('counts a 23:41 check-in in the last bucket instead of dropping it', () => {
+    const late = new Date(2026, 8, 29, 23, 41).toISOString();
+    const hours = peakHours([rec('a', 'present', { check_in: late })]);
+    expect(hours.find((h) => h.label === '11 PM–12 AM')).toMatchObject({ count: 1, share: 100 });
+  });
 });
 
 describe('the export', () => {

@@ -422,6 +422,8 @@ export type Attendance = {
   check_out?: string;
   status: string;
   method?: string;
+  /** The API's GET selects `method AS check_in_method`; normalised in the endpoint. */
+  check_in_method?: string;
   notes?: string;
   trainer_id?: string;
   trainer_name?: string;
