@@ -17,7 +17,7 @@
 
 import { emerald, amber, red, tint } from '@/lib/palette';
 import type {
-  FitnessCategory, BpCategory, RhrCategory, Spo2Category, BmiCategory, AnthropometricRisk,
+  FitnessCategory, BpCategory, RhrCategory, Spo2Category, BmiCategory, AnthropometricRisk, BodyFatCategory,
 } from '@/lib/fitness-calculations';
 
 // The same hues as the member spectrum and the front desk's, so the
@@ -120,12 +120,13 @@ export function categoryPill(category: FitnessCategory): { bg: string; color: st
   return { bg: tint(color, alpha), color };
 }
 
-/** A blood-pressure classification pill. Clinical bands: normal, watch,
- *  and the bands that stop exertion testing. */
+/** A blood-pressure classification pill. Clinical bands: normal, watch
+ *  (including hypotension, which now cautions), and the bands that stop
+ *  exertion testing. */
 export function bpPill(category: BpCategory): { bg: string; color: string } {
   const color =
     category === 'Normal' ? emerald[600]
-      : category === 'Elevated' || category === 'Hypertension Stage 1' ? amber[600]
+      : category === 'Elevated' || category === 'Hypertension Stage 1' || category === 'Hypotension' ? amber[600]
         : red[600];
   return { bg: tint(color, 0.13), color };
 }
@@ -143,7 +144,7 @@ export function rhrPill(category: RhrCategory): { bg: string; color: string } {
 export function spo2Pill(category: Spo2Category): { bg: string; color: string } {
   const color =
     category === 'Normal' ? emerald[600]
-      : category === 'Mildly Low' ? amber[600]
+      : category === 'Mild Hypoxia' ? amber[600]
         : red[600];
   return { bg: tint(color, 0.13), color };
 }
@@ -153,6 +154,17 @@ export function bmiPill(category: BmiCategory): { bg: string; color: string } {
   const color =
     category === 'Normal' ? emerald[600]
       : category === 'Obese' ? red[600]
+        : amber[600];
+  return { bg: tint(color, 0.13), color };
+}
+
+/** K11 body-fat bands. Athletic and acceptable are both healthy; the range the
+ *  table leaves undefined between them is amber because it carries no health
+ *  label, and Overfat is the only red band. */
+export function bodyFatPill(category: BodyFatCategory): { bg: string; color: string } {
+  const color =
+    category === 'Athletic / Ideal' || category === 'Acceptable / Average' ? emerald[600]
+      : category === 'Overfat / High Risk' ? red[600]
         : amber[600];
   return { bg: tint(color, 0.13), color };
 }

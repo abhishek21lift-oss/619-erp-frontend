@@ -572,8 +572,8 @@ export default function CardioCalculatorPage() {
           <section className="rounded-[14px] border p-4" style={{ borderColor: 'var(--border)' }}>
             <SectionHeading step="2" title="FITT prescription">
               Frequency {K11_FITT_REFERENCE.frequencyPerWeek.min}–{K11_FITT_REFERENCE.frequencyPerWeek.max} sessions/week,
-              main work {K11_FITT_REFERENCE.mainWorkMinutes.min}–{K11_FITT_REFERENCE.mainWorkMinutes.max} min.
-              Warm-up and cool-down sit outside that main-work time.
+              time {K11_FITT_REFERENCE.sessionMinutes.min}–{K11_FITT_REFERENCE.sessionMinutes.max} min per session
+              (warm-up and cool-down included). Main work below is the workout’s work phase, not the full session.
             </SectionHeading>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -907,6 +907,16 @@ export default function CardioCalculatorPage() {
 
               {templateErrors.length > 0 && (
                 <div className="mt-3"><NoticeList tone="error" items={templateErrors} /></div>
+              )}
+              {plannedMinutes != null
+                && (plannedMinutes < K11_FITT_REFERENCE.sessionMinutes.min
+                  || plannedMinutes > K11_FITT_REFERENCE.sessionMinutes.max) && (
+                <div className="mt-3">
+                  <Notice tone="warning">
+                    {plannedMinutes} min is outside the K11 FITT session reference of{' '}
+                    {K11_FITT_REFERENCE.sessionMinutes.min}–{K11_FITT_REFERENCE.sessionMinutes.max} min per session.
+                  </Notice>
+                </div>
               )}
             </div>
           </section>

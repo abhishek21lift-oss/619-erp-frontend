@@ -15,7 +15,7 @@ import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { downloadAssessmentPdf } from '@/lib/assessment-pdf';
 import {
-  computeAge, calcBmi, calcWhr, classifyBmi, classifyWaistRisk, classifyWhrRisk,
+  computeAge, calcBmi, calcWhr, classifyBmi, classifyWaistRisk, classifyWhrRisk, classifyBodyFat,
   classifyBp, classifyRhr, classifySpo2, assessVitalsSafety, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
   calc1RM, classifyStrength, classifyEndurance,
@@ -355,17 +355,18 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   }, [form.bpSystolic, form.bpDiastolic, form.restingHeartRate, form.restingSpo2]);
 
   // The live anthropometric summary — the same labels the API recomputes and
-  // stores. Waist uses waistCm only; waistIliacCm is never substituted.
+  // stores. Waist risk uses the iliac landmark its table names; WHR uses the
+  // narrowest waist.
   const liveAnthropometric = useMemo<FitnessAnthropometric>(() => {
     const bmi = calcBmi(n(form.weight), n(form.heightCm));
-    const waistCm = n(form.waistCm);
-    const waistHipRatio = calcWhr(waistCm, n(form.hipsCm));
+    const waistIliacCm = n(form.waistIliacCm);
+    const waistHipRatio = calcWhr(n(form.waistCm), n(form.hipsCm));
     return {
       bmi, bmiCategory: classifyBmi(bmi),
-      waistCm, waistRisk: classifyWaistRisk(waistCm, gender),
+      waistCm: waistIliacCm, waistRisk: classifyWaistRisk(waistIliacCm, gender),
       waistHipRatio, whrRisk: classifyWhrRisk(waistHipRatio, gender),
     };
-  }, [form.weight, form.heightCm, form.waistCm, form.hipsCm, gender]);
+  }, [form.weight, form.heightCm, form.waistCm, form.waistIliacCm, form.hipsCm, gender]);
 
   // An unsafe resting vitals reading stops the exertion tests — cardio (4),
   // strength (5), endurance (6). The reading, measurements, body composition
@@ -652,14 +653,24 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const savedAnthropometric: FitnessAnthropometric | undefined = (() => {
     if (!lastSaved) return undefined;
     const bmi = scoreNum(lastSaved.bmi);
-    const waistCm = scoreNum(lastSaved.waist_cm);
+    const waistIliacCm = scoreNum(lastSaved.waist_iliac_cm);
     const waistHipRatio = scoreNum(lastSaved.waist_hip_ratio);
     return {
       bmi, bmiCategory: cat(lastSaved.bmi_category) ?? classifyBmi(bmi),
-      waistCm, waistRisk: cat(lastSaved.waist_risk) ?? classifyWaistRisk(waistCm, gender),
+      // Recompute the waist label: rows saved before the landmark change stored
+      // one graded from the narrowest waist.
+      waistCm: waistIliacCm, waistRisk: classifyWaistRisk(waistIliacCm, gender),
       waistHipRatio, whrRisk: cat(lastSaved.whr_risk) ?? classifyWhrRisk(waistHipRatio, gender),
     };
   })();
+
+  // Old rows and list queries carry no stored body-fat category, and a waist
+  // risk from before the landmark change is regraded here.
+  const pdfRow = (row: Record<string, unknown>) => ({
+    ...row,
+    waist_risk: classifyWaistRisk(scoreNum(row.waist_iliac_cm), gender),
+    body_fat_category: cat(row.body_fat_category) ?? classifyBodyFat(scoreNum(row.body_fat_pct), gender),
+  });
 
   return (
     <PageContainer>
@@ -688,7 +699,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             <div className="flex flex-wrap gap-3">
               <Button
                 iconLeft={<Download size={14} />}
-                onClick={() => downloadAssessmentPdf(lastSaved, clientName)}
+                onClick={() => downloadAssessmentPdf(pdfRow(lastSaved), clientName)}
                 style={{ background: 'linear-gradient(135deg, #A33757, #852E4E)', color: '#fff' }}
               >
                 Download PDF Report
@@ -762,7 +773,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                         <Sparkles size={13} style={{ color: 'var(--text-muted)' }} />
                       </button>
                       <button
-                        type="button" title="Download PDF" aria-label="Download PDF" onClick={() => downloadAssessmentPdf(a, clientName)}
+                        type="button" title="Download PDF" aria-label="Download PDF" onClick={() => downloadAssessmentPdf(pdfRow(a), clientName)}
                         className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
                       >
                         <Download size={13} style={{ color: 'var(--text-muted)' }} />

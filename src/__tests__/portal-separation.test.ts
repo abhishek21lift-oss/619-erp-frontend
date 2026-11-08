@@ -1,9 +1,9 @@
-// Keeping the two sign-in doors apart.
+// Keeping the three doors apart.
 //
-// There is one auth cookie per browser, but two portals that refuse each
-// other's accounts. Everything in this file is a consequence of that: which
-// door somebody is sent back to, which account a door will walk into, and
-// which identity a door is allowed to remember.
+// There is now one auth cookie namespace per portal, so trainer, member and
+// platform sessions can coexist in a browser. Everything in this file is a
+// consequence of that: which door somebody is sent back to, which account a
+// door will walk into, and which identity a door is allowed to remember.
 //
 // ── The bug that produced it ──
 //
@@ -13,6 +13,8 @@
 // SignInScreen's redirect effect read only `user.role` and fired
 // router.replace('/pt-os'). The client never saw the form. The server was not
 // at fault and could not have been: it answered the session it was handed.
+// The fix then was a foreign-session guard; now each door has its own session,
+// so the other door's identity is not visible here at all.
 //
 // Three smaller versions of the same confusion shipped alongside it — the
 // remembered-account chip showing the trainer's email on the client's page,
@@ -32,7 +34,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { signInPathFor, SESSIONLESS_PAGES } from '@/lib/public-paths';
-import { rememberKeys, portalForRole, mayEnterPortal, type Portal } from '@/lib/portals';
+import { rememberKeys, portalForRole, portalForPage, mayEnterPortal, ACCESS_COOKIE_NAMES, type Portal } from '@/lib/portals';
 import { SESSION_USER_KEY } from '@/lib/session-cache';
 import { srcPath } from '@/__tests__/helpers/app-routes';
 
@@ -100,12 +102,46 @@ describe('nobody is sent to the wrong door', () => {
   });
 });
 
-describe('a sign-in page will not walk into the other portal', () => {
-  it('SignInScreen guards its redirect effect on the session matching the portal', () => {
-    // The reported bug in one line: the effect below used to run for any
-    // authenticated user, whichever door it was rendered behind.
-    expect(signInSrc).toMatch(/const foreignSession =/);
-    expect(signInSrc).toMatch(/if \(loading \|\| !user \|\| foreignSession\) return;/);
+describe('a sign-in page only ever sees its own door', () => {
+  it('SignInScreen redirects on any session it can see', () => {
+    // The provider is keyed on the page's portal (PortalAuthProvider), so a
+    // session from another door is not in this provider at all. There is no
+    // foreign session left for the screen to guard against — if this match
+    // comes back, the per-door session model has been undone somewhere.
+    expect(signInSrc).toMatch(/if \(loading \|\| !user\) return;/);
+    expect(signInSrc).not.toMatch(/foreignSession/);
+  });
+
+  it('keys the provider on the page portal, so crossing doors remounts it', () => {
+    expect(authContextSrc).toMatch(/export function PortalAuthProvider/);
+    expect(authContextSrc).toMatch(/<AuthProvider key=\{portal\}>/);
+  });
+
+  it('names one access cookie per door', () => {
+    expect(ACCESS_COOKIE_NAMES).toEqual([
+      'trainer_token', 'member_token', 'platform_token', 'token',
+    ]);
+  });
+
+  it('gives each sign-in page its own door', () => {
+    // /member-login and /platform-login are not app pages, but their provider
+    // must still be keyed on the door they lead to. Otherwise a trainer
+    // session is visible behind the member door and its redirect effect
+    // walks the client into the trainer's app.
+    expect(portalForPage('/login')).toBe('trainer');
+    expect(portalForPage('/member-login')).toBe('member');
+    expect(portalForPage('/platform-login')).toBe('platform');
+  });
+
+  it('keeps each door\'s cached identity apart', async () => {
+    const { writeCachedUser, readCachedUser, clearCachedUser } = await import('@/lib/session-cache');
+    writeCachedUser('{"id":"trainer-1"}', 'trainer');
+    writeCachedUser('{"id":"member-1"}', 'member');
+    expect(readCachedUser('trainer')).toBe('{"id":"trainer-1"}');
+    expect(readCachedUser('member')).toBe('{"id":"member-1"}');
+    clearCachedUser('trainer');
+    expect(readCachedUser('trainer')).toBeNull();
+    expect(readCachedUser('member')).toBe('{"id":"member-1"}');
   });
 
   it('classifies each of the three roles into exactly one portal', () => {
@@ -130,18 +166,6 @@ describe('a sign-in page will not walk into the other portal', () => {
         expect(mayEnterPortal(from, to), `${from} → ${to}`).toBe(from === to);
       }
     }
-  });
-
-  it('reads the session portal from the role, not from the page', () => {
-    expect(signInSrc).toMatch(/sessionPortal[^\n]*portalForRole\(user\.role\)/);
-  });
-
-  it('offers a way out instead of silently signing the other person out', () => {
-    // Clearing somebody's session because a second person opened a login page
-    // would be its own bug. The panel names the session and makes leaving it a
-    // tap.
-    expect(signInSrc).toMatch(/if \(foreignSession && user\)/);
-    expect(signInSrc).toMatch(/Sign out and continue/);
   });
 });
 
@@ -208,6 +232,6 @@ describe('clearCachedUser actually clears what writeCachedUser wrote', () => {
     expect(readCachedUser()).toBeNull();
     // And the store it used is the one the comment promises — a future edit
     // moving it to localStorage would survive the round trip above.
-    expect(window.sessionStorage.getItem(SESSION_USER_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(`${SESSION_USER_KEY}.trainer`)).toBeNull();
   });
 });

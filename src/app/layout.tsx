@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
-import { AuthProvider } from '@/lib/auth-context';
+import { PortalAuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
@@ -249,7 +249,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleAuthWrapper clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}>
           <ErrorBoundary>
             <ThemeProvider>
-              <AuthProvider>
+              <PortalAuthProvider>
                 <FeaturesProvider>
                   <ToastProvider>
                     {/*
@@ -311,7 +311,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </NavScrollProvider>
                   </ToastProvider>
                 </FeaturesProvider>
-              </AuthProvider>
+              </PortalAuthProvider>
             </ThemeProvider>
           </ErrorBoundary>
         </GoogleAuthWrapper>

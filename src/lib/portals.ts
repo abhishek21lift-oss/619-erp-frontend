@@ -94,11 +94,35 @@ export function isPlatformAppPage(pathname: string): boolean {
   return pathname === '/platform' || pathname.startsWith('/platform/');
 }
 
-/** Which portal a page belongs to. */
+/**
+ * Which portal a page belongs to.
+ *
+ * The sign-in pages are doors in their own right: `/member-login` must be
+ * judged by the member session (or by none) even when a trainer is signed in
+ * in the same browser, and `/platform-login` likewise. Leaving them on the
+ * default would put the trainer's identity behind the member door and let the
+ * redirect effect walk a client into the trainer's app — the exact confusion
+ * the per-door sessions exist to end.
+ */
 export function portalForPage(pathname: string): Portal {
-  if (isPlatformAppPage(pathname)) return 'platform';
-  return isMemberAppPage(pathname) ? 'member' : 'trainer';
+  if (isPlatformAppPage(pathname) || pathname === '/platform-login') return 'platform';
+  if (isMemberAppPage(pathname) || pathname === '/member-login') return 'member';
+  return 'trainer';
 }
+
+/**
+ * The access-cookie name for a portal. One namespace per door, so signing in
+ * at one does not overwrite the others. The backend's lib/authSession.js owns
+ * the same names; both sides are pinned by tests.
+ */
+export function accessCookieName(portal: Portal): string {
+  return `${portal}_token`;
+}
+
+/** Every access-cookie name, including the pre-namespace mirror. */
+export const ACCESS_COOKIE_NAMES = [
+  'trainer_token', 'member_token', 'platform_token', 'token',
+] as const;
 
 /**
  * May an account whose home is `userPortal` open a page in `pagePortal`?

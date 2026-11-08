@@ -77,6 +77,9 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FloatInput label="Completion Time (min)" numeric="decimal" value={form.cardioTimeMin} onChange={(v) => set('cardioTimeMin', v)} />
             <FloatInput label="Heart Rate at Finish (bpm)" numeric="integer" value={form.cardioHeartRate} onChange={(v) => set('cardioHeartRate', v)} />
+            <p className="text-[11px] leading-snug sm:col-span-2" style={{ color: 'var(--text-muted)' }}>
+              Protocol: walk 1 mile (1.6 km) as fast as possible; record completion time and heart rate at the finish.
+            </p>
           </div>
         )}
         {form.cardioTestType === 'Cooper 12-Minute Run' && (
@@ -96,7 +99,10 @@ export function StepCardio({ form, set, age, gender, error }: StepCardioProps) {
         {form.cardioTestType === 'YMCA 3-Minute Step Test' && (
           <div>
             <FloatInput label="Recovery Heart Rate (bpm)" numeric="integer" value={form.cardioRecoveryHr} onChange={(v) => set('cardioRecoveryHr', v)} />
-            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
+            <p className="mt-1.5 text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+              Protocol: 12-inch step board, 96 bpm metronome, 3 minutes of stepping. Sit immediately and count the recovery pulse for 1 full minute. Lower recovery pulse is better.
+            </p>
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>No standard VO₂max formula for this test — classified by heart-rate recovery only.</p>
           </div>
         )}
         {form.cardioTestType === 'Custom' && (

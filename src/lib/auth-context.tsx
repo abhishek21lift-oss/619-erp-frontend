@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { clearAllDrafts, clearDraftsOutside, draftScopeFor, DraftScopeContext } from '@/hooks/useAutoSaveDraft';
 import { api, type User, http } from './api';
 import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
@@ -12,6 +12,7 @@ import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
 import { readCachedUser, writeCachedUser, clearCachedUser } from './session-cache';
 import { signInPathFor } from './public-paths';
 import type { Portal } from './portals';
+import { portalForPage } from './portals';
 import type { Role } from './roles';
 export type { Role } from './roles';
 
@@ -72,6 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user,    setUser]    = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  // Which door this tab is standing at. The provider is keyed on it by
+  // PortalAuthProvider, so this is constant for the lifetime of one mount.
+  const portal = portalForPage(usePathname() ?? '');
 
   // If the user explicitly logged in during this session, skip me() result
   const loggedInRef = useRef(false);
@@ -109,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Restore cached user immediately — avoids blank flash on hard refresh.
     // Only id + name + role are persisted; email and other PII stay in memory.
-    const cachedRaw = readCachedUser();
+    const cachedRaw = readCachedUser(portal);
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
@@ -119,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // refresh, which for a permanent mark of status reads as a glitch.
         // Not PII — it is displayed publicly on the studio page.
         cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_id: partial.organization_id ?? null, organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null, avatar_url: partial.avatar_url ?? null };
-      } catch { clearCachedUser(); }
+      } catch { clearCachedUser(portal); }
     }
     if (cachedUser) setUser(cachedUser);
 
@@ -151,21 +155,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let timedOut = false;
     const meTimeout = setTimeout(() => { timedOut = true; ac.abort(); }, 10_000);
 
-    http<{ user: User }>('/api/auth/me', { signal: ac.signal })
-      .then((res) => {
-        clearTimeout(meTimeout);
+    http<{ user: User | null; legacy?: boolean }>('/api/auth/me', { signal: ac.signal })
+      .then(async (res) => {
         if (loggedInRef.current) return;
-        if (res?.user) {
-          const u = res.user as User;
+        let answer = res;
+
+        // A session minted before the per-portal cookies has no cookie for
+        // this door. Ask the server to migrate it once; it refuses unless the
+        // legacy session belongs to this portal, so visiting another door
+        // cannot sign that user out of it.
+        if (!answer?.user && answer?.legacy) {
+          const renewed = await refreshSession();
+          if (renewed && !loggedInRef.current && !ac.signal.aborted) {
+            answer = await http<{ user: User | null }>('/api/auth/me', { signal: ac.signal });
+          }
+        }
+        if (loggedInRef.current) return;
+
+        if (answer?.user) {
+          const u = answer.user as User;
           setUser(u);
-          writeCachedUser(cacheable(u));
+          writeCachedUser(cacheable(u), portal);
         } else {
           setUser(null);
-          clearCachedUser();
+          clearCachedUser(portal);
         }
       })
       .catch((err: unknown) => {
-        clearTimeout(meTimeout);
         if (loggedInRef.current) return;
         const status = (err as { status?: number })?.status;
         if (status === 401 || status === 403) {
@@ -175,6 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // All other errors (network, timeout, 5xx): keep cached session silently
       })
       .finally(() => {
+        clearTimeout(meTimeout);
         // See the comment on `timedOut` above: a cleanup-abort has a successor
         // request on the way and must not answer for it.
         if (ac.signal.aborted && !timedOut) return;
@@ -188,7 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ac.abort();
       initDone.current = false;
     };
-  }, []);
+  }, [portal]);
 
   // Where to send somebody who has just stopped being signed in. There are two
   // sign-in pages and each refuses the other's accounts, so a client dropped on
@@ -251,10 +268,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((prev) => {
       if (!prev) return prev;
       const next = { ...prev, ...patch };
-      writeCachedUser(cacheable(next));
+      writeCachedUser(cacheable(next), portal);
       return next;
     });
-  }, []);
+  }, [portal]);
 
   /**
    * Take on a freshly authenticated identity.
@@ -281,10 +298,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const scope = draftScopeFor(u);
     if (scope) clearDraftsOutside(scope); else clearAllDrafts();
     setUser(u);
-    writeCachedUser(cacheable(u));
+    writeCachedUser(cacheable(u), portal);
     setLoading(false);
     return u;
-  }, []);
+  }, [portal]);
 
   const login = useCallback(async function (
     email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform',
@@ -334,3 +351,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+
+/**
+ * One provider per door.
+ *
+ * Trainer, member and platform sessions can now coexist in one browser, but
+ * one tab still renders one door at a time. Keying the provider on the portal
+ * remounts it when a tab crosses doors, so no cached identity or in-flight
+ * /me answer from the previous door can paint for a frame on the new one.
+ */
+export function PortalAuthProvider({ children }: { children: React.ReactNode }) {
+  const portal = portalForPage(usePathname() ?? '');
+  return <AuthProvider key={portal}>{children}</AuthProvider>;
+}

@@ -5,9 +5,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
-  classifyBmi, classifyWaistRisk, classifyWhrRisk,
+  classifyBmi, classifyWaistRisk, classifyWhrRisk, classifyBodyFat,
 } from '@/lib/fitness-calculations';
 import StepAnthropometric from '@/components/pt-os/fitness-testing/StepAnthropometric';
+import StepBodyComposition from '@/components/pt-os/fitness-testing/StepBodyComposition';
 import { FitnessDashboard, type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { initAssessmentForm } from '@/components/pt-os/fitness-testing/types';
 
@@ -84,7 +85,7 @@ function formWith(overrides: Record<string, string>) {
 }
 
 describe('StepAnthropometric — labels the measurements it actually uses', () => {
-  it('classifies waist from waist_cm and WHR from waist_cm ÷ hips', () => {
+  it('classifies waist from the iliac landmark and WHR from waist_cm ÷ hips', () => {
     render(
       <StepAnthropometric
         form={formWith({ waistCm: '89.9', waistIliacCm: '120', hipsCm: '100' })}
@@ -92,13 +93,15 @@ describe('StepAnthropometric — labels the measurements it actually uses', () =
         gender="Male"
       />,
     );
-    // BMI 22.9 → Normal; both risk labels are the low-risk side.
+    // BMI 22.9 → Normal; waist 120 → above; WHR 0.9 → low risk.
     expect(screen.getByText('Normal')).toBeTruthy();
-    expect(screen.getAllByText('Low risk')).toHaveLength(2);
+    expect(screen.getByText('Above low-risk threshold')).toBeTruthy();
+    expect(screen.getByText('Low risk')).toBeTruthy();
+    expect(screen.getByText('120 cm')).toBeTruthy();
     expect(screen.getByText('0.9')).toBeTruthy();
   });
 
-  it('does not substitute the iliac measurement when waist_cm is missing', () => {
+  it('classifies the iliac waist even when the narrowest waist is missing, but never derives WHR from it', () => {
     render(
       <StepAnthropometric
         form={formWith({ waistCm: '', waistIliacCm: '120', hipsCm: '100' })}
@@ -106,8 +109,7 @@ describe('StepAnthropometric — labels the measurements it actually uses', () =
         gender="Male"
       />,
     );
-    expect(screen.queryByText('Above low-risk threshold')).toBeNull();
-    expect(screen.queryByText('Low risk')).toBeNull();
+    expect(screen.getByText('Above low-risk threshold')).toBeTruthy();
     // No WHR derived from the iliac reading.
     expect(screen.queryByText('1.2')).toBeNull();
   });
@@ -115,7 +117,7 @@ describe('StepAnthropometric — labels the measurements it actually uses', () =
   it('shows the BMI band but no waist/WHR risk for an unsupported sex', () => {
     render(
       <StepAnthropometric
-        form={formWith({ waistCm: '95', hipsCm: '100' })}
+        form={formWith({ waistCm: '95', waistIliacCm: '95', hipsCm: '100' })}
         set={() => {}}
         gender="Other"
       />,
@@ -123,6 +125,54 @@ describe('StepAnthropometric — labels the measurements it actually uses', () =
     expect(screen.getByText('Normal')).toBeTruthy();
     expect(screen.queryByText('Above low-risk threshold')).toBeNull();
     expect(screen.getByText(/Waist-circumference and waist-to-hip risk bands are sex-specific/)).toBeTruthy();
+  });
+});
+
+describe('classifyBodyFat — supplied K11 bands', () => {
+  it.each([
+    [2, 'Male', 'Essential Fat'],
+    [3, 'Male', 'Essential Fat'],
+    [5, 'Male', 'Essential Fat'],
+    [5.1, 'Male', 'Athletic / Ideal'],
+    [14.9, 'Male', 'Athletic / Ideal'],
+    [15, 'Male', 'Acceptable / Average'],
+    [20, 'Male', 'Acceptable / Average'],
+    [20.1, 'Male', 'Above Ideal Range'],
+    [25, 'Male', 'Above Ideal Range'],
+    [25.1, 'Male', 'Overfat / High Risk'],
+    [7, 'Female', 'Essential Fat'],
+    [8, 'Female', 'Essential Fat'],
+    [12, 'Female', 'Essential Fat'],
+    [12.1, 'Female', 'Athletic / Ideal'],
+    [19.9, 'Female', 'Athletic / Ideal'],
+    [20, 'Female', 'Acceptable / Average'],
+    [25, 'Female', 'Acceptable / Average'],
+    [25.1, 'Female', 'Above Ideal Range'],
+    [30, 'Female', 'Above Ideal Range'],
+    [30.1, 'Female', 'Overfat / High Risk'],
+    [22, 'male', 'Above Ideal Range'],
+  ])('%s%%, %s → %s', (bodyFat, gender, expected) => {
+    expect(classifyBodyFat(bodyFat, gender)).toBe(expected);
+  });
+
+  it('never invents a category without a supported sex or a usable value', () => {
+    expect(classifyBodyFat(22, null)).toBeNull();
+    expect(classifyBodyFat(22, 'Other')).toBeNull();
+    expect(classifyBodyFat(null, 'Male')).toBeNull();
+    expect(classifyBodyFat(Number.NaN, 'Male')).toBeNull();
+    expect(classifyBodyFat(0, 'Male')).toBeNull();
+  });
+
+  it('shows the category in the body-composition summary', () => {
+    render(
+      <StepBodyComposition
+        form={formWith({ bodyFatPct: '22' })}
+        set={() => {}}
+        age={30}
+        gender="Male"
+      />,
+    );
+    expect(screen.getByText('Above Ideal Range')).toBeTruthy();
   });
 });
 
@@ -145,6 +195,8 @@ describe('FitnessDashboard — anthropometric display', () => {
     );
     expect(screen.getByText('24.2')).toBeTruthy();
     expect(screen.getByText('Overweight')).toBeTruthy();
+    // The dashboard's waist value is the iliac landmark its risk uses.
+    expect(screen.getByText('Waist (Iliac)')).toBeTruthy();
     expect(screen.getByText('92 cm')).toBeTruthy();
     expect(screen.getByText('0.98')).toBeTruthy();
     expect(screen.getAllByText('Above low-risk threshold')).toHaveLength(2);
@@ -152,7 +204,7 @@ describe('FitnessDashboard — anthropometric display', () => {
 
   it('omits the block when the caller has no anthropometric data', () => {
     render(<FitnessDashboard scores={SCORES} />);
-    expect(screen.queryByText('Waist Circumference')).toBeNull();
+    expect(screen.queryByText('Waist (Iliac)')).toBeNull();
   });
 
   it('omits the block when every measurement is missing, rather than showing dashes', () => {
@@ -162,6 +214,6 @@ describe('FitnessDashboard — anthropometric display', () => {
         anthropometric={{ bmi: null, bmiCategory: null, waistCm: null, waistRisk: null, waistHipRatio: null, whrRisk: null }}
       />,
     );
-    expect(screen.queryByText('Waist Circumference')).toBeNull();
+    expect(screen.queryByText('Waist (Iliac)')).toBeNull();
   });
 });

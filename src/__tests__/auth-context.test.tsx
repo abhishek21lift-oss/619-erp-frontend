@@ -20,7 +20,7 @@ import { render, act, waitFor, screen } from '@testing-library/react';
 import { useAuth, AuthProvider } from '@/lib/auth-context';
 import type { ReactNode } from 'react';
 
-const CACHE_KEY = '619_user_minimal_v3';
+const CACHE_KEY = '619_user_minimal_v3.trainer';
 
 const mocks = vi.hoisted(() => ({
   mockHttp: vi.fn(),
@@ -54,6 +54,7 @@ vi.mock('@/lib/http', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.mockRouterReplace }),
+  usePathname: () => '/',
 }));
 
 const CACHED = { id: 'u1', name: 'Cached Coach', role: 'admin', organization_name: 'Studio' };

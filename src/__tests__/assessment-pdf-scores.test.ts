@@ -93,27 +93,31 @@ describe('assessment report — anthropometric norms', () => {
   const anthro = {
     bmi: 24.2, bmi_category: 'Overweight',
     waist_cm: 92, waist_iliac_cm: 74,
-    waist_risk: 'Above low-risk threshold',
+    waist_risk: 'Low risk',
     hips_cm: 94, waist_hip_ratio: 0.98, whr_risk: 'Above low-risk threshold',
+    body_fat_pct: 22, body_fat_category: 'Above Ideal Range',
   };
 
   it('prints each stored classification beside its measurement', () => {
     const html = generateAssessmentReportHTML({ ...base, ...anthro }, 'Test Client');
     expect(html).toContain('<label>BMI Classification</label><p>Overweight</p>');
     expect(html).toContain('<label>Waist Narrowest</label><p>92 cm</p>');
-    expect(html).toContain('<label>Waist Circumference Risk</label><p>Above low-risk threshold</p>');
+    // Waist risk reads the iliac landmark; WHR reads the narrowest waist.
+    expect(html).toContain('<label>Waist Iliac Risk</label><p>Low risk</p>');
     expect(html).toContain('<label>Waist-Hip Ratio Risk</label><p>Above low-risk threshold</p>');
-    // The separate iliac landmark is displayed, never substituted.
     expect(html).toContain('<label>Waist Iliac</label><p>74 cm</p>');
+    expect(html).toContain('<label>Body Fat Classification</label><p>Above Ideal Range</p>');
   });
 
   it('does not invent a classification for a row saved before the columns existed', () => {
     const html = generateAssessmentReportHTML({
-      ...base, bmi: 24.2, waist_cm: 92, hips_cm: 94, waist_hip_ratio: 0.98,
+      ...base, bmi: 24.2, waist_cm: 92, waist_iliac_cm: 74, hips_cm: 94,
+      waist_hip_ratio: 0.98, body_fat_pct: 22,
     }, 'Test Client');
     expect(html).toContain('<label>BMI Classification</label><p>—</p>');
-    expect(html).toContain('<label>Waist Circumference Risk</label><p>—</p>');
+    expect(html).toContain('<label>Waist Iliac Risk</label><p>—</p>');
     expect(html).toContain('<label>Waist-Hip Ratio Risk</label><p>—</p>');
+    expect(html).toContain('<label>Body Fat Classification</label><p>—</p>');
   });
 
   it('states the norm basis and that only the low-risk cut-off is defined', () => {
@@ -135,8 +139,8 @@ describe('assessment report — K11 strength percentiles', () => {
   });
 
   it('prints the stored percentile beside its category', () => {
-    const html = generateAssessmentReportHTML(withStrength('Well Above Average', 80), 'Test Client');
-    expect(html).toContain('<label>Test 1 Classification</label><p>Well Above Average (80th percentile)</p>');
+    const html = generateAssessmentReportHTML(withStrength('Above Average', 80), 'Test Client');
+    expect(html).toContain('<label>Test 1 Classification</label><p>Above Average (80th percentile)</p>');
   });
 
   it('keeps both tests and their own percentiles separate', () => {
@@ -176,7 +180,7 @@ describe('assessment report — resting vitals', () => {
   const vitals = {
     bp_systolic: 135, bp_diastolic: 85, bp_category: 'Hypertension Stage 1',
     resting_heart_rate: 72, rhr_category: 'Normal',
-    resting_spo2: 92, spo2_category: 'Mildly Low',
+    resting_spo2: 92, spo2_category: 'Mild Hypoxia',
     vitals_safety: 'caution',
   };
 
@@ -184,7 +188,7 @@ describe('assessment report — resting vitals', () => {
     const html = generateAssessmentReportHTML({ ...base, ...vitals }, 'Test Client');
     expect(html).toContain('<label>Blood Pressure Classification</label><p>Hypertension Stage 1</p>');
     expect(html).toContain('<label>Heart Rate Classification</label><p>Normal</p>');
-    expect(html).toContain('<label>SpO₂ Classification</label><p>Mildly Low</p>');
+    expect(html).toContain('<label>SpO₂ Classification</label><p>Mild Hypoxia</p>');
     expect(html).toContain('<label>Resting Heart Rate</label><p>72 bpm</p>');
     expect(html).toContain('<label>Exercise Safety</label><p>Caution — recheck before exertion testing</p>');
   });

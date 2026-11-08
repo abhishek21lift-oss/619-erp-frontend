@@ -1,6 +1,7 @@
 // Resting vitals: clinical classification and the separate exercise-safety
-// decision. Bands are the MPTS/AHA thresholds; where two bands overlap the
-// higher-risk one wins, and a single reading is described, never diagnosed.
+// decision. Blood pressure uses the studio's supplied dual-criteria table
+// (systolic OR diastolic); where two rows match, the more actionable one wins,
+// and a single reading is described, never diagnosed.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
@@ -17,31 +18,44 @@ vi.mock('@/components/pt-os/FitnessRadarChart', () => ({ default: () => <div dat
 const safe: VitalsSafetyInput = { systolic: 118, diastolic: 76, restingHeartRate: 72, restingSpo2: 98 };
 const assess = (over: Partial<VitalsSafetyInput> = {}) => assessVitalsSafety({ ...safe, ...over });
 
-describe('classifyBp — bands and overlap precedence', () => {
+describe('classifyBp — dual systolic/diastolic bands', () => {
   it.each([
-    [89, 70, 'Hypotension'],
-    [118, 59, 'Hypotension'],
+    [85, 55, 'Hypotension'],
+    [89, 60, 'Hypotension'],
+    [110, 55, 'Hypotension'],
     [90, 60, 'Normal'],
     [110, 75, 'Normal'],
+    [118, 59, 'Hypotension'],
     [119, 79, 'Normal'],
-    // 120 is the top of "normal" and the bottom of "elevated": the higher-risk
-    // band wins, so 120/79 is Elevated and 120/80 is Stage 1.
-    [120, 79, 'Elevated'],
-    [129, 79, 'Elevated'],
+    // 80 is printed in both "Normal 60–80" and "Stage 1 80–89"; the
+    // higher-risk row wins.
+    [118, 80, 'Hypertension Stage 1'],
+    [118, 85, 'Hypertension Stage 1'],
+    [118, 90, 'Hypertension Stage 2'],
+    // Crisis diastolic is ">120" exactly as printed, so 120 is stage 2.
+    [118, 120, 'Hypertension Stage 2'],
+    [118, 121, 'Hypertensive Crisis'],
+    // 120 is printed in both "Normal 90–120" and "Elevated 120–129".
     [120, 70, 'Elevated'],
-    [130, 79, 'Hypertension Stage 1'],
-    [139, 85, 'Hypertension Stage 1'],
+    [120, 79, 'Elevated'],
     [120, 80, 'Hypertension Stage 1'],
+    [125, 75, 'Elevated'],
+    [125, 85, 'Hypertension Stage 1'],
+    [129, 79, 'Elevated'],
+    [130, 79, 'Hypertension Stage 1'],
+    [135, 55, 'Hypotension'],
+    [135, 85, 'Hypertension Stage 1'],
     [135, 89, 'Hypertension Stage 1'],
-    [140, 85, 'Hypertension Stage 2'],
     [135, 90, 'Hypertension Stage 2'],
+    [139, 85, 'Hypertension Stage 1'],
+    [140, 80, 'Hypertension Stage 2'],
+    [140, 85, 'Hypertension Stage 2'],
+    [160, 55, 'Hypertension Stage 2'],
+    [170, 120, 'Hypertension Stage 2'],
     [179, 119, 'Hypertension Stage 2'],
     [180, 70, 'Hypertensive Crisis'],
-    [170, 120, 'Hypertensive Crisis'],
-    // The dangerous band outranks the low one when the numbers disagree.
-    [160, 58, 'Hypertension Stage 2'],
-    [185, 55, 'Hypertensive Crisis'],
-    [85, 55, 'Hypotension'],
+    [180, 80, 'Hypertensive Crisis'],
+    [85, 95, 'Hypertension Stage 2'],
   ])('%i/%i → %s', (systolic, diastolic, expected) => {
     expect(classifyBp(systolic, diastolic)).toBe(expected);
   });
@@ -49,8 +63,11 @@ describe('classifyBp — bands and overlap precedence', () => {
   it('names a high band from one number but never "Normal"', () => {
     expect(classifyBp(120, null)).toBe('Elevated');
     expect(classifyBp(145, null)).toBe('Hypertension Stage 2');
+    expect(classifyBp(85, null)).toBe('Hypotension');
     expect(classifyBp(null, 95)).toBe('Hypertension Stage 2');
+    expect(classifyBp(null, 121)).toBe('Hypertensive Crisis');
     expect(classifyBp(110, null)).toBeNull();
+    expect(classifyBp(null, 70)).toBeNull();
     expect(classifyBp(null, null)).toBeNull();
   });
 });
@@ -71,11 +88,14 @@ describe('classifyRhr — preferred 60–80, broad adult 60–100', () => {
   });
 
   it('describes an athlete-range low reading instead of flagging it as disease', () => {
-    // 40–50 is common in trained athletes; the classifier still says Low.
+    // 40–50 (or lower) is common in trained athletes; the classifier still
+    // says Low, but the safety decision treats it as context.
     expect(classifyRhr(45)).toBe('Low');
-    expect(assess({ restingHeartRate: 45, athlete: true })).toMatchObject({
-      level: 'safe', athleteLowRhr: true, reasons: [],
-    });
+    for (const bpm of [45, 38]) {
+      expect(assess({ restingHeartRate: bpm, athlete: true })).toMatchObject({
+        level: 'safe', athleteLowRhr: true, reasons: [],
+      });
+    }
     expect(assess({ restingHeartRate: 45, athlete: false }).level).toBe('caution');
   });
 
@@ -85,12 +105,16 @@ describe('classifyRhr — preferred 60–80, broad adult 60–100', () => {
   });
 });
 
-describe('classifySpo2 — 95–100 normal, 90–94 mildly low, <90 critical', () => {
+describe('classifySpo2 — 95–100 normal, 91–94 mild, 86–90 moderate, ≤85 severe', () => {
   it.each([
-    [89.5, 'Critical'],
-    [90, 'Mildly Low'],
-    [92, 'Mildly Low'],
-    [94.5, 'Mildly Low'],
+    [84, 'Severe Hypoxia'],
+    [85, 'Severe Hypoxia'],
+    [86, 'Moderate Hypoxia'],
+    [88, 'Moderate Hypoxia'],
+    [90, 'Moderate Hypoxia'],
+    [91, 'Mild Hypoxia'],
+    [92, 'Mild Hypoxia'],
+    [94.5, 'Mild Hypoxia'],
     [95, 'Normal'],
     [100, 'Normal'],
   ])('%s%% → %s', (spo2, expected) => {
@@ -110,14 +134,23 @@ describe('assessVitalsSafety — the exercise decision, separate from labels', (
     });
   });
 
-  it('stops on crisis, stage 2 and hypotension', () => {
-    for (const [systolic, diastolic] of [[185, 70], [160, 100], [85, 55], [135, 55]]) {
+  it('stops on crisis and stage 2, including a diastolic-only trigger', () => {
+    for (const [systolic, diastolic] of [[185, 70], [160, 100], [145, 55], [118, 95], [118, 121]]) {
       const result = assess({ systolic, diastolic });
       expect(result.level).toBe('stop');
       expect(result.requiresMedicalClearance).toBe(true);
     }
     expect(assess({ systolic: 185, diastolic: 70 }).reasons[0]).toMatch(/crisis/i);
-    expect(assess({ systolic: 160, diastolic: 100 }).reasons[0]).toMatch(/medical clearance/i);
+    expect(assess({ systolic: 160, diastolic: 100 }).reasons[0]).toMatch(/clearance/i);
+  });
+
+  it('cautions on hypotension with the table\'s symptom guidance', () => {
+    const result = assess({ systolic: 85, diastolic: 55 });
+    expect(result.level).toBe('caution');
+    expect(result.requiresMedicalClearance).toBe(false);
+    expect(result.repeatBp).toBe(true);
+    expect(result.reasons[0]).toMatch(/dizziness|fainting/i);
+    expect(classifyBp(85, 55)).toBe('Hypotension');
   });
 
   it('cautions and asks for a repeat on stage 1 and elevated bands', () => {
@@ -129,23 +162,36 @@ describe('assessVitalsSafety — the exercise decision, separate from labels', (
     expect(assess({ systolic: 135, diastolic: 85 }).requiresMedicalClearance).toBe(false);
   });
 
-  it('stops on RHR >100 and <40, cautions on 81–100 and 40–59 without athlete context', () => {
-    expect(assess({ restingHeartRate: 105 }).level).toBe('stop');
-    expect(assess({ restingHeartRate: 39 }).level).toBe('stop');
-    expect(assess({ restingHeartRate: 85 }).level).toBe('caution');
-    expect(assess({ restingHeartRate: 50 }).level).toBe('caution');
-    expect(assess({ restingHeartRate: 38, athlete: true }).level).toBe('stop');
-    expect(assess({ restingHeartRate: 50, athlete: true }).level).toBe('safe');
+  it('applies the image RHR guidance: >100 stops, <60 in a non-athlete refers, 81–100 is not a caution', () => {
+    const high = assess({ restingHeartRate: 105 });
+    expect(high.level).toBe('stop');
+    expect(high.reasons[0]).toMatch(/physician evaluation/i);
+
+    // 60–100 is the supplied wider population range, considered non-pathological.
+    expect(assess({ restingHeartRate: 85 })).toMatchObject({ level: 'safe', reasons: [] });
+
+    const low = assess({ restingHeartRate: 50 });
+    expect(low.level).toBe('caution');
+    expect(low.reasons[0]).toMatch(/refer.*medical doctor/i);
+
+    // Athletes may sit at 40–50 or lower; that is context, not a stop.
+    expect(assess({ restingHeartRate: 38, athlete: true })).toMatchObject({
+      level: 'safe', athleteLowRhr: true,
+    });
   });
 
-  it('stops on SpO₂ <90 and cautions on 90–94', () => {
-    expect(assess({ restingSpo2: 88 })).toMatchObject({ level: 'stop', requiresMedicalClearance: true });
+  it('applies the image SpO₂ guidance: ≤90 stops, 91–94 cautions', () => {
+    expect(assess({ restingSpo2: 84 })).toMatchObject({ level: 'stop', requiresMedicalClearance: true });
+    expect(assess({ restingSpo2: 84 }).reasons[0]).toMatch(/emergency|oxygen/i);
+    // 90 is Moderate Hypoxia in the image, so it halts testing, not cautions.
+    expect(assess({ restingSpo2: 90 })).toMatchObject({ level: 'stop', requiresMedicalClearance: true });
+    expect(assess({ restingSpo2: 88 }).level).toBe('stop');
     expect(assess({ restingSpo2: 92 })).toMatchObject({ level: 'caution' });
-    expect(assess({ restingSpo2: 92 }).reasons[0]).toMatch(/90–94%/);
+    expect(assess({ restingSpo2: 92 }).reasons[0]).toMatch(/91–94%/);
   });
 
   it('keeps every reason and reports the worst level when several readings are abnormal', () => {
-    const result = assess({ systolic: 135, diastolic: 85, restingHeartRate: 85, restingSpo2: 88 });
+    const result = assess({ systolic: 135, diastolic: 85, restingHeartRate: 105, restingSpo2: 88 });
     expect(result.level).toBe('stop');
     expect(result.reasons).toHaveLength(3);
     expect(result.reasons[0]).toMatch(/stage 1/i);
@@ -166,7 +212,7 @@ describe('FitnessDashboard — vitals display', () => {
         vitals={{
           bpSystolic: 135, bpDiastolic: 85, bpCategory: 'Hypertension Stage 1',
           restingHeartRate: 72, rhrCategory: 'Normal',
-          restingSpo2: 92, spo2Category: 'Mildly Low',
+          restingSpo2: 92, spo2Category: 'Mild Hypoxia',
         }}
       />,
     );
@@ -174,7 +220,7 @@ describe('FitnessDashboard — vitals display', () => {
     expect(screen.getByText('Hypertension Stage 1')).toBeTruthy();
     expect(screen.getByText('72 bpm')).toBeTruthy();
     expect(screen.getByText('92%')).toBeTruthy();
-    expect(screen.getByText('Mildly Low')).toBeTruthy();
+    expect(screen.getByText('Mild Hypoxia')).toBeTruthy();
   });
 
   it('omits the vitals block when the caller has none', () => {
