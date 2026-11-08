@@ -172,12 +172,13 @@ describe('attendance reports merged into the attendance page', () => {
     // "Footfall Trend" drew one bar per STATUS — present, late, absent. It
     // could not show a trend. The weekly chart beside it does plot days.
     expect(attendance).not.toContain('Footfall Trend');
-    expect(attendance).toContain('Weekly Attendance Trends');
+    expect(attendance).toContain('title="Weekly attendance"');
   });
 
-  it('sends the two buttons that opened it to the tab instead', () => {
+  it('exposes the old reports content as an in-page tab, not a route', () => {
     expect(attendance).not.toContain("router.push('/attendance/reports')");
-    expect(attendance).toContain("onGenerateReport={() => setActiveTab('insights')}");
+    expect(attendance).toContain("{ id: 'insights', label: 'Trends' }");
+    expect(attendance).toContain('onChange={setActiveTab}');
   });
 
   it('does not fetch 90 days of history until the tab is opened', () => {

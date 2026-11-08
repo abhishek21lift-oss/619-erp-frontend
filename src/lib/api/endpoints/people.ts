@@ -78,8 +78,14 @@ export const clients = {
 // profile is read through /api/pt-os/trainers.
 
 export const attendance = {
-  list: (params?: Record<string, string>) =>
-    http<Attendance[]>(`/api/attendance${buildQs(params)}`),
+  // GET returns `check_in_method`; every reader in the app uses `method`.
+  // Normalise once here rather than at each call site.
+  list: async (params?: Record<string, string>) => {
+    const rows = await http<Attendance[]>(`/api/attendance${buildQs(params)}`);
+    return Array.isArray(rows)
+      ? rows.map((r) => ({ ...r, method: r.method ?? r.check_in_method }))
+      : rows;
+  },
   /**
    * Server-side rank aggregation: per-member present+late counts, no row
    * cap. The list branch caps at 500 rows, which silently corrupts ranks for
@@ -95,6 +101,8 @@ export const attendance = {
     http('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Record<string, unknown>) =>
     http(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) =>
+    http(`/api/attendance/${id}`, { method: 'DELETE' }),
   /** Up to 200 rows in one request; each is checked against the studio server-side. */
   bulk: (records: Record<string, unknown>[]) =>
     http<{ processed: number; failed: number; errors?: { index: number; error: string }[] }>(

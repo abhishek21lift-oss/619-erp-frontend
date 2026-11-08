@@ -151,6 +151,9 @@ export const HOUR_BUCKETS = [
   { label: '2–5 PM', from: 14, to: 17 },
   { label: '5–8 PM', from: 17, to: 20 },
   { label: '8–11 PM', from: 20, to: 23 },
+  // The screenshot that prompted this page's review was taken at 23:41; a
+  // check-in that late used to fall outside every bucket and vanish.
+  { label: '11 PM–12 AM', from: 23, to: 24 },
 ] as const;
 
 /** Check-ins per time-of-day bucket, in the viewer's hours. */

@@ -32,8 +32,10 @@ const tone = (from: string, to: string, ink: string, rgb: string): Tone => ({
 });
 
 export const tones = {
-  aqua:   tone(spectrum.teal[400],   spectrum.cyan[500],   spectrum.teal[700],   '20,184,166'),
-  indigo: tone(spectrum.indigo[400], spectrum.violet[600], spectrum.indigo[700], '99,102,241'),
+  // Deep enough for white text: the 400 steps these used to start from put
+  // white-on-aqua and white-on-indigo below AA on the CTAs that wear them.
+  aqua:   tone(spectrum.teal[700],   spectrum.sky[700],    spectrum.teal[700],   '15,118,110'),
+  indigo: tone(spectrum.indigo[600], spectrum.violet[600], spectrum.indigo[700], '79,70,229'),
   sunset: tone(spectrum.orange[400], spectrum.pink[500],   '#C2410C',            '249,115,22'),
   berry:  tone(spectrum.pink[400],   spectrum.violet[500], '#BE185D',            '236,72,153'),
   sky:    tone(spectrum.sky[400],    spectrum.indigo[500], spectrum.sky[700],    '14,165,233'),
