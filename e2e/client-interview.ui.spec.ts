@@ -12,14 +12,14 @@ import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session
  * is done through the screens, and every outcome is read back from the API.
  *
  * The interview is four sections since 2026-11-01: work & lifestyle, training
- * background, training challenges, and a summary. Occupation, screen time and
- * activity live on the Lifestyle Assessment, which owns those columns; this
- * form shows them read-only and never writes a second copy.
+ * background, training challenges, and a summary. Occupation, screen time,
+ * activity, sitting time and meal regularity live on the Lifestyle Assessment,
+ * which owns those columns; this form shows them read-only and never writes a
+ * second copy.
  *
- * What the controls store is the canonical value, not the label: a sitting
- * band is stored as its midpoint, and a barrier is its key ('time'), not
- * 'Time'. The free-text columns the form used to fill are still on the record
- * and must survive a save from this form.
+ * What the controls store is the canonical value, not the label: a barrier is
+ * its key ('time'), not 'Time'. The free-text columns the form used to fill
+ * are still on the record and must survive a save from this form.
  */
 
 type Interview = {
@@ -81,15 +81,25 @@ test.describe('Client interview and journey', () => {
     await expect(page.getByRole('button', { name: /Complete PAR-Q/ })).toBeVisible();
   });
 
-  test('the interview stores canonical answers and completing continues to the server\'s next step', async ({ page }) => {
-    await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const sitting = page.getByLabel('Sitting hours');
-    await expect(sitting).toBeVisible({ timeout: 25_000 });
+  test('the interview stores its own answers, shows Lifestyle facts read-only, and continues to the next step', async ({ page }) => {
+    // Sitting time and meal regularity belong to the Lifestyle Assessment.
+    const seeded = await apiPost<{ data: { id: string } }>(
+      '/api/progress/lifestyle-assessments', token,
+      { client_id: clientId, sitting_hours: 7, meal_regularity: 'inconsistent' },
+    );
+    expect(seeded.status, JSON.stringify(seeded.body)).toBe(201);
 
-    // A label is never what gets stored: "6 – 8 hours" is 7, "Frequently
-    // skipped" is inconsistent, "Intermediate" is intermediate.
-    await sitting.selectOption('7');
-    await page.getByLabel('Meal regularity').selectOption('inconsistent');
+    await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
+    // The read-only Lifestyle card is the page's ready signal.
+    const source = page.locator('#section-source');
+    await expect(source.getByText('From the Lifestyle Assessment')).toBeVisible({ timeout: 25_000 });
+    await expect(source.getByText('7 h', { exact: true })).toBeVisible();
+    await expect(source.getByText('Frequently skipped', { exact: true })).toBeVisible();
+    // Two editable copies are how two answers start to disagree.
+    await expect(page.getByLabel('Sitting hours')).toHaveCount(0);
+    await expect(page.getByLabel('Meal regularity')).toHaveCount(0);
+
+    // A label is never what gets stored: "Intermediate" is intermediate.
     await page.getByLabel('Days a week they can train').selectOption('4');
     await page.getByLabel('Previous experience').selectOption('intermediate');
     await page.getByLabel('Job details').fill('Warehouse team lead, rotating shifts, on feet most of the day');
@@ -110,8 +120,6 @@ test.describe('Client interview and journey', () => {
     const [row] = await interviews();
     expect(row.status).toBe('completed');
     expect(row.completed_at).toBeTruthy();
-    expect(Number(row.lifestyle_sitting_hours)).toBe(7);
-    expect(row.lifestyle_meal_regularity).toBe('inconsistent');
     expect(Number(row.lifestyle_training_days)).toBe(4);
     expect(row.previous_workout_experience).toBe('intermediate');
     expect(row.job_details).toBe('Warehouse team lead, rotating shifts, on feet most of the day');
@@ -119,6 +127,16 @@ test.describe('Client interview and journey', () => {
     expect(row.challenge_other).toBe('The gym closes before the shift ends');
     // A question this form did not ask stays empty, not blank-written.
     expect(row.training_history).toBeNull();
+    // The interview never wrote a second copy of the Lifestyle answers.
+    expect(row.lifestyle_sitting_hours).toBeNull();
+    expect(row.lifestyle_meal_regularity).toBeNull();
+
+    // The Lifestyle row still owns them, unchanged by the interview save.
+    const lifestyleRows = (await apiGet<{ data: Record<string, unknown>[] }>(
+      `/api/progress/lifestyle-assessments?client_id=${clientId}`, token,
+    )).data;
+    expect(Number(lifestyleRows[0].sitting_hours)).toBe(7);
+    expect(lifestyleRows[0].meal_regularity).toBe('inconsistent');
 
     const journey = (await apiGet<{ data: Journey }>(`/api/pt-os/clients/${clientId}/journey`, token)).data;
     expect(journey.steps.find((s) => s.key === 'interview')?.state).toBe('done');
@@ -140,9 +158,11 @@ test.describe('Client interview and journey', () => {
     expect(seeded.status, JSON.stringify(seeded.body)).toBe(201);
 
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    const meal = page.getByLabel('Meal regularity');
-    await expect(meal).toBeVisible({ timeout: 25_000 });
-    await meal.selectOption('irregular');
+    const job = page.getByLabel('Job details');
+    await expect(job).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByLabel('Training history'))
+      .toHaveValue('Played football at college; nothing for two years.');
+    await job.fill('Warehouse team lead');
     await page.getByRole('button', { name: 'Save draft' }).click();
     await expect.poll(async () => (await interviews())[0]?.status, { timeout: 15_000 }).toBe('draft');
 
@@ -150,17 +170,20 @@ test.describe('Client interview and journey', () => {
     // from the new form.
     let rows = await interviews();
     expect(rows).toHaveLength(1);
-    expect(rows[0].lifestyle_meal_regularity).toBe('irregular');
+    expect(rows[0].job_details).toBe('Warehouse team lead');
     expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
 
     await page.reload();
-    await expect(page.getByLabel('Meal regularity')).toHaveValue('irregular', { timeout: 25_000 });
+    await expect(page.getByLabel('Job details')).toHaveValue('Warehouse team lead', { timeout: 25_000 });
+    await expect(page.getByLabel('Training history'))
+      .toHaveValue('Played football at college; nothing for two years.');
     await page.getByRole('button', { name: 'Complete interview' }).click();
     await expect(page.getByText('Interview completed', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     rows = await interviews();
     expect(rows, 'the draft was completed, not duplicated').toHaveLength(1);
     expect(rows[0].status).toBe('completed');
+    expect(rows[0].job_details).toBe('Warehouse team lead');
     expect(rows[0].training_history).toBe('Played football at college; nothing for two years.');
   });
 
@@ -207,7 +230,7 @@ test.describe('Client interview and journey', () => {
 
   test('an empty interview cannot be completed', async ({ page }) => {
     await gotoApp(page, `/pt-os/interview?client_id=${clientId}`);
-    await expect(page.getByLabel('Sitting hours')).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByLabel('Job details')).toBeVisible({ timeout: 25_000 });
     await expect(page.getByRole('button', { name: 'Complete interview' })).toBeDisabled();
     expect(await interviews()).toHaveLength(0);
   });
