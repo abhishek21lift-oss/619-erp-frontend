@@ -159,7 +159,10 @@ describe('api transport', () => {
     // the Bearer token IS the identity, and otherwise the cookie is.
     const http = fs.readFileSync(path.join(SRC, 'lib', 'http.ts'), 'utf8');
     const fn = http.slice(http.indexOf('export function tenantAuthHeaders'));
-    expect(fn.slice(0, 400)).toMatch(/imp\s*\?\s*\{\s*Authorization[\s\S]*?\}\s*:\s*\{\}/);
+    // X-Portal is a cookie-namespace selector, not identity: the unified door
+    // sends none, and every other door sends only its own name.
+    expect(fn.slice(0, 600)).toMatch(/'X-Portal': portal/);
+    expect(fn.slice(0, 600)).toMatch(/imp\s*\?\s*\{\s*Authorization[\s\S]*?\}\s*:\s*\{\}/);
 
     // …and no file anywhere reconstructs one by hand. Comments are stripped
     // first: several of them explain why the header is gone, and a test that

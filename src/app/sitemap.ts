@@ -5,8 +5,6 @@ import { PUBLIC_SEO_ROUTES, canonicalUrl, type PublicSeoRoute } from '@/lib/seo-
 export const PUBLIC_ROUTES = PUBLIC_SEO_ROUTES;
 
 const PRIORITY: Record<PublicSeoRoute, number> = {
-  '/': 1,
-  '/pt-os': 0.9,
   '/start-free': 0.8,
 };
 

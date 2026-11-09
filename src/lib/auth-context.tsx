@@ -11,17 +11,16 @@ import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
 // the two had drifted onto different keys in different stores.
 import { readCachedUser, writeCachedUser, clearCachedUser } from './session-cache';
 import { signInPathFor } from './public-paths';
-import type { Portal } from './portals';
-import { portalForPage } from './portals';
+import { portalForPage, portalForRole, type PagePortal } from './portals';
 import type { Role } from './roles';
 export type { Role } from './roles';
 
 interface Ctx {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform') => Promise<void>;
-  loginWithGoogle: (credential: string, portal?: Portal) => Promise<User>;
-  linkGoogle: (credential: string, password: string, portal?: Portal) => Promise<User>;
+  login: (email: string, password: string, mfaCode?: string, portal?: PagePortal) => Promise<void>;
+  loginWithGoogle: (credential: string, portal?: PagePortal) => Promise<User>;
+  linkGoogle: (credential: string, password: string, portal?: PagePortal) => Promise<User>;
   loginWithPasskey: (email?: string) => Promise<void>;
   logout: () => void;
   /**
@@ -113,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Restore cached user immediately — avoids blank flash on hard refresh.
     // Only id + name + role are persisted; email and other PII stay in memory.
-    const cachedRaw = readCachedUser(portal);
+    const cachedRaw = portal === 'unified' ? null : readCachedUser(portal);
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
@@ -123,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // refresh, which for a permanent mark of status reads as a glitch.
         // Not PII — it is displayed publicly on the studio page.
         cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_id: partial.organization_id ?? null, organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null, is_founder: partial.is_founder ?? false, founder_number: partial.founder_number ?? null, avatar_url: partial.avatar_url ?? null };
-      } catch { clearCachedUser(portal); }
+      } catch { if (portal === 'unified') clearCachedUser(); else clearCachedUser(portal); }
     }
     if (cachedUser) setUser(cachedUser);
 
@@ -175,10 +174,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (answer?.user) {
           const u = answer.user as User;
           setUser(u);
-          writeCachedUser(cacheable(u), portal);
+          // The cache is keyed by the account's real portal, never by the
+          // unified page: a restored member must land in the member cache.
+          const actual = portalForRole(u.role);
+          if (actual) writeCachedUser(cacheable(u), actual);
         } else {
           setUser(null);
-          clearCachedUser(portal);
+          if (portal === 'unified') clearCachedUser(); else clearCachedUser(portal);
         }
       })
       .catch((err: unknown) => {
@@ -268,7 +270,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((prev) => {
       if (!prev) return prev;
       const next = { ...prev, ...patch };
-      writeCachedUser(cacheable(next), portal);
+      const actual = portalForRole(next.role);
+      if (actual) writeCachedUser(cacheable(next), actual);
       return next;
     });
   }, [portal]);
@@ -298,27 +301,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const scope = draftScopeFor(u);
     if (scope) clearDraftsOutside(scope); else clearAllDrafts();
     setUser(u);
-    writeCachedUser(cacheable(u), portal);
+    const actual = portalForRole(u.role);
+    if (actual) writeCachedUser(cacheable(u), actual);
     setLoading(false);
     return u;
   }, [portal]);
 
   const login = useCallback(async function (
-    email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform',
+    email: string, password: string, mfaCode?: string, portal?: PagePortal,
   ): Promise<void> {
     const data = await api.auth.login(email, password, mfaCode, portal);
     _adoptSession(data.user);
   }, [_adoptSession]);
 
   const loginWithGoogle = useCallback(async function (
-    credential: string, portal?: Portal,
+    credential: string, portal?: PagePortal,
   ): Promise<User> {
     const data = await api.auth.googleLogin(credential, portal);
     return _adoptSession(data.user);
   }, [_adoptSession]);
 
   const linkGoogle = useCallback(async function (
-    credential: string, password: string, portal?: Portal,
+    credential: string, password: string, portal?: PagePortal,
   ): Promise<User> {
     const data = await api.auth.googleLink({ credential, password, portal });
     return _adoptSession(data.user);

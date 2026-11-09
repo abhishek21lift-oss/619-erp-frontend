@@ -102,12 +102,12 @@ describe('<Guard />', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('sends somebody with no session to the sign-in page for that app', async () => {
+  it('sends somebody with no session to the unified sign-in page', async () => {
     pathname = '/member/payments';
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     render(<Guard><div>never</div></Guard>);
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/member-login'));
-    expect(mockReplace).not.toHaveBeenCalledWith('/login');
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
+    expect(mockReplace).not.toHaveBeenCalledWith('/member-login');
   });
 });
 

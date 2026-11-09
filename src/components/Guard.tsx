@@ -63,7 +63,7 @@ export default function Guard({ children, role, roles }: Props) {
   const roleRequired = role !== undefined || roles !== undefined;
   const verdict: 'pending' | 'redirect' | 'pass' =
     loading ? 'pending'
-      : (!user || userPortal === null) ? 'redirect'
+      : (!user || userPortal === null || pagePortal === 'unified') ? 'redirect'
         : !mayEnterPortal(userPortal, pagePortal) ? 'redirect'
           : (roleRequired && !hasRole(user.role, roles ?? role)) ? 'redirect'
             : 'pass';

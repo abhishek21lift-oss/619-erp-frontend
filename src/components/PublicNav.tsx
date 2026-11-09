@@ -35,7 +35,7 @@ export default function PublicNav({ action }: { action: 'sign-in' | 'start-free'
     >
       <div className={HEADER.container}>
         <nav className={HEADER.bar}>
-          <Link href="/" aria-label="MY PT STUDIO home" className={HEADER.chipClass}>
+          <Link href="/login" aria-label="Sign in to MY PT STUDIO" className={HEADER.chipClass}>
             <Wordmark size={22} priority />
           </Link>
 

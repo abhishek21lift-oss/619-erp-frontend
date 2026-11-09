@@ -20,6 +20,7 @@ const PRIVATE_SEGMENTS = [
   '/pay',
   '/platform',
   '/platform-login',
+  '/pt-os',
   '/reports',
   '/reset-password',
   '/sales',
@@ -31,16 +32,6 @@ const PRIVATE_SEGMENTS = [
   '/training',
 ];
 
-/**
- * Private subtrees under a public parent.
- *
- * `/pt-os` itself is the public marketing page; `/pt-os/` is the authenticated
- * app. robots.txt matches by prefix, so this blocks `/pt-os/clients`,
- * `/pt-os/exercise-library`, `/pt-os/workout-plans` and the rest without
- * touching the exact public URL.
- */
-const PRIVATE_PREFIXES = ['/pt-os/'];
-
 /** Answer-engine crawlers that should see the same public surface as `*`. */
 export const AI_CRAWLERS = [
   'GPTBot', 'OAI-SearchBot', 'ChatGPT-User',
@@ -51,7 +42,7 @@ export const AI_CRAWLERS = [
 
 export default function robots(): MetadataRoute.Robots {
   const allow = [...PUBLIC_SEO_ROUTES];
-  const disallow = ['/api/', '/login', ...PRIVATE_SEGMENTS, ...PRIVATE_PREFIXES];
+  const disallow = ['/api/', '/login', ...PRIVATE_SEGMENTS];
   return {
     rules: [
       {
@@ -69,4 +60,4 @@ export default function robots(): MetadataRoute.Robots {
   };
 }
 
-export { PRIVATE_SEGMENTS, PRIVATE_PREFIXES };
+export { PRIVATE_SEGMENTS };

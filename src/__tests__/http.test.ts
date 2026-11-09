@@ -87,9 +87,9 @@ describe('http()', () => {
     // not — which is why it sat failing rather than catching anything.
     //
     // 1. handleUnauthorized() deliberately does nothing on a PUBLIC path
-    //    ('/', '/login', '/reset-password'): being signed out on the login
-    //    page is not an expiry worth announcing. The shared beforeEach pins
-    //    pathname to '/', so the event could never fire.
+    //    ('/login', '/reset-password'): being signed out on the login page is
+    //    not an expiry worth announcing. The shared beforeEach pins pathname
+    //    to '/', which is gated now, so this test sets a gated path itself.
     // 2. A 401 is not final. http() first tries to refresh the access token
     //    via the rotating cookie and only gives up if that also fails — so
     //    the refresh call needs a response too, and it must be a 401 (the
@@ -122,6 +122,10 @@ describe('http()', () => {
   it('stays quiet about a 401 on a public page', async () => {
     // The other half of the same rule. Landing on /login without a session is
     // the normal case, not an event worth firing at the app.
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hostname: 'localhost', pathname: '/login' },
+      writable: true,
+    });
     const handler = vi.fn();
     window.addEventListener('session-expired', handler);
     vi.mocked(fetch)

@@ -34,7 +34,7 @@ import { C, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/components/landing/tokens
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Mail, ArrowRight, Fingerprint, Loader2, Lock, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { rememberKeys, safeReturnTo, type Portal } from '@/lib/portals';
+import { rememberKeys, safeReturnTo, postSignInPath, unifiedRedirectTarget, type PagePortal, type Portal } from '@/lib/portals';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import { errorMessage, mapSignInError } from '@/lib/forms/errors';
 import { signInSchema } from '@/lib/forms/schemas/auth';
@@ -55,7 +55,7 @@ function isValidSignInEmail(value: string): boolean {
 export type { Portal };
 
 const COPY: Record<
-  Portal,
+  PagePortal,
   {
     title: string;
     blurb: string;
@@ -65,6 +65,25 @@ const COPY: Record<
     aside: AuthAside;
   }
 > = {
+  // The one customer door: trainer and member accounts both sign in here, and
+  // the server reads the account row to decide which session to mint.
+  unified: {
+    title: 'Sign in',
+    blurb: 'For trainers and members.',
+    otherHref: '/platform-login',
+    otherLabel: 'Command Center',
+    otherCta: 'Command Center',
+    aside: {
+      eyebrow: 'Sign in · MY PT STUDIO',
+      headline: 'Your studio, or your training.',
+      sub: 'One sign-in for the trainer who runs the studio and the members who train with it. Your account decides where you land.',
+      notes: [
+        'Members see only their own records',
+        'Trainers get the full studio dashboard',
+        'The Command Center keeps its own door',
+      ],
+    },
+  },
   trainer: {
     title: 'Trainer Login',
     blurb: 'For the trainer who runs the studio.',
@@ -123,8 +142,11 @@ const MAIN_PADDING = {
   paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
 } as const;
 
-export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }) {
-  const copy = COPY[portal];
+export default function SignInScreen({
+  portal = 'trainer',
+  unified = false,
+}: { portal?: Portal; unified?: boolean }) {
+  const copy = COPY[unified ? 'unified' : portal];
   const LS = rememberKeys(portal);
   // Set when the server says the credentials were right but this is the wrong
   // sign-in page. Turns the error box into a way out rather than a wall.
@@ -163,7 +185,13 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
   // follows whether the Google block is actually on screen, not whether a client
   // id happens to be configured for another door.
   const googleConfigured = googleSignInConfigured();
-  const showGoogle = portal === 'trainer' && googleConfigured && !mfaRequired;
+  const showGoogle = (portal === 'trainer' || unified) && googleConfigured && !mfaRequired;
+
+  // A fresh credential is the one case where the unified door always sends the
+  // person onward. A merely restored session stays on the form so a shared
+  // device can sign in as the other role. Read synchronously by the redirect
+  // effect, so it is set before the auth call that updates `user`.
+  const justSignedIn = useRef(false);
 
   /**
    * Whether a sign-in attempt is already running.
@@ -228,8 +256,17 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
       typeof window === 'undefined'
         ? null
         : new URLSearchParams(window.location.search).get('redirect');
-    router.replace(safeReturnTo(returnTo, user.role));
-  }, [user, loading, router]);
+
+    if (!unified) {
+      router.replace(safeReturnTo(returnTo, user.role));
+      return;
+    }
+
+    // The unified door only moves a restored session when the destination is
+    // its own; otherwise the form stays and the "Continue as" card is offered.
+    const target = unifiedRedirectTarget(returnTo, user.role, justSignedIn.current);
+    if (target) router.replace(target);
+  }, [user, loading, router, unified]);
 
   const emailValid = isValidSignInEmail(email);
   const emailError = touched.email && !email.trim() ? 'Email is required.' : touched.email && !emailValid ? 'Enter a valid email address.' : '';
@@ -286,13 +323,15 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
+    justSignedIn.current = true;
     try {
-      await login(email.trim(), password, mfaRequired ? mfaCode.trim() : undefined, portal);
+      await login(email.trim(), password, mfaRequired ? mfaCode.trim() : undefined, unified ? 'unified' : portal);
       persistRemember({ email: email.trim(), organization_name: lastOrg });
       // Deliberately NOT releasing the in-flight ref here: the redirect is
       // already on its way.
       setOk(true); // brief success flash before redirect fires
     } catch (err: unknown) {
+      justSignedIn.current = false;
       // The server challenges 2FA-enabled accounts with { mfaRequired: true }.
       const payload = (err && typeof err === 'object' && 'payload' in err)
         ? (err as { payload?: { mfaRequired?: boolean } }).payload : undefined;
@@ -318,10 +357,12 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     if (passkeyBusy || busy) return;
     setError('');
     setPasskeyBusy(true);
+    justSignedIn.current = true;
     try {
       await loginWithPasskey(email.trim() || undefined);
       setOk(true);
     } catch (err: unknown) {
+      justSignedIn.current = false;
       fail(webAuthnError(err));
     }
   }
@@ -331,11 +372,13 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     inFlight.current = true;
     setError('');
     setGoogleBusy(true);
+    justSignedIn.current = true;
     try {
-      const signedIn = await loginWithGoogle(credential, 'trainer');
+      const signedIn = await loginWithGoogle(credential, unified ? 'unified' : portal);
       persistRemember(signedIn);
       setOk(true);
     } catch (err: unknown) {
+      justSignedIn.current = false;
       const code = (err as { code?: string })?.code;
       if (code === 'GOOGLE_NO_ACCOUNT') {
         setGoogleBusy(false);
@@ -366,7 +409,9 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
         return;
       }
       if (code === 'GOOGLE_ACCOUNT_NOT_SUPPORTED') {
-        fail('Google sign-in is for studio accounts. Use password login with your authenticator code.');
+        fail(unified
+          ? 'This account cannot use Google sign-in here. Use your password instead.'
+          : 'Google sign-in is for studio accounts. Use password login with your authenticator code.');
         return;
       }
       fail(mapSignInError(err, 'Google sign-in was cancelled or failed. Try again.'));
@@ -383,11 +428,13 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
     inFlight.current = true;
     setError('');
     setGoogleBusy(true);
+    justSignedIn.current = true;
     try {
-      const signedIn = await linkGoogle(googleCredential, googleLinkPassword, 'trainer');
+      const signedIn = await linkGoogle(googleCredential, googleLinkPassword, unified ? 'unified' : portal);
       persistRemember(signedIn);
       setOk(true);
     } catch (err: unknown) {
+      justSignedIn.current = false;
       const code = (err as { code?: string })?.code;
       if (code === 'GOOGLE_LINK_INVALID_PASSWORD') {
         return fail('That password is incorrect.');
@@ -409,7 +456,9 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
         return fail('This Google account is already linked to another account. Sign in with that Google account or with your password.');
       }
       if (code === 'GOOGLE_ACCOUNT_NOT_SUPPORTED') {
-        return fail('Google sign-in is for studio accounts. Use password login with your authenticator code.');
+        return fail(unified
+          ? 'This account cannot use Google sign-in here. Use your password instead.'
+          : 'Google sign-in is for studio accounts. Use password login with your authenticator code.');
       }
       if (code === 'GOOGLE_NO_ACCOUNT') {
         setGoogleBusy(false);
@@ -473,17 +522,20 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
           footer={
             <>
               {/* The other door. Two separate sign-ins only work if each one
-                  says where the other is — "wrong page" on its own is a dead end. */}
-              <div className="mt-5 text-center">
-                <Link
-                  href={copy.otherHref}
-                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-[500] transition-colors hover:bg-black/5"
-                  style={{ color: C.body }}
-                >
-                  {copy.otherLabel}
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
+                  says where the other is — "wrong page" on its own is a dead end.
+                  The unified door has no sibling customer door to advertise. */}
+              {!unified && (
+                <div className="mt-5 text-center">
+                  <Link
+                    href={copy.otherHref}
+                    className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-[500] transition-colors hover:bg-black/5"
+                    style={{ color: C.body }}
+                  >
+                    {copy.otherLabel}
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              )}
               <p className="mt-3 text-center text-[12px]" style={{ color: C.muted }}>
                 © {new Date().getFullYear()} MY PT STUDIO · Need help?{' '}
                 <a href={`mailto:${SUPPORT_EMAIL}`} className="font-[650] hover:underline" style={{ color: C.blueHi }}>Contact support</a>
@@ -491,8 +543,29 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
             </>
           }
         >
-          {/* remembered-account chip */}
-          {rememberedEmail && (
+          {/* Session-first card. On a shared device this is how the person
+              already signed in gets back in without hunting for a URL; the
+              form underneath stays usable by the other role. */}
+          {user ? (
+            <button
+              type="button"
+              onClick={() => router.push(postSignInPath(user.role))}
+              className="mt-6 flex w-full items-center gap-3 rounded-[14px] px-3.5 py-3 text-left transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(0,113,227,0.2)]"
+              style={{ background: C.canvasAlt }}
+            >
+              <span
+                className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full text-[13px] font-[600] text-white"
+                style={{ background: C.blue }}
+              >
+                {(user.name || '?').slice(0, 1).toUpperCase()}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-[600]" style={{ color: C.muted }}>Continue as</span>
+                <span className="block truncate text-[14px] font-[500]" style={{ color: C.ink }}>{user.name}</span>
+              </span>
+              <ArrowRight size={16} style={{ color: C.blueHi }} />
+            </button>
+          ) : rememberedEmail && (
             <button
               type="button"
               onClick={() => { setEmail(rememberedEmail); pwRef.current?.focus(); }}
@@ -531,8 +604,8 @@ export default function SignInScreen({ portal = 'trainer' }: { portal?: Portal }
                   {wrongPortal && (
                     <>
                       {' '}
-                      <Link href={copy.otherHref} className="font-[500] underline underline-offset-2">
-                        Go to {copy.otherCta}
+                      <Link href={unified ? '/platform-login' : copy.otherHref} className="font-[500] underline underline-offset-2">
+                        Go to {unified ? 'Command Center' : copy.otherCta}
                       </Link>
                     </>
                   )}

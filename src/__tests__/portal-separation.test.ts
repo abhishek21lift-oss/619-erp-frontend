@@ -49,11 +49,11 @@ const activateSrc = read('app', 'client', 'activate', 'page.tsx');
 
 describe('signInPathFor', () => {
   it.each([
-    ['/member/dashboard', '/member-login'],
-    ['/member/classes', '/member-login'],
-    ['/member/payments', '/member-login'],
-    ['/member', '/member-login'],
-    ['/member-login', '/member-login'],
+    ['/member/dashboard', '/login'],
+    ['/member/classes', '/login'],
+    ['/member/payments', '/login'],
+    ['/member', '/login'],
+    ['/member-login', '/login'],
     ['/pt-os', '/login'],
     ['/clients', '/login'],
     ['/trainer/dashboard', '/login'],
@@ -88,7 +88,9 @@ describe('nobody is sent to the wrong door', () => {
     expect(authContextSrc).not.toMatch(/router\.replace\('\/login'\)/);
   });
 
-  it('the edge proxy redirects an expired member session to Member Login', () => {
+  it('the edge proxy redirects an expired session through the shared door map', () => {
+    // Member and trainer both come back to the unified door now; only the
+    // platform's own door is a separate destination.
     expect(proxySrc).toMatch(/signInPathFor\(/);
     expect(proxySrc).not.toMatch(/loginUrl\.pathname = '\/login'/);
   });
@@ -128,7 +130,7 @@ describe('a sign-in page only ever sees its own door', () => {
     // must still be keyed on the door they lead to. Otherwise a trainer
     // session is visible behind the member door and its redirect effect
     // walks the client into the trainer's app.
-    expect(portalForPage('/login')).toBe('trainer');
+    expect(portalForPage('/login')).toBe('unified');
     expect(portalForPage('/member-login')).toBe('member');
     expect(portalForPage('/platform-login')).toBe('platform');
   });

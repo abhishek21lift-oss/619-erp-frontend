@@ -20,9 +20,9 @@ const SRC = join(process.cwd(), 'src');
 const read = (p: string) => readFileSync(srcPath(...p.split('/')), 'utf8');
 
 describe('<PublicNav />', () => {
-  it('always links the wordmark back to the marketing site', () => {
+  it('always links the wordmark to the sign-in door', () => {
     render(<PublicNav action="sign-in" />);
-    expect(screen.getByLabelText('MY PT STUDIO home')).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Sign in to MY PT STUDIO' })).toHaveAttribute('href', '/login');
   });
 
   it('offers Sign in when it sits on the signup page', () => {

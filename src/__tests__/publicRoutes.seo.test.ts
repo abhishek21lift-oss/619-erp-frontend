@@ -8,14 +8,13 @@ vi.mock('next/font/google', () => {
 });
 import fs from 'node:fs';
 import path from 'node:path';
-import robots, { AI_CRAWLERS, PRIVATE_PREFIXES, PRIVATE_SEGMENTS } from '@/app/robots';
+import robots, { AI_CRAWLERS, PRIVATE_SEGMENTS } from '@/app/robots';
 import sitemap, { PUBLIC_ROUTES } from '@/app/sitemap';
 import { PUBLIC_SEO_ROUTES, SITE_URL, canonicalUrl } from '@/lib/seo-routes';
 import { SESSIONLESS_PAGES } from '@/lib/public-paths';
 import { isPublicProxyPath } from '@/proxy';
 import nextConfig from '../../next.config.js';
 import { metadata as rootMetadata } from '@/app/layout';
-import { metadata as homeMetadata } from '@/app/(chrome)/page';
 import {
   HOME_STRUCTURED_DATA,
   buildHomeStructuredData,
@@ -27,7 +26,6 @@ import { ORGANIZATION_NODE, SOFTWARE_FEATURES } from '@/lib/schema-org';
 import { START_FREE_STRUCTURED_DATA } from '@/lib/start-free-structured-data';
 import { PT_OS_FAQ } from '@/components/landing/pt-os-faq-content';
 import { HOME_FAQ } from '@/components/landing/faq-content';
-import { metadata as ptOsMetadata } from '@/app/(bare)/pt-os/page';
 import { metadata as startFreeMetadata } from '@/app/(bare)/start-free/layout';
 
 const APP = path.join(__dirname, '..', 'app');
@@ -60,9 +58,7 @@ describe('indexable marketing routes', () => {
 
   it('every public route exports metadata that opts in to indexing', () => {
     const optIns: Record<string, string> = {
-      '/': '(chrome)/page.tsx',
       '/start-free': '(bare)/start-free/layout.tsx',
-      '/pt-os': '(bare)/pt-os/page.tsx',
     };
     for (const route of PUBLIC_ROUTES) {
       const src = read(optIns[route]);
@@ -73,9 +69,7 @@ describe('indexable marketing routes', () => {
   });
 
   it('each public route declares its own canonical', () => {
-    expect(read('(chrome)/page.tsx')).toMatch(/canonical:\s*'\/'/);
     expect(read('(bare)/start-free/layout.tsx')).toMatch(/canonical:\s*'\/start-free'/);
-    expect(read('(bare)/pt-os/page.tsx')).toMatch(/canonical:\s*'\/pt-os'/);
   });
 
   it('the root layout does not declare a global canonical', () => {
@@ -101,7 +95,7 @@ describe('robots.txt describes routes that exist', () => {
   const first = Array.isArray(rule) ? rule[0] : rule;
   const disallow = ([] as string[]).concat(first.disallow ?? []);
 
-  it('allows the root and disallows authenticated routes', () => {
+  it('allows the public route and disallows authenticated routes', () => {
     expect(first.allow).toEqual([...PUBLIC_SEO_ROUTES]);
     expect(disallow.length).toBeGreaterThan(10);
   });
@@ -114,7 +108,7 @@ describe('robots.txt describes routes that exist', () => {
   });
 
   it('no real top-level segment is left unclassified', () => {
-    const publicTop = new Set(['/start-free', '/pt-os']);
+    const publicTop = new Set(['/start-free']);
     const listed = new Set(PRIVATE_SEGMENTS);
     const unclassified = realSegments().filter(
       (s) => !listed.has(s) && !publicTop.has(s) && s !== '/login',
@@ -122,12 +116,11 @@ describe('robots.txt describes routes that exist', () => {
     expect(unclassified).toEqual([]);
   });
 
-  it('blocks the authenticated PT OS subtree without blocking /pt-os', () => {
-    expect(PRIVATE_PREFIXES).toEqual(['/pt-os/']);
-    expect(disallow).toContain('/pt-os/');
-    // robots.txt is a prefix match: `/pt-os` does not start with `/pt-os/`.
-    expect(disallow).not.toContain('/pt-os');
-    expect(disallow.filter((d) => '/pt-os'.startsWith(d))).toEqual([]);
+  it('blocks /pt-os now that it is no longer public', () => {
+    // The whole origin opens on the unified door, so the old PT OS marketing
+    // page is a private page like every other one.
+    expect(PRIVATE_SEGMENTS).toContain('/pt-os');
+    expect(disallow).toContain('/pt-os');
   });
 
   it('keeps crawlers off the API and sign-in form', () => {
@@ -170,8 +163,10 @@ describe('AI crawler policy', () => {
     expect(rules[1].disallow).toEqual(rules[0].disallow);
     expect(rules[1].disallow).toContain('/api/');
     expect(rules[1].disallow).toContain('/login');
-    expect(rules[1].disallow).toContain('/pt-os/');
-    expect(rules[1].disallow).not.toContain('/pt-os');
+    expect(rules[1].disallow).toContain('/pt-os');
+    // `/pt-os` is a whole private page now, not a public page with a private
+    // subtree, so no separate prefix entry is needed.
+    expect(rules[1].disallow).not.toContain('/pt-os/');
   });
 
   it('names the answer-engine crawlers the product wants to reach', () => {
@@ -209,14 +204,14 @@ function sourceRegex(source: string): RegExp {
 }
 
 const PUBLIC_METADATA = {
-  '/': homeMetadata,
-  '/pt-os': ptOsMetadata,
   '/start-free': startFreeMetadata,
 } as const;
 
 describe('the public SEO contract', () => {
-  it('is exactly /, /pt-os and /start-free', () => {
-    expect([...PUBLIC_SEO_ROUTES].sort()).toEqual(['/', '/pt-os', '/start-free']);
+  it('is exactly /start-free', () => {
+    // The domain opens on the unified sign-in form. Start Free is the only
+    // page a crawler is invited to, and the only one that opts in.
+    expect([...PUBLIC_SEO_ROUTES]).toEqual(['/start-free']);
     expect([...PUBLIC_ROUTES].sort()).toEqual([...PUBLIC_SEO_ROUTES].sort());
   });
 
@@ -278,6 +273,11 @@ describe('the public SEO contract', () => {
       expect(SESSIONLESS_PAGES as readonly string[]).toContain(route);
       expect(isPublicProxyPath(route)).toBe(true);
     }
+    // The root and the old PT OS marketing page are no longer doors.
+    expect(SESSIONLESS_PAGES as readonly string[]).not.toContain('/');
+    expect(SESSIONLESS_PAGES as readonly string[]).not.toContain('/pt-os');
+    expect(isPublicProxyPath('/')).toBe(false);
+    expect(isPublicProxyPath('/pt-os')).toBe(false);
   });
 
   it('keeps authenticated pages under a public parent private', () => {
@@ -413,7 +413,9 @@ describe('/pt-os structured data', () => {
 
   it('breadcrumbs home to /pt-os in one step', () => {
     const crumbs = (node('BreadcrumbList') as { itemListElement: { item: string }[] }).itemListElement;
-    expect(crumbs.map((c) => c.item)).toEqual([SITE_URL, canonicalUrl('/pt-os')]);
+    // The page is private now, so this is its URL, not an indexable route the
+    // contract lists.
+    expect(crumbs.map((c) => c.item)).toEqual([SITE_URL, `${SITE_URL}/pt-os`]);
   });
 
   it('shares the homepage entity ids rather than inventing new ones', () => {

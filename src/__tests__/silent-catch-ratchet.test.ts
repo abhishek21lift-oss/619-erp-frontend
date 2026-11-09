@@ -80,7 +80,7 @@ function sites(): string[] {
  * wants reading, not renumbering.
  */
 const KNOWN = [
-  'app/(bare)/start-free/page.tsx:67',
+  'app/(bare)/start-free/page.tsx:81',
   'app/(chrome)/ai-coach/knowledge/page.tsx:75',
   'app/(chrome)/engagement/notifications/page.tsx:45',
   // The three /stats catches are the reasoned ones: when the SQL aggregate is
@@ -147,11 +147,11 @@ const KNOWN = [
   'components/pt-os/analytics/LandmarkEditor.tsx:82',
   'components/pt-os/workout-log/ExercisePicker.tsx:283',
   'components/pt-os/workout-log/ExercisePicker.tsx:297',
-  // The portal-aware session init added 17 lines above the keep-alive effect.
-  // File set and per-file count are unchanged (217/219 -> 234/236), so these
-  // are line-number moves, not new or removed catches.
-  'lib/auth-context.tsx:234',
+  // The portal-aware session init and unified cache comments added lines above
+  // the keep-alive effect. File set and per-file count are unchanged
+  // (217/219 -> 236/238), so these are line-number moves, not new catches.
   'lib/auth-context.tsx:236',
+  'lib/auth-context.tsx:238',
 ].sort();
 
 describe('silent catches are listed, and the list only shrinks', () => {

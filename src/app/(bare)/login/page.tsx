@@ -1,15 +1,14 @@
 'use client';
 
-// Trainer Login — the studio side.
+// The customer sign-in — trainer and member in one place.
 //
-// Both sign-in routes render the same screen (src/components/auth/SignInScreen)
-// with a different `portal`. One component, because the two share Google
-// sign-in, passkeys, the 2FA challenge and the remembered-account handling —
-// five hundred lines that must not drift apart between two copies.
+// Both account types render the same screen (src/components/auth/SignInScreen)
+// with `unified`, and the server resolves the account's door from the users
+// row after the password checks out. `/member-login` is now only a redirect
+// here, and `/platform-login` keeps the operator's separate door.
 //
-// The `portal` is not decoration. It goes to the server, which refuses a
-// member account here after checking the password. A screen that merely looks
-// separate is not separate: the same POST works from either page, or from curl.
+// The `portal` sent to the server is `'unified'`: a request selector, never an
+// authorization fact. A screen that merely looks separate is not separate.
 
 import SignInScreen from '@/components/auth/SignInScreen';
 import PublicPullToRefresh from '@/components/PublicPullToRefresh';
@@ -18,7 +17,7 @@ export default function LoginPage() {
   return (
     <>
       <PublicPullToRefresh />
-      <SignInScreen portal="trainer" />
+      <SignInScreen unified />
     </>
   );
 }

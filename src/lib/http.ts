@@ -15,7 +15,7 @@
 
 import { SESSIONLESS_PAGES } from './public-paths';
 import { clearCachedUser } from './session-cache';
-import { portalForPage, type Portal } from './portals';
+import { portalForPage, type PagePortal } from './portals';
 
 export function apiBase(): string {
   if (typeof window === 'undefined') {
@@ -163,16 +163,18 @@ export interface FetchOptions extends Omit<RequestInit, 'body'> {
  * appears without it.
  */
 export function tenantAuthHeaders(): Record<string, string> {
+  const portal = currentPortal();
   const imp = getImpersonation();
   return {
     // Which door this tab is standing at. The server uses it to choose the
-    // cookie namespace; it is never an authorization fact.
-    'X-Portal': currentPortal(),
+    // cookie namespace; it is never an authorization fact. The unified door
+    // names none: the cookies present decide, so a member is restored there.
+    ...(portal === 'unified' ? {} : { 'X-Portal': portal }),
     ...(imp ? { Authorization: `Bearer ${imp.token}` } : {}),
   };
 }
 
-function currentPortal(): Portal {
+function currentPortal(): PagePortal {
   if (typeof window === 'undefined') return 'trainer';
   return portalForPage(window.location.pathname);
 }
@@ -392,7 +394,7 @@ function handleSubscriptionInactive(): void {
 // In-flight refresh promises — deduplicates concurrent 401 retries. Keyed per
 // portal: two doors can be renewing at once, and one door's result must not
 // answer for the other's session.
-const _refreshPromises = new Map<Portal, Promise<boolean>>();
+const _refreshPromises = new Map<PagePortal, Promise<boolean>>();
 
 // Renew the access token via the rotating refresh-token cookie. Resilient to
 // transient failures: a 401 means the refresh token is genuinely gone (give up
@@ -410,7 +412,7 @@ function tryRefreshToken(): Promise<boolean> {
         const r = await fetch(`${BASE}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'X-Portal': portal },
+          headers: portal === 'unified' ? {} : { 'X-Portal': portal },
         });
         if (r.ok) return true;
         if (r.status === 401 || r.status === 403) return false; // truly unauthenticated
