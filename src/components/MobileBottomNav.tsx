@@ -18,13 +18,15 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // keys the sidebar uses. A studio with AI Suite or Attendance switched off
 // gets a shorter bar rather than a tab that 403s — which is worse here than
 // in the sidebar, since this is the only navigation on a phone. Home, Clients
-// and Sessions are core and can never be switched off.
-// Sessions opens My Schedule — what is booked, today first — rather than
+// and Schedule are core and can never be switched off.
+// Schedule opens My Schedule — what is booked, today first — rather than
 // Session History, which is where the tab used to land. It stays lit on the
 // other session screens (history, booking) so the bar still says where you are.
 // Home opens the studio dashboard at `/` — the first screen after sign-in —
-// and uses the same Home icon as the member portal's first tab. Sessions uses
+// and uses the same Home icon as the member portal's first tab. Schedule uses
 // a calendar rather than a dumbbell — it opens a schedule, not a workout.
+// Called "Schedule" rather than "Sessions" because the drawer's Sessions group
+// is the booking/history category; one label, one meaning.
 const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
   { href: '/',                   icon: Home,          label: 'Home'     },
   { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
@@ -33,7 +35,7 @@ const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: st
   // pages, which is exactly where a trainer is most likely to be.
   { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite',
     alsoActive: ['/ai/workout-generator', '/ai/diet-generator', '/ai/progress-analysis', '/ai/business-insights'] },
-  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Sessions', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
+  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Schedule', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
   { href: '/checkin/qr-scanner', icon: ScanFace,      label: 'Check-in', feature: 'attendance' },
 ];
 

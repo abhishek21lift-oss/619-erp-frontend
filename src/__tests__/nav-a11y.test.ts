@@ -116,7 +116,7 @@ describe('the sidebar says where you are and stays usable collapsed', () => {
 
   it('expands the rail and opens the clicked group when collapsed', () => {
     expect(sidebar).toMatch(/if \(collapsed\) \{[\s\S]{0,80}onExpand\?\.\(\)[\s\S]{0,80}setOpenGroupId\(group\.id\)/);
-    expect(sidebar).toMatch(/<SidebarNav collapsed=\{collapsed\} onLinkClick=\{isMobile \? onMobileClose : undefined\} onExpand=\{onExpand\}/);
+    expect(sidebar).toMatch(/<SidebarNav\s+collapsed=\{collapsed\}\s+onLinkClick=\{isMobile \? onMobileClose : undefined\}\s+onExpand=\{onExpand\}/);
   });
 });
 
@@ -127,6 +127,49 @@ describe('every icon in the studio navigation resolves', () => {
     const map = sidebar.split('const ICON_MAP')[1].split('};')[0];
     const missing = icons.filter((i) => !new RegExp(`\\b${i}\\b`).test(map));
     expect(missing).toEqual([]);
+  });
+});
+
+describe('the phone drawer is sized for a thumb', () => {
+  it('is wide enough for 14px labels without exceeding the viewport', () => {
+    expect(sidebar).toContain('w-[300px] max-w-[86vw]');
+  });
+
+  it('gives nav rows and the close button explicit 44px targets', () => {
+    expect(sidebar).toMatch(/mobile \? 'gap-2\.5 min-h-\[44px\]'/);
+    expect(sidebar).toMatch(/mobile \? 'gap-2\.5 min-h-\[46px\]/);
+    expect(sidebar).toContain('h-[44px] w-[44px]');
+  });
+
+  it('keeps the mobile type scale legible', () => {
+    expect(sidebar).toMatch(/mobile \? 'text-\[14px\]'/);
+  });
+});
+
+describe('the drawer opens where you are and follows an expansion', () => {
+  it('announces the current section even while its group is collapsed', () => {
+    expect(sidebar).toMatch(/aria-current=\{hasActiveChild && !open \? 'true' : undefined\}/);
+  });
+
+  it('scrolls inside its own container, never the page behind it', () => {
+    expect(sidebar).toContain('data-drawer-scroll');
+    expect(sidebar).toContain('function scrollDrawerTo');
+    expect(sidebar).toContain("closest('[data-drawer-scroll]')");
+    expect(sidebar).toContain('querySelector<HTMLElement>(\'[aria-current="page"]\')');
+  });
+
+  it('brings a just-expanded group into view', () => {
+    expect(sidebar).toMatch(/onAnimationComplete=\{[\s\S]{0,400}scrollDrawerTo/);
+  });
+
+  it('closes a group when the route belongs to none', () => {
+    expect(sidebar).toMatch(/setOpenGroupId\(active \? active\.id : null\)/);
+  });
+});
+
+describe('logout asks first', () => {
+  it('confirms before ending the session', () => {
+    expect(sidebar).toMatch(/window\.confirm\('Log out of the studio\? You will need to sign in again\.'\)/);
   });
 });
 

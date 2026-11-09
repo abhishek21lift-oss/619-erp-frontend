@@ -164,14 +164,31 @@ const SECTION_LABELS: Record<string, string> = {
 // Snappy spring-like easing
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+/**
+ * Scroll the drawer's own container until `el` is fully visible, leaving a
+ * little air. Manual rect maths rather than `scrollIntoView`, which would also
+ * scroll every scrollable ancestor — on desktop that is the page behind the
+ * rail, not something a nav interaction should move.
+ */
+function scrollDrawerTo(el: Element | null) {
+  const box = el?.closest('[data-drawer-scroll]');
+  if (!el || !box) return;
+  const pad = 8;
+  const boxRect = box.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  if (rect.top < boxRect.top + pad) box.scrollTop -= boxRect.top + pad - rect.top;
+  else if (rect.bottom > boxRect.bottom - pad) box.scrollTop += rect.bottom - boxRect.bottom + pad;
+}
+
 // One leaf of the navigation. Shared by the pinned direct links and the items
 // inside an expanded group so the two cannot drift apart visually.
-function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
+function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId, mobile = false }: {
   item: NavItem;
   active: boolean;
   badgeCount: number;
   onLinkClick?: () => void;
   layoutId: string;
+  mobile?: boolean;
 }) {
   const ItemIcon = ICON_MAP[item.icon];
   const isDisabled = !!item.comingSoon;
@@ -193,19 +210,22 @@ function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
         style={{ background: !active && !isDisabled ? THEME.hoverBg : undefined }}
       />
       <div
-        className="flex h-5 w-5 items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
+        className={cn(
+          'flex items-center justify-center shrink-0 transition-all duration-200 relative z-10',
+          mobile ? 'h-[24px] w-[24px] rounded-lg' : 'h-5 w-5 rounded-md',
+        )}
         style={{ background: active && !isDisabled ? THEME.iconBg : 'transparent' }}
       >
         {ItemIcon && (
           <ItemIcon
-            size={11}
+            size={mobile ? 16 : 11}
             strokeWidth={active && !isDisabled ? 2.5 : 1.5}
             style={{ color: active && !isDisabled ? '#fff' : THEME.inactiveIcon }}
           />
         )}
       </div>
       <span
-        className="truncate relative z-10 text-[11.5px] flex-1"
+        className={cn('truncate relative z-10 flex-1', mobile ? 'text-[14px]' : 'text-[11.5px]')}
         style={{ color: active && !isDisabled ? BRAND : THEME.inactiveText }}
       >
         {item.label}
@@ -226,7 +246,10 @@ function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
       )}
       {!isDisabled && badgeCount > 0 && (
         <span
-          className="relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+          className={cn(
+            'relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 font-bold text-white',
+            mobile ? 'text-[10px]' : 'text-[9px]',
+          )}
           style={{ background: BRAND }}
         >
           {badgeCount > 99 ? '99+' : badgeCount}
@@ -254,7 +277,8 @@ function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
       onClick={onLinkClick}
       aria-current={active && !isDisabled ? 'page' : undefined}
       className={cn(
-        'relative flex items-center gap-2 rounded-lg px-3 py-3 transition-colors duration-150 overflow-hidden',
+        'relative flex items-center rounded-lg px-3 py-3 transition-colors duration-150 overflow-hidden',
+        mobile ? 'gap-2.5 min-h-[44px]' : 'gap-2',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[rgba(255,187,148,0.55)]',
         active && 'font-semibold',
       )}
@@ -266,11 +290,18 @@ function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId }: {
 }
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
-function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean; onLinkClick?: () => void; onExpand?: () => void }) {
+function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
+  collapsed?: boolean;
+  onLinkClick?: () => void;
+  onExpand?: () => void;
+  mobile?: boolean;
+  drawerOpen?: boolean;
+}) {
   const { user } = useAuth();
   const { features } = useFeatures();
   const pathname = usePathname();
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
   // The studio app is the trainer's; the badge counts are studio business.
   const isTrainer = user?.role === 'trainer';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
@@ -371,7 +402,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
   const toggleGroup = (id: string) => setOpenGroupId(p => (p === id ? null : id));
 
   // Longest-match active state, not per-item prefix matching. Plain prefix
-  // matching lit up both "All Clients" and "Clients Birthday" on
+  // matching lit up both "All Clients" and "Client Birthdays" on
   // /pt-os/clients/birthdays; findItemByPath already resolves one winner.
   const activeHref = useMemo(() => findItemByPath(pathname ?? '')?.href ?? null, [pathname]);
   const isActive = (href: string) => href === activeHref;
@@ -388,21 +419,27 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
   // this the group containing the current page would start closed.
   useEffect(() => {
     const active = navItems.find(g => anyChildActive(g.items));
-    if (active) setOpenGroupId(active.id);
+    // Null, not "leave it as it was": on a pinned page (Today, Schedule, Check
+    // In) no group is current, and a group left open from the last page kept
+    // suggesting otherwise.
+    setOpenGroupId(active ? active.id : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, navItems]);
 
   return (
-    <nav role="navigation" aria-label="Main navigation" className="px-2.5 py-1">
+    <nav ref={navRef} role="navigation" aria-label="Main navigation" className="px-2.5 py-1">
       {/* Pinned daily destinations. Direct links, not an accordion. */}
       {visiblePinned.length > 0 && (
         <div>
           {!collapsed ? (
             <>
-              <p className="px-3 pt-2 pb-1 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: THEME.sectionLabel }}>
+              <p
+                className={cn('px-3 pt-2 pb-1 font-bold uppercase tracking-[0.14em]', mobile ? 'text-[10.5px]' : 'text-[9.5px]')}
+                style={{ color: THEME.sectionLabel }}
+              >
                 Workspace
               </p>
-              <div className="space-y-px pb-1">
+              <div className={cn('pb-1', mobile ? 'space-y-0.5' : 'space-y-px')}>
                 {visiblePinned.map(item => (
                   <NavLeaf
                     key={item.href}
@@ -411,6 +448,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                     badgeCount={item.badge ? (badgeCounts[item.badge] ?? 0) : 0}
                     onLinkClick={onLinkClick}
                     layoutId="sidebar-active-workspace"
+                    mobile={mobile}
                   />
                 ))}
               </div>
@@ -457,7 +495,10 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                     style={{ background: 'linear-gradient(90deg, transparent, rgba(255,187,148,0.18), transparent)' }}
                   />
                 )}
-                <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: THEME.sectionLabel }}>
+                <p
+                  className={cn('px-3 font-bold uppercase tracking-[0.14em]', mobile ? 'text-[10.5px]' : 'text-[9.5px]')}
+                  style={{ color: THEME.sectionLabel }}
+                >
                   {sectionLabel}
                 </p>
               </div>
@@ -476,8 +517,11 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                   toggleGroup(group.id);
                 }}
                 aria-expanded={!collapsed ? open : undefined}
+                aria-controls={!collapsed && open ? `sidebar-${mobile ? 'mobile' : 'desktop'}-group-${group.id}` : undefined}
+                aria-current={hasActiveChild && !open ? 'true' : undefined}
                 aria-label={group.label}
                 title={collapsed ? group.label : undefined}
+                data-nav-group={group.id}
                 className={cn(
                   'relative w-full rounded-xl transition-colors duration-200 overflow-hidden',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,187,148,0.55)] focus-visible:ring-offset-1 focus-visible:ring-offset-transparent',
@@ -485,8 +529,11 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                 )}
                 style={{ background: hasActiveChild ? THEME.activeBg : 'transparent' }}
               >
-                {/* Active left accent */}
-                {!collapsed && (hasActiveChild || open) && (
+                {/* Active left accent. On mobile only the group holding the
+                    current page gets the bar: an expanded group is a
+                    disclosure state, and two selected-looking rows made
+                    "where am I" ambiguous. Desktop keeps its existing cue. */}
+                {!collapsed && (hasActiveChild || (!mobile && open)) && (
                   <div
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-300"
                     style={{
@@ -520,24 +567,34 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                   </div>
                 ) : (
                   <div
-                    className="relative flex items-center gap-2.5 px-3 py-2.5"
+                    className={cn(
+                      'relative flex items-center px-3',
+                      mobile ? 'gap-2.5 min-h-[46px] py-1.5' : 'gap-2.5 py-2.5',
+                    )}
                     style={{ color: hasActiveChild ? BRAND : THEME.inactiveText }}
                   >
                     <div
-                      className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0 transition-all duration-200"
-                      style={{ background: hasActiveChild || open ? THEME.iconBg : THEME.iconBgIdle }}
+                      className={cn(
+                        'flex items-center justify-center shrink-0 transition-all duration-200',
+                        mobile ? 'h-8 w-8 rounded-lg' : 'h-7 w-7 rounded-lg',
+                      )}
+                      style={{
+                        background: hasActiveChild || (open && !mobile)
+                          ? THEME.iconBg
+                          : open ? 'rgba(255,187,148,0.12)' : THEME.iconBgIdle,
+                      }}
                     >
                       <GroupIcon
-                        size={14}
+                        size={mobile ? 18 : 14}
                         strokeWidth={hasActiveChild ? 2.2 : 1.5}
-                        style={{ color: hasActiveChild || open ? '#fff' : THEME.inactiveIcon }}
+                        style={{ color: hasActiveChild || (open && !mobile) ? '#fff' : open ? BRAND : THEME.inactiveIcon }}
                       />
                     </div>
-                    <span className="flex-1 text-left text-[12.5px] font-semibold tracking-tight whitespace-nowrap">
+                    <span className={cn('flex-1 text-left font-semibold tracking-tight whitespace-nowrap', mobile ? 'text-[14px]' : 'text-[12.5px]')}>
                       {group.label}
                     </span>
                     <ChevronDown
-                      size={12}
+                      size={mobile ? 14 : 12}
                       strokeWidth={2.5}
                       className="shrink-0 transition-transform duration-300"
                       style={{
@@ -555,14 +612,27 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                   {open && (
                     <m.div
                       key={`${group.id}-items`}
+                      id={`sidebar-${mobile ? 'mobile' : 'desktop'}-group-${group.id}`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.22, ease: EASE }}
                       className="overflow-hidden"
+                      onAnimationComplete={() => {
+                        // Expanding a group near the bottom used to push its
+                        // children under the footer. Mobile-only: the desktop
+                        // rail shares this animation but not this container.
+                        if (!open || !mobile || !drawerOpen) return;
+                        scrollDrawerTo(
+                          navRef.current?.querySelector(`[data-nav-group="${group.id}"]`) ?? null,
+                        );
+                      }}
                     >
                       <div
-                        className="ml-[22px] mt-1 space-y-px border-l pl-2.5 pb-1"
+                        className={cn(
+                          'mt-1 border-l pb-1',
+                          mobile ? 'ml-[26px] space-y-0.5 pl-3' : 'ml-[22px] space-y-px pl-2.5',
+                        )}
                         style={{ borderColor: THEME.subBorder }}
                       >
                         {group.items.map((item) => (
@@ -573,6 +643,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
                             badgeCount={item.badge ? (badgeCounts[item.badge] ?? 0) : 0}
                             onLinkClick={onLinkClick}
                             layoutId={`sidebar-active-${group.id}`}
+                            mobile={mobile}
                           />
                         ))}
                       </div>
@@ -589,7 +660,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand }: { collapsed?: boolean;
 }
 
 // ── User profile footer ───────────────────────────────────────────────────────
-function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?: () => void }) {
+function SidebarProfile({ collapsed, onClose, mobile }: { collapsed?: boolean; onClose?: () => void; mobile?: boolean }) {
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -598,6 +669,10 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
     : (user?.email?.[0] || '?').toUpperCase();
 
   const handleLogout = async () => {
+    // Confirmed, because Logout sits one thumb-width from Settings and used to
+    // end the session on a single tap. window.confirm rather than a nested
+    // dialog keeps the drawer's focus trap out of it.
+    if (!window.confirm('Log out of the studio? You will need to sign in again.')) return;
     onClose?.();
     await logout();
     router.push('/login');
@@ -667,10 +742,10 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate text-[12.5px] font-bold leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            <p className={cn('truncate font-bold leading-tight', mobile ? 'text-[14px]' : 'text-[12.5px]')} style={{ color: 'rgba(255,255,255,0.9)' }}>
               {user?.name || 'User'}
             </p>
-            <p className="truncate text-[10.5px] leading-tight mt-0.5" style={{ color: 'rgba(255,255,255,0.72)' }}>
+            <p className={cn('truncate leading-tight mt-0.5', mobile ? 'text-[12px]' : 'text-[10.5px]')} style={{ color: 'rgba(255,255,255,0.72)' }}>
               {user?.email || user?.role || 'member'}
             </p>
           </div>
@@ -679,7 +754,10 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         {/* Role badge */}
         <div className="mb-2.5">
           <span
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+            className={cn(
+              'inline-flex items-center rounded-full px-2 py-0.5 font-bold uppercase tracking-wider',
+              mobile ? 'text-[10px]' : 'text-[9px]',
+            )}
             style={{ background: 'rgba(255,187,148,0.15)', color: BRAND, border: '1px solid rgba(255,187,148,0.2)' }}
           >
             {roleLabel(user?.role) || 'Trainer'}
@@ -711,10 +789,13 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
           <Link
             href="/settings/profile"
             onClick={onClose}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-[600] text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1.5 rounded-lg font-[600] text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white',
+              mobile ? 'text-[13px]' : 'text-[12px]',
+            )}
             style={{ background: 'rgba(255,255,255,0.10)', height: 44 }}
           >
-            <User size={14} strokeWidth={1.9} />
+            <User size={mobile ? 16 : 14} strokeWidth={1.9} />
             Profile
           </Link>
           <Link
@@ -725,7 +806,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
             className="flex items-center justify-center rounded-lg text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
             style={{ background: 'rgba(255,255,255,0.10)', height: 44, width: 44 }}
           >
-            <Settings size={16} strokeWidth={1.9} />
+            <Settings size={mobile ? 18 : 16} strokeWidth={1.9} />
           </Link>
           <button
             type="button"
@@ -740,7 +821,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
               width: 44,
             }}
           >
-            <LogOut size={16} strokeWidth={1.9} />
+            <LogOut size={mobile ? 18 : 16} strokeWidth={1.9} />
           </button>
         </div>
       </div>
@@ -785,11 +866,27 @@ export default function Sidebar({
   // and restore focus on close. Escape stays in AppShell, which also owns the
   // page scroll lock.
   const closeRef = useRef<HTMLButtonElement>(null);
+  const navScrollRef = useRef<HTMLDivElement>(null);
   const setDrawerRef = useDialogA11y({
     open: isMobile && mobileOpen,
     escapeCloses: false,
     initialFocus: closeRef,
   });
+
+  // Open the drawer at the current page. It always opened at scrollTop 0, so
+  // on a low group (Finance, AI Suite) the active section was expanded but
+  // off-screen. The group button carries aria-current when its submenu holds
+  // the current page, so a collapsed active group is still findable.
+  const pathname = usePathname();
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return;
+    const box = navScrollRef.current;
+    if (!box) return;
+    const target = box.querySelector<HTMLElement>('[aria-current="page"]')
+      ?? box.querySelector<HTMLElement>('[aria-current="true"]');
+    if (target) scrollDrawerTo(target);
+    else box.scrollTop = 0;
+  }, [isMobile, mobileOpen, pathname]);
 
   return (
     <aside
@@ -811,7 +908,7 @@ export default function Sidebar({
         ],
         isMobile && [
           'fixed left-0 z-50 flex flex-col',
-          'w-[240px]',
+          'w-[300px] max-w-[86vw]',
           'transition-transform duration-[320ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ],
@@ -847,7 +944,7 @@ export default function Sidebar({
           <Link
             href="/"
             onClick={isMobile ? onMobileClose : undefined}
-            className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}
+            className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5', isMobile && 'min-h-[44px]')}
           >
             <div className="relative shrink-0">
               {/* White, explicitly. This drawer is navy in both themes, so the
@@ -858,7 +955,7 @@ export default function Sidebar({
               <StudioMark
                 name={studioName}
                 logoUrl={user?.organization_logo_url || user?.avatar_url}
-                size={collapsed ? 32 : 38}
+                size={collapsed ? 32 : isMobile ? 40 : 38}
                 background="#FFFFFF"
               />
             </div>
@@ -871,7 +968,7 @@ export default function Sidebar({
                   exit={{ opacity: 0, transition: { duration: 0.08 } }}
                   className="overflow-hidden"
                 >
-                  <h2 className="max-w-[160px] truncate text-[13px] font-extrabold uppercase tracking-tight leading-none text-[var(--text-primary)]">
+                  <h2 className={cn('truncate font-extrabold uppercase tracking-tight leading-none text-[var(--text-primary)]', isMobile ? 'max-w-[180px] text-[14px]' : 'max-w-[160px] text-[13px]')}>
                     {studioName}
                   </h2>
                   {/* Was the `compact` variant, which existed only because
@@ -881,7 +978,7 @@ export default function Sidebar({
                     <FounderBadge number={founderNumber} size="sm" className="mt-[5px]" />
                   )}
                   {studioOwner && (
-                    <p className="mt-[3px] max-w-[160px] truncate text-[9.5px] font-semibold text-[var(--text-muted)] tracking-[0.06em]">
+                    <p className={cn('mt-[3px] truncate font-semibold text-[var(--text-muted)] tracking-[0.06em]', isMobile ? 'max-w-[180px] text-[11px]' : 'max-w-[160px] text-[9.5px]')}>
                       {studioOwner}
                     </p>
                   )}
@@ -916,10 +1013,10 @@ export default function Sidebar({
               type="button"
               aria-label="Close sidebar"
               onClick={onMobileClose}
-              className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
+              className="flex h-[44px] w-[44px] items-center justify-center rounded-lg transition-colors"
               style={{ color: 'rgba(255,255,255,0.62)' }}
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           )}
         </div>
@@ -927,14 +1024,22 @@ export default function Sidebar({
 
       {/* Nav */}
       <div
+        ref={navScrollRef}
+        data-drawer-scroll
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain py-1"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,187,148,0.15) transparent' }}
       >
-        <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} onExpand={onExpand} />
+        <SidebarNav
+          collapsed={collapsed}
+          onLinkClick={isMobile ? onMobileClose : undefined}
+          onExpand={onExpand}
+          mobile={isMobile}
+          drawerOpen={isMobile && mobileOpen}
+        />
       </div>
 
       {/* User profile */}
-      <SidebarProfile collapsed={collapsed} onClose={isMobile ? onMobileClose : undefined} />
+      <SidebarProfile collapsed={collapsed} mobile={isMobile} onClose={isMobile ? onMobileClose : undefined} />
     </aside>
   );
 }
