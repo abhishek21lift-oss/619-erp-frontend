@@ -34,7 +34,7 @@ export const auth = {
    * Omitted rather than defaulted here, so the server's own default
    * ('trainer') is the single place that decision lives.
    */
-  login: (email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform') =>
+  login: (email: string, password: string, mfaCode?: string, portal?: 'trainer' | 'member' | 'platform' | 'unified') =>
     http<{ user: User }>('/api/auth/login', {
       method: 'POST',
       body: {
@@ -44,7 +44,7 @@ export const auth = {
         ...(portal ? { portal } : {}),
       },
     }),
-  googleLogin: (credential: string, portal?: 'trainer' | 'member' | 'platform') =>
+  googleLogin: (credential: string, portal?: 'trainer' | 'member' | 'platform' | 'unified') =>
     http<{ user: User }>('/api/auth/google-login', {
       method: 'POST',
       // A 401 here is a rejected credential, not an expired session: do not
@@ -56,7 +56,7 @@ export const auth = {
   googleLink: (body: {
     credential: string;
     password: string;
-    portal?: 'trainer' | 'member' | 'platform';
+    portal?: 'trainer' | 'member' | 'platform' | 'unified';
   }) =>
     http<{ user: User }>('/api/auth/google-link', {
       method: 'POST',

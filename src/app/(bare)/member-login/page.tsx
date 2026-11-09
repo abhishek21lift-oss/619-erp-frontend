@@ -1,12 +1,9 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-// Member Login — the client side.
-//
-// The twin of /login; see the note there for why both render one component.
-// A studio account cannot sign in here, enforced server-side.
-
-import SignInScreen from '@/components/auth/SignInScreen';
-
+// Member Login is now the same customer door as /login. Kept as a server
+// redirect so old bookmarks, activation emails and installed member apps keep
+// working; the ?redirect= target restores the member session and lands them on
+// their dashboard.
 export default function MemberLoginPage() {
-  return <SignInScreen portal="member" />;
+  redirect('/login?redirect=/member/dashboard');
 }

@@ -12,12 +12,15 @@
 // them off a login they cannot pass would be worse than saying nothing.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import PublicNav, { PUBLIC_NAV_CLEARANCE } from '@/components/PublicNav';
 import AuthShell, { AuthCard, type AuthAside } from '@/components/landing/AuthShell';
 import AuthInput, { RevealButton } from '@/components/landing/AuthField';
 import { C, PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/components/landing/tokens';
 import { AlertTriangle, ArrowRight, Building2, Clock, Loader2, Lock, Mail, Phone, User } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { startFreeRedirect } from '@/lib/portals';
 import PublicPullToRefresh from '@/components/PublicPullToRefresh';
 import { errorMessage } from '@/lib/forms/errors';
 
@@ -52,6 +55,17 @@ export default function StartFreePage() {
   // Live trial length from the same public endpoint the landing page uses.
   // Null until it loads: the page says "free trial" rather than guess a number.
   const [trialDays, setTrialDays] = useState<number | null>(null);
+
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  // Start Free is trainer onboarding. A member or platform session is sent to
+  // its own home; a trainer stays on the form.
+  useEffect(() => {
+    if (loading || !user) return;
+    const target = startFreeRedirect(user.role);
+    if (target) router.replace(target);
+  }, [user, loading, router]);
 
   useEffect(() => {
     const base = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '');

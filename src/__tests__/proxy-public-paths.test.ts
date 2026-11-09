@@ -21,8 +21,9 @@
 // would quietly pass the day somebody forgets Guard on a private page.
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
+import { NextRequest } from 'next/server';
 import { isSessionlessPage } from '@/lib/public-paths';
-import { isPublicProxyPath } from '@/proxy';
+import { isPublicProxyPath, proxy } from '@/proxy';
 import path from 'node:path';
 import { srcPath } from '@/__tests__/helpers/app-routes';
 
@@ -104,6 +105,20 @@ describe('the proxy lets in everyone who arrives from an email', () => {
   });
 });
 
+describe('the legacy member door', () => {
+  it('is a real 307, not a streamed meta refresh', async () => {
+    // The page still calls redirect() as defence in depth, but a redirect
+    // thrown under the root loading boundary streams a 200 + meta refresh.
+    // Old bookmarks, activation emails and installed member shells need a
+    // real 307 at the edge.
+    const res = await proxy(new NextRequest('http://localhost/member-login'));
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe(
+      'http://localhost/login?redirect=%2Fmember%2Fdashboard',
+    );
+  });
+});
+
 describe('the 401 handler lets them stay', () => {
   // The second half of the same bug, and the reason the first fix was not
   // enough. Getting past the proxy only means the page RENDERS. AuthProvider
@@ -159,6 +174,13 @@ describe('being public is not accidentally contagious', () => {
     for (const p of ['/pt-os/clients', '/finance/dues', '/trainers', '/platform', '/settings']) {
       expect([p, isPublic(p)]).toEqual([p, false]);
     }
+  });
+
+  it('does not let an anonymous request reach the root or /pt-os', () => {
+    // Both used to be public marketing pages. The domain now opens on the
+    // unified sign-in form, so neither may pass the edge without a session.
+    expect(isPublic('/')).toBe(false);
+    expect(isPublic('/pt-os')).toBe(false);
   });
 
   it('does not open all of /auth', () => {

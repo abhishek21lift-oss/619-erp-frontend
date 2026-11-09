@@ -32,6 +32,12 @@
 export type Portal = 'trainer' | 'member' | 'platform';
 
 /**
+ * A page's door. 'unified' is the one customer sign-in: it names no session
+ * and sends no selector, because the account's row decides the real portal.
+ */
+export type PagePortal = Portal | 'unified';
+
+/**
  * localStorage keys for the "continue as …" chip, namespaced per portal.
  *
  * These were three unsuffixed keys shared by both sign-in pages. A client
@@ -104,8 +110,9 @@ export function isPlatformAppPage(pathname: string): boolean {
  * redirect effect walk a client into the trainer's app — the exact confusion
  * the per-door sessions exist to end.
  */
-export function portalForPage(pathname: string): Portal {
+export function portalForPage(pathname: string): PagePortal {
   if (isPlatformAppPage(pathname) || pathname === '/platform-login') return 'platform';
+  if (pathname === '/login' || pathname === '/start-free') return 'unified';
   if (isMemberAppPage(pathname) || pathname === '/member-login') return 'member';
   return 'trainer';
 }
@@ -237,21 +244,21 @@ export function postSignInPath(role: string | null | undefined): string {
  *     than an empty frame of the trainer's app. Client-side half only; the API
  *     refuses them either way.
  *
- * Anything that fails falls back to postSignInPath — the behaviour that
- * existed before this function did, so the worst case is exactly today's.
+ * Anything that fails returns null; safeReturnTo falls back to postSignInPath —
+ * the behaviour that existed before this function did, so the worst case is
+ * exactly today's.
  */
-export function safeReturnTo(raw: string | null | undefined, role: string | null | undefined): string {
-  const fallback = postSignInPath(role);
-  if (!raw) return fallback;
+export function safeReturnPath(raw: string | null | undefined, role: string | null | undefined): string | null {
+  if (!raw) return null;
 
   // Structural checks first. `new URL()` is deliberately not reached until the
   // value has been shown to be incapable of changing origin.
-  if (!raw.startsWith('/')) return fallback;
-  if (raw.startsWith('//')) return fallback;
-  if (raw.includes('\\')) return fallback;
+  if (!raw.startsWith('/')) return null;
+  if (raw.startsWith('//')) return null;
+  if (raw.includes('\\')) return null;
   for (let i = 0; i < raw.length; i += 1) {
     const code = raw.charCodeAt(i);
-    if (code <= 0x20 || code === 0x7f) return fallback;
+    if (code <= 0x20 || code === 0x7f) return null;
   }
 
   let pathname: string;
@@ -261,20 +268,48 @@ export function safeReturnTo(raw: string | null | undefined, role: string | null
     // managed to make this absolute, the origin comparison catches it here
     // rather than the person being delivered to a real one.
     const url = new URL(raw, 'http://localhost');
-    if (url.origin !== 'http://localhost') return fallback;
+    if (url.origin !== 'http://localhost') return null;
     pathname = url.pathname;
     search = url.search;
   } catch {
-    return fallback;
+    return null;
   }
 
   // A door is never a destination.
   if (pathname === '/login' || pathname === '/member-login' || pathname === '/platform-login') {
-    return fallback;
+    return null;
   }
 
   const userPortal = portalForRole(role);
-  if (!userPortal || !mayEnterPortal(userPortal, portalForPage(pathname))) return fallback;
+  if (!userPortal) return null;
+  const pagePortal = portalForPage(pathname);
+  // A neutral page is a door, not a destination.
+  if (pagePortal === 'unified') return null;
+  if (!mayEnterPortal(userPortal, pagePortal)) return null;
 
   return `${pathname}${search}`;
+}
+
+export function safeReturnTo(raw: string | null | undefined, role: string | null | undefined): string {
+  return safeReturnPath(raw, role) ?? postSignInPath(role);
+}
+
+/**
+ * When the unified door should send a restored session onward.
+ *
+ * A fresh sign-in always follows the normal landing; a restored session only
+ * follows a redirect that belongs to its own portal. Otherwise a shared device
+ * would let the trainer's session walk a member away from the form.
+ */
+export function unifiedRedirectTarget(
+  raw: string | null | undefined,
+  role: string | null | undefined,
+  justSignedIn: boolean,
+): string | null {
+  return justSignedIn ? safeReturnTo(raw, role) : safeReturnPath(raw, role);
+}
+
+/** Start Free is trainer onboarding; other sessions go to their own home. */
+export function startFreeRedirect(role: string | null | undefined): string | null {
+  return role === 'member' || role === 'super_admin' ? postSignInPath(role) : null;
 }

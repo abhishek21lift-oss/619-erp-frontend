@@ -42,9 +42,8 @@ export function isPublicProxyPath(pathname: string): boolean {
 }
 
 function isPublicPath(pathname: string): boolean {
-  // Sessionless pages are exact routes. This is important because `/pt-os` is
-  // a public marketing page while `/pt-os/clients` and its other app routes
-  // remain authenticated.
+  // Sessionless pages are exact routes, not prefixes: `/start-free` is public
+  // while every authenticated page under another segment stays gated.
   if ((SESSIONLESS_PAGES as readonly string[]).includes(pathname)) return true;
 
   // The social-preview images those pages declare. Without this the og:image
@@ -89,7 +88,9 @@ function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextRespo
   if (deleteTokenCookie) {
     // Only this door's cookie. The other doors' sessions are still valid and
     // a failed check on one of them must not sign the browser out everywhere.
-    res.cookies.delete(accessCookieName(portalForPage(pathname)));
+    const pagePortal = portalForPage(pathname);
+    // A unified page has no cookie namespace of its own; it is never gated here.
+    if (pagePortal !== 'unified') res.cookies.delete(accessCookieName(pagePortal));
     res.cookies.delete('token'); // pre-namespace mirror
   }
   return res;
@@ -147,6 +148,18 @@ export async function proxy(req: NextRequest) {
     }
   }
 
+  // `/member-login` is a compatibility alias for the unified door. Redirect it
+  // here, not in the page: a redirect() thrown under the root loading boundary
+  // streams a 200 + meta refresh, and old bookmarks/installed shells need a
+  // real 307.
+  if (pathname === '/member-login') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    url.search = '';
+    url.searchParams.set('redirect', '/member/dashboard');
+    return NextResponse.redirect(url);
+  }
+
   if (isPublicPath(pathname)) {
     return withReportOnlyCsp(req);
   }
@@ -154,9 +167,12 @@ export async function proxy(req: NextRequest) {
   // One cookie namespace per door, so a tab standing at /member is judged by
   // the member session even while a trainer session lives in the same browser.
   // The bare `token` is the pre-namespace mirror and the migration fallback.
-  const portal = portalForPage(pathname);
+  const pagePortal = portalForPage(pathname);
+  // `/login` and `/start-free` are sessionless, so they never reach here. A
+  // neutral page that somehow did has no namespace of its own.
+  const portal = pagePortal === 'unified' ? null : pagePortal;
   const token =
-    req.cookies.get(accessCookieName(portal))?.value ??
+    (portal ? req.cookies.get(accessCookieName(portal))?.value : undefined) ??
     req.cookies.get('token')?.value ??
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
 

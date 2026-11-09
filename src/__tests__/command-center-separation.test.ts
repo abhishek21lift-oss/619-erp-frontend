@@ -122,7 +122,9 @@ describe('a lapsed session comes back to the right door', () => {
   });
 
   it('still routes the other two doors as it did', () => {
-    expect(signInPathFor('/member/dashboard')).toBe('/member-login');
+    // Member and trainer share the unified door; only the operator has a
+    // separate one.
+    expect(signInPathFor('/member/dashboard')).toBe('/login');
     expect(signInPathFor('/pt-os/clients')).toBe('/login');
     expect(signInPathFor('/login')).toBe('/login');
   });
