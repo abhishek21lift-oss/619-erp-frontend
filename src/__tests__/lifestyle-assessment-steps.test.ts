@@ -33,6 +33,15 @@ describe('the lifestyle wizard asks each question once', () => {
     }
   });
 
+  it('asks and sends the sitting and meal answers it now owns', () => {
+    const submit = page.slice(page.indexOf('const handleSubmit'), page.indexOf('if (assessmentId)'));
+    expect(submit).toContain('sitting_hours');
+    expect(submit).toContain('meal_regularity');
+    const extra = read('components/pt-os/lifestyle-assessment/StepAdditionalFactors.tsx');
+    expect(extra).toMatch(/Sitting Time \(hours\/day\)/);
+    expect(extra).toMatch(/Meal Regularity/);
+  });
+
   it('scores water and meals from the latest Nutrition assessment', () => {
     expect(page).toMatch(/api\.progress\.nutritionAssessments\.list/);
     expect(page).toMatch(/waterIntakeLiters=\{n\(withNutrition\(form, nutritionHabits\)\.waterIntakeLiters\)\}/);

@@ -2,24 +2,21 @@
 //
 // ── Who owns what ──────────────────────────────────────────────────────────
 //
-// Occupation type, screen time and activity level belong to the Lifestyle
-// Assessment (docs/specs/CLIENT-ASSESSMENT-TARGET-ARCHITECTURE.md). This screen
-// shows them read-only with a link back; it never writes a second copy.
+// Occupation type, activity level, screen time, sitting time and meal
+// regularity belong to the Lifestyle Assessment. This screen shows them
+// read-only with a link back; it never writes a second copy.
 //
 // The Interview owns the conversation: work detail, training history,
 // training challenges, availability, motivation, preferences, the client's own
-// words, and the trainer's summary. Sitting hours, meal regularity and
-// training days stay here as the three quick screens the target architecture
-// assigns to this step.
+// words, and the trainer's summary. Training days stay here as a quick screen
+// the target architecture assigns to this step.
 //
 // ── Values are canonical, labels are for people ────────────────────────────
 //
 // Every option's `value` is what the server stores and the DB's CHECK
 // constraints accept (migrations 228a/249/254). Numbers stay numbers on the
-// wire: sitting bands are stored as their midpoint, because that is the only
-// honest number a band contains.
+// wire.
 //
-//   sitting hours   <2 → 1 · 2–4 → 3 · 4–6 → 5 · 6–8 → 7 · 8+ → 9
 //   training days   0 · 1 · 2 · 3 · 4 · 5 · 6 · 7
 //
 // ── Progress is what is on the screen ──────────────────────────────────────
@@ -35,8 +32,6 @@ import { Briefcase, Dumbbell, Flag, NotebookPen } from 'lucide-react';
 export const TEXT_FIELDS = [
   'job_details',
   'occupation_other_details',
-  'lifestyle_sitting_hours',
-  'lifestyle_meal_regularity',
   'previous_workout_experience',
   'training_history',
   'lifestyle_training_days',
@@ -86,15 +81,6 @@ export interface InterviewSection {
   icon: LucideIcon;
   controls: readonly InterviewControl[];
 }
-
-/** Bands as midpoints — see the header. */
-const SITTING: readonly InterviewOption[] = [
-  { value: '1', label: 'Under 2 hours' },
-  { value: '3', label: '2 – 4 hours' },
-  { value: '5', label: '4 – 6 hours' },
-  { value: '7', label: '6 – 8 hours' },
-  { value: '9', label: '8+ hours' },
-];
 
 const TRAINING_DAYS: readonly InterviewOption[] = [
   { value: '0', label: 'None right now' },
@@ -152,24 +138,6 @@ export const INTERVIEW_SECTIONS: readonly InterviewSection[] = [
         rows: 2,
         maxLength: 500,
         showWhen: 'occupationOther',
-      },
-      {
-        key: 'lifestyle_sitting_hours',
-        kind: 'select',
-        label: 'Sitting hours',
-        hint: 'A work-day average is close enough.',
-        options: SITTING,
-      },
-      {
-        key: 'lifestyle_meal_regularity',
-        kind: 'select',
-        label: 'Meal regularity',
-        hint: 'How often meals land at roughly the same time.',
-        options: [
-          { value: 'regular', label: 'Mostly regular' },
-          { value: 'irregular', label: 'Irregular' },
-          { value: 'inconsistent', label: 'Frequently skipped' },
-        ],
       },
     ],
   },

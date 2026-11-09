@@ -66,7 +66,7 @@ function contextRows(c: ClientContext): { label: string; value: string }[] {
     { label: 'Screen time', value: c.screenTime ? (SCREEN_TIME[c.screenTime] || c.screenTime) : '—' },
     { label: 'Sleep / night', value: c.sleepHours != null ? `${c.sleepHours} h` : '—' },
     { label: 'Stress level', value: c.stressLevel != null ? `${c.stressLevel} / 10` : '—' },
-    { label: 'Meal timing', value: c.mealRegularity ? (MEAL_REGULARITY[c.mealRegularity] || c.mealRegularity) : '—' },
+    { label: 'Meal regularity', value: c.mealRegularity ? (MEAL_REGULARITY[c.mealRegularity] || c.mealRegularity) : '—' },
     { label: 'Diet preferences', value: c.dietPreferences.length ? c.dietPreferences.join(', ') : '—' },
     { label: 'Allergies / restrictions', value: c.foodAllergies.length ? c.foodAllergies.join(', ') : '—' },
     { label: 'Smoking / alcohol', value: [c.smoking ? SMOKING[c.smoking] || c.smoking : null, c.alcohol ? ALCOHOL[c.alcohol] || c.alcohol : null].filter(Boolean).join(' · ') || '—' },

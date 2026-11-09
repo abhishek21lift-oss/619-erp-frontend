@@ -112,6 +112,8 @@ describe('<InterviewPage />', () => {
       occupation_type: 'desk_job',
       screen_time_bracket: '6_8',
       daily_steps_bracket: '5000_8000',
+      sitting_hours: 5,
+      meal_regularity: 'regular',
     }];
     render(<InterviewPage />);
     await clientHeading();
@@ -120,23 +122,41 @@ describe('<InterviewPage />', () => {
     expect(within(source).getByText('Desk job')).toBeTruthy();
     expect(within(source).getByText('6 – 8 hours')).toBeTruthy();
     expect(within(source).getByText('Moderately Active')).toBeTruthy();
+    expect(within(source).getByText('5 h')).toBeTruthy();
+    expect(within(source).getByText('Mostly regular')).toBeTruthy();
     expect(within(source).getByRole('link', { name: /edit/i }).getAttribute('href'))
       .toBe('/pt-os/lifestyle-assessment?client_id=c1');
-    // Read-only means exactly that: there is no Occupation or Screen time control.
+    // Read-only means exactly that: there is no editable second copy of any
+    // Lifestyle-owned fact.
     expect(screen.queryByLabelText('Occupation')).toBeNull();
     expect(screen.queryByLabelText('Screen time')).toBeNull();
+    expect(screen.queryByLabelText('Sitting hours')).toBeNull();
+    expect(screen.queryByLabelText('Meal regularity')).toBeNull();
   });
 
-  it('starts at 0 of 12 visible answers and cannot complete an empty interview', async () => {
+  it('falls back to legacy interview answers until Lifestyle holds its own', async () => {
+    mockInterviews = [{
+      id: 'iv-legacy', status: 'draft', updated_at: '2026-09-01T10:00:00Z',
+      lifestyle_sitting_hours: '7.0', lifestyle_meal_regularity: 'irregular',
+    }];
+    render(<InterviewPage />);
+    await clientHeading();
+
+    const source = screen.getByRole('region', { name: 'Work profile' });
+    expect(within(source).getByText('7 h')).toBeTruthy();
+    expect(within(source).getByText('Irregular')).toBeTruthy();
+  });
+
+  it('starts at 0 of 10 visible answers and cannot complete an empty interview', async () => {
     render(<InterviewPage />);
     await clientHeading();
 
     const bar = screen.getByRole('progressbar', { name: 'Interview progress' });
     expect(bar.getAttribute('aria-valuenow')).toBe('0');
-    // 13 stored fields, but the occupation detail is conditional and hidden
+    // 12 stored fields, but the occupation detail is conditional and hidden
     // until the Lifestyle Assessment says "other", and the challenge detail
     // until the Other chip is chosen.
-    expect(bar.getAttribute('aria-valuemax')).toBe('12');
+    expect(bar.getAttribute('aria-valuemax')).toBe('10');
     expect(screen.getByText(/client interview · step 4/i)).toBeTruthy();
 
     const complete = screen.getByRole('button', { name: 'Complete interview' }) as HTMLButtonElement;
@@ -151,16 +171,18 @@ describe('<InterviewPage />', () => {
     render(<InterviewPage />);
     await clientHeading();
 
-    const work = screen.getByRole('region', { name: 'How does their week look?' });
-    expect(within(work).queryByText('Answered')).toBeNull();
+    const training = screen.getByRole('region', { name: 'What training are they bringing with them?' });
+    expect(within(training).queryByText('Answered')).toBeNull();
 
-    fireEvent.change(textField('Job details'), { target: { value: 'Warehouse team lead' } });
-    fireEvent.change(select('Sitting hours'), { target: { value: '5' } });
-    expect(within(work).queryByText('Answered')).toBeNull();
-    expect(within(work).getByText('2/3')).toBeTruthy();
+    fireEvent.change(select('Previous experience'), { target: { value: 'beginner' } });
+    expect(within(training).queryByText('Answered')).toBeNull();
+    expect(within(training).getByText('1/5')).toBeTruthy();
 
-    fireEvent.change(select('Meal regularity'), { target: { value: 'irregular' } });
-    expect(within(work).getByText('Answered')).toBeTruthy();
+    fireEvent.change(textField('Training history'), { target: { value: 'Home workouts' } });
+    fireEvent.change(select('Days a week they can train'), { target: { value: '3' } });
+    fireEvent.change(textField('When they can train'), { target: { value: 'Weekday evenings' } });
+    fireEvent.change(textField('What they enjoy or avoid'), { target: { value: 'No burpees' } });
+    expect(within(training).getByText('Answered')).toBeTruthy();
   });
 
   it('shows the occupation detail only when the Lifestyle Assessment says Other', async () => {
@@ -174,7 +196,7 @@ describe('<InterviewPage />', () => {
     await clientHeading();
     expect(textField('Describe their occupation')).toBeTruthy();
     // The conditional field is now part of the total, not a free extra.
-    expect(screen.getByRole('progressbar', { name: 'Interview progress' }).getAttribute('aria-valuemax')).toBe('13');
+    expect(screen.getByRole('progressbar', { name: 'Interview progress' }).getAttribute('aria-valuemax')).toBe('11');
   });
 
   it('reveals the "what else" box only after the Other barrier is chosen', async () => {
@@ -187,26 +209,24 @@ describe('<InterviewPage />', () => {
     expect(textField('What else gets in the way?')).toBeTruthy();
   });
 
-  it('resumes a draft, trims Postgres\' numeric scale, and saves only what changed', async () => {
-    // lifestyle_sitting_hours is NUMERIC(4,1): a stored 7 arrives as '7.0'.
+  it('resumes a draft and saves only what changed', async () => {
     mockInterviews = [{
       id: 'iv-9', status: 'draft', updated_at: '2026-10-07T10:00:00Z',
-      lifestyle_sitting_hours: '7.0', lifestyle_meal_regularity: 'irregular',
+      lifestyle_training_days: 4,
       training_history: 'Two years of home workouts',
     }];
     render(<InterviewPage />);
     await clientHeading();
 
-    expect(select('Sitting hours').value).toBe('7');
-    expect(select('Meal regularity').value).toBe('irregular');
-    expect(answeredCount()).toBe('3');
+    expect(select('Days a week they can train').value).toBe('4');
+    expect(answeredCount()).toBe('2');
 
-    fireEvent.change(select('Meal regularity'), { target: { value: 'regular' } });
+    fireEvent.change(select('Days a week they can train'), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 
     expect(mockUpdate.mock.calls[0][0]).toBe('iv-9');
-    expect(mockUpdate.mock.calls[0][1]).toEqual({ lifestyle_meal_regularity: 'regular', status: 'draft' });
+    expect(mockUpdate.mock.calls[0][1]).toEqual({ lifestyle_training_days: '5', status: 'draft' });
   });
 
   it('does nothing when Save draft is pressed with no changes', async () => {
@@ -235,7 +255,7 @@ describe('<InterviewPage />', () => {
     await clientHeading();
 
     fireEvent.change(textField('Job details'), { target: { value: 'Warehouse team lead, rotating shifts' } });
-    fireEvent.change(select('Meal regularity'), { target: { value: 'irregular' } });
+    fireEvent.change(select('Days a week they can train'), { target: { value: '4' } });
     fireEvent.change(select('Previous experience'), { target: { value: 'intermediate' } });
     fireEvent.click(screen.getByRole('button', { name: 'Complete interview' }));
 
@@ -243,7 +263,7 @@ describe('<InterviewPage />', () => {
     expect(mockCreate.mock.calls[0][0]).toBe('c1');
     expect(mockCreate.mock.calls[0][1]).toEqual({
       job_details: 'Warehouse team lead, rotating shifts',
-      lifestyle_meal_regularity: 'irregular',
+      lifestyle_training_days: '4',
       previous_workout_experience: 'intermediate',
       status: 'completed',
     });
@@ -256,7 +276,7 @@ describe('<InterviewPage />', () => {
     mockInterviews = [{
       id: 'iv-legacy', status: 'draft', updated_at: '2026-09-01T10:00:00Z',
       lifestyle_occupation: 'Software engineer', lifestyle_sleep_hours: '7',
-      lifestyle_meal_regularity: 'irregular', pain_and_injuries: 'Left knee',
+      lifestyle_sitting_hours: '6.0', lifestyle_meal_regularity: 'irregular', pain_and_injuries: 'Left knee',
     }];
     render(<InterviewPage />);
     await clientHeading();
@@ -267,7 +287,7 @@ describe('<InterviewPage />', () => {
 
     const body = mockUpdate.mock.calls[0][1] as Record<string, unknown>;
     expect(body).toEqual({ job_details: 'Desk work, eight hours', status: 'draft' });
-    for (const old of ['lifestyle_occupation', 'lifestyle_sleep_hours', 'lifestyle_meal_regularity', 'pain_and_injuries']) {
+    for (const old of ['lifestyle_occupation', 'lifestyle_sleep_hours', 'lifestyle_sitting_hours', 'lifestyle_meal_regularity', 'pain_and_injuries']) {
       expect(body).not.toHaveProperty(old);
     }
   });

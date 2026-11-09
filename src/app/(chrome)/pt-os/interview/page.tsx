@@ -292,7 +292,8 @@ function InterviewForm({ clientId }: { clientId: string }) {
 
           <form id="interview-form" className="mx-auto w-full max-w-3xl space-y-3 pb-32"
             onSubmit={(e) => { e.preventDefault(); save(current?.status === 'completed' ? 'changes' : 'completed'); }}>
-            <SourceFactsCard clientId={clientId} lifestyle={lifestyle} unavailable={lifestyleFailed} />
+            <SourceFactsCard clientId={clientId} lifestyle={lifestyle} unavailable={lifestyleFailed}
+              legacy={{ sitting_hours: current?.lifestyle_sitting_hours, meal_regularity: current?.lifestyle_meal_regularity }} />
             {INTERVIEW_SECTIONS.map((section, i) => (
               <InterviewSection key={section.id} section={section} index={i} answers={answers}
                 occupationType={occupationType} onChange={setField} />
@@ -397,7 +398,8 @@ function InterviewSummary({
         </div>
       </div>
 
-      <SourceFactsCard clientId={clientId} lifestyle={lifestyle} unavailable={lifestyleUnavailable} />
+      <SourceFactsCard clientId={clientId} lifestyle={lifestyle} unavailable={lifestyleUnavailable}
+        legacy={{ sitting_hours: current.lifestyle_sitting_hours, meal_regularity: current.lifestyle_meal_regularity }} />
 
       {INTERVIEW_SECTIONS.map((section, i) => {
         const Icon = section.icon;

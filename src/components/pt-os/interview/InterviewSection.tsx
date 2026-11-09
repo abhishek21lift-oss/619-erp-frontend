@@ -181,6 +181,14 @@ export interface LifestyleFacts {
   screen_time_bracket?: string | null;
   activity_level?: string | null;
   daily_steps_bracket?: string | null;
+  sitting_hours?: number | string | null;
+  meal_regularity?: string | null;
+}
+
+/** Values an older interview recorded before Lifestyle became their owner. */
+export interface LegacyLifestyleFacts {
+  sitting_hours?: number | string | null;
+  meal_regularity?: string | null;
 }
 
 const OCCUPATION_LABEL: Record<string, string> = {
@@ -205,15 +213,23 @@ const SCREEN_LABEL: Record<string, string> = {
   '8_plus': '8+ hours',
 };
 
+const MEAL_LABEL: Record<string, string> = {
+  regular: 'Mostly regular',
+  irregular: 'Irregular',
+  inconsistent: 'Frequently skipped',
+};
+
 /**
- * Occupation, screen time and activity are owned by the Lifestyle Assessment.
- * They are shown here because they belong in the interview conversation, and
- * read-only because a second editable copy is how two answers start to
- * disagree. The link is the way to change them.
+ * Occupation, screen time, activity, sitting time and meal regularity are
+ * owned by the Lifestyle Assessment. They are shown here because they belong
+ * in the interview conversation, and read-only because a second editable copy
+ * is how two answers start to disagree. The link is the way to change them.
  */
-export function SourceFactsCard({ clientId, lifestyle, unavailable = false }: {
+export function SourceFactsCard({ clientId, lifestyle, legacy, unavailable = false }: {
   clientId: string;
   lifestyle: LifestyleFacts | null;
+  /** Old interview answers, shown until the Lifestyle record holds its own. */
+  legacy?: LegacyLifestyleFacts | null;
   /** The read failed — different from "no assessment yet". */
   unavailable?: boolean;
 }) {
@@ -223,11 +239,16 @@ export function SourceFactsCard({ clientId, lifestyle, unavailable = false }: {
       (lifestyle?.daily_steps_bracket ?? null) as DailyStepsBracket | null,
       (lifestyle?.occupation_type ?? null) as OccupationType | null,
     ).level;
+  const sitting = lifestyle?.sitting_hours ?? legacy?.sitting_hours ?? null;
+  const meal = lifestyle?.meal_regularity ?? legacy?.meal_regularity ?? null;
+  const legacyOnly = !lifestyle && (sitting != null || Boolean(meal));
 
   const facts = [
     { label: 'Occupation', value: labelOf(OCCUPATION_LABEL, lifestyle?.occupation_type) },
     { label: 'Screen time', value: labelOf(SCREEN_LABEL, lifestyle?.screen_time_bracket) },
     { label: 'Activity level', value: labelOf(null, derived) },
+    { label: 'Sitting / day', value: sitting != null && sitting !== '' ? `${Number(sitting)} h` : '' },
+    { label: 'Meal regularity', value: labelOf(MEAL_LABEL, meal) },
   ];
 
   return (
@@ -264,7 +285,7 @@ export function SourceFactsCard({ clientId, lifestyle, unavailable = false }: {
         </Link>
       </div>
 
-      <dl className="grid grid-cols-1 gap-px sm:grid-cols-3" style={{ background: 'var(--border)' }}>
+      <dl className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-5" style={{ background: 'var(--border)' }}>
         {facts.map((fact) => (
           <div key={fact.label} className="px-4 py-3 sm:px-5" style={{ background: 'var(--bg-card)' }}>
             <dt className="text-[10.5px] font-[760] uppercase tracking-[0.10em]" style={{ color: 'var(--text-muted)' }}>
@@ -285,7 +306,7 @@ export function SourceFactsCard({ clientId, lifestyle, unavailable = false }: {
           </Link>{' '}
           to check.
         </p>
-      ) : !lifestyle && (
+      ) : !lifestyle && !legacyOnly && (
         <p className="px-4 pb-4 text-[12px] leading-snug sm:px-5" style={{ color: 'var(--text-muted)' }}>
           No Lifestyle Assessment yet.{' '}
           <Link href={`/pt-os/lifestyle-assessment?client_id=${clientId}`} className="font-[720]" style={{ color: indigo[600] }}>

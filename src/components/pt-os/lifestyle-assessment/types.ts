@@ -60,6 +60,8 @@ export interface LifestyleFormData {
 
   // Step 9 — Additional Lifestyle Factors
   screenTimeBracket: '<2' | '2_4' | '4_6' | '6_8' | '8_plus' | '';
+  sittingHours: string;
+  mealRegularity: 'regular' | 'irregular' | 'inconsistent' | '';
   travelFrequency: 'rarely' | 'monthly' | 'weekly' | 'daily' | '';
   energyLevel: string;
   motivationToExercise: string;
@@ -119,7 +121,7 @@ export function initLifestyleForm(): LifestyleFormData {
     mealFrequency: '', breakfastHabit: '', lateNightEating: null,
     smokingStatus: '', cigarettesPerDay: '', yearsSmoking: '',
     alcoholStatus: '', drinksPerWeek: '',
-    screenTimeBracket: '', travelFrequency: '', energyLevel: '', motivationToExercise: '', recoveryQuality: '',
+    screenTimeBracket: '', sittingHours: '', mealRegularity: '', travelFrequency: '', energyLevel: '', motivationToExercise: '', recoveryQuality: '',
     coachNotes: { recovery: '', nutrition: '', lifestyle: '', stress: '', sleep: '', special_instructions: '' },
   };
 }

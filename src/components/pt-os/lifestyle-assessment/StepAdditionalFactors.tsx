@@ -2,6 +2,7 @@
 
 import { Sparkles } from 'lucide-react';
 import { Slider } from '@/components/ui';
+import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import type { LifestyleFormData } from './types';
 import { n, stepLabel } from './types';
@@ -10,6 +11,12 @@ import type { RecoveryQuality } from '@/lib/lifestyle-calculations';
 const SCREEN_TIME_OPTIONS = [
   { value: '<2', label: '<2 Hours' }, { value: '2_4', label: '2–4 Hours' }, { value: '4_6', label: '4–6 Hours' },
   { value: '6_8', label: '6–8 Hours' }, { value: '8_plus', label: '8+ Hours' },
+];
+
+const MEAL_REGULARITY_OPTIONS = [
+  { value: 'regular', label: 'Mostly regular' },
+  { value: 'irregular', label: 'Irregular' },
+  { value: 'inconsistent', label: 'Frequently skipped' },
 ];
 
 const TRAVEL_OPTIONS = [
@@ -42,6 +49,8 @@ export function StepAdditionalFactors({ form, set }: StepAdditionalFactorsProps)
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <SearchableSelect label="Screen Time" allowCustom={false} value={form.screenTimeBracket} onChange={(v) => set('screenTimeBracket', v as LifestyleFormData['screenTimeBracket'])} options={SCREEN_TIME_OPTIONS} />
+          <FloatInput label="Sitting Time (hours/day)" numeric="decimal" value={form.sittingHours} onChange={(v) => set('sittingHours', v)} />
+          <SearchableSelect label="Meal Regularity" allowCustom={false} value={form.mealRegularity} onChange={(v) => set('mealRegularity', v as LifestyleFormData['mealRegularity'])} options={MEAL_REGULARITY_OPTIONS} />
           <SearchableSelect label="Travel Frequency" allowCustom={false} value={form.travelFrequency} onChange={(v) => set('travelFrequency', v as LifestyleFormData['travelFrequency'])} options={TRAVEL_OPTIONS} />
         </div>
 
