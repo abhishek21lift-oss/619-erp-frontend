@@ -148,7 +148,8 @@ export interface RecordedTests {
   hamstrings: RecordedHamstrings;
   hip_flexors: RecordedHipFlexors;
   sit_and_reach: RecordedSitAndReach;
-  shoulder_reach: RecordedShoulderReach;
+  /** Absent from a `k11-2026.01` four-test row. */
+  shoulder_reach?: RecordedShoulderReach;
 }
 
 export interface FlexibilityOverride {
@@ -229,7 +230,8 @@ export interface FlexibilityDerived {
     hamstrings: DerivedHamstrings;
     hip_flexors: DerivedHipFlexors;
     sit_and_reach: DerivedSitAndReach;
-    shoulder_reach: DerivedShoulderReach;
+    /** Absent for a `k11-2026.01` four-test row. */
+    shoulder_reach?: DerivedShoulderReach;
   };
   override_used: boolean;
   overall_status: OverallStatus;
@@ -539,7 +541,9 @@ export function deriveFlexibility(
       && (sh.sides.left.reach === 'gap') !== (sh.sides.right.reach === 'gap') : false);
 
   return {
-    tests: { quadriceps, hamstrings, hip_flexors: hipFlexors, sit_and_reach: sitAndReach, shoulder_reach: shoulderReach },
+    tests: expectsShoulder
+      ? { quadriceps, hamstrings, hip_flexors: hipFlexors, sit_and_reach: sitAndReach, shoulder_reach: shoulderReach }
+      : { quadriceps, hamstrings, hip_flexors: hipFlexors, sit_and_reach: sitAndReach },
     override_used: overrideUsed,
     overall_status,
     has_asymmetry: hasAsymmetry,
@@ -801,11 +805,13 @@ export function isRecordedBattery(v: unknown): v is FlexibilityRecorded {
 export function buildFlexibilityPayload(state: FlexibilityFormState): FlexibilityPayload {
   const notesOf = (v: string) => v.trim();
   const anyUnable = FLEXIBILITY_TEST_KEYS.some((k) => formTest(state, k).unable);
+  const untouchedLegacy = state.legacyBattery && !shoulderReachStarted(state);
 
   return {
-    // An untouched old row is posted back as the old version; the server's old
-    // schema ignores the empty shoulder block and round-trips the row as-is.
-    protocol_version: state.legacyBattery && !shoulderReachStarted(state) ? LEGACY_PROTOCOL_VERSION : PROTOCOL_VERSION,
+    // An untouched old row is posted back as the old version, without a
+    // shoulder block, so the server round-trips it as the four-test battery it
+    // was. Starting the shoulder test upgrades the payload to the current one.
+    protocol_version: untouchedLegacy ? LEGACY_PROTOCOL_VERSION : PROTOCOL_VERSION,
     tests: {
       quadriceps: {
         sides: {
@@ -889,23 +895,25 @@ export function buildFlexibilityPayload(state: FlexibilityFormState): Flexibilit
         unable_to_complete: state.sitAndReach.unable,
         unable_reason: state.sitAndReach.unable ? (state.sitAndReach.unableReason.trim() || null) : null,
       },
-      shoulder_reach: {
-        sides: {
-          left: {
-            reach: state.shoulderReach.reach.left || 'gap',
-            pain: state.shoulderReach.pain.left === true,
-            notes: notesOf(state.shoulderReach.notes),
+      ...(untouchedLegacy ? {} : {
+        shoulder_reach: {
+          sides: {
+            left: {
+              reach: state.shoulderReach.reach.left || 'gap',
+              pain: state.shoulderReach.pain.left === true,
+              notes: notesOf(state.shoulderReach.notes),
+            },
+            right: {
+              reach: state.shoulderReach.reach.right || 'gap',
+              pain: state.shoulderReach.pain.right === true,
+              notes: notesOf(state.shoulderReach.notes),
+            },
           },
-          right: {
-            reach: state.shoulderReach.reach.right || 'gap',
-            pain: state.shoulderReach.pain.right === true,
-            notes: notesOf(state.shoulderReach.notes),
-          },
+          completed: state.shoulderReach.completed && !state.shoulderReach.unable,
+          unable_to_complete: state.shoulderReach.unable,
+          unable_reason: state.shoulderReach.unable ? (state.shoulderReach.unableReason.trim() || null) : null,
         },
-        completed: state.shoulderReach.completed && !state.shoulderReach.unable,
-        unable_to_complete: state.shoulderReach.unable,
-        unable_reason: state.shoulderReach.unable ? (state.shoulderReach.unableReason.trim() || null) : null,
-      },
+      }),
     },
     override: {
       used: anyUnable,

@@ -139,11 +139,11 @@ function flexibilitySection(assessment: Row): string {
       ? 'No valid attempt recorded'
       : `Best ${v(s.best_raw_inches, ' in')} − ${v(s.zero_point_inches, ' in')} = ${v(s.score_inches, ' in')}`;
 
-  const shoulder = sh.unable_to_complete ? `Not performed: ${e(sh.unable_reason ?? '')}`
+  const shoulder = sh ? (sh.unable_to_complete ? `Not performed: ${e(sh.unable_reason ?? '')}`
     : !sh.completed ? 'Not recorded'
       : (['left', 'right'] as const).map((side) =>
         `${sideName(side)} ${v(sh.sides[side].reach)} (${sh.sides_interpretation[side] ?? 'not recorded'})`,
-      ).join(' · ');
+      ).join(' · ')) : null;
 
   const overrideReason = blob.override && typeof blob.override === 'object'
     && typeof (blob.override as Row).reason === 'string'
@@ -157,7 +157,7 @@ function flexibilitySection(assessment: Row): string {
     field('Hip Flexors (Thomas Test)', hip),
     field('YMCA Sit and Reach', sit),
     field('Norm', s.unable_to_complete ? '—' : `${s.norm.category ? `${s.norm.category} — ` : ''}${s.norm.message}`),
-    field('Shoulder Reach', shoulder),
+    ...(shoulder ? [field('Shoulder Reach', shoulder)] : []),
     field('Asymmetry Detected', d.has_asymmetry ? 'Yes' : 'No'),
     field('Overall Status', FLEX_STATUS_TEXT[d.overall_status]),
     ...(d.override_used ? [field('Override Reason', e(overrideReason))] : []),

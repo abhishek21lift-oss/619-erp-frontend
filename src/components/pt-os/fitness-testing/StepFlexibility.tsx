@@ -142,7 +142,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
       }
       case 'shoulder_reach': {
         const t = derived.tests.shoulder_reach;
-        return t.unable_to_complete ? '' : `L ${t.sides_interpretation.left ?? '—'} / R ${t.sides_interpretation.right ?? '—'}`;
+        return t && !t.unable_to_complete ? `L ${t.sides_interpretation.left ?? '—'} / R ${t.sides_interpretation.right ?? '—'}` : '';
       }
     }
   };
@@ -197,7 +197,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                   : optional
                     ? { text: 'Optional for this older record', color: 'var(--text-muted)', Icon: CircleDashed }
                     : { text: 'Not recorded', color: 'var(--text-muted)', Icon: CircleDashed };
-              const action = state.completed ? 'Edit result' : state.unable ? 'Edit result' : (optional ? 'Add' : derived.tests[key].completed ? 'Continue' : 'Start');
+              const action = state.completed ? 'Edit result' : state.unable ? 'Edit result' : (optional ? 'Add' : derived.tests[key]?.completed ? 'Continue' : 'Start');
               return (
                 <div key={key} className="flex flex-wrap items-start gap-3 rounded-[18px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                   <span className="mt-0.5" style={{ color: status.color }}><status.Icon size={16} /></span>
@@ -211,7 +211,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                     <p className="mt-1 text-[11.5px] font-[640]" style={{ color: 'var(--text-muted)' }}>
                       {state.unable
                         ? `Not performed: ${state.unableReason.trim() || 'reason missing'}`
-                        : state.completed || derived.tests[key].completed
+                        : state.completed || derived.tests[key]?.completed
                           ? valueLine(key)
                           : 'Not recorded yet'}
                       {derived.has_asymmetry && key === 'hamstrings' ? ' · asymmetry detected' : ''}
