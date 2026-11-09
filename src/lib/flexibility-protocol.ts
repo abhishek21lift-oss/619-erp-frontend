@@ -1,6 +1,6 @@
-// K11 Flexibility protocol — `k11-2026.01`.
+// K11 Flexibility protocol — `k11-2026.02`.
 //
-// The four-test battery that replaced step 7's two-slot dropdown workflow. The
+// The five-test battery that replaced step 7's two-slot dropdown workflow. The
 // reference criteria are the SUPPLIED K11 protocol's, not universal clinical
 // norms. The sit-and-reach norm uses K11's age/sex table when that context is
 // known; otherwise `norm` stays unavailable rather than inventing cutoffs.
@@ -21,7 +21,11 @@ import {
 import type { Gender } from './fitness-calculations';
 import { toMeasurementOrNull } from './forms/normalize';
 
-export const PROTOCOL_VERSION = 'k11-2026.01';
+export const PROTOCOL_VERSION = 'k11-2026.02';
+
+/** The four-test payload older assessments were stored with. Still accepted
+ *  and round-tripped until the trainer re-records the battery. */
+export const LEGACY_PROTOCOL_VERSION = 'k11-2026.01';
 
 /** YMCA Sit and Reach: the box's zero point, in inches. */
 export const SIT_AND_REACH_ZERO_POINT_INCHES = 15;
@@ -45,15 +49,20 @@ export type HipTightness = (typeof HIP_TIGHTNESS)[number];
 export const THIGH_POSITIONS = ['below', 'at', 'above'] as const;
 export type ThighPosition = (typeof THIGH_POSITIONS)[number];
 
+/** K11 shoulder reach: whether the fingertips overlap, touch, or leave a gap. */
+export const SHOULDER_REACH_RESULTS = ['overlap', 'touch', 'gap'] as const;
+export type ShoulderReachResult = (typeof SHOULDER_REACH_RESULTS)[number];
+
 export type HamstringsValidity = 'valid' | 'invalid_repeat';
 export type QuadricepsInterpretation = 'Normal' | 'Possible tightness';
 export type HamstringsInterpretation = 'Below reference range' | 'Within reference range' | 'Above reference range';
 export type HipFlexorsInterpretation = 'Clear' | 'Possible hip flexor restriction';
+export type ShoulderReachInterpretation = 'Clear' | 'Possible restriction';
 export type OverallStatus = 'all_tests_recorded' | 'follow_up_recommended' | 'completed_with_override' | 'incomplete';
 
-export type FlexibilityTestKey = 'quadriceps' | 'hamstrings' | 'hip_flexors' | 'sit_and_reach';
+export type FlexibilityTestKey = 'quadriceps' | 'hamstrings' | 'hip_flexors' | 'sit_and_reach' | 'shoulder_reach';
 
-export const FLEXIBILITY_TEST_KEYS: FlexibilityTestKey[] = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach'];
+export const FLEXIBILITY_TEST_KEYS: FlexibilityTestKey[] = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach', 'shoulder_reach'];
 
 /* ── Recorded (stored) shapes ─────────────────────────────────────────────── */
 
@@ -92,6 +101,12 @@ export interface HipFlexorsSide {
   notes: string;
 }
 
+export interface ShoulderReachSide {
+  reach: ShoulderReachResult | null;
+  pain: boolean | null;
+  notes: string;
+}
+
 export interface SitAndReachAttempt {
   inches: number | null;
   valid: boolean;
@@ -120,6 +135,7 @@ export interface AbleTest {
 export interface RecordedQuadriceps extends TestFlags { sides: Side<QuadricepsSide> }
 export interface RecordedHamstrings extends TestFlags { sides: Side<HamstringsSide> }
 export interface RecordedHipFlexors extends TestFlags { sides: Side<HipFlexorsSide> }
+export interface RecordedShoulderReach extends TestFlags { sides: Side<ShoulderReachSide> }
 export interface RecordedSitAndReach extends TestFlags {
   attempts: SitAndReachAttempt[];
   knee_bending: boolean;
@@ -132,6 +148,7 @@ export interface RecordedTests {
   hamstrings: RecordedHamstrings;
   hip_flexors: RecordedHipFlexors;
   sit_and_reach: RecordedSitAndReach;
+  shoulder_reach: RecordedShoulderReach;
 }
 
 export interface FlexibilityOverride {
@@ -186,6 +203,12 @@ export interface AbleHipFlexors extends AbleTest {
 }
 export type DerivedHipFlexors = AbleHipFlexors | UnableTest;
 
+export interface AbleShoulderReach extends AbleTest {
+  sides: Side<ShoulderReachSide>;
+  sides_interpretation: Side<ShoulderReachInterpretation | null>;
+}
+export type DerivedShoulderReach = AbleShoulderReach | UnableTest;
+
 export interface AbleSitAndReach extends AbleTest {
   attempts: SitAndReachAttempt[];
   best_attempt_index: number | null;
@@ -206,6 +229,7 @@ export interface FlexibilityDerived {
     hamstrings: DerivedHamstrings;
     hip_flexors: DerivedHipFlexors;
     sit_and_reach: DerivedSitAndReach;
+    shoulder_reach: DerivedShoulderReach;
   };
   override_used: boolean;
   overall_status: OverallStatus;
@@ -355,6 +379,33 @@ function deriveHipFlexors(raw: unknown): DerivedHipFlexors {
   };
 }
 
+function deriveShoulderReach(raw: unknown): DerivedShoulderReach {
+  const state = testState(raw);
+  if (state.unable_to_complete) return unableResult(state);
+  const src = obj(obj(raw).sides);
+  const side = (v: unknown): ShoulderReachSide => {
+    const s = obj(v);
+    return {
+      reach: enumOrNull(SHOULDER_REACH_RESULTS, s.reach),
+      pain: boolOrNull(s.pain),
+      notes: str(s.notes),
+    };
+  };
+  const left = side(src.left);
+  const right = side(src.right);
+  // K11's three outcomes: overlap and touch are clear, a gap is the one
+  // possible restriction. The wording stays "possible" — it is a screen.
+  const interpret = (s: ShoulderReachSide): ShoulderReachInterpretation | null => (s.reach == null ? null
+    : s.reach === 'gap' ? 'Possible restriction' : 'Clear');
+  return {
+    sides: { left, right },
+    sides_interpretation: { left: interpret(left), right: interpret(right) },
+    completed: state.completed,
+    unable_to_complete: false,
+    unable_reason: null,
+  };
+}
+
 export interface FlexibilityContext {
   age: number | null;
   gender: Gender | null;
@@ -436,8 +487,16 @@ export function deriveFlexibility(
   const hamstrings = deriveHamstrings(tests.hamstrings);
   const hipFlexors = deriveHipFlexors(tests.hip_flexors);
   const sitAndReach = deriveSitAndReach(tests.sit_and_reach, context);
+  const shoulderReach = deriveShoulderReach(tests.shoulder_reach);
 
-  const all = [quadriceps, hamstrings, hipFlexors, sitAndReach];
+  // A stored `k11-2026.01` row predates the shoulder test. It stays a complete
+  // four-test battery until the trainer re-records — an old row must not turn
+  // incomplete, or every unrelated edit of it would be refused.
+  const expectsShoulder = r.protocol_version === PROTOCOL_VERSION
+    || Object.prototype.hasOwnProperty.call(tests, 'shoulder_reach');
+  const all = expectsShoulder
+    ? [quadriceps, hamstrings, hipFlexors, sitAndReach, shoulderReach]
+    : [quadriceps, hamstrings, hipFlexors, sitAndReach];
   const allCompleted = all.every((t) => t.completed);
   const incomplete = all.filter((t) => !t.completed);
   const overrideReason = r.override && typeof r.override === 'object' && typeof (r.override as { reason?: unknown }).reason === 'string'
@@ -452,12 +511,15 @@ export function deriveFlexibility(
   const q = quadriceps.unable_to_complete ? null : quadriceps;
   const h = hamstrings.unable_to_complete ? null : hamstrings;
   const x = hipFlexors.unable_to_complete ? null : hipFlexors;
+  const sh = shoulderReach.unable_to_complete ? null : shoulderReach;
   const followUp =
     (q ? q.overall_interpretation === 'Possible tightness' : false)
     || (h ? (['left', 'right'] as const).some((s) =>
       h.sides_interpretation[s] === 'Below reference range' || h.sides_validity[s] === 'invalid_repeat') : false)
     || (x ? (['left', 'right'] as const).some((s) =>
-      x.sides_interpretation[s] === 'Possible hip flexor restriction') : false);
+      x.sides_interpretation[s] === 'Possible hip flexor restriction') : false)
+    || (sh ? (['left', 'right'] as const).some((s) =>
+      sh.sides_interpretation[s] === 'Possible restriction') : false);
 
   const overall_status: OverallStatus = allCompleted
     ? (followUp ? 'follow_up_recommended' : 'all_tests_recorded')
@@ -472,10 +534,12 @@ export function deriveFlexibility(
     || (q ? typeof q.sides.left.contact === 'boolean' && typeof q.sides.right.contact === 'boolean'
       && q.sides.left.contact !== q.sides.right.contact : false)
     || (x ? x.sides.left.thigh_position != null && x.sides.right.thigh_position != null
-      && (x.sides.left.thigh_position === 'below') !== (x.sides.right.thigh_position === 'below') : false);
+      && (x.sides.left.thigh_position === 'below') !== (x.sides.right.thigh_position === 'below') : false)
+    || (sh ? sh.sides.left.reach != null && sh.sides.right.reach != null
+      && (sh.sides.left.reach === 'gap') !== (sh.sides.right.reach === 'gap') : false);
 
   return {
-    tests: { quadriceps, hamstrings, hip_flexors: hipFlexors, sit_and_reach: sitAndReach },
+    tests: { quadriceps, hamstrings, hip_flexors: hipFlexors, sit_and_reach: sitAndReach, shoulder_reach: shoulderReach },
     override_used: overrideUsed,
     overall_status,
     has_asymmetry: hasAsymmetry,
@@ -491,11 +555,12 @@ export interface FlexibilityTestState {
 }
 
 /** The wizard's form slice for each protocol test key (the form is camelCase). */
-export const FLEXIBILITY_FORM_KEY: Record<FlexibilityTestKey, 'quadriceps' | 'hamstrings' | 'hipFlexors' | 'sitAndReach'> = {
+export const FLEXIBILITY_FORM_KEY: Record<FlexibilityTestKey, 'quadriceps' | 'hamstrings' | 'hipFlexors' | 'sitAndReach' | 'shoulderReach'> = {
   quadriceps: 'quadriceps',
   hamstrings: 'hamstrings',
   hip_flexors: 'hipFlexors',
   sit_and_reach: 'sitAndReach',
+  shoulder_reach: 'shoulderReach',
 };
 
 /** The completion flags of a protocol test, wherever the form keeps them. */
@@ -503,11 +568,35 @@ export function formTest(state: FlexibilityFormState, key: FlexibilityTestKey): 
   return state[FLEXIBILITY_FORM_KEY[key]];
 }
 
+/** Has the trainer entered anything for the shoulder reach test yet? */
+export function shoulderReachStarted(state: FlexibilityFormState): boolean {
+  const s = state.shoulderReach;
+  return s.completed || s.unable
+    || s.reach.left !== '' || s.reach.right !== ''
+    || s.pain.left != null || s.pain.right != null
+    || s.notes.trim() !== '';
+}
+
+/**
+ * The tests this form must complete. A four-test row loaded for editing keeps
+ * its four-test requirement until the trainer starts the shoulder reach; an
+ * old assessment must not be blocked by a test it never contained.
+ */
+export function requiredFlexibilityTests(state: FlexibilityFormState): FlexibilityTestKey[] {
+  return state.legacyBattery && !shoulderReachStarted(state)
+    ? FLEXIBILITY_TEST_KEYS.filter((k) => k !== 'shoulder_reach')
+    : FLEXIBILITY_TEST_KEYS;
+}
+
 export interface FlexibilityFormState {
   /** true = record with the K11 battery; false = an untouched legacy blob. */
   recording: boolean;
   /** The old `{test1,test2}` blob, kept verbatim so saving an edit cannot lose it. */
   legacy: Record<string, unknown> | null;
+  /** Loaded from a `k11-2026.01` four-test row: the shoulder test is optional
+   *  until the trainer starts it, so an unrelated edit of an old row is not
+   *  blocked by a test it never contained. */
+  legacyBattery: boolean;
   overrideReason: string;
   quadriceps: FlexibilityTestState & {
     contact: Side<boolean | null>;
@@ -539,6 +628,11 @@ export interface FlexibilityFormState {
     bouncing: boolean;
     notes: string;
   };
+  shoulderReach: FlexibilityTestState & {
+    reach: Side<ShoulderReachResult | ''>;
+    pain: Side<boolean | null>;
+    notes: string;
+  };
 }
 
 export function initFlexibilityForm(): FlexibilityFormState {
@@ -546,6 +640,7 @@ export function initFlexibilityForm(): FlexibilityFormState {
   return {
     recording: true,
     legacy: null,
+    legacyBattery: false,
     overrideReason: '',
     quadriceps: {
       ...flags(),
@@ -580,6 +675,12 @@ export function initFlexibilityForm(): FlexibilityFormState {
       attempts: [{ inches: '', valid: true }, { inches: '', valid: true }],
       kneeBending: false,
       bouncing: false,
+      notes: '',
+    },
+    shoulderReach: {
+      ...flags(),
+      reach: { left: '', right: '' },
+      pain: { left: null, right: null },
       notes: '',
     },
   };
@@ -620,6 +721,9 @@ export function flexibilityFormFromRecorded(recorded: FlexibilityRecorded): Flex
   const xSides = obj(x.sides);
   const xl = obj(xSides.left); const xr = obj(xSides.right);
   const s = obj(tests.sit_and_reach);
+  const sh = obj(tests.shoulder_reach);
+  const shSides = obj(sh.sides);
+  const shl = obj(shSides.left); const shr = obj(shSides.right);
 
   const attempts = (Array.isArray(s.attempts) ? s.attempts : [])
     .map((a) => { const p = obj(a); return { inches: numText(p.inches), valid: p.valid !== false }; });
@@ -630,6 +734,7 @@ export function flexibilityFormFromRecorded(recorded: FlexibilityRecorded): Flex
     ...f,
     recording: true,
     legacy: null,
+    legacyBattery: recorded.protocol_version !== PROTOCOL_VERSION,
     overrideReason: str(override.reason),
     quadriceps: {
       ...flags(q),
@@ -668,6 +773,15 @@ export function flexibilityFormFromRecorded(recorded: FlexibilityRecorded): Flex
       bouncing: s.bouncing === true,
       notes: str(s.notes),
     },
+    shoulderReach: {
+      ...flags(sh),
+      reach: formSide(
+        enumOrNull(SHOULDER_REACH_RESULTS, shl.reach) ?? '',
+        enumOrNull(SHOULDER_REACH_RESULTS, shr.reach) ?? '',
+      ),
+      pain: formSide(tri(shl.pain), tri(shr.pain)),
+      notes: str(shl.notes) || str(shr.notes),
+    },
   };
 }
 
@@ -689,7 +803,9 @@ export function buildFlexibilityPayload(state: FlexibilityFormState): Flexibilit
   const anyUnable = FLEXIBILITY_TEST_KEYS.some((k) => formTest(state, k).unable);
 
   return {
-    protocol_version: PROTOCOL_VERSION,
+    // An untouched old row is posted back as the old version; the server's old
+    // schema ignores the empty shoulder block and round-trips the row as-is.
+    protocol_version: state.legacyBattery && !shoulderReachStarted(state) ? LEGACY_PROTOCOL_VERSION : PROTOCOL_VERSION,
     tests: {
       quadriceps: {
         sides: {
@@ -773,6 +889,23 @@ export function buildFlexibilityPayload(state: FlexibilityFormState): Flexibilit
         unable_to_complete: state.sitAndReach.unable,
         unable_reason: state.sitAndReach.unable ? (state.sitAndReach.unableReason.trim() || null) : null,
       },
+      shoulder_reach: {
+        sides: {
+          left: {
+            reach: state.shoulderReach.reach.left || 'gap',
+            pain: state.shoulderReach.pain.left === true,
+            notes: notesOf(state.shoulderReach.notes),
+          },
+          right: {
+            reach: state.shoulderReach.reach.right || 'gap',
+            pain: state.shoulderReach.pain.right === true,
+            notes: notesOf(state.shoulderReach.notes),
+          },
+        },
+        completed: state.shoulderReach.completed && !state.shoulderReach.unable,
+        unable_to_complete: state.shoulderReach.unable,
+        unable_reason: state.shoulderReach.unable ? (state.shoulderReach.unableReason.trim() || null) : null,
+      },
     },
     override: {
       used: anyUnable,
@@ -785,7 +918,7 @@ export function buildFlexibilityPayload(state: FlexibilityFormState): Flexibilit
  * Today's mobility score from a LEGACY `{test1,test2}` blob: the trainer-entered
  * 0–10 composite of each test, banded and averaged. Kept for the rows still
  * stored in that shape — v3 rows deliberately produce null, because there is no
- * supported universal score across the four tests' incompatible units.
+ * supported universal score across the battery tests' incompatible units.
  */
 export function legacyMobilityScore(blob: Record<string, unknown> | null | undefined): number | null {
   if (!blob || typeof blob !== 'object') return null;
@@ -887,6 +1020,12 @@ export function flexibilityTestIssues(state: FlexibilityFormState, test: Flexibi
     const attempts = state.sitAndReach.attempts.filter((a) => toMeasurementOrNull(a.inches) != null);
     if (!attempts.length) issues.push('Sit and Reach: record at least one attempt.');
     else if (!attempts.some((a) => a.valid)) issues.push('Sit and Reach: at least one attempt must be marked valid.');
+  }
+
+  if (test === 'shoulder_reach') {
+    if (!state.shoulderReach.reach.left) issues.push('Shoulder reach (left): choose overlap, touch or gap.');
+    if (!state.shoulderReach.reach.right) issues.push('Shoulder reach (right): choose overlap, touch or gap.');
+    answered('Pain reported', state.shoulderReach.pain);
   }
 
   return issues;

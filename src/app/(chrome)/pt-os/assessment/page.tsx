@@ -37,7 +37,7 @@ import StepStrength from '@/components/pt-os/fitness-testing/StepStrength';
 import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from '@/components/pt-os/fitness-testing/flexibility/protocol-content';
-import { buildFlexibilityPayload, formTest, legacyMobilityScore } from '@/lib/flexibility-protocol';
+import { buildFlexibilityPayload, formTest, legacyMobilityScore, requiredFlexibilityTests } from '@/lib/flexibility-protocol';
 import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessAnthropometric } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
@@ -147,23 +147,24 @@ function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean,
     else checks.push(['Test 2 duration', form.enduranceDurationSec2, 1, 3600, 'sec']);
     return rangeIssue(...checks);
   }
-  // The K11 battery: every one of the four tests either recorded, or recorded
+  // The K11 battery: every test either recorded, or recorded
   // as not performed with a reason — and an override reason for the assessment
   // whenever any of them is not performed. A legacy row has no live fields to
   // range-check: it is posted back exactly as stored.
   if (id === 7) {
     const f = form.flexibility;
     if (!f.recording) return undefined;
-    const notRecorded = FLEXIBILITY_TEST_ORDER.filter((k) => { const t = formTest(f, k); return !t.completed && !t.unable; });
+    const required = requiredFlexibilityTests(f);
+    const notRecorded = required.filter((k) => { const t = formTest(f, k); return !t.completed && !t.unable; });
     if (notRecorded.length) {
       return `${FLEXIBILITY_PROTOCOLS[notRecorded[0]].name} is not complete — record its measurements and mark it complete, or record why it could not be performed.`;
     }
-    const reasonMissing = FLEXIBILITY_TEST_ORDER.filter((k) => formTest(f, k).unable && !formTest(f, k).unableReason.trim());
+    const reasonMissing = required.filter((k) => formTest(f, k).unable && !formTest(f, k).unableReason.trim());
     if (reasonMissing.length) {
       return `${FLEXIBILITY_PROTOCOLS[reasonMissing[0]].name}: enter the reason it could not be performed.`;
     }
     if (!f.overrideReason.trim()
-      && FLEXIBILITY_TEST_ORDER.some((k) => { const t = formTest(f, k); return t.unable || !t.completed; })) {
+      && required.some((k) => { const t = formTest(f, k); return t.unable || !t.completed; })) {
       return 'Some flexibility tests were not performed — enter the override reason for the assessment.';
     }
     return undefined;

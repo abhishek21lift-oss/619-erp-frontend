@@ -1,10 +1,11 @@
-// The K11 four-test flexibility battery's derivation, form round-trip and
+// The K11 five-test flexibility battery's derivation, form round-trip and
 // payload — the frontend mirror of the backend module. Anything asserted here
 // about a threshold must match `src/modules/progress/flexibility-protocol.js`;
 // scripts/assert-scoring-parity.ts compares the two implementations directly.
 
 import { describe, it, expect } from 'vitest';
 import {
+  LEGACY_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
   SIT_AND_REACH_ZERO_POINT_INCHES,
   buildFlexibilityPayload,
@@ -16,6 +17,7 @@ import {
   isRecordedBattery,
   legacyBlobSummary,
   legacyMobilityScore,
+  requiredFlexibilityTests,
 } from '@/lib/flexibility-protocol';
 import type {
   FlexibilityDerived,
@@ -27,6 +29,7 @@ import type {
   QuadricepsSide,
   RecordedSitAndReach,
   RecordedTests,
+  ShoulderReachSide,
 } from '@/lib/flexibility-protocol';
 import { formFromAssessmentRow } from '@/components/pt-os/fitness-testing/types';
 
@@ -41,16 +44,20 @@ const hSide = (p: Partial<HamstringsSide> = {}): HamstringsSide => ({
 const xSide = (p: Partial<HipFlexorsSide> = {}): HipFlexorsSide => ({
   thigh_position: 'below', knee_flexion_deg: null, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p,
 });
+const shSide = (p: Partial<ShoulderReachSide> = {}): ShoulderReachSide => ({
+  reach: 'overlap', pain: false, notes: '', ...p,
+});
 
 interface Over {
   quadriceps?: Partial<RecordedTests['quadriceps']>;
   hamstrings?: Partial<RecordedTests['hamstrings']>;
   hip_flexors?: Partial<RecordedTests['hip_flexors']>;
   sit_and_reach?: Partial<RecordedSitAndReach>;
+  shoulder_reach?: Partial<RecordedTests['shoulder_reach']>;
   override?: FlexibilityRecorded['override'];
 }
 
-/** A raw payload with all four tests recorded and marked complete. */
+/** A raw payload with all five tests recorded and marked complete. */
 function battery(over: Over = {}): FlexibilityRecorded {
   // The spread widens every optional field to `| undefined`, which is exactly
   // what this builder is for: a hand-edited row the derivation still answers.
@@ -59,6 +66,7 @@ function battery(over: Over = {}): FlexibilityRecorded {
     hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...over.hamstrings },
     hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...over.hip_flexors },
     sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...over.sit_and_reach },
+    shoulder_reach: { sides: { left: shSide(), right: shSide() }, completed: true, ...over.shoulder_reach },
   } as unknown as Partial<RecordedTests>;
   return { protocol_version: PROTOCOL_VERSION, tests, override: over.override ?? null };
 }
@@ -92,6 +100,10 @@ const completeForm = (): FlexibilityFormState => {
     sitAndReach: {
       ...f.sitAndReach, completed: true,
       attempts: [{ inches: '20', valid: true }, { inches: '', valid: true }],
+    },
+    shoulderReach: {
+      ...f.shoulderReach, completed: true,
+      reach: { left: 'overlap', right: 'touch' }, pain: { left: false, right: false },
     },
   };
 };
@@ -198,6 +210,35 @@ describe('deriveFlexibility — hip flexors (Thomas test)', () => {
   });
 });
 
+/* ── Shoulder reach ──────────────────────────────────────────────────────── */
+
+describe('deriveFlexibility — shoulder reach', () => {
+  const verdict = (p: Partial<ShoulderReachSide>) => able(derive({
+    shoulder_reach: { sides: { left: shSide(p), right: shSide() } },
+  }).tests.shoulder_reach).sides_interpretation.left;
+
+  it('calls overlap and touch Clear, and a gap a possible restriction', () => {
+    expect(verdict({ reach: 'overlap' })).toBe('Clear');
+    expect(verdict({ reach: 'touch' })).toBe('Clear');
+    expect(verdict({ reach: 'gap' })).toBe('Possible restriction');
+  });
+
+  it('leaves an unanswered or unknown reach null', () => {
+    expect(verdict({ reach: null })).toBeNull();
+    expect(verdict({ reach: 'sideways' as never })).toBeNull();
+  });
+
+  it('recommends follow-up when either side has a gap', () => {
+    expect(derive({ shoulder_reach: { sides: { left: shSide({ reach: 'gap' }), right: shSide() } } }).overall_status)
+      .toBe('follow_up_recommended');
+  });
+
+  it('counts a gap vs overlap mismatch as asymmetry only when both sides answered', () => {
+    expect(derive({ shoulder_reach: { sides: { left: shSide({ reach: 'gap' }), right: shSide({ reach: 'overlap' }) } } }).has_asymmetry).toBe(true);
+    expect(derive({ shoulder_reach: { sides: { left: shSide({ reach: 'gap' }), right: shSide({ reach: null }) } } }).has_asymmetry).toBe(false);
+  });
+});
+
 /* ── Sit and reach ───────────────────────────────────────────────────────── */
 
 describe('deriveFlexibility — sit and reach', () => {
@@ -264,7 +305,7 @@ describe('deriveFlexibility — unable tests and override', () => {
     expect(d.unable_reason).toBeNull();
   });
 
-  it('is all_tests_recorded when the four tests are complete and unremarkable', () => {
+  it('is all_tests_recorded when the five tests are complete and unremarkable', () => {
     const d = derive();
     expect(d.override_used).toBe(false);
     expect(d.overall_status).toBe('all_tests_recorded');
@@ -330,6 +371,17 @@ describe('deriveFlexibility — has_asymmetry', () => {
   });
 });
 
+describe('deriveFlexibility — stored four-test rows', () => {
+  it('keeps a k11-2026.01 row complete instead of inventing the shoulder test', () => {
+    const old = battery();
+    old.protocol_version = LEGACY_PROTOCOL_VERSION;
+    delete (old.tests as Partial<RecordedTests>).shoulder_reach;
+    const d = deriveFlexibility(old);
+    expect(d.overall_status).toBe('all_tests_recorded');
+    expect(d.tests.shoulder_reach).toMatchObject({ completed: false, unable_to_complete: false });
+  });
+});
+
 /* ── Robustness ──────────────────────────────────────────────────────────── */
 
 describe('deriveFlexibility — absent and hand-edited input', () => {
@@ -354,7 +406,7 @@ describe('deriveFlexibility — absent and hand-edited input', () => {
 /* ── Client validation ───────────────────────────────────────────────────── */
 
 describe('flexibilityTestIssues', () => {
-  const KEYS: FlexibilityTestKey[] = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach'];
+  const KEYS: FlexibilityTestKey[] = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach', 'shoulder_reach'];
 
   it('asks every unanswered question on a fresh form', () => {
     const f = initFlexibilityForm();
@@ -362,6 +414,7 @@ describe('flexibilityTestIssues', () => {
     expect(flexibilityTestIssues(f, 'hamstrings')).toHaveLength(8); // 2 angles + 3 answers × 2 sides
     expect(flexibilityTestIssues(f, 'hip_flexors')).toHaveLength(6);
     expect(flexibilityTestIssues(f, 'sit_and_reach')).toEqual(['Sit and Reach: record at least one attempt.']);
+    expect(flexibilityTestIssues(f, 'shoulder_reach')).toHaveLength(4);
   });
 
   it('requires the reach distance only when the heel is not in contact', () => {
@@ -458,6 +511,7 @@ describe('flexibility form state', () => {
     expect(back.hamstrings.kneeExtended).toEqual({ left: true, right: true });
     expect(back.hipFlexors.thighPosition).toEqual({ left: 'below', right: 'below' });
     expect(back.sitAndReach.attempts).toEqual([{ inches: '20', valid: true }]);
+    expect(back.shoulderReach.reach).toEqual({ left: 'overlap', right: 'touch' });
     expect(back.overrideReason).toBe('');
   });
 
@@ -477,6 +531,20 @@ describe('flexibility form state', () => {
     expect(isRecordedBattery(null)).toBe(false);
   });
 
+  it('marks a k11-2026.01 row as a legacy battery, so shoulder is optional until started', () => {
+    const old = battery();
+    old.protocol_version = LEGACY_PROTOCOL_VERSION;
+    delete (old.tests as Partial<RecordedTests>).shoulder_reach;
+    const form = flexibilityFormFromRecorded(old);
+    expect(form.legacyBattery).toBe(true);
+    expect(requiredFlexibilityTests(form)).toEqual(['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach']);
+    expect(buildFlexibilityPayload(form).protocol_version).toBe(LEGACY_PROTOCOL_VERSION);
+
+    const started = { ...form, shoulderReach: { ...form.shoulderReach, reach: { left: 'overlap' as const, right: '' } } };
+    expect(requiredFlexibilityTests(started)).toContain('shoulder_reach');
+    expect(buildFlexibilityPayload(started).protocol_version).toBe(PROTOCOL_VERSION);
+  });
+
   it('opens a v3 row as an editable, completed battery', () => {
     const stored = deriveFlexibility(buildFlexibilityPayload(completeForm()));
     const form = formFromAssessmentRow({
@@ -487,6 +555,7 @@ describe('flexibility form state', () => {
     expect(form.flexibility.quadriceps.completed).toBe(true);
     expect(form.flexibility.hamstrings.angleDeg).toEqual({ left: '70', right: '78' });
     expect(form.flexibility.sitAndReach.attempts).toEqual([{ inches: '20', valid: true }]);
+    expect(form.flexibility.shoulderReach.reach).toEqual({ left: 'overlap', right: 'touch' });
   });
 
   it('keeps a legacy blob verbatim and read-only instead of inventing answers', () => {

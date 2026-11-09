@@ -60,7 +60,7 @@ export interface AssessmentFormData {
   enduranceValueType2: 'reps' | 'time';
   enduranceReps2: string; enduranceDurationSec2: string;
 
-  // Step 7 — Flexibility: the K11 four-test battery (v3 payload), or a legacy
+  // Step 7 — Flexibility: the K11 five-test battery (v3 payload), or a legacy
   // `{test1,test2}` blob kept read-only for the rows still stored that way.
   flexibility: FlexibilityFormState;
 }
@@ -184,7 +184,7 @@ export function formFromAssessmentRow(row: Record<string, unknown>): AssessmentF
     enduranceTestType2: str(row.endurance_test_type_2) as EnduranceTestType | '',
     enduranceValueType2: et('test2').durationSec != null && et('test2').reps == null ? 'time' : 'reps',
     enduranceReps2: str(et('test2').reps), enduranceDurationSec2: str(et('test2').durationSec),
-    // v3 battery → editable four-test form. Legacy {test1,test2} blob →
+    // v3 battery → editable five-test form. Legacy {test1,test2} blob →
     // read-only until the trainer chooses to re-record, so an edit can never
     // lose it. Nothing stored → a fresh battery.
     flexibility: isRecordedBattery(fd)

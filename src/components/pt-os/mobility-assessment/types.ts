@@ -9,7 +9,7 @@ const BODY_REGIONS = ['Neck', 'Shoulders', 'Thoracic Spine', 'Hip', 'Hamstrings'
 
 // Sit and Reach is measured in centimetres in Fitness Testing's flexibility
 // step; scoring it again here on a 1-5 scale gave one test three records.
-const MOBILITY_TESTS = ['Shoulder Reach', 'Overhead Squat', 'Deep Squat', 'Hip Internal Rotation', 'Ankle Dorsiflexion'];
+const MOBILITY_TESTS = ['Overhead Squat', 'Deep Squat', 'Hip Internal Rotation', 'Ankle Dorsiflexion'];
 
 export interface MobilityFormData {
   assessmentDate: string;

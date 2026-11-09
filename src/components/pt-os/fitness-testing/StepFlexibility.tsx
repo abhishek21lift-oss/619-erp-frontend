@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Move, AlertTriangle, ArrowLeft, FileText, RefreshCw, CheckCircle2, CircleDashed, MinusCircle } from 'lucide-react';
 import { Button, FloatInput } from '@/components/ui';
-import { deriveFlexibility, buildFlexibilityPayload, formTest, legacyBlobSummary } from '@/lib/flexibility-protocol';
+import { deriveFlexibility, buildFlexibilityPayload, formTest, legacyBlobSummary, requiredFlexibilityTests } from '@/lib/flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey } from '@/lib/flexibility-protocol';
 import type { Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
@@ -29,7 +29,7 @@ interface StepFlexibilityProps {
 type View = 'overview' | 'summary' | { test: FlexibilityTestKey };
 
 /**
- * Step 7 — the K11 four-test flexibility battery.
+ * Step 7 — the K11 five-test flexibility battery.
  *
  * Overview → one test per screen (protocol beside the fields) → summary. Every
  * interpretation shown is `deriveFlexibility` on the current form state, which
@@ -50,9 +50,11 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
     [flex, age, gender],
   );
 
-  const recordedCount = FLEXIBILITY_TEST_ORDER.filter((k) => formTest(flex, k).completed).length;
-  const anyUnable = FLEXIBILITY_TEST_ORDER.some((k) => formTest(flex, k).unable);
-  const mustOverride = FLEXIBILITY_TEST_ORDER.some((k) => { const t = formTest(flex, k); return !t.completed && !t.unable; });
+  const required = requiredFlexibilityTests(flex);
+  const totalTests = required.length;
+  const recordedCount = required.filter((k) => formTest(flex, k).completed).length;
+  const anyUnable = required.some((k) => formTest(flex, k).unable);
+  const mustOverride = required.some((k) => { const t = formTest(flex, k); return !t.completed && !t.unable; });
 
   /* ── Legacy rows: read-only until re-recorded ─────────────────────────── */
   if (!flex.recording) {
@@ -108,7 +110,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
 
   const statusPill = recordedCount === 0
     ? { text: 'Not started', color: 'var(--text-muted)', bg: 'var(--bg-subtle)' }
-    : recordedCount === 4
+    : recordedCount === totalTests
       ? { text: 'Completed', color: 'var(--success-text)', bg: 'var(--success-bg)' }
       : { text: 'In progress', color: 'var(--warning-text)', bg: 'var(--warning-bg)' };
 
@@ -138,6 +140,10 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
         const t = derived.tests.sit_and_reach;
         return t.unable_to_complete ? '' : (t.score_inches == null ? 'not recorded' : `${t.score_inches} in`);
       }
+      case 'shoulder_reach': {
+        const t = derived.tests.shoulder_reach;
+        return t.unable_to_complete ? '' : `L ${t.sides_interpretation.left ?? '—'} / R ${t.sides_interpretation.right ?? '—'}`;
+      }
     }
   };
 
@@ -147,7 +153,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
         icon={Move}
         tone={TONE}
         title="Flexibility & Mobility"
-        subtitle="Step 7 of 7 — the K11 four-test battery: quadriceps, hamstrings, hip flexors and YMCA Sit and Reach."
+        subtitle="Step 7 of 7 — the K11 five-test battery: quadriceps, hamstrings, hip flexors, YMCA Sit and Reach and Shoulder Reach."
       />
 
       {typeof view === 'object' ? (
@@ -170,25 +176,28 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
             <span className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>
               {clientName ? `${clientName} · ` : ''}{form.assessmentDate}
             </span>
-            <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{recordedCount}/4 recorded</span>
+            <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{recordedCount}/{totalTests} recorded</span>
             <span className="rounded-full px-2.5 py-0.5 text-[11px] font-[700]" style={{ background: statusPill.bg, color: statusPill.color }}>{statusPill.text}</span>
             <Button variant="ghost" size="sm" className="ml-auto" iconLeft={<FileText size={13} />} onClick={() => setView('summary')}>Summary</Button>
           </div>
 
-          <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }} role="progressbar" aria-valuenow={recordedCount} aria-valuemin={0} aria-valuemax={4} aria-label="Flexibility tests recorded">
-            <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${(recordedCount / 4) * 100}%`, background: gradient(TONE, 90) }} />
+          <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }} role="progressbar" aria-valuenow={recordedCount} aria-valuemin={0} aria-valuemax={totalTests} aria-label="Flexibility tests recorded">
+            <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${(recordedCount / totalTests) * 100}%`, background: gradient(TONE, 90) }} />
           </div>
 
           <div className="space-y-2.5">
             {FLEXIBILITY_TEST_ORDER.map((key) => {
               const content = FLEXIBILITY_PROTOCOLS[key];
               const state = formTest(flex, key);
+              const optional = !required.includes(key);
               const status = state.completed
                 ? { text: 'Completed', color: 'var(--success-text)', Icon: CheckCircle2 }
                 : state.unable
                   ? { text: 'Unable to complete', color: 'var(--warning-text)', Icon: MinusCircle }
-                  : { text: 'Not recorded', color: 'var(--text-muted)', Icon: CircleDashed };
-              const action = state.completed ? 'Edit result' : state.unable ? 'Edit result' : (derived.tests[key].completed ? 'Continue' : 'Start');
+                  : optional
+                    ? { text: 'Optional for this older record', color: 'var(--text-muted)', Icon: CircleDashed }
+                    : { text: 'Not recorded', color: 'var(--text-muted)', Icon: CircleDashed };
+              const action = state.completed ? 'Edit result' : state.unable ? 'Edit result' : (optional ? 'Add' : derived.tests[key].completed ? 'Continue' : 'Start');
               return (
                 <div key={key} className="flex flex-wrap items-start gap-3 rounded-[18px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                   <span className="mt-0.5" style={{ color: status.color }}><status.Icon size={16} /></span>
@@ -222,7 +231,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
               {overallText}
             </p>
             <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-              {recordedCount}/4 recorded{anyUnable ? ` · ${FLEXIBILITY_TEST_ORDER.filter((k) => formTest(flex, k).unable).length} not performed` : ''}
+              {recordedCount}/{totalTests} recorded{anyUnable ? ` · ${FLEXIBILITY_TEST_ORDER.filter((k) => formTest(flex, k).unable).length} not performed` : ''}
             </p>
           </div>
 

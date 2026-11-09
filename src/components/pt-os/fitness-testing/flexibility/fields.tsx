@@ -1,6 +1,6 @@
 'use client';
 
-// The two control shapes every flexibility screen uses, so four tests cannot
+// The two control shapes every flexibility screen uses, so the tests cannot
 // drift into four different-looking forms.
 //
 // No `type="number"` anywhere: the shared FloatInput is the only numeric
