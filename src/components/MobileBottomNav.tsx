@@ -163,7 +163,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   the bar's height is fixed — letting it stack onto two lines
                   would push it out of the row. */}
               <span
-                className="relative z-10 select-none whitespace-nowrap text-[9.5px] font-bold uppercase leading-none"
+                className="relative z-10 select-none whitespace-nowrap text-[10.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
                   color: isActive ? BOTTOM_NAV_COLORS.activeLabel : BOTTOM_NAV_COLORS.inactiveLabel,
