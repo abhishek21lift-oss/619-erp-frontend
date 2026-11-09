@@ -155,11 +155,14 @@ const C = {
   // is the indigo ramp. Every accent on this page reads this one value.
   primary:    palette.indigo[500],
   success:    palette.emerald[500],
+  successText: palette.emerald[700],
   warning:    palette.amber[500],
+  warningText: palette.amber[700],
   danger:     palette.red[600],
-  dangerDeep: palette.red[900],
   ink:        palette.gray[900],
-  muted:      rgba(palette.gray[500], 0.85),
+  // gray[600], not 500 at 85% alpha: the old value measured ~3.5:1 on the
+  // card surface, below AA for the 10–12px labels it is used on.
+  muted:      palette.gray[600],
 };
 
 // Trainers are told apart, not judged — so this walks the non-semantic ramp
@@ -225,7 +228,7 @@ function TrendBadge({ pct }: { pct: number | null }) {
   if (pct === null) return null;
   const up = pct >= 0;
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9.5px] font-[750] tabular-nums"
+    <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10.5px] font-[750] tabular-nums"
       style={{
         background: up ? 'var(--success-soft)' : 'var(--danger-soft)',
         color: up ? 'var(--success-text)' : 'var(--danger-text)',
@@ -267,10 +270,10 @@ function Glass({ children, className = '', style, onClick }: {
 
 function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <p className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-[750] uppercase tracking-[0.14em]"
-      style={{ color: 'rgba(100,116,139,0.7)' }}>
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[12px] font-[750] uppercase tracking-[0.1em]"
+      style={{ color: 'var(--text-muted)' }}>
       {icon && (
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px]"
           style={{ background: 'rgba(100,116,139,0.14)' }} aria-hidden>
           {icon}
         </span>
@@ -312,7 +315,7 @@ function HeroStat({ icon, label, value, accent, trend }: {
             </span>
           )}
         </span>
-        <span className="mt-1 text-[8px] font-[700] uppercase tracking-[0.14em] text-white/45">{label}</span>
+        <span className="mt-1 text-[10.5px] font-[700] uppercase tracking-[0.12em] text-white/55">{label}</span>
       </div>
     </div>
   );
@@ -443,15 +446,15 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
 export const QUICK_ACTIONS = [
   { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.primary },
   { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.primary },
-  { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.success },
+  { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.primary },
   { label: 'Interview',            icon: MessagesSquare, href: '/pt-os/interview',            color: C.primary },
-  { label: 'Fitness',              icon: Gauge,          href: '/pt-os/assessment',           color: C.warning },
-  { label: 'Goal',                 icon: Target,         href: '/pt-os/goals',                color: C.dangerDeep },
-  { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.danger },
+  { label: 'Fitness',              icon: Gauge,          href: '/pt-os/assessment',           color: C.primary },
+  { label: 'Goal',                 icon: Target,         href: '/pt-os/goals',                color: C.primary },
+  { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.primary },
   { label: 'Nutrition',            icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.primary },
-  { label: 'Mobility',             icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.danger },
+  { label: 'Mobility',             icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.primary },
   { label: 'Posture',              icon: Accessibility,  href: '/pt-os/posture-assessment',   color: C.primary },
-  { label: 'Strength',             icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.success },
+  { label: 'Strength',             icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.primary },
 ] as const;
 
 // ─── Section 1.5 — Not cleared to train ─────────────────────────────────────
@@ -475,7 +478,7 @@ export function ScreeningGaps() {
   if (gaps.loading || gaps.error || rows.length === 0) return null;
   const total = gaps.data?.total ?? rows.length;
   const blocked = rows.filter((g) => g.block).length;
-  const tone = blocked ? C.danger : C.warning;
+  const tone = blocked ? C.danger : C.warningText;
 
   return (
     <section aria-labelledby="screening-gaps-title">
@@ -510,7 +513,7 @@ export function ScreeningGaps() {
                   <span className="block truncate text-[12.5px] font-[720]" style={{ color: C.ink }}>{g.client_name}</span>
                   <span className="mt-1 flex flex-wrap gap-1">
                     {gapChips(g).map((chip) => {
-                      const c = chip.severity === 'danger' ? C.danger : C.warning;
+                      const c = chip.severity === 'danger' ? C.danger : C.warningText;
                       return (
                         <span key={chip.label} className="rounded-full px-2 py-[1px] text-[10px] font-[700]"
                           // Dark text on a tint, not the hue as text: amber on
@@ -545,6 +548,7 @@ function MobileQuickActions() {
   return (
     <div className="lg:hidden -mx-3 px-3">
       <SectionLabel icon={<Sparkles size={10} />}>Quick Actions</SectionLabel>
+      <div className="relative">
       <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         {actions.map((a, i) => (
           <m.div key={a.label} className="shrink-0"
@@ -560,12 +564,17 @@ function MobileQuickActions() {
             {/* The theme's ink, not C.ink: this strip sits on the page canvas
                 itself, not on a light Glass card, and in dark mode C.ink is
                 the canvas colour — the labels were invisible. */}
-            <span className="text-[9.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+            <span className="text-[10.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
               {a.label}
             </span>
           </Link>
           </m.div>
         ))}
+      </div>
+        {/* There are eleven tiles in a horizontal strip; without an edge cue
+            the last visible one looks like the end of the list. */}
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-7"
+          style={{ background: 'linear-gradient(to left, var(--bg-canvas), transparent)' }} />
       </div>
     </div>
   );
@@ -643,7 +652,7 @@ function StatCard({
       <div className="relative z-10 flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
         <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
           <span aria-hidden className="shrink-0 [&>svg]:h-[13px] [&>svg]:w-[13px]">{icon}</span>
-          <p className="text-[9px] font-[800] uppercase tracking-[0.13em] sm:text-[9.5px]">{label}</p>
+          <p className="text-[10.5px] font-[800] uppercase tracking-[0.1em]">{label}</p>
         </div>
 
         <div className="mt-auto">
@@ -651,7 +660,7 @@ function StatCard({
             <p className="text-[28px] font-[900] leading-none tracking-[-0.04em] tabular-nums text-[var(--text-primary)] sm:text-[32px]">{value}</p>
             {pct !== undefined && <TrendBadge pct={pct ?? null} />}
           </div>
-          {sub && <p className="mt-1 line-clamp-2 text-[9.5px] font-[600] leading-tight text-[var(--text-muted)] sm:text-[10px]">{sub}</p>}
+          {sub && <p className="mt-1 line-clamp-2 text-[10.5px] font-[600] leading-tight text-[var(--text-muted)]">{sub}</p>}
         </div>
       </div>
 
@@ -881,8 +890,8 @@ function TargetRing({ pct, colour, size = 132 }: { pct: number; colour: string; 
           }}>
           {Math.round(pct)}%
         </span>
-        <span className="mt-1 text-[9px] font-[800] uppercase tracking-[0.16em]"
-          style={{ color: 'rgba(255,255,255,0.5)' }}>
+        <span className="mt-1 text-[10.5px] font-[800] uppercase tracking-[0.12em]"
+          style={{ color: 'rgba(255,255,255,0.55)' }}>
           of target
         </span>
       </div>
@@ -1093,7 +1102,7 @@ function RevenueBar({
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <span className="text-[9.5px] font-[800] uppercase tracking-[0.11em]" style={{ color: C.muted }}>
+          <span className="text-[10.5px] font-[800] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
             {label}
           </span>
           {/* The number is the point of the card, so it gets the size — in ink,
@@ -1190,7 +1199,7 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
             </div>
           </div>
           {overdue > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-[750] uppercase tracking-[0.08em]"
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] font-[750] uppercase tracking-[0.08em]"
               style={{ background: `${C.danger}14`, color: C.danger }}>
               {overdue} overdue
             </span>
@@ -1243,7 +1252,7 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
           </div>
           {/* Direct labels rather than a legend box: two series, both named
               right here, so identity never rests on the colour alone. */}
-          <div className="mt-2 flex items-center justify-between text-[10px] font-[650]" style={{ color: C.muted }}>
+          <div className="mt-2 flex items-center justify-between text-[10.5px] font-[650]" style={{ color: C.muted }}>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-[7px] w-[7px] rounded-full" style={{ background: palette.emerald[500] }} aria-hidden />
               {Math.round(pct)}% collected
@@ -1349,7 +1358,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
 
   const TONE: Record<Urgency, { fg: string; bg: string; border: string; label: string; Icon: typeof AlertTriangle }> = {
     critical: { fg: palette.red[600],     bg: rgba(palette.red[600], 0.08),     border: rgba(palette.red[600], 0.20),     label: 'Urgent',    Icon: AlertTriangle },
-    warning:  { fg: palette.amber[600],   bg: rgba(palette.amber[600], 0.10),   border: rgba(palette.amber[600], 0.22),   label: 'Soon',      Icon: Clock },
+    warning:  { fg: palette.amber[700],   bg: rgba(palette.amber[600], 0.10),   border: rgba(palette.amber[600], 0.22),   label: 'Soon',      Icon: Clock },
     info:     { fg: palette.blue[500],    bg: rgba(palette.blue[500], 0.08),    border: rgba(palette.blue[500], 0.20),    label: 'Nice to do', Icon: Sparkles },
   };
 
@@ -1461,7 +1470,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                         </p>
                         {/* Urgency in words as well as colour — colour alone is
                             not a signal for everyone. */}
-                        <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-[800] uppercase tracking-wide"
+                        <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[10px] font-[800] uppercase tracking-wide"
                           style={{ background: t.bg, color: t.fg }}>
                           {t.label}
                         </span>
@@ -1495,7 +1504,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                 WebkitBackdropFilter: 'blur(12px)',
               }}>
               <div className="mb-2.5 flex items-baseline justify-between gap-2">
-                <p className="text-[10px] font-[800] uppercase tracking-[0.12em]" style={{ color: C.muted }}>
+                <p className="text-[11px] font-[800] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
                   Suggested action
                 </p>
                 {targets.length > 0 && (
@@ -1809,16 +1818,16 @@ function TodaySchedule() {
         )}
 
         {!loading && queue.length === 0 && (
-          <div className="flex flex-col items-center rounded-[20px] px-4 py-6 text-center"
+          <div className="flex flex-col items-center rounded-[20px] px-4 py-4 text-center"
             style={{ background: done > 0 ? rowTones.live.wash : 'rgba(15,23,42,0.025)' }}>
-            <span className="flex h-12 w-12 items-center justify-center rounded-full text-white"
+            <span className="flex h-10 w-10 items-center justify-center rounded-full text-white"
               style={{
                 background: done > 0 ? gradient(rowTones.live.from, rowTones.live.to) : gradient(todayMark.from, todayMark.to),
                 boxShadow: `0 8px 20px -8px ${done > 0 ? rowTones.live.glow : todayMark.glow}`,
               }}>
-              {done > 0 ? <CheckCircle2 size={22} /> : <CalendarClock size={20} />}
+              {done > 0 ? <CheckCircle2 size={20} /> : <CalendarClock size={18} />}
             </span>
-            <p className="mt-2.5 text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
+            <p className="mt-2 text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
               {done > 0 ? 'All done for today' : 'Nothing on today'}
             </p>
             {done === 0 && (
@@ -1830,7 +1839,7 @@ function TodaySchedule() {
             )}
             {done === 0 && (
               <button onClick={() => router.push('/pt-os/schedule-session')}
-                className="mt-3 inline-flex h-[38px] items-center gap-1.5 rounded-full px-4 text-[12px] font-[750] text-white transition-transform active:scale-95"
+                className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-[12.5px] font-[750] text-white transition-transform active:scale-95"
                 style={{ background: gradient(rowTones.next.from, rowTones.next.to), boxShadow: `0 8px 18px -8px ${rowTones.next.glow}` }}>
                 <CalendarPlus size={13} /> Schedule a session
               </button>
@@ -1887,12 +1896,12 @@ function TodaySchedule() {
                         <span className="text-[15px] font-[800] tabular-nums tracking-[-0.02em]" style={{ color: C.ink }}>
                           {t12.replace(/\s?[AP]M$/i, '')}
                         </span>
-                        <span className="mt-1 text-[9.5px] font-[750] uppercase tracking-[0.06em]" style={{ color: C.muted }}>
+                        <span className="mt-1 text-[10.5px] font-[750] uppercase tracking-[0.06em]" style={{ color: C.muted }}>
                           {/[AP]M$/i.exec(t12)?.[0] ?? ''}
                         </span>
                       </>
                     ) : (
-                      <span className="text-center text-[10px] font-[700] leading-[1.2]" style={{ color: C.muted }}>Any<br />time</span>
+                      <span className="text-center text-[10.5px] font-[700] leading-[1.2]" style={{ color: C.muted }}>Any<br />time</span>
                     )}
                   </span>
 
@@ -1913,9 +1922,9 @@ function TodaySchedule() {
                     {/* The state sits ABOVE the name, not beside it: beside it,
                         a phone row had room for "M" of "Myself". */}
                     {stateLabel && (
-                      <span className="mb-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] text-[9px] font-[820] uppercase tracking-[0.09em]"
+                      <span className="mb-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] text-[10px] font-[820] uppercase tracking-[0.08em]"
                         style={r.live || nextUp
-                          ? { background: gradient(tone.from, tone.to), color: '#fff' }
+                          ? { background: tone.ink, color: '#fff' }
                           : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', boxShadow: 'inset 0 0 0 1px var(--border)' }}>
                         {stateLabel}
                       </span>
@@ -1938,7 +1947,7 @@ function TodaySchedule() {
                       invisible. */}
                   <span className="inline-flex h-[34px] shrink-0 items-center gap-0.5 rounded-full px-3 text-[12px] font-[800] transition-transform group-hover:translate-x-0.5 sm:px-3.5"
                     style={{
-                      background: quietAction ? 'var(--bg-subtle)' : toneKey === 'waiting' ? C.ink : gradient(tone.from, tone.to),
+                      background: quietAction ? 'var(--bg-subtle)' : toneKey === 'waiting' ? C.ink : tone.ink,
                       color: quietAction ? 'var(--text-primary)' : '#fff',
                       boxShadow: quietAction || toneKey === 'waiting' ? 'none' : `0 6px 14px -6px ${tone.glow}`,
                     }}>
@@ -2020,7 +2029,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
     return (
       <Glass className="flex items-center gap-3 px-4 py-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-          style={{ background: rgba(C.success, 0.10), color: C.success }}>
+          style={{ background: rgba(C.success, 0.10), color: C.successText }}>
           <CheckCircle2 size={16} />
         </span>
         <div className="min-w-0 flex-1">
@@ -2040,12 +2049,12 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
           </span>
           <div>
             <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Renewals Due</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>Next 7 days</p>
+            <p className="text-[11px] font-[500]" style={{ color: C.muted }}>Next 7 days</p>
           </div>
         </div>
         {renewals.length > 0 && (
-          <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
-            style={{ background: `${C.warning}18`, color: C.warning }}>{renewals.length}</span>
+          <span className="rounded-full px-2 py-0.5 text-[10.5px] font-[700]"
+            style={{ background: `${C.warning}18`, color: C.warningText }}>{renewals.length}</span>
         )}
       </div>
 
@@ -2062,7 +2071,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
         <div className="space-y-2" style={{ maxHeight: 280, overflowY: 'auto' }}>
           {renewals.map((r, i) => {
             const urgent = r.days_left <= 2;
-            const color = urgent ? C.danger : r.days_left <= 5 ? C.warning : C.primary;
+            const color = urgent ? C.danger : r.days_left <= 5 ? C.warningText : C.primary;
             return (
               <m.div key={r.id}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
@@ -2077,7 +2086,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
                   style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11.5px] font-[720] truncate" style={{ color: C.ink }}>{r.name}</p>
-                  <p className="text-[9.5px] font-[500] truncate" style={{ color: C.muted }}>
+                  <p className="text-[10.5px] font-[500] truncate" style={{ color: C.muted }}>
                     {r.trainer_name ?? '—'} · {r.package_type ?? 'PT'}
                   </p>
                 </div>
@@ -2086,7 +2095,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
                     {r.days_left === 0 ? 'Today!' : `${r.days_left}d`}
                   </span>
                   {r.balance_amount > 0 && (
-                    <span className="text-[9px] font-[640]" style={{ color: C.danger }}>{fmtCompact(r.balance_amount)} due</span>
+                    <span className="text-[10.5px] font-[640]" style={{ color: C.danger }}>{fmtCompact(r.balance_amount)} due</span>
                   )}
                 </div>
               </m.div>
@@ -2118,7 +2127,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
           </span>
           <div>
             <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Session Activity</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>Workouts logged this month</p>
+            <p className="text-[11px] font-[500]" style={{ color: C.muted }}>Workouts logged this month</p>
           </div>
         </div>
         {momDelta !== null && <TrendBadge pct={momDelta} />}
@@ -2149,7 +2158,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
               { label: 'Last mo.', value: stats.last_month_completed, color: palette.indigo[700] },
             ].map(t => (
               <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
-                <p className="mb-0.5 flex items-center gap-1 text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>
+                <p className="mb-0.5 flex items-center gap-1 text-[10.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: C.muted }}>
                   <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: t.color }} aria-hidden />
                   {t.label}
                 </p>
@@ -2161,8 +2170,8 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
           {completionRate !== null && (
             <div className="mb-4">
               <div className="flex justify-between mb-1.5">
-                <span className="text-[9.5px] font-[650]" style={{ color: C.muted }}>Completion rate</span>
-                <span className="text-[9.5px] font-[750]" style={{ color: C.success }}>{completionRate.toFixed(0)}%</span>
+                <span className="text-[11px] font-[650]" style={{ color: C.muted }}>Completion rate</span>
+                <span className="text-[11px] font-[750]" style={{ color: C.successText }}>{completionRate.toFixed(0)}%</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.success}18` }}>
                 <m.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.success}, #34d399)` }}
@@ -2174,19 +2183,19 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
 
           {trainerSessions.length > 0 && (
             <div className="space-y-2.5">
-              <p className="text-[9.5px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>By Trainer</p>
+              <p className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: C.muted }}>By Trainer</p>
               {trainerSessions.map((t, i) => {
                 const color = TRAINER_COLORS[i % TRAINER_COLORS.length];
                 const pct = (t.completed / maxCompleted) * 100;
                 return (
                   <m.div key={t.trainer_name}
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}>
-                    <div className="flex items-center justify-between mb-1 min-w-0">
-                      <span className="text-[11px] font-[640] truncate max-w-[130px] sm:max-w-[170px]" style={{ color: C.ink }}>{t.trainer_name}</span>
-                      <div className="flex items-center gap-1.5 text-[9px] font-[650] shrink-0 ml-2">
-                        <span style={{ color: C.success }}>{t.completed}✓</span>
-                        {t.scheduled > 0 && <span style={{ color: C.primary }}>{t.scheduled}⏱</span>}
-                        {t.missed > 0 && <span style={{ color: C.warning }}>{t.missed}✗</span>}
+                    <div className="mb-1 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                      <span className="min-w-0 flex-1 truncate text-[11.5px] font-[640]" style={{ color: C.ink }}>{t.trainer_name}</span>
+                      <div className="ml-auto flex items-center gap-x-1.5 text-[10.5px] font-[650]">
+                        <span style={{ color: C.successText }}>{t.completed} done</span>
+                        {t.scheduled > 0 && <span style={{ color: C.primary }}>{t.scheduled} booked</span>}
+                        {t.missed > 0 && <span style={{ color: C.warningText }}>{t.missed} missed</span>}
                       </div>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
@@ -2433,10 +2442,18 @@ export default function PtOsDashboard() {
                 no request of its own. */}
             <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} />
 
-            {/* 3 — Mobile quick actions (desktop uses the dock) */}
+            {/* 3 — Who to call. Above quick actions and the AI board: it is the
+                one list on this screen that changes what a trainer does in the
+                next hour, and below those two it never got seen. The roster
+                sweep's own section, heading included: who stopped coming, who
+                is paying but absent. A failed check says so in place rather
+                than rendering an empty, reassuring list. */}
+            <RosterSignalsCard />
+
+            {/* 4 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
-            {/* 3.5 — The AI Coach board, directly under the card that promoted
+            {/* 4.5 — The AI Coach board, directly under the card that promoted
                 the top of its list: excludeTop hands this board the remainder,
                 so one action never prints twice. */}
             <AICoach d={d} ops={o}
@@ -2444,14 +2461,7 @@ export default function PtOsDashboard() {
               studioName={studioName}
               excludeTop />
 
-            {/* 3.6 — Who to call. The roster sweep's own section, heading
-                included: the half a trainer cannot see by looking around the
-                gym floor — who stopped coming, who is paying but absent. A
-                failed sweep says so in place rather than rendering an empty,
-                reassuring list. */}
-            <RosterSignalsCard />
-
-            {/* 3.7 — Progress Radar. Where the six measured categories actually
+            {/* 4.7 — Progress Radar. Where the six measured categories actually
                 stand, for the studio's most recently measured client. It reads
                 its own endpoints and fails soft: a broken response removes the
                 card, not the screen. */}
@@ -2523,7 +2533,10 @@ export default function PtOsDashboard() {
                 still not know whether to pick up the phone. This asks the
                 question the day actually has: what came in, what is still out,
                 who do I call. */}
-            <TodayRevenue d={d} loading={dash.loading} />
+            <div>
+              <SectionLabel icon={<IndianRupee size={10} />}>Money</SectionLabel>
+              <TodayRevenue d={d} loading={dash.loading} />
+            </div>
 
             {/* 7 — Session activity.
                 Was a two-column "Team Performance" row with a trainer

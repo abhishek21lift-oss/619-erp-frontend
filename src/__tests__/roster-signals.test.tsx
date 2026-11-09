@@ -187,7 +187,7 @@ describe('roster signals card', () => {
     render(<RosterSignalsCard />);
 
     expect(await screen.findByText(/did not come back/i)).toBeInTheDocument();
-    expect(screen.getByText(/Nobody has been cleared/i)).toBeInTheDocument();
+    expect(screen.getByText(/unknown, not empty/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   });
 
@@ -213,12 +213,50 @@ describe('roster signals card', () => {
   });
 
   it('says the sweep ran when it found nothing, rather than rendering no card', async () => {
-    // "No card" and "swept 34 clients and found nothing" are different answers
-    // and only one of them tells the trainer the check happened.
+    // "No card" and "reviewed 34 clients and found nothing" are different
+    // answers and only one of them tells the trainer the check happened.
     resolve(sweep({ clients_detail: [], clients_with_signals: 0 }));
     render(<RosterSignalsCard />);
 
-    expect(await screen.findByText(/Swept 34 clients — nothing to flag today/)).toBeInTheDocument();
+    expect(await screen.findByText(/Reviewed 34 clients — nothing to flag today/)).toBeInTheDocument();
+  });
+
+  it('counts only what the card actually shows, not everything the endpoint flagged', async () => {
+    // clients_with_signals includes the info rows behind the disclosure. Badging
+    // those as "to call" told the trainer to phone someone the card had hidden.
+    resolve(sweep({
+      clients: 34,
+      clients_with_signals: 3,
+      clients_detail: [
+        client({ client_id: 'now', client_name: 'Call Today' }),
+        client({
+          client_id: 'later',
+          client_name: 'Finished Farhan',
+          worst: 'info',
+          signals: [{ id: 'term_ended_inactive', severity: 'info', headline: 'Term finished', evidence: 'term ended', recommendation: 'Win-back.' }],
+        }),
+      ],
+    }));
+    render(<RosterSignalsCard />);
+
+    expect(await screen.findByLabelText('1 to call')).toBeInTheDocument();
+    expect(screen.queryByLabelText('3 to call')).not.toBeInTheDocument();
+  });
+
+  it('hides the badge when nothing urgent is left after the cut', async () => {
+    resolve(sweep({
+      clients_with_signals: 1,
+      clients_detail: [client({
+        client_id: 'later',
+        client_name: 'Finished Farhan',
+        worst: 'info',
+        signals: [{ id: 'term_ended_inactive', severity: 'info', headline: 'Term finished', evidence: 'term ended', recommendation: 'Win-back.' }],
+      })],
+    }));
+    render(<RosterSignalsCard />);
+
+    await screen.findByText(/1 more with nothing urgent/i);
+    expect(screen.queryByText('to call')).not.toBeInTheDocument();
   });
 
   it('reports the clients nothing could be computed for', async () => {

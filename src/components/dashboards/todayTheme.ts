@@ -21,6 +21,7 @@ const spectrum = {
   pink:   { 400: '#F472B6', 500: '#EC4899', 600: '#DB2777' },
   orange: { 400: '#FB923C', 500: '#F97316' },
   indigo: { 400: '#818CF8', 500: '#6366F1', 600: '#4F46E5' },
+  rose:   { 400: '#DC586D', 500: '#A33757', 600: '#852E4E' },
   violet: { 500: '#8B5CF6' },
   cyan:   { 400: '#22D3EE' },
   teal:   { 400: '#2DD4BF', 500: '#14B8A6' },
@@ -45,7 +46,7 @@ export const ringTrack = 'rgba(236,72,153,0.14)';
  */
 export const rowTones = {
   live:    { from: spectrum.teal[400],   to: spectrum.cyan[400],   ink: '#0F766E', wash: 'rgba(20,184,166,0.10)', glow: 'rgba(20,184,166,0.30)' },
-  next:    { from: spectrum.indigo[400], to: spectrum.indigo[600], ink: '#4338CA', wash: 'rgba(99,102,241,0.09)',  glow: 'rgba(99,102,241,0.30)' },
+  next:    { from: spectrum.rose[500],   to: spectrum.rose[600],   ink: '#852E4E', wash: 'rgba(163,55,87,0.09)',  glow: 'rgba(163,55,87,0.30)' },
   waiting: { from: spectrum.violet[500], to: spectrum.pink[400],   ink: '#6D28D9', wash: 'rgba(139,92,246,0.06)', glow: 'rgba(139,92,246,0.22)' },
 } as const;
 

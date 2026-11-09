@@ -72,7 +72,10 @@ describe('progress radar card', () => {
     render(<ProgressRadarCard />);
     expect(await screen.findByText('Asha Nair')).toBeTruthy();
     expect(screen.getByText(/12-09-2026/)).toBeTruthy();
-    expect(screen.getByText('Overall 66')).toBeTruthy();
+    expect(screen.getByText('Overall 66/100')).toBeTruthy();
+    // The radar is a shape; these are its readings as text.
+    expect(screen.getByText('Cardio: 70 out of 100')).toBeTruthy();
+    expect(screen.getByText('Endurance: not measured')).toBeTruthy();
   });
 
   it('never reads "no tests yet" over a test that is simply under-measured', async () => {
@@ -83,7 +86,7 @@ describe('progress radar card', () => {
       cardio_score_computed: '52', overall_fitness_score: '66',
     }]);
     render(<ProgressRadarCard />);
-    expect(await screen.findByText('Overall 66')).toBeTruthy();
+    expect(await screen.findByText('Overall 66/100')).toBeTruthy();
     expect(screen.queryByTestId('radar-mock')).toBeNull();
     expect(screen.getByText(/no radar to draw/i)).toBeTruthy();
     expect(screen.getByRole('link', { name: /open assessment/i }).getAttribute('href'))

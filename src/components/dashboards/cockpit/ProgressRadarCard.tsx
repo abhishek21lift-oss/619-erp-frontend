@@ -114,6 +114,7 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
     .filter(Boolean).join(' · ');
   const clientId = typeof row.client_id === 'string' ? row.client_id : '';
   const href = clientId ? `/pt-os/assessment?client_id=${encodeURIComponent(clientId)}` : '/pt-os/assessment';
+  const radar = radarDataFromScores(scores);
 
   return (
     <div className="mt-3">
@@ -130,13 +131,25 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
         {scores.overallScore != null && (
           <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-[800]"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
-            Overall {scores.overallScore}
+            Overall {scores.overallScore}/100
           </span>
         )}
       </div>
 
       {measured >= 3 ? (
-        <FitnessRadarChart data={radarDataFromScores(scores)} height={250} variant="onCard" accent={palette.blue[450]} />
+        <>
+          <FitnessRadarChart data={radar} height={250} variant="onCard" accent={palette.blue[450]} />
+          {/* The chart is a shape with no text of its own. Same six readings,
+              written out, so a screen reader (or anyone who cannot separate
+              the axes) gets the scores rather than a picture. */}
+          <ul className="sr-only">
+            {radar.map((d) => (
+              <li key={d.category}>
+                {d.category}: {d.score == null ? 'not measured' : `${d.score} out of 100`}
+              </li>
+            ))}
+          </ul>
+        </>
       ) : (
         <p className="mt-3 rounded-[12px] px-3 py-2.5 text-[11.5px] leading-snug"
           style={{ background: rgba(palette.blue[500], 0.06), color: 'var(--text-muted)' }}>

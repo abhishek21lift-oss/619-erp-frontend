@@ -1,7 +1,7 @@
 // The cockpit's section order, and what survives when the roster sweep fails.
 //
-// Order is the design: the day's schedule, then the one thing to do, then the
-// rest of the board, then who to call, then money. A reorder here is a product
+// Order is the design: the day's schedule, then the one thing to do, then who
+// to call, then the rest of the board, then money. A reorder here is a product
 // decision, so it is pinned in one place rather than inferred from source.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -61,14 +61,14 @@ describe('cockpit section order', () => {
     signalsMock.mockResolvedValue({ data: SWEEP });
   });
 
-  it('orders the day: schedule, next action, board, who to call, money', async () => {
+  it('orders the day: schedule, next action, who to call, board, money', async () => {
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
     await assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
-      'AI Coach',
       'Who to call',
+      'AI Coach',
       'Progress Radar',
       'This Month',
       'Key Metrics',
@@ -80,7 +80,7 @@ describe('cockpit section order', () => {
     render(<PtOsDashboard />);
     // A full cockpit render under a loaded machine can outrun findBy's
     // one-second default; the assertion is about presence, not speed.
-    await screen.findByText(/roster sweep did not come back/i, undefined, { timeout: 3000 });
+    await screen.findByText(/roster check did not come back/i, undefined, { timeout: 3000 });
     expect(screen.getByText('Next Best Action')).toBeTruthy();
     expect(screen.getByText('Active Clients')).toBeTruthy();
   });

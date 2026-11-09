@@ -155,7 +155,7 @@ export default function RosterSignalsCard() {
             <AlertTriangle size={16} />
           </span>
           <p className="min-w-0 flex-1 text-[12px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            The roster sweep did not come back. Nobody has been cleared &mdash; this list is unknown, not empty.
+            The roster check did not come back. This list is unknown, not empty.
           </p>
           <button
             type="button"
@@ -188,8 +188,8 @@ export default function RosterSignalsCard() {
           </span>
           <p className="min-w-0 flex-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             {sweep.clients === 0
-              ? 'No clients on the roster to sweep.'
-              : `Swept ${sweep.clients} client${sweep.clients === 1 ? '' : 's'} — nothing to flag today.`}
+              ? 'No clients on the roster yet.'
+              : `Reviewed ${sweep.clients} client${sweep.clients === 1 ? '' : 's'} — nothing to flag today.`}
             <NotAssessable n={sweep.not_assessable} />
           </p>
         </div>
@@ -206,8 +206,7 @@ export default function RosterSignalsCard() {
   return (
     <Shell
       swept={sweep.clients}
-      flagged={sweep.clients_with_signals}
-      urgent={sweep.critical}
+      flagged={urgent.length}
       accent={accent}
     >
       <div style={DIVIDER}>
@@ -259,18 +258,17 @@ function NotAssessable({ n, lead = false }: { n: number; lead?: boolean }) {
   return (
     <>
       {lead ? '' : ' '}
-      {n} client{n === 1 ? '' : 's'} could not be assessed at all &mdash; nothing logged to read.
+      {n} client{n === 1 ? '' : 's'} could not be assessed at all.
     </>
   );
 }
 
 function Shell({
-  children, swept, flagged, urgent, accent = palette.indigo[500],
+  children, swept, flagged, accent = palette.indigo[500],
 }: {
   children: React.ReactNode;
   swept?: number;
   flagged?: number;
-  urgent?: number;
   accent?: string;
 }) {
   return (
@@ -307,9 +305,7 @@ function Shell({
             </h2>
             {swept !== undefined && (
               <p className="mt-0.5 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                {swept} swept
-                {flagged ? ` · ${flagged} to call` : ''}
-                {urgent ? ` · ${urgent} urgent` : ''}
+                {swept} reviewed
               </p>
             )}
           </div>
@@ -320,15 +316,17 @@ function Shell({
           >
             View all
           </Link>
-          {flagged !== undefined && (
+          {flagged !== undefined && flagged > 0 && (
             <div
+              role="status"
+              aria-label={`${flagged} to call`}
               className="flex shrink-0 flex-col items-center rounded-[16px] px-3.5 py-2"
               style={{ background: rgba(accent, 0.12), border: `1px solid ${rgba(accent, 0.18)}` }}
             >
               <span className="text-[22px] font-[800] leading-none tabular-nums" style={{ color: 'var(--text-primary)' }}>
                 {flagged}
               </span>
-              <span className="mt-1 text-[9.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-secondary)' }}>
+              <span className="mt-1 text-[10.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-secondary)' }}>
                 to call
               </span>
             </div>
