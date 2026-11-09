@@ -11,6 +11,7 @@ import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import { api } from '@/lib/api';
 import FloatInput from '@/components/ui/FloatInput';
+import { FieldSurface } from '@/components/ui/form';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
@@ -417,11 +418,15 @@ function NewClientForm() {
 
           {/* ═══ CLIENT INFORMATION ═══ */}
           <Section kicker="Client Information" title="Basic Information" last>
-            {/* Same field container as the fitness-testing steps. */}
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-[18px] p-5"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-            >
+            {/* Same field container as the fitness-testing steps. The fields
+                are declared `nested` so their controls sit on the card surface
+                with a visible outline — on this `--bg-subtle` panel the default
+                subtle fill was the same colour as the panel. */}
+            <FieldSurface surface="nested">
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 rounded-[18px] p-5"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+              >
               <FloatInput
                 label="Full Name" required value={form.name}
                 onChange={(v) => set('name', v)}
@@ -446,7 +451,7 @@ function NewClientForm() {
                 through three toggle buttons is honest and works today.
               */}
               <div role="group" aria-labelledby="gender-label" aria-describedby={errors.gender ? 'gender-error' : undefined}>
-                <p id="gender-label" className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                <p id="gender-label" className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                   Gender <span style={{ color: '#F59E0B' }}>*</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -515,7 +520,7 @@ function NewClientForm() {
                     onChange={(e) => handleWhatsappToggle(e.target.checked)}
                     className="h-4 w-4 rounded accent-[#F59E0B]"
                   />
-                  <span className="text-[12.5px] font-[560] text-slate-500">Same as Mobile</span>
+                  <span className="text-[12.5px] font-[560]" style={{ color: 'var(--text-secondary)' }}>Same as Mobile</span>
                 </label>
               </div>
 
@@ -566,16 +571,16 @@ function NewClientForm() {
 
               {/* Profile Photo */}
               <div className="sm:col-span-2">
-                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Profile Photo</p>
+                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Profile Photo</p>
                 {form.photoDataUrl ? (
                   <div className="flex items-center gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={form.photoDataUrl} alt="Client preview" className="h-20 w-20 rounded-full object-cover shadow-lg" />
                     <div className="flex flex-col gap-1.5">
-                      <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: '#F59E0B' }}>
+                      <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: 'var(--warning-text)' }}>
                         Change Photo
                       </button>
-                      <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640] text-slate-400">
+                      <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640]" style={{ color: 'var(--text-muted)' }}>
                         Remove
                       </button>
                     </div>
@@ -600,11 +605,12 @@ function NewClientForm() {
                     <p className="text-[13px] font-[640] text-slate-500">
                       {photoDragOver ? 'Drop here' : 'Drag & drop, browse, or use your camera'}
                     </p>
-                    <p className="text-[11.5px] mt-1 text-slate-400">JPG or PNG — optional</p>
+                    <p className="text-[11.5px] mt-1" style={{ color: 'var(--text-muted)' }}>JPG or PNG — optional</p>
                   </div>
                 )}
               </div>
-            </div>
+              </div>
+            </FieldSurface>
           </Section>
 
         </m.div>

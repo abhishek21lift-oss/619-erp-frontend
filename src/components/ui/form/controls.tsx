@@ -67,8 +67,8 @@ export function controlClassName(w: FieldWiring | null, extra?: string) {
     'w-full rounded-[var(--radius-sm)] px-3.5 text-[13px] font-[500]',
     'transition-[border-color,background-color] duration-150',
     'motion-reduce:transition-none',
-    'placeholder:text-[var(--text-disabled)]',
-    w?.disabled && 'cursor-not-allowed opacity-55',
+    'placeholder:text-[var(--text-muted)]',
+    w?.disabled && 'cursor-not-allowed',
     extra,
   );
 }
@@ -81,12 +81,12 @@ export function controlStyle(
   return {
     minHeight: 44,
     background: w?.disabled || w?.readOnly
-      ? 'var(--bg-base)'
+      ? (nested ? 'var(--bg-subtle)' : 'var(--bg-base)')
       : nested ? 'var(--bg-card)' : 'var(--bg-subtle)',
-    border: `1px solid ${
-      w?.invalid ? 'var(--danger-border)' : nested ? 'var(--border)' : 'var(--border-2)'
-    }`,
-    color: 'var(--text-primary)',
+    // The control's boundary, not a card hairline: --border/--border-2 are
+    // 1.1–1.25:1 against these surfaces and made fields vanish into them.
+    border: `1px solid ${w?.invalid ? 'var(--danger-border)' : 'var(--border-input)'}`,
+    color: w?.disabled || w?.readOnly ? 'var(--text-muted)' : 'var(--text-primary)',
   };
 }
 
