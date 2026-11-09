@@ -333,8 +333,11 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
         },
         nutrition: {
           waterLiters: water != null && water > 0 ? water : null,
-          // The Interview owns meal regularity; Nutrition is the detail source.
-          mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency),
+          // Lifestyle owns meal regularity; older Interview/Nutrition rows are
+          // read only as fallbacks for records written before the move.
+          mealRegularity: stringOrNull(lifestyleRow.meal_regularity)
+            ?? stringOrNull(interview?.lifestyle_meal_regularity)
+            ?? stringOrNull(nutritionRow.meal_timing_consistency),
           preferences: stringList(nutritionRow.diet_preferences),
           allergies: stringList(nutritionRow.food_allergies),
           date: isoDate(nutritionRow.assessment_date ?? nutritionRow.created_at),
@@ -347,11 +350,16 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
 
       setContext({
         occupation: stringOrNull(lifestyleRow.occupation_type),
-        sittingHours: numberOrNull(interview?.lifestyle_sitting_hours) ?? numberOrNull(parqHistory.daily_sitting_hours),
+        // Lifestyle owns sitting hours; Interview and PAR-Q are legacy fallbacks.
+        sittingHours: numberOrNull(lifestyleRow.sitting_hours)
+          ?? numberOrNull(interview?.lifestyle_sitting_hours)
+          ?? numberOrNull(parqHistory.daily_sitting_hours),
         screenTime: stringOrNull(lifestyleRow.screen_time_bracket),
         sleepHours: sleep,
         stressLevel: numberOrNull(lifestyleRow.stress_level),
-        mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency),
+        mealRegularity: stringOrNull(lifestyleRow.meal_regularity)
+          ?? stringOrNull(interview?.lifestyle_meal_regularity)
+          ?? stringOrNull(nutritionRow.meal_timing_consistency),
         dietPreferences: stringList(nutritionRow.diet_preferences),
         foodAllergies: stringList(nutritionRow.food_allergies),
         smoking: stringOrNull(lifestyleRow.smoking_status),

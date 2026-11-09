@@ -1,8 +1,8 @@
 // One home per fact.
 //
-// Sleep, smoking, alcohol, occupation and screen time are scored by the
-// Lifestyle assessment; meal regularity by the Interview, with Nutrition's
-// meal-timing detail as the fallback. Training frequency is the Interview's
+// Sleep, smoking, alcohol, occupation, screen time, sitting hours and meal
+// regularity are scored by the Lifestyle assessment, with older Interview
+// answers kept as read-only fallbacks. Training frequency is the Interview's
 // answer, with enrolment's sessions_per_week as the fallback. The goal wizard
 // used to fall back to the Interview's lifestyle answers (and read
 // smoking/alcohol only from the Interview), so the two records could disagree
@@ -41,11 +41,13 @@ describe('lifestyle facts come from the Lifestyle assessment', () => {
   });
 });
 
-describe('meal regularity is owned by the Interview, detail by Nutrition', () => {
-  it('reads the Interview first and Nutrition only as the fallback', () => {
-    expect(goals).toContain(
-      'mealRegularity: stringOrNull(interview?.lifestyle_meal_regularity) ?? stringOrNull(nutritionRow.meal_timing_consistency)',
-    );
+describe('meal regularity and sitting hours are owned by the Lifestyle assessment', () => {
+  it('reads Lifestyle first, then the legacy Interview/PAR-Q copies', () => {
+    expect(goals).toContain('stringOrNull(lifestyleRow.meal_regularity)');
+    expect(goals).toContain('?? stringOrNull(interview?.lifestyle_meal_regularity)');
+    expect(goals).toContain('numberOrNull(lifestyleRow.sitting_hours)');
+    expect(goals).toContain('?? numberOrNull(interview?.lifestyle_sitting_hours)');
+    expect(goals).toContain('?? numberOrNull(parqHistory.daily_sitting_hours)');
   });
 });
 

@@ -47,6 +47,7 @@ function validateStep(id: StepId, form: LifestyleFormData): string | undefined {
     return rangeIssue(['Cigarettes per day', form.cigarettesPerDay, 0, 100], ['Years of smoking', form.yearsSmoking, 0, 80],
       ['Drinks per week', form.drinksPerWeek, 0, 100]);
   }
+  if (id === 5) return rangeIssue(['Sitting hours', form.sittingHours, 0, 24]);
   return undefined;
 }
 
@@ -92,6 +93,8 @@ function formFromRow(row: Record<string, unknown>): LifestyleFormData {
     alcoholStatus: (row.alcohol_status as LifestyleFormData['alcoholStatus']) || '',
     drinksPerWeek: row.drinks_per_week != null ? String(row.drinks_per_week) : '',
     screenTimeBracket: (row.screen_time_bracket as LifestyleFormData['screenTimeBracket']) || '',
+    sittingHours: row.sitting_hours != null ? String(row.sitting_hours) : '',
+    mealRegularity: (row.meal_regularity as LifestyleFormData['mealRegularity']) || '',
     travelFrequency: (row.travel_frequency as LifestyleFormData['travelFrequency']) || '',
     energyLevel: row.energy_level != null ? String(row.energy_level) : fresh.energyLevel,
     motivationToExercise: row.motivation_to_exercise != null ? String(row.motivation_to_exercise) : fresh.motivationToExercise,
@@ -342,6 +345,8 @@ function LifestyleWizard({ clientId, clientName, editing, nutritionHabits, toast
         alcohol_status: form.alcoholStatus || null,
         drinks_per_week: form.alcoholStatus && form.alcoholStatus !== 'never' ? n(form.drinksPerWeek) ?? null : null,
         screen_time_bracket: form.screenTimeBracket || null,
+        sitting_hours: n(form.sittingHours) ?? null,
+        meal_regularity: form.mealRegularity || null,
         travel_frequency: form.travelFrequency || null,
         energy_level: n(form.energyLevel) ?? null,
         recovery_quality: form.recoveryQuality || null,
