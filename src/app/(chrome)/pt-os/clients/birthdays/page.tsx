@@ -84,7 +84,7 @@ export default function ClientBirthdaysPage() {
               same translucent tile every other hero uses. */}
           <PageHero
             icon={<Cake size={20} />}
-            title="Clients Birthday"
+            title="Client Birthdays"
 
           >
             {todayCount > 0 && (
