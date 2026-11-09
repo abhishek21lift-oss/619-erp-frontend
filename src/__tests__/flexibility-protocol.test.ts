@@ -378,7 +378,7 @@ describe('deriveFlexibility — stored four-test rows', () => {
     delete (old.tests as Partial<RecordedTests>).shoulder_reach;
     const d = deriveFlexibility(old);
     expect(d.overall_status).toBe('all_tests_recorded');
-    expect(d.tests.shoulder_reach).toMatchObject({ completed: false, unable_to_complete: false });
+    expect(d.tests.shoulder_reach).toBeUndefined();
   });
 });
 
@@ -538,11 +538,15 @@ describe('flexibility form state', () => {
     const form = flexibilityFormFromRecorded(old);
     expect(form.legacyBattery).toBe(true);
     expect(requiredFlexibilityTests(form)).toEqual(['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach']);
-    expect(buildFlexibilityPayload(form).protocol_version).toBe(LEGACY_PROTOCOL_VERSION);
+    const legacyPayload = buildFlexibilityPayload(form);
+    expect(legacyPayload.protocol_version).toBe(LEGACY_PROTOCOL_VERSION);
+    expect(legacyPayload.tests.shoulder_reach).toBeUndefined();
 
     const started = { ...form, shoulderReach: { ...form.shoulderReach, reach: { left: 'overlap' as const, right: '' } } };
     expect(requiredFlexibilityTests(started)).toContain('shoulder_reach');
-    expect(buildFlexibilityPayload(started).protocol_version).toBe(PROTOCOL_VERSION);
+    const upgraded = buildFlexibilityPayload(started);
+    expect(upgraded.protocol_version).toBe(PROTOCOL_VERSION);
+    expect(upgraded.tests.shoulder_reach).toBeDefined();
   });
 
   it('opens a v3 row as an editable, completed battery', () => {

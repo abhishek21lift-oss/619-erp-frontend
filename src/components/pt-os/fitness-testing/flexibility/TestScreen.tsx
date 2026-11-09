@@ -91,7 +91,7 @@ export function TestScreen({ test, form, patchFlex, derived, onBack, onSaveDraft
   ) : (
     <ShoulderReachFields
       state={form.shoulderReach}
-      derived={derived.tests.shoulder_reach.unable_to_complete ? null : derived.tests.shoulder_reach}
+      derived={derived.tests.shoulder_reach?.unable_to_complete ? null : (derived.tests.shoulder_reach ?? null)}
       patch={(p) => patchFlex({ shoulderReach: { ...form.shoulderReach, ...p } })}
     />
   );

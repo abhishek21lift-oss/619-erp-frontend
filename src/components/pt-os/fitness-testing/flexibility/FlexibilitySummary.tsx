@@ -38,23 +38,24 @@ function previousLine({ date, data }: PreviousAssessment): string {
     h.unable_to_complete ? 'Hamstrings: not performed' : `Hamstrings L ${h.sides.left.hip_flexion_deg ?? '—'}° / R ${h.sides.right.hip_flexion_deg ?? '—'}°`,
     x.unable_to_complete ? 'Hip flexors: not performed' : `Hip flexors: ${x.sides_interpretation.left ?? '—'} / ${x.sides_interpretation.right ?? '—'}`,
     sr.unable_to_complete ? 'Sit and Reach: not performed' : (sr.score_inches == null ? 'Sit and Reach: not recorded' : `Sit and Reach ${sr.score_inches} in`),
-    sh.unable_to_complete ? 'Shoulder reach: not performed'
+    ...(sh ? [sh.unable_to_complete ? 'Shoulder reach: not performed'
       : sh.completed ? `Shoulder reach: ${sh.sides_interpretation.left ?? '—'} / ${sh.sides_interpretation.right ?? '—'}`
-        : 'Shoulder reach: not recorded',
+        : 'Shoulder reach: not recorded'] : []),
     OVERALL_TEXT[d.overall_status],
   ];
   return `${date} · ${parts.join(' · ')}`;
 }
 
-function testStatus(state: FlexibilityTestState, derived: FlexibilityDerived['tests'][FlexibilityTestKey]) {
+function testStatus(state: FlexibilityTestState, derived: FlexibilityDerived['tests'][FlexibilityTestKey] | undefined) {
   if (state.completed) return { text: 'Completed', color: 'var(--success-text)', bg: 'var(--success-bg)', Icon: CheckCircle2 };
   if (state.unable) return { text: 'Unable to complete', color: 'var(--warning-text)', bg: 'var(--warning-bg)', Icon: MinusCircle };
-  if (derived.completed) return { text: 'Recorded', color: 'var(--success-text)', bg: 'var(--success-bg)', Icon: CheckCircle2 };
+  if (derived?.completed) return { text: 'Recorded', color: 'var(--success-text)', bg: 'var(--success-bg)', Icon: CheckCircle2 };
   return { text: 'Not recorded', color: 'var(--text-muted)', bg: 'var(--bg-subtle)', Icon: CircleDashed };
 }
 
 export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
   const followUp = derived.overall_status === 'follow_up_recommended';
+  const required = requiredFlexibilityTests(form);
   const q = derived.tests.quadriceps;
   const h = derived.tests.hamstrings;
   const x = derived.tests.hip_flexors;
@@ -82,12 +83,14 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
       : sr.score_inches == null
         ? 'No valid attempt recorded'
         : `${sr.best_raw_inches} in − ${SIT_AND_REACH_ZERO_POINT_INCHES} = ${sr.score_inches.toFixed(1)} in · ${sr.norm.category ? `${sr.norm.category} — ` : ''}${sr.norm.message}`,
-    shoulder_reach: sh.unable_to_complete
-      ? 'Not performed'
-      : [
-        `${sh.sides_interpretation.left ?? '—'} (L)`,
-        `${sh.sides_interpretation.right ?? '—'} (R)`,
-      ].join(' · '),
+    shoulder_reach: sh
+      ? (sh.unable_to_complete
+        ? 'Not performed'
+        : [
+          `${sh.sides_interpretation.left ?? '—'} (L)`,
+          `${sh.sides_interpretation.right ?? '—'} (R)`,
+        ].join(' · '))
+      : 'Not recorded',
   };
 
   return (
@@ -98,13 +101,13 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
           {OVERALL_TEXT[derived.overall_status]}
         </span>
         <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          {requiredFlexibilityTests(form).filter((k) => formTest(form, k).completed).length}/{requiredFlexibilityTests(form).length} recorded
+          {required.filter((k) => formTest(form, k).completed).length}/{required.length} recorded
           {derived.has_asymmetry ? ' · asymmetry detected' : ''}
         </span>
       </div>
 
       <div className="space-y-2">
-        {FLEXIBILITY_TEST_ORDER.map((key) => {
+        {FLEXIBILITY_TEST_ORDER.filter((key) => required.includes(key)).map((key) => {
           const state = formTest(form, key);
           const status = testStatus(state, derived.tests[key]);
           return (
