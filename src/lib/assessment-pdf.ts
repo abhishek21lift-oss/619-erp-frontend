@@ -93,7 +93,7 @@ const VITALS_SAFETY_TEXT: Record<string, string> = {
 };
 
 /**
- * Step 7 is either the current K11 four-test battery (v3 payload) or the old
+ * Step 7 is either the current K11 five-test battery (v3 payload) or the old
  * two-test blob. A v3 row deliberately has no single mobility score, so the
  * block reports each test's raw values, interpretation and flags instead of
  * the null derived columns. Legacy rows render exactly as before.
@@ -115,7 +115,7 @@ function flexibilitySection(assessment: Row): string {
   }
 
   const d = deriveFlexibility(blob as FlexibilityRecorded);
-  const { quadriceps: q, hamstrings: h, hip_flexors: x, sit_and_reach: s } = d.tests;
+  const { quadriceps: q, hamstrings: h, hip_flexors: x, sit_and_reach: s, shoulder_reach: sh } = d.tests;
   const yn = (b: boolean | null): string => (b == null ? '—' : b ? 'Yes' : 'No');
   const sideName = (side: 'left' | 'right') => (side === 'left' ? 'L' : 'R');
 
@@ -139,6 +139,12 @@ function flexibilitySection(assessment: Row): string {
       ? 'No valid attempt recorded'
       : `Best ${v(s.best_raw_inches, ' in')} − ${v(s.zero_point_inches, ' in')} = ${v(s.score_inches, ' in')}`;
 
+  const shoulder = sh.unable_to_complete ? `Not performed: ${e(sh.unable_reason ?? '')}`
+    : !sh.completed ? 'Not recorded'
+      : (['left', 'right'] as const).map((side) =>
+        `${sideName(side)} ${v(sh.sides[side].reach)} (${sh.sides_interpretation[side] ?? 'not recorded'})`,
+      ).join(' · ');
+
   const overrideReason = blob.override && typeof blob.override === 'object'
     && typeof (blob.override as Row).reason === 'string'
     ? String((blob.override as Row).reason)
@@ -151,6 +157,7 @@ function flexibilitySection(assessment: Row): string {
     field('Hip Flexors (Thomas Test)', hip),
     field('YMCA Sit and Reach', sit),
     field('Norm', s.unable_to_complete ? '—' : `${s.norm.category ? `${s.norm.category} — ` : ''}${s.norm.message}`),
+    field('Shoulder Reach', shoulder),
     field('Asymmetry Detected', d.has_asymmetry ? 'Yes' : 'No'),
     field('Overall Status', FLEX_STATUS_TEXT[d.overall_status]),
     ...(d.override_used ? [field('Override Reason', e(overrideReason))] : []),

@@ -10,6 +10,7 @@ import QuadricepsFields from './QuadricepsFields';
 import HamstringsFields from './HamstringsFields';
 import HipFlexorsFields from './HipFlexorsFields';
 import SitAndReachFields from './SitAndReachFields';
+import ShoulderReachFields from './ShoulderReachFields';
 
 interface TestScreenProps {
   test: FlexibilityTestKey;
@@ -81,11 +82,17 @@ export function TestScreen({ test, form, patchFlex, derived, onBack, onSaveDraft
       derived={derived.tests.hip_flexors.unable_to_complete ? null : derived.tests.hip_flexors}
       patch={(p) => patchFlex({ hipFlexors: { ...form.hipFlexors, ...p } })}
     />
-  ) : (
+  ) : test === 'sit_and_reach' ? (
     <SitAndReachFields
       state={form.sitAndReach}
       derived={derived.tests.sit_and_reach.unable_to_complete ? null : derived.tests.sit_and_reach}
       patch={(p) => patchFlex({ sitAndReach: { ...form.sitAndReach, ...p } })}
+    />
+  ) : (
+    <ShoulderReachFields
+      state={form.shoulderReach}
+      derived={derived.tests.shoulder_reach.unable_to_complete ? null : derived.tests.shoulder_reach}
+      patch={(p) => patchFlex({ shoulderReach: { ...form.shoulderReach, ...p } })}
     />
   );
 

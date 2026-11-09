@@ -147,6 +147,13 @@ function battery(): FlexibilityRecorded {
       sit_and_reach: {
         attempts: [{ inches: 16, valid: true }], knee_bending: false, bouncing: false, notes: '', completed: true,
       },
+      shoulder_reach: {
+        sides: {
+          left: { reach: 'overlap', pain: false, notes: '' },
+          right: { reach: 'overlap', pain: false, notes: '' },
+        },
+        completed: true,
+      },
     },
   } as unknown as FlexibilityRecorded;
 }

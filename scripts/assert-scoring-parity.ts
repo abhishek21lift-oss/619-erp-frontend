@@ -641,15 +641,17 @@ function buildFlexibilityCases(): Array<{ fn: string; args: unknown[] }> {
   const qSide = (p: Record<string, unknown> = {}) => ({ contact: true, distance_cm: null, pain: false, pelvic_compensation: false, tightness: 'Normal', notes: '', ...p });
   const hSide = (p: Record<string, unknown> = {}) => ({ hip_flexion_deg: 75, knee_extended: true, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
   const xSide = (p: Record<string, unknown> = {}) => ({ thigh_position: 'below', knee_flexion_deg: null, pelvic_compensation: false, pain: false, tightness: 'Normal', notes: '', ...p });
+  const shSide = (p: Record<string, unknown> = {}) => ({ reach: 'overlap', pain: false, notes: '', ...p });
   const battery = (over: Record<string, unknown> = {}) => {
     const part = (key: string) => (over[key] && typeof over[key] === 'object' ? over[key] as Record<string, unknown> : {});
     return {
-      protocol_version: 'k11-2026.01',
+      protocol_version: FE_FLEXIBILITY.PROTOCOL_VERSION,
       tests: {
         quadriceps: { sides: { left: qSide(), right: qSide() }, completed: true, ...part('quadriceps') },
         hamstrings: { sides: { left: hSide(), right: hSide() }, completed: true, ...part('hamstrings') },
         hip_flexors: { sides: { left: xSide(), right: xSide() }, completed: true, ...part('hip_flexors') },
         sit_and_reach: { attempts: [{ inches: 20, valid: true }], knee_bending: false, bouncing: false, completed: true, ...part('sit_and_reach') },
+        shoulder_reach: { sides: { left: shSide(), right: shSide() }, completed: true, ...part('shoulder_reach') },
       },
       override: over.override ?? null,
     };
@@ -689,6 +691,18 @@ function buildFlexibilityCases(): Array<{ fn: string; args: unknown[] }> {
     add(battery({ hip_flexors: { sides: { left: xSide({ thigh_position: 'above', knee_flexion_deg: knee }), right: xSide() } } }));
   }
   add(battery({ hip_flexors: { sides: { left: xSide({ thigh_position: 'below' }), right: xSide({ thigh_position: 'at' }) } } }));
+
+  for (const reach of ['overlap', 'touch', 'gap', null, 'sideways']) for (const pain of TRI) {
+    add(battery({ shoulder_reach: { sides: { left: shSide({ reach, pain }), right: shSide() } } }));
+  }
+  add(battery({ shoulder_reach: { sides: { left: shSide({ reach: 'gap' }), right: shSide({ reach: 'overlap' }) } } }));
+  add(battery({ shoulder_reach: { sides: { left: shSide({ reach: 'gap' }), right: shSide({ reach: null }) } } }));
+
+  // A stored four-test row must still derive identically on both sides.
+  const legacy = battery();
+  legacy.protocol_version = FE_FLEXIBILITY.LEGACY_PROTOCOL_VERSION;
+  delete (legacy.tests as Record<string, unknown>).shoulder_reach;
+  add(legacy);
 
   const attempts = [[null, true], [0, true], [12, true], [18.5, true], [60, false], ['21', true], [12, false], [null, false]];
   for (const [inches, valid] of attempts) add(battery({ sit_and_reach: { attempts: [{ inches, valid }] } }));

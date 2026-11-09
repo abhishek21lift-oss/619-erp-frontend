@@ -146,11 +146,42 @@ export const SIT_AND_REACH_PROTOCOL: TestProtocol = {
   reference: 'K11 sit-and-reach norms are age- and sex-specific; the category is shown when the client’s age and sex are recorded.',
 };
 
+export const SHOULDER_REACH_PROTOCOL: TestProtocol = {
+  key: 'shoulder_reach',
+  name: 'Shoulder Reach',
+  purpose: 'Shoulder flexion, extension and rotation — whether the fingertips can overlap, touch, or only leave a gap behind the back.',
+  setup: 'Standing tall, one hand reaching over the shoulder and down the back, the other reaching up the back.',
+  equipment: ['None'],
+  positioning: [
+    'Client stands upright, feet hip-width apart, head neutral.',
+    'One arm reaches over the same-side shoulder, palm toward the back and fingers down.',
+    'The other arm reaches behind the lower back, palm out and fingers up.',
+  ],
+  procedure: [
+    'Ask the client to reach both hands towards each other slowly.',
+    'Stop at the first limit: shoulder pinching, trunk side-bend, or pain.',
+    'Compare the fingertips: overlap, touch, or a gap between them.',
+    'Watch for shrugging, chin tuck or side-bending — those fake the reach; ask the client to stay tall and repeat.',
+    'Ask whether the reach caused pain.',
+    'Repeat with the arms swapped.',
+  ],
+  measurement: [
+    'Overlap = the fingertips pass each other; Touch = they just meet; Gap = they do not meet.',
+    'Record the result you see, never the one you think the client should reach.',
+    'A gap is recorded as a possible restriction, not a diagnosis.',
+  ],
+  safety: [
+    'Never push the hands together — the shoulder joint, not the stretch, is the risk.',
+    'Stop on sharp shoulder pain, pinching at the front of the shoulder, or numbness in the arm.',
+  ],
+};
+
 export const FLEXIBILITY_PROTOCOLS: Record<FlexibilityTestKey, TestProtocol> = {
   quadriceps: QUADRICEPS_PROTOCOL,
   hamstrings: HAMSTRINGS_PROTOCOL,
   hip_flexors: HIP_FLEXORS_PROTOCOL,
   sit_and_reach: SIT_AND_REACH_PROTOCOL,
+  shoulder_reach: SHOULDER_REACH_PROTOCOL,
 };
 
-export const FLEXIBILITY_TEST_ORDER: FlexibilityTestKey[] = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach'];
+export const FLEXIBILITY_TEST_ORDER: FlexibilityTestKey[] = ['quadriceps', 'hamstrings', 'hip_flexors', 'sit_and_reach', 'shoulder_reach'];

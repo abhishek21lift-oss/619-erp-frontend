@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, CheckCircle2, CircleDashed, MinusCircle } from 'lucide-react';
-import { deriveFlexibility, formTest, isRecordedBattery, legacyBlobSummary, SIT_AND_REACH_ZERO_POINT_INCHES } from '@/lib/flexibility-protocol';
+import { deriveFlexibility, formTest, isRecordedBattery, legacyBlobSummary, requiredFlexibilityTests, SIT_AND_REACH_ZERO_POINT_INCHES } from '@/lib/flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey, FlexibilityTestState } from '@/lib/flexibility-protocol';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from './protocol-content';
 
@@ -32,11 +32,15 @@ function previousLine({ date, data }: PreviousAssessment): string {
   const h = d.tests.hamstrings;
   const x = d.tests.hip_flexors;
   const sr = d.tests.sit_and_reach;
+  const sh = d.tests.shoulder_reach;
   const parts = [
     q.unable_to_complete ? 'Quadriceps: not performed' : `Quadriceps: ${q.overall_interpretation ?? 'not recorded'}`,
     h.unable_to_complete ? 'Hamstrings: not performed' : `Hamstrings L ${h.sides.left.hip_flexion_deg ?? '—'}° / R ${h.sides.right.hip_flexion_deg ?? '—'}°`,
     x.unable_to_complete ? 'Hip flexors: not performed' : `Hip flexors: ${x.sides_interpretation.left ?? '—'} / ${x.sides_interpretation.right ?? '—'}`,
     sr.unable_to_complete ? 'Sit and Reach: not performed' : (sr.score_inches == null ? 'Sit and Reach: not recorded' : `Sit and Reach ${sr.score_inches} in`),
+    sh.unable_to_complete ? 'Shoulder reach: not performed'
+      : sh.completed ? `Shoulder reach: ${sh.sides_interpretation.left ?? '—'} / ${sh.sides_interpretation.right ?? '—'}`
+        : 'Shoulder reach: not recorded',
     OVERALL_TEXT[d.overall_status],
   ];
   return `${date} · ${parts.join(' · ')}`;
@@ -55,6 +59,7 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
   const h = derived.tests.hamstrings;
   const x = derived.tests.hip_flexors;
   const sr = derived.tests.sit_and_reach;
+  const sh = derived.tests.shoulder_reach;
   const tri = (v: boolean | null) => (v == null ? '—' : v ? 'Y' : 'N');
   const values: Record<FlexibilityTestKey, string> = {
     quadriceps: q.unable_to_complete
@@ -77,6 +82,12 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
       : sr.score_inches == null
         ? 'No valid attempt recorded'
         : `${sr.best_raw_inches} in − ${SIT_AND_REACH_ZERO_POINT_INCHES} = ${sr.score_inches.toFixed(1)} in · ${sr.norm.category ? `${sr.norm.category} — ` : ''}${sr.norm.message}`,
+    shoulder_reach: sh.unable_to_complete
+      ? 'Not performed'
+      : [
+        `${sh.sides_interpretation.left ?? '—'} (L)`,
+        `${sh.sides_interpretation.right ?? '—'} (R)`,
+      ].join(' · '),
   };
 
   return (
@@ -87,7 +98,7 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
           {OVERALL_TEXT[derived.overall_status]}
         </span>
         <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          {FLEXIBILITY_TEST_ORDER.filter((k) => formTest(form, k).completed).length}/4 recorded
+          {requiredFlexibilityTests(form).filter((k) => formTest(form, k).completed).length}/{requiredFlexibilityTests(form).length} recorded
           {derived.has_asymmetry ? ' · asymmetry detected' : ''}
         </span>
       </div>
