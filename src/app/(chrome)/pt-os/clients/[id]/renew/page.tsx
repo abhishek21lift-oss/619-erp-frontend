@@ -16,7 +16,7 @@ import {
   renewPtSchema, blankRenewPt, toRenewPtPayload, ptEndDate, renewalBalance,
 } from '@/lib/forms/schemas/renewPt';
 import {
-  NumberField, DateFieldControl, TextAreaField, FormErrorBanner,
+  NumberField, DateFieldControl, TextAreaField, FormErrorBanner, FormSection,
 } from '@/components/ui/form';
 
 const fmtINR = (n: number | string | null | undefined) =>
@@ -175,7 +175,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
           </div>
         )}
 
-        {/* Form sections (flat — no wrapper card) */}
         {(!client || hasPtTerm(client)) && (
         <form
           noValidate
@@ -183,14 +182,8 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
           className="space-y-6"
         >
 
-          {/* Section: Plan */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(163,55,87,0.12)' }}>
-                <Dumbbell size={13} style={{ color: '#852E4E' }} />
-              </div>
-              <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Package Details</h2>
-            </div>
+          <FormSection icon={<Dumbbell size={14} />} title="Package Details"
+            description="Start, length and the new end date" tone="rose">
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <form.Field name="startDate">
@@ -216,18 +209,10 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 </div>
               )}
             </div>
-          </div>
+          </FormSection>
 
-          <div style={{ height: 1, background: 'var(--bg-subtle)' }} />
-
-          {/* Section: Financials */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
-                <IndianRupee size={13} style={{ color: '#10b981' }} />
-              </div>
-              <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Financial Details</h2>
-            </div>
+          <FormSection icon={<IndianRupee size={14} />} title="Financial Details"
+            description="What this term is worth, and what is collected today" tone="emerald">
             <div className="space-y-4">
               <form.Field name="finalAmount">
                 {(field) => (
@@ -253,25 +238,17 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 <ReadOnly label="Balance Due" value={fmtINR(balance)} highlight={balance > 0 ? '#dc2626' : '#10b981'} />
               </div>
             </div>
-          </div>
+          </FormSection>
 
-          <div style={{ height: 1, background: 'var(--bg-subtle)' }} />
-
-          {/* Notes */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(245,158,11,0.12)' }}>
-                <FileText size={13} style={{ color: '#f59e0b' }} />
-              </div>
-              <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Notes (optional)</h2>
-            </div>
+          <FormSection icon={<FileText size={14} />} title="Notes"
+            description="Optional — anything to remember about this renewal" tone="amber">
             <form.Field name="notes">
               {(field) => (
                 <TextAreaField field={field} label="Notes" labelHidden rows={3} maxLength={1000} showCount
                   serverError={f.errors.fieldErrors.notes} />
               )}
             </form.Field>
-          </div>
+          </FormSection>
 
           <FormErrorBanner errors={f.errors} onRetry={() => void f.submit()} />
 

@@ -86,7 +86,14 @@ describe('one form system, not eighteen', () => {
     expect(src).toMatch(/tone = 'gold'/);
     const enroll = readFileSync(join(SRC, 'app/(chrome)/pt-os/clients/[id]/enroll/page.tsx'), 'utf8');
     expect(enroll).toMatch(/<FloatInput/);
-    expect(enroll).not.toMatch(/tone=/);
+    // FormSection carries its own `tone` (the card's hue). The guarantee here
+    // is about the inputs: no FloatInput in this file passes one, so the gold
+    // default still applies to every assessment field.
+    const floatInputProps = enroll
+      .split('<FloatInput')
+      .slice(1)
+      .map((chunk) => chunk.slice(0, chunk.indexOf('/>')));
+    for (const props of floatInputProps) expect(props).not.toMatch(/\btone=/);
   });
 
   it('renders migrated Phase 2 forms through the field system', () => {

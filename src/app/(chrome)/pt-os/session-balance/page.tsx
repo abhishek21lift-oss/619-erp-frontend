@@ -14,7 +14,7 @@ import {
 } from '@/lib/forms/schemas/sessionBalance';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import {
-  TextField, NumberField, SelectField, DateFieldControl, FormErrorBanner,
+  TextField, NumberField, SelectField, DateFieldControl, FormErrorBanner, FormSection,
 } from '@/components/ui/form';
 
 /**
@@ -111,7 +111,8 @@ function SessionBalanceInner() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
-            <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Add Session Package</h2>
+            <FormSection icon={<Plus size={14} />} title="Add Session Package"
+              description="Sessions left are counted from this package" tone="rose">
             <form noValidate onSubmit={(e) => { e.preventDefault(); void f.submit(); }} className="space-y-3">
               <form.Field name="client_id">
                 {(field) => (
@@ -150,6 +151,7 @@ function SessionBalanceInner() {
                 {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create Balance
               </Button>
             </form>
+            </FormSection>
           </div>
 
           <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>

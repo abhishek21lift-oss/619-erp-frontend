@@ -33,7 +33,8 @@ vi.mock('@/components/ui', () => ({
     <select {...rest}>{children as React.ReactNode}</select>
   ),
 }));
-vi.mock('@/components/ui/form', () => ({
+vi.mock('@/components/ui/form', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/ui/form')>()),
   CheckboxField: () => null,
 }));
 vi.mock('@/components/ai/AiClientPicker', () => ({
