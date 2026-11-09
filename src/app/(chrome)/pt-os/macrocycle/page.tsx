@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero, FormField, TextInput, SelectInput } from '@/components/ui';
-import { CheckboxField, type FieldLike } from '@/components/ui/form';
+import { CheckboxField, type FieldLike, FormSection } from '@/components/ui/form';
 import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
 import { useClientTrainingFacts } from '@/lib/client-training-facts';
 import { api } from '@/lib/api';
@@ -136,7 +136,9 @@ export default function MacrocyclePage() {
           )}
         </div>
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FormSection className="mb-5" icon={<CalendarRange size={14} />} title="Parameters"
+          description="Fill from the client’s record, or set it by hand" tone="emerald">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <FormField label="Goal">
             <SelectInput value={goal} onChange={(e) => setGoal(e.target.value as MacroGoal)}>
               {MACRO_GOALS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
@@ -154,6 +156,7 @@ export default function MacrocyclePage() {
             <CheckboxField field={deloadField} label="Include deload" />
           </div>
         </div>
+        </FormSection>
 
         <section className="mb-5">
           <h2 className="mb-1 text-[15px] font-[700]">

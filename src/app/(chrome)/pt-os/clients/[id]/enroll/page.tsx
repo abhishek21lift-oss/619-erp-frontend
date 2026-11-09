@@ -8,11 +8,12 @@ import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Award, Clock, Dumbbell,
   Check, Sparkles, AlertCircle, Loader2, X, Download, FileSignature,
-  ShieldAlert,
+  ShieldAlert, IndianRupee,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, PageContainer, PageHero } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
+import { FormSection } from '@/components/ui/form';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { AGREEMENT_TEXT, PAYMENT_METHODS, ageFrom } from '@/lib/enrollment';
 import { SignaturePad } from '@/components/pt-os/shared/SignaturePad';
@@ -837,12 +838,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
           </div>
         )}
 
-        {/* ── MAIN CARD ── */}
+        {/* The enrolment form, in section cards. */}
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
           <div>
-            <div className="space-y-8">
+            <div className="space-y-5">
 
-              {/* Start / Duration / End */}
+              <FormSection icon={<Calendar size={14} />} title="Plan"
+                description="How long the term runs, and where it is trained" tone="rose">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div ref={bindFieldRef('startDate')}>
                   <div className="mb-2 flex items-center justify-between">
@@ -876,6 +878,20 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 <FloatInput label="PT End Date" value={fmtDateLong(endDate)} onChange={() => {}} disabled />
               </div>
 
+              {/* Training Mode */}
+              <div ref={bindFieldRef('trainingMode')}>
+                <SearchableSelect
+                  label="Training Mode" required allowCustom={false}
+                  value={form.trainingMode}
+                  onChange={(v) => { set('trainingMode', v as EnrollFormData['trainingMode']); setErrors((e) => ({ ...e, trainingMode: undefined })); }}
+                  options={TRAINING_MODES}
+                  error={errors.trainingMode}
+                />
+              </div>
+              </FormSection>
+
+              <FormSection icon={<IndianRupee size={14} />} title="Payment"
+                description="Leave it part-paid and the balance stays on the client" tone="amber">
               <div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div ref={bindFieldRef('finalAmount')}>
@@ -967,17 +983,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   </div>
                 </div>
               </div>
-
-              {/* Training Mode */}
-              <div ref={bindFieldRef('trainingMode')}>
-                <SearchableSelect
-                  label="Training Mode" required allowCustom={false}
-                  value={form.trainingMode}
-                  onChange={(v) => { set('trainingMode', v as EnrollFormData['trainingMode']); setErrors((e) => ({ ...e, trainingMode: undefined })); }}
-                  options={TRAINING_MODES}
-                  error={errors.trainingMode}
-                />
-              </div>
+              </FormSection>
 
               {/* Training Availability — the same section the Goal Setting
                   wizard asks for, consolidated here because this is the screen

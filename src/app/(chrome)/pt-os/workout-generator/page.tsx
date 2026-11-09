@@ -18,6 +18,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero, Button, FormField, TextInput, SelectInput } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
+import { FormSection } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { Dumbbell, Loader2, RefreshCw, Save, AlertTriangle, Info } from 'lucide-react';
@@ -322,7 +323,9 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
         </Link>
       </p>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <FormSection className="mb-5" icon={<Dumbbell size={14} />} title="Build the block"
+        description="These values decide every exercise in the plan" tone="sky">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <FormField label="Goal">
           <SelectInput value={goal} onChange={(e) => setGoal(e.target.value)}>
             {GOALS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
@@ -368,6 +371,7 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
           </FormField>
         )}
       </div>
+      </FormSection>
 
       {periodization === 'powerlifting_block' && (
         <section className="mb-5 rounded-[14px] border p-4" style={{ borderColor: 'var(--border)' }}>

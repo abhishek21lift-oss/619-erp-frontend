@@ -43,6 +43,9 @@ export type {
 export { FormErrorBanner, SubmitStatus } from './FormStatus';
 export type { FormErrorBannerProps, SubmitStatusProps } from './FormStatus';
 
+export { FormSection } from './FormSection';
+export type { FormSectionTone } from './FormSection';
+
 export {
   RadioField, MonthFieldControl, TimeFieldControl, ChoiceChips, useStandaloneField,
 } from './fields';

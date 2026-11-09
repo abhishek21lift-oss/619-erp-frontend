@@ -8,7 +8,7 @@ import { useAsync } from '@/lib/use-async';
 import { api, Client } from '@/lib/api';
 import { Button, PageHero } from '@/components/ui';
 import {
-  ChoiceChips, DateFieldControl, FormErrorBanner, NumberField, SelectField, TextAreaField,
+  ChoiceChips, DateFieldControl, FormErrorBanner, NumberField, SelectField, TextAreaField, FormSection,
 } from '@/components/ui/form';
 import { ChartDataTable, PremiumAreaChart, PremiumBarChart, semantic } from '@/components/visualizations';
 import WeeklyCheckinInsightCard from '@/components/pt-os/WeeklyCheckinInsightCard';
@@ -165,7 +165,8 @@ export default function WeeklyCheckinPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Log Check-In</h2>
+            <FormSection icon={<ClipboardCheck size={14} />} title="Log Check-In"
+              description="This week, as the client reported it" tone="rose">
             <form
               noValidate
               onSubmit={(e) => { e.preventDefault(); submit(); }}
@@ -342,6 +343,7 @@ export default function WeeklyCheckinPage() {
                 {isSubmitting ? 'Saving...' : saved ? 'Saved!' : 'Log Check-In'}
               </Button>
             </form>
+            </FormSection>
           </m.div>
 
           <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
