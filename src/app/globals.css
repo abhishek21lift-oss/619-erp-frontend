@@ -167,6 +167,10 @@
   --border:        var(--gray-150);
   --border-2:      var(--gray-200);
   --border-3:      var(--gray-300);
+  /* The boundary of a form control, not decoration: border/2/3 are
+     1.1–1.5:1 against these surfaces, which is why fields disappeared.
+     gray-500 clears WCAG 1.4.11's 3:1 on white and --bg-subtle. */
+  --border-input:  var(--gray-500);
   --border-focus:  var(--action);
 
   /* ── Text ────────────────────────────────────────────────── */
@@ -377,6 +381,7 @@
   --border:        rgba(255,255,255,0.08);
   --border-2:      rgba(255,255,255,0.12);
   --border-3:      rgba(255,255,255,0.20);
+  --border-input:  var(--gray-400);
 
   /* Text */
   --text-primary:   #F8FAFC;

@@ -195,8 +195,10 @@ export function FormField({
                 labelClassName,
               )}
               style={{
+                // Muted, not disabled-grey: a disabled field still has to be
+                // readable, and the control's own surface says it is inactive.
                 color: disabled
-                  ? 'var(--text-disabled)'
+                  ? 'var(--text-muted)'
                   : compact ? 'var(--text-muted)' : 'var(--text-secondary)',
               }}
             >

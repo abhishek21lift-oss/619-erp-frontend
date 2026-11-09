@@ -135,6 +135,17 @@ describe.each([['light', LIGHT], ['dark', DARK]] as const)('%s theme', (_name, t
     expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(AA);
   });
 
+  it('form-control boundaries clear the 3:1 UI-component floor', () => {
+    // WCAG 1.4.11, not 1.4.3: the boundary is what identifies an input. The
+    // old --border/--border-2 hairlines were 1.1–1.25:1 and a field inside a
+    // subtle card disappeared into it.
+    const failures = SURFACES
+      .map((s) => [s, contrast('border-input', s, theme)] as const)
+      .filter(([, r]) => r < 3)
+      .map(([s, r]) => `${s}: ${r.toFixed(2)}`);
+    expect(failures, `border-input → ${failures.join(', ')}`).toEqual([]);
+  });
+
   it('warning text clears AA on its own soft chip', () => {
     // The progress analyzer's gate, summary and risk panels sit on
     // warning-soft, not on a base surface; amber-700 measured 4.44:1 there.
