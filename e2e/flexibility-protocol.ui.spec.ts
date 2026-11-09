@@ -2,10 +2,11 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import { gotoApp, apiToken, apiGet, apiPost, apiPatch, apiDelete } from './helpers/session';
 
 /**
- * Journey — the K11 four-test flexibility battery on Step 7 of the fitness
- * assessment (protocol k11-2026.01):
+ * Journey — the K11 five-test flexibility battery on Step 7 of the fitness
+ * assessment (protocol k11-2026.02):
  *
- *   Quadriceps → Hamstrings 70° Reach → Hip Flexors (Thomas) → YMCA Sit and Reach
+ *   Quadriceps → Hamstrings 70° Reach → Hip Flexors (Thomas) → YMCA Sit and
+ *   Reach → Shoulder Reach
  *
  * Real browser, real API, real Postgres. The client and its screening are
  * arranged through the API (the intake journeys belong to client-interview and
@@ -42,6 +43,10 @@ interface Battery {
       score_inches?: number | null;
       norm?: { category?: string | null; message?: string | null };
     };
+    shoulder_reach: {
+      sides: { left: { reach?: string | null }; right: { reach?: string | null } };
+      sides_interpretation: { left?: string | null; right?: string | null };
+    };
   };
 }
 
@@ -52,8 +57,8 @@ const uniqueMobile = () => `9${String(Date.now() + ++seq).slice(-9)}`;
 /** The API only accepts an image data URL as a signature. */
 const SIGNATURE_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
-/** The four tests, in the protocol's fixed order. */
-const NAMES = ['Quadriceps', 'Hamstrings 70° Reach', 'Hip Flexors — Thomas', 'YMCA Sit and Reach'] as const;
+/** The five tests, in the protocol's fixed order. */
+const NAMES = ['Quadriceps', 'Hamstrings 70° Reach', 'Hip Flexors — Thomas', 'YMCA Sit and Reach', 'Shoulder Reach'] as const;
 
 test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
   let token = '';
@@ -131,6 +136,10 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
   const side = (page: Page, which: 'Left' | 'Right'): Locator =>
     page.locator('div').filter({ has: page.getByText(`${which} leg`, { exact: true }) }).last();
 
+  /** Shoulder Reach labels its panels by arm, not leg. */
+  const shoulderSide = (page: Page, which: 'Left' | 'Right'): Locator =>
+    page.locator('div').filter({ has: page.getByText(`${which} arm over the shoulder`, { exact: true }) }).last();
+
   /** The chip row for one question, scoped to where it was asked. */
   const chipRow = (scope: Locator, label: string): Locator =>
     scope.locator('div').filter({ has: scope.page().getByText(label, { exact: true }) }).last();
@@ -183,13 +192,13 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await next.click(); // 6 → 7
   }
 
-  test('records the four K11 tests, keeps a negative Sit and Reach, and stores the battery', async ({ page }) => {
-    // Seven wizard steps, four test screens and a save round-trip do not fit
+  test('records the five K11 tests, keeps a negative Sit and Reach, and stores the battery', async ({ page }) => {
+    // Seven wizard steps, five test screens and a save round-trip do not fit
     // the suite's 30s budget on a loaded runner.
     test.slow();
     await walkToStep7(page);
 
-    // ── The overview: the four tests, in the protocol's fixed order ────────
+    // ── The overview: the five tests, in the protocol's fixed order ────────
     for (const name of NAMES) await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 20_000 });
     const ys = await Promise.all(NAMES.map(async (n) => (await page.getByText(n, { exact: true }).boundingBox())?.y ?? NaN));
     expect(ys, 'the tests are listed in the K11 order').toEqual([...ys].sort((a, b) => a - b));
@@ -257,6 +266,14 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await expect(page.getByText('Norm classification unavailable')).toBeVisible();
     await page.getByRole('button', { name: 'Mark Test Complete', exact: true }).click();
 
+    // ── Shoulder Reach: fingertips meet on both sides ──────────────────────
+    await card(page, 'Shoulder Reach').getByRole('button', { name: 'Start', exact: true }).click();
+    await page.getByLabel('Fingertip reach (left)').selectOption('overlap');
+    await answer(shoulderSide(page, 'Left'), 'Pain reported', false);
+    await page.getByLabel('Fingertip reach (right)').selectOption('touch');
+    await answer(shoulderSide(page, 'Right'), 'Pain reported', false);
+    await page.getByRole('button', { name: 'Mark Test Complete', exact: true }).click();
+
     // ── The summary: overall status and the arithmetic, as stored ──────────
     await expect(page.getByText('All tests recorded')).toBeVisible();
     await page.getByRole('button', { name: 'Summary', exact: true }).click();
@@ -286,7 +303,7 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     const [row] = await batteries();
     const f = batteryOf(row);
 
-    expect(f.protocol_version).toBe('k11-2026.01');
+    expect(f.protocol_version).toBe('k11-2026.02');
     expect(f.overall_status).toBe('all_tests_recorded');
     expect(f.override?.used).toBe(false);
     expect(f.tests.quadriceps.overall_interpretation).toBe('Normal');
@@ -299,6 +316,9 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     expect(f.tests.sit_and_reach.best_raw_inches).toBe(12);
     expect(f.tests.sit_and_reach.score_inches).toBe(-3);
     expect(f.tests.sit_and_reach.norm).toMatchObject({ category: null, message: 'Norm classification unavailable' });
+    expect(f.tests.shoulder_reach.sides.left.reach).toBe('overlap');
+    expect(f.tests.shoulder_reach.sides.right.reach).toBe('touch');
+    expect(f.tests.shoulder_reach.sides_interpretation).toEqual({ left: 'Clear', right: 'Clear' });
     // Provenance is the server's to stamp — the client never sent these.
     expect(f.recorded_at).toBeTruthy();
     expect(f.assessor_id).toBeTruthy();
@@ -310,9 +330,10 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     const sideways = (page: Page): Promise<number> =>
       page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-    test('step 7 offers the four tests without sideways scrolling', async ({ page }) => {
+    test('step 7 offers the five tests without sideways scrolling', async ({ page }) => {
       await walkToStep7(page);
       await expect(page.getByText('YMCA Sit and Reach', { exact: true })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText('Shoulder Reach', { exact: true })).toBeVisible();
       expect(await sideways(page), 'the overview scrolls sideways on a phone').toBeLessThanOrEqual(1);
 
       // The widest screen is a test's own: protocol beside fields on desktop,
