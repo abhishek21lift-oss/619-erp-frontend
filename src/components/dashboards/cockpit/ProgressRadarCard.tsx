@@ -110,14 +110,8 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
   const measured = measuredCount(scores);
   const number = scoreNum(row.assessment_number);
   const rawDate = typeof row.assessment_date === 'string' ? row.assessment_date : '';
-  // A first test has nothing behind it. The card says so instead of leaving a
-  // bare 42/100 to be read as a verdict on the client.
-  const firstTest = number === 1;
-  const meta = [
-    number != null ? `Assessment #${number}` : null,
-    rawDate ? fmtDate(rawDate) : null,
-    firstTest ? 'first test, no baseline yet' : null,
-  ].filter(Boolean).join(' · ');
+  const meta = [number != null ? `Assessment #${number}` : null, rawDate ? fmtDate(rawDate) : null]
+    .filter(Boolean).join(' · ');
   const clientId = typeof row.client_id === 'string' ? row.client_id : '';
   const href = clientId ? `/pt-os/assessment?client_id=${encodeURIComponent(clientId)}` : '/pt-os/assessment';
   const radar = radarDataFromScores(scores);

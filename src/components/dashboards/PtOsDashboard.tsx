@@ -457,56 +457,6 @@ export const QUICK_ACTIONS = [
   { label: 'Strength',             icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.primary },
 ] as const;
 
-// ─── Section 1.4 — Compact header ───────────────────────────────────────────
-//
-// The full hero is a personal-brand moment: crest, greeting, wordmark, founder
-// badge, date, sheen. On a phone it also spends the top third of the screen
-// before the first thing a trainer can act on. This is the same information in
-// one row, because the day starts at 6am and the question is "who am I
-// coaching", not "whose studio is this".
-//
-// The crest and the name stay. The sheen, the founder badge's added height and
-// the display gradient do not: none of them answer a question, and each costs
-// vertical space the schedule needs.
-function CompactHeader({ studioName, founderNumber }: {
-  studioName: string; founderNumber: number | null;
-}) {
-  const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-
-  return (
-    <m.div
-      initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-center gap-3 rounded-[20px] px-4 py-3"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}
-    >
-      <span aria-hidden className="hero-coin flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-        style={{ background: heroCrest }}>
-        <Crown size={17} style={{ color: '#78350F' }} />
-      </span>
-      <div className="min-w-0 flex-1">
-        {/* The h1 travels with the studio name in both variants; a screen that
-            drops it for a plainer header is still one page, one title. */}
-        <h1 className="truncate text-[16px] font-[850] leading-tight tracking-[-0.02em]" style={{ color: C.ink }}>
-          {studioName}
-        </h1>
-        <p className="mt-0.5 truncate text-[11px] font-[600]" style={{ color: C.muted }}>
-          {greeting()} · {dateStr}
-        </p>
-      </div>
-      {founderNumber != null && <FounderBadge number={founderNumber} size="sm" />}
-    </m.div>
-  );
-}
-
-// shortcut: the header A/B is a URL switch (`?hero=full`) so both variants can
-// be compared on the real screen, including while signed in. Delete this and
-// the losing component once one is picked.
-function heroVariant(): 'compact' | 'full' {
-  if (typeof window === 'undefined') return 'compact';
-  return new URLSearchParams(window.location.search).get('hero') === 'full' ? 'full' : 'compact';
-}
-
 // ─── Section 1.5 — Not cleared to train ─────────────────────────────────────
 //
 // Active clients with no completed consent, an incomplete PAR-Q, or a hard
@@ -1341,7 +1291,7 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
 // the selected insight and walks its cohort one contact at a time, naming who
 // is next and counting down what is left. That is honest about what a tap
 // does, and it is still one tap per client.
-export function AICoach({ d, ops, birthdays, studioName, excludeTop = false, notAssessable = 0 }: {
+export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
   d: DashData;
   ops: OpsData | null;
   birthdays: CoachBirthday[];
@@ -1349,10 +1299,6 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false, not
   /** The cockpit's Next Best Action card promotes insights[0]; the board then
    *  lists the remainder so the same action never renders twice. */
   excludeTop?: boolean;
-  /** Verdict from the roster sweep, which this board cannot see.
-   *  'pending' before it answers, null when it failed, a count otherwise.
-   *  Anything but 0 removes the right to print an all-clear. */
-  notAssessable?: number | null | 'pending';
 }) {
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -1426,35 +1372,16 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false, not
   // card — icon tile, title, dated subhead, a 36px empty panel — for a
   // sentence that fits on one line, and pushed the money chapter down with it.
   if (promotedOnly || done) {
-    // This board reads renewals, dues and birthdays. The roster sweep reads
-    // training silence and is the only source here that can answer "unknown",
-    // so an all-clear printed above one of its unknown clients is the one lie
-    // this screen must not tell. The unknown wins the verdict.
-    const verdict = promotedOnly
-      ? { clear: true, text: 'Nothing else to review.' }
-      : notAssessable === 'pending'
-        ? { clear: false, text: 'Checking the roster…' }
-        : notAssessable === null
-          ? { clear: false, text: 'Roster check did not come back — this is not an all-clear.' }
-          : notAssessable > 0
-            ? {
-              clear: false,
-              text: `${notAssessable} client${notAssessable === 1 ? '' : 's'} could not be assessed — see Who to call.`,
-            }
-            : { clear: true, text: 'Nothing needs you right now.' };
-
     return (
       <Glass className="flex items-center gap-3 px-4 py-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-          style={verdict.clear
-            ? { background: rgba(palette.emerald[500], 0.10), color: palette.emerald[700] }
-            : { background: rgba(palette.amber[500], 0.14), color: palette.amber[700] }}>
-          {verdict.clear ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
+          style={{ background: rgba(palette.emerald[500], 0.10), color: palette.emerald[700] }}>
+          <ShieldCheck size={16} />
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-[13px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>AI Coach</h3>
-          <p className="mt-0.5 text-[11.5px] font-[600] leading-snug" style={{ color: C.muted }}>
-            {verdict.text}
+          <p className="mt-0.5 truncate text-[11.5px] font-[600]" style={{ color: C.muted }}>
+            {promotedOnly ? 'Nothing else to review.' : 'Nothing needs you right now.'}
           </p>
         </div>
       </Glass>
@@ -2188,12 +2115,6 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
     ? (stats.this_month_completed / stats.this_month_total) * 100 : null;
   const momDelta = stats && stats.last_month_completed > 0
     ? ((stats.this_month_completed - stats.last_month_completed) / stats.last_month_completed) * 100 : null;
-  // Under ten sessions either side a percentage is noise dressed as a trend:
-  // 5 against 2 is "+150%", and it was the loudest green thing on the page.
-  // Below that floor the card states the difference in sessions instead.
-  const smallSample = !!stats
-    && Math.min(stats.this_month_completed, stats.last_month_completed) < 10;
-  const deltaCount = stats ? stats.this_month_completed - stats.last_month_completed : 0;
   const maxCompleted = Math.max(...trainerSessions.map(t => t.completed), 1);
 
   return (
@@ -2209,14 +2130,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
             <p className="text-[11px] font-[500]" style={{ color: C.muted }}>Workouts logged this month</p>
           </div>
         </div>
-        {momDelta !== null && (smallSample
-          ? (
-            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-[700] tabular-nums"
-              style={{ background: 'var(--bg-subtle)', color: C.muted }}>
-              {deltaCount > 0 ? '+' : ''}{deltaCount} vs last mo.
-            </span>
-          )
-          : <TrendBadge pct={momDelta} />)}
+        {momDelta !== null && <TrendBadge pct={momDelta} />}
       </div>
 
       {loading && !ops && <div className="space-y-2">{[1,2,3].map(i=><Skel key={i} h="h-10" r="rounded-[12px]" />)}</div>}
@@ -2390,15 +2304,6 @@ export default function PtOsDashboard() {
   const coach = user?.name?.split(' ')[0] || 'Coach';
   const studioName = user?.organization_name || 'PT Studio';
 
-  // The roster sweep's verdict, lifted out of the card that owns the read.
-  // The AI Coach board reads renewals, dues and birthdays only, so it cannot
-  // know the sweep found someone unassessable — and "nothing needs you" over
-  // an unknown client is the one claim this screen must never make.
-  const [rosterVerdict, setRosterVerdict] = useState<number | null | 'pending'>('pending');
-  // Stable identity: RosterSignalsCard memoises its loader on this prop, so an
-  // inline arrow would re-fire the sweep on every render of this page.
-  const onSweep = useCallback((n: number | null) => setRosterVerdict(n), []);
-
   // Array.isArray, not `?? []`: the nullish default only catches
   // undefined, so anything ELSE this endpoint yields — an object,
   // an error envelope, a string — passes through to
@@ -2462,12 +2367,7 @@ export default function PtOsDashboard() {
   // client whose package ENDED came back. TRUE renewal conversion
   // (renewed_of_cohort / expired_cohort) is canonical in /api/insights/renewals
   // and rendered on /insights/renewal. Never re-derive it from these two counts.
-  //
-  // Only shown once a package has actually ended. With zero expired clients the
-  // figure is 100% by construction — arithmetic dressed as a retention win, and
-  // the most reassuring number on a screen that has earned no such thing.
-  const shareEligible = !!d && d.expired_clients > 0;
-  const activeSharePct = d && shareEligible
+  const activeSharePct = d && (d.active_pt_clients + d.expired_clients) > 0
     ? (d.active_pt_clients / (d.active_pt_clients + d.expired_clients)) * 100 : null;
 
   return (
@@ -2505,12 +2405,8 @@ export default function PtOsDashboard() {
 
         {d && (
           <>
-            {/* 1 — Header. Compact by default: the schedule is the reason this
-                screen exists and it should not start a third of the way down.
-                `?hero=full` brings the original back for comparison. */}
-            {heroVariant() === 'full'
-              ? <HeroHeader d={d} coach={coach} studioName={studioName} founderNumber={founderNumber} loading={dash.loading} onRefresh={dash.refetch} />
-              : <CompactHeader studioName={studioName} founderNumber={founderNumber} />}
+            {/* 1 — Hero header */}
+            <HeroHeader d={d} coach={coach} studioName={studioName} founderNumber={founderNumber} loading={dash.loading} onRefresh={dash.refetch} />
 
             {/* 2 — Today's sessions.
                 Directly under the hero, above revenue and retention: it is the
@@ -2552,7 +2448,7 @@ export default function PtOsDashboard() {
                 sweep's own section, heading included: who stopped coming, who
                 is paying but absent. A failed check says so in place rather
                 than rendering an empty, reassuring list. */}
-            <RosterSignalsCard onSweep={onSweep} />
+            <RosterSignalsCard />
 
             {/* 4 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
@@ -2563,7 +2459,6 @@ export default function PtOsDashboard() {
             <AICoach d={d} ops={o}
               birthdays={birthdayList}
               studioName={studioName}
-              notAssessable={rosterVerdict}
               excludeTop />
 
             {/* 4.7 — Progress Radar. Where the six measured categories actually
@@ -2591,12 +2486,9 @@ export default function PtOsDashboard() {
 
                 Read-only. Setting a target is irreversible for the month, so
                 the form stays where there is room to explain the lock; this
-                links there.
-
-                No section label. The card's own month heading and its navy
-                surface already mark the shift from today's work to the month,
-                and a label above it said "This month" twice. */}
-            <div className="pt-2">
+                links there. */}
+            <div>
+              <SectionLabel icon={<Target size={10} />}>This Month</SectionLabel>
               <MonthlyTarget />
             </div>
 
@@ -2619,21 +2511,20 @@ export default function PtOsDashboard() {
                 {/* The Commission card (coach payouts) went with the multi-coach
                     model; a studio is one trainer, so there is no one to pay. */}
                 <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
-                  sub={shareEligible
-                    ? `${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`
-                    : 'No packages have ended yet · true renewal on Insights'} delay={0.15} href="/insights/renewal" />
+                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} delay={0.15} href="/insights/renewal" />
               </div>
             </div>
 
             {/* 5 — Renewals due.
                 Was a two-column row with a "Today" card beside it. That card
-                is now the full-width section under the header, where it can
-                show the programme and the clients who are due but unbooked —
-                so keeping it here as well would have been the same list twice,
-                one of them worse. Renewals is full width now that it is alone.
-
-                No section label: the card's own header already says it. */}
-            <RenewalsDue ops={o} loading={ops.loading} />
+                is now the full-width section under the hero, where it can show
+                the programme and the clients who are due but unbooked — so
+                keeping it here as well would have been the same list twice, one
+                of them worse. Renewals is full width now that it is alone. */}
+            <div>
+              <SectionLabel icon={<CalendarClock size={10} />}>Renewals</SectionLabel>
+              <RenewalsDue ops={o} loading={ops.loading} />
+            </div>
 
             {/* 6 — Today's Revenue.
                 Was "Revenue Intelligence": this month, a linear-regression
@@ -2642,7 +2533,10 @@ export default function PtOsDashboard() {
                 still not know whether to pick up the phone. This asks the
                 question the day actually has: what came in, what is still out,
                 who do I call. */}
-            <TodayRevenue d={d} loading={dash.loading} />
+            <div>
+              <SectionLabel icon={<IndianRupee size={10} />}>Money</SectionLabel>
+              <TodayRevenue d={d} loading={dash.loading} />
+            </div>
 
             {/* 7 — Session activity.
                 Was a two-column "Team Performance" row with a trainer
@@ -2650,7 +2544,10 @@ export default function PtOsDashboard() {
                 one trainer, so the board ranked a list of one, and "team" was
                 the wrong word for a solo studio. Full width now that it is the
                 only card in the row. */}
-            <SessionActivity ops={o} loading={ops.loading} />
+            <div>
+              <SectionLabel icon={<Dumbbell size={10} />}>Sessions</SectionLabel>
+              <SessionActivity ops={o} loading={ops.loading} />
+            </div>
           </>
         )}
       </div>
