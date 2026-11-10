@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Building2, UserPlus, Loader2, ShieldAlert, LayoutDashboard, Activity, IndianRupee, TrendingUp, ScrollText, HeartPulse, ToggleRight, Megaphone, Bot, LifeBuoy, HardDrive, Mail, Users2, Fingerprint, Server, BookOpen } from 'lucide-react';
 import { getImpersonation } from '@/lib/http';
 import { CommandBar, OPEN_COMMAND_BAR } from './_shared/CommandBar';
-import { AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, HostingAssistant, HostingCentre, HostingVps, InvitationsPanel, NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel, TenancyCentre } from './_shared/panels';
+import { AiControlCentre, AnalyticsPanel, AuditCentre, FeatureManager, HostingAssistant, HostingCentre, HostingVps, InvitationsPanel, MyMfaCard, NotificationCentre, SecurityCentre, StorageCentre, SupportCentre, CommandCenterPanel, TenancyCentre } from './_shared/panels';
 import { MODULES, TAB_LABELS, moduleForTab, normalizeTab, resolveFinanceSubTab } from './_shared/types';
 import type { FinanceSubTab, ModuleId, NavOpts, Tab } from './_shared/types';
 import { RevenueNav } from './_shared/RevenueNav';
@@ -177,7 +177,12 @@ function PlatformContent() {
         {tab === 'knowledge' && <KnowledgeTab />}
         {tab === 'features' && <FeatureManager />}
         {tab === 'announcements' && <NotificationCentre />}
-        {tab === 'security' && <SecurityCentre />}
+        {tab === 'security' && (
+          <div className="space-y-4">
+            <MyMfaCard />
+            <SecurityCentre />
+          </div>
+        )}
         {tab === 'tenancy' && <TenancyCentre />}
         {tab === 'activity' && <ActivityTab />}
         {tab === 'audit' && <AuditCentre />}

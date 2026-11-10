@@ -58,7 +58,7 @@ export function ErrorState({ error, onRetry }: { error: string; onRetry: () => v
       <ShieldAlert size={28} aria-hidden style={{ color: '#ef4444' }} />
       <p className="max-w-[420px] text-[14px] font-[600] text-slate-600">{error}</p>
       {/two-factor|2fa/i.test(error)
-        ? <Button onClick={() => { window.location.href = '/settings/profile'; }}>Set up two-factor authentication</Button>
+        ? <Button onClick={() => { window.location.href = '/platform?tab=security'; }}>Set up two-factor authentication</Button>
         : <Button variant="outline" iconLeft={<RefreshCw size={14} />} onClick={onRetry}>Retry</Button>}
     </div>
   );
