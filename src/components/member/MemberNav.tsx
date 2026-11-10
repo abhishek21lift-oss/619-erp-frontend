@@ -95,6 +95,7 @@ export default function MemberNav() {
 
   return (
     <nav
+      aria-label="Member navigation"
       // A fixed bar at the bottom of the viewport: a downward drag that starts
       // here is somebody reaching for a tab, not asking to refresh. Same
       // opt-out MobileBottomNav carries, and the guard test that caught this

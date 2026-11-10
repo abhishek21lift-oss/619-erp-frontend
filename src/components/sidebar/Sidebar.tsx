@@ -15,7 +15,7 @@ import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import StudioMark from '@/components/StudioMark';
 import UserPhoto from '@/components/UserPhoto';
-import { NAV_GROUPS, PINNED_ITEMS, findItemByPath, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
+import { NAV_GROUPS, SETTINGS_GROUP, PINNED_ITEMS, findItemByPath, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
 import type { NavItem } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
@@ -46,7 +46,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   // the map is an allowlist, not a lookup with a fallback. Anything added to
   // nav-config.ts must be added here too.
   Receipt, Smartphone, UserRound, UserSearch, ScrollText, ToggleRight, ShieldAlert, LifeBuoy, HardDrive,
-  AlertTriangle, Video,
+  AlertTriangle, Video, Settings,
 };
 
 // ── Design constants ──────────────────────────────────────────────────────────
@@ -290,12 +290,13 @@ function NavLeaf({ item, active, badgeCount, onLinkClick, layoutId, mobile = fal
 }
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
-function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
+function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen, poll = true }: {
   collapsed?: boolean;
   onLinkClick?: () => void;
   onExpand?: () => void;
   mobile?: boolean;
   drawerOpen?: boolean;
+  poll?: boolean;
 }) {
   const { user } = useAuth();
   const { features } = useFeatures();
@@ -305,6 +306,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
   // The studio app is the trainer's; the badge counts are studio business.
   const isTrainer = user?.role === 'trainer';
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+  // Both sidebar variants are mounted at once; only the visible one polls.
 
   // Nav badge counts, via the api client rather than hand-written fetch so they
   // inherit the 401 refresh every other call gets.
@@ -316,7 +318,7 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
   // reports "nothing pending" is worse than no counter at all. (The pending
   // staff-leave badge went with the staff roles.)
   useEffect(() => {
-    if (!isTrainer) return;
+    if (!isTrainer || !poll) return;
     let cancelled = false;
 
     api.insights.dues({ limit: 100 }).then(
@@ -328,12 +330,12 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
     );
 
     return () => { cancelled = true; };
-  }, [isTrainer]);
+  }, [isTrainer, poll]);
 
   // Unread member messages. Re-read on navigation, so opening a thread clears
   // it by the next page, and every minute while the studio app is open.
   useEffect(() => {
-    if (!isTrainer) return;
+    if (!isTrainer || !poll) return;
     let cancelled = false;
     const load = () => api.clientMessages.unreadCount().then(
       (r) => { if (!cancelled) setBadgeCounts((b) => ({ ...b, messagesUnread: r.data.unread })); },
@@ -342,13 +344,13 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
     void load();
     const t = setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 60_000);
     return () => { cancelled = true; clearInterval(t); };
-  }, [isTrainer, pathname]);
+  }, [isTrainer, pathname, poll]);
 
   // UPI payments waiting for approval. Re-read on navigation, so approving one
   // clears the count by the next page, and every minute while the app is open:
   // a member who has paid is waiting on this number reaching zero.
   useEffect(() => {
-    if (!isTrainer) return;
+    if (!isTrainer || !poll) return;
     let cancelled = false;
     const load = () => api.upiPayments.pending({ status: 'VERIFICATION_PENDING', limit: 1 }).then(
       (r) => { if (!cancelled) setBadgeCounts((b) => ({ ...b, upiPending: r.stats.pending_count })); },
@@ -357,15 +359,15 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
     void load();
     const t = setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 60_000);
     return () => { cancelled = true; clearInterval(t); };
-  }, [isTrainer, pathname]);
+  }, [isTrainer, pathname, poll]);
 
   // The whole nav tree, rebuilt only when something it actually reads changes.
   //
   // This ran on EVERY render, and this component re-renders on every
   // navigation because it reads usePathname() to mark the active item. So a
-  // route change walked all of NAV_GROUPS and, for every item and every
-  // child, re-ran the role and feature-flag predicates. Neither can change as
-  // a result of the pathname changing.
+  // route change walked all of NAV_GROUPS and re-ran the role and feature-flag
+  // predicates for every item. Neither can change as a result of the pathname
+  // changing.
   //
   // The dependency list is exactly what the computation reads. `features`
   // comes from its own context, so this recomputes when flags finish loading,
@@ -382,16 +384,12 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
       return isVisibleForFeature(i, features);
     };
 
-    return NAV_GROUPS
+    return [...NAV_GROUPS, SETTINGS_GROUP]
       .filter(g => isGroupVisibleForRole(g, user?.role))
       .filter(g => isGroupVisibleForFeature(g, features))
       .map(g => ({
         ...g,
-        items: g.items.filter(i => filterItem(i)).flatMap(i =>
-          i.children ? i.children.filter(c => filterItem(c)) : [i]
-        ),
-        single: false,
-        href: '',
+        items: g.items.filter(i => filterItem(i)),
       }))
       .filter(g => g.items.length > 0);
   }, [user?.role, features]);
@@ -406,8 +404,8 @@ function SidebarNav({ collapsed, onLinkClick, onExpand, mobile, drawerOpen }: {
   // /pt-os/clients/birthdays; findItemByPath already resolves one winner.
   const activeHref = useMemo(() => findItemByPath(pathname ?? '')?.href ?? null, [pathname]);
   const isActive = (href: string) => href === activeHref;
-  const anyChildActive = (items: { href?: string; children?: { href?: string }[] }[]) =>
-    items.some(i => isActive(i.href || '') || i.children?.some(c => isActive(c.href || '')));
+  const anyChildActive = (items: { href?: string }[]) =>
+    items.some(i => isActive(i.href || ''));
 
   const visiblePinned = useMemo(
     () => PINNED_ITEMS.filter(i => isVisibleForRole(i, user?.role) && isVisibleForFeature(i, features)),
@@ -801,8 +799,8 @@ function SidebarProfile({ collapsed, onClose, mobile }: { collapsed?: boolean; o
           <Link
             href="/settings/profile?tab=security"
             onClick={onClose}
-            title="Settings"
-            aria-label="Settings"
+            title="Security settings"
+            aria-label="Security settings"
             className="flex items-center justify-center rounded-lg text-white/[0.92] transition-colors duration-150 hover:bg-white/[0.18] hover:text-white"
             style={{ background: 'rgba(255,255,255,0.10)', height: 44, width: 44 }}
           >
@@ -830,6 +828,21 @@ function SidebarProfile({ collapsed, onClose, mobile }: { collapsed?: boolean; o
 }
 
 // ── Main sidebar ──────────────────────────────────────────────────────────────
+// The desktop rail and the mobile drawer are both mounted; this says which one
+// the reader can actually see, so only that one polls the badge endpoints.
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia?.('(min-width: 1024px)');
+    if (!mq) return;
+    const update = () => setDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return desktop;
+}
+
 export default function Sidebar({
   collapsed = false,
   onExpand,
@@ -839,6 +852,7 @@ export default function Sidebar({
   variant = 'desktop',
 }: SidebarProps) {
   const isMobile = variant === 'mobile';
+  const isDesktop = useIsDesktop();
   const { user } = useAuth();
   const studioName = user?.organization_name || 'PT Studio';
   const founderNumber = useFounder();
@@ -1035,6 +1049,7 @@ export default function Sidebar({
           onExpand={onExpand}
           mobile={isMobile}
           drawerOpen={isMobile && mobileOpen}
+          poll={isMobile ? mobileOpen : isDesktop}
         />
       </div>
 

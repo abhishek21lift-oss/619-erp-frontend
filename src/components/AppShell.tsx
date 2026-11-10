@@ -72,16 +72,8 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/engagement/notifications':   'communication messaging notifications alerts',
   '/insights/revenue':           'reports revenue analytics insights income monthly',
   '/attendance':                 'attendance check-in sign-in records',
+  '/checkin/dashboard':          'attendance dashboard live stats today visitors inside',
 };
-
-// 'QR Scanner' used to live here as its own entry, pointing at the same route
-// the Attendance group's 'Check In' item now also points to — since removing
-// the face check-in hub, they'd otherwise show as two identical search
-// results. Its keywords were folded into NAV_KEYWORDS['/checkin/qr-scanner']
-// above instead.
-const EXTRA_SEARCH_PAGES: Array<PageEntry & { feature?: string }> = [
-  { label: 'Attendance Dashboard', href: '/checkin/dashboard', feature: 'attendance', keywords: 'attendance dashboard live stats today visitors inside' },
-];
 
 // The page index. This used to BE the search: the box filtered this array in
 // the browser and nothing else. It is now a secondary group inside
@@ -93,18 +85,15 @@ const EXTRA_SEARCH_PAGES: Array<PageEntry & { feature?: string }> = [
 // is rebuilt per session instead. Searching a page the studio does not have
 // would only lead to a 403.
 function buildSearchPages(features: Record<string, boolean>, role?: string): PageEntry[] {
-  return [
-    ...allNavItems()
-      .filter(item => !item.hidden)
-      .filter(item => isVisibleForRole(item, role))
-      .filter(item => isVisibleForFeature(item, features))
-      .map(item => ({
-        label: item.label,
-        href: item.href,
-        keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
-      })),
-    ...EXTRA_SEARCH_PAGES.filter(item => isVisibleForFeature(item, features)),
-  ];
+  return allNavItems()
+    .filter(item => !item.hidden)
+    .filter(item => isVisibleForRole(item, role))
+    .filter(item => isVisibleForFeature(item, features))
+    .map(item => ({
+      label: item.label,
+      href: item.href,
+      keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
+    }));
 }
 
 function timeAgo(dateStr: string): string {

@@ -14,17 +14,19 @@ const trainerItems = () =>
     .filter((i) => isVisibleForRole(i, 'trainer'));
 
 describe('the first screenful is the trainer\'s day', () => {
-  it('pins Today, My Schedule and Check In as direct links', () => {
+  it('pins the dashboard, Today, My Schedule and Check In as direct links', () => {
     expect(PINNED_ITEMS.map((i) => i.href)).toEqual([
+      '/',
       '/pt-os/today',
       '/pt-os/my-schedule',
       '/checkin/qr-scanner',
     ]);
+    expect(PINNED_ITEMS[0].label).toBe('Dashboard');
   });
 
   it('keeps them out of the accordions they used to be buried in', () => {
     const grouped = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
-    for (const href of ['/pt-os/today', '/pt-os/my-schedule', '/checkin/qr-scanner']) {
+    for (const href of ['/', '/pt-os/today', '/pt-os/my-schedule', '/checkin/qr-scanner']) {
       expect(grouped).not.toContain(href);
     }
   });
@@ -50,6 +52,14 @@ describe('per-client forms belong to the client record', () => {
       '/pt-os/progress-report',
       '/pt-os/weekly-checkin',
     ]);
+  });
+});
+
+describe('the active item is the deepest match', () => {
+  it('resolves a nested client route to its own item, not All Clients', () => {
+    expect(findItemByPath('/pt-os/clients/at-risk/client-1')?.href).toBe('/pt-os/clients/at-risk');
+    expect(findItemByPath('/pt-os/clients/client-1')?.href).toBe('/pt-os/clients');
+    expect(findItemByPath('/pt-os/clients')?.href).toBe('/pt-os/clients');
   });
 });
 

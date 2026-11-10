@@ -4,7 +4,6 @@ import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
 import { PortalAuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { FeaturesProvider } from '@/lib/features-context';
-import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
 import PwaInit from '@/components/PwaInit';
@@ -299,7 +298,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           <PwaInit />
                           <ScrollRestoration />
                           {children}
-                          <CommandPalette />
                           {/* Renders nothing unless NODE_ENV is not
                               production AND ?vvprobe=1 is in the URL. It is
                               mounted here rather than in AppShell so the
