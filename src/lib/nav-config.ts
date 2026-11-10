@@ -1,6 +1,6 @@
 // src/lib/nav-config.ts
 // Single source of truth for all navigation.
-// Sidebar, CommandPalette, and Breadcrumbs all consume this file.
+// Sidebar, GlobalSearch, and Breadcrumbs all consume this file.
 
 import { isRole } from './roles';
 import type { Role } from './roles';
@@ -29,7 +29,6 @@ export type NavItem = {
   badge?: string;
   isNew?: boolean;
   comingSoon?: boolean;
-  children?: NavItem[];
 };
 
 export type NavGroup = {
@@ -42,11 +41,14 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-// The three things a trainer needs at the start of a shift. They used to sit
-// in three different accordions (Today under Programs, Schedule under Sessions,
-// Check In under Attendance), so the sidebar now renders them as direct links
-// above the groups. See PINNED_ITEMS handling in Sidebar.tsx.
+// The first screenful is the trainer's day. These used to sit in three
+// different accordions (Today under Programs, Schedule under Sessions, Check
+// In under Attendance), so the sidebar now renders them as direct links above
+// the groups. Dashboard leads: it is the page after sign-in and was only
+// reachable by clicking the brand header. See PINNED_ITEMS handling in
+// Sidebar.tsx.
 export const PINNED_ITEMS: NavItem[] = [
+  { href: '/',                      label: 'Dashboard',    icon: 'LayoutDashboard' },
   { href: '/pt-os/today',           label: 'Today',        icon: 'CalendarDays' },
   { href: '/pt-os/my-schedule',     label: 'My Schedule',  icon: 'CalendarCheck' },
   { href: '/checkin/qr-scanner',    label: 'Check In',     icon: 'ScanFace', feature: 'attendance' },
@@ -81,6 +83,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/availability',      label: 'Availability',        icon: 'CalendarClock' },
       { href: '/pt-os/session-balance',   label: 'Session Balance',     icon: 'Gauge' },
       { href: '/pt-os/sessions',          label: 'Session History',     icon: 'History' },
+      { href: '/checkin/dashboard',       label: 'Attendance Dashboard', icon: 'Monitor', feature: 'attendance', roles: ['trainer'] },
       { href: '/attendance',              label: 'Attendance Records',  icon: 'ClipboardList', feature: 'attendance', roles: ['trainer'] },
     ],
   },
@@ -105,7 +108,6 @@ export const NAV_GROUPS: NavGroup[] = [
     id: 'progress',
     label: 'Progress',
     icon: 'LineChart',
-    feature: 'screening',
     items: [
       { href: '/pt-os/progress',           label: 'Progress Hub',        icon: 'LineChart' },
       { href: '/pt-os/progress-report',    label: 'Progress Report',     icon: 'TrendingUp' },
@@ -140,14 +142,16 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Reports',
     icon: 'FileBarChart',
     roles: ['trainer'],
-    feature: 'insights',
     items: [
       // One revenue page: All Reports and PT Revenue Report were thinner
       // copies of it. Session Utilisation's weekday chart is on the
       // Attendance Report, which reads the same endpoint.
-      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'] },
-      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'] },
-      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'] },
+      // The insights key sits on the report pages themselves: switching it
+      // off must not take Trainer Feedback, the Leaderboard or the Activity
+      // Log with it.
+      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'], feature: 'insights' },
+      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'], feature: 'insights' },
+      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'], feature: 'insights' },
       { href: '/pt-os/feedback',           label: 'Trainer Feedback',    icon: 'Star',          roles: ['trainer'] },
       { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
       { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
@@ -231,11 +235,6 @@ export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: st
     const inherit = (it: NavItem): NavItem => ({ ...it, feature: it.feature ?? g.feature });
     for (const it of g.items) {
       out.push({ ...inherit(it), groupId: g.id, groupLabel: g.label });
-      if (it.children) {
-        for (const child of it.children) {
-          out.push({ ...inherit(child), groupId: g.id, groupLabel: g.label });
-        }
-      }
     }
   }
   for (const it of SETTINGS_GROUP.items) out.push({ ...it, groupId: SETTINGS_GROUP.id, groupLabel: SETTINGS_GROUP.label });
@@ -247,9 +246,12 @@ export function findItemByPath(pathname: string): (NavItem & { groupId: string; 
   const path = pathname.split('?')[0];
   const exact = all.find((i) => i.href.split('?')[0] === path);
   if (exact) return exact;
-  const prefix = all.find((i) => i.matchPrefix && path.startsWith(i.matchPrefix));
-  if (prefix) return prefix;
-  return all.find((i) => !i.matchPrefix && path.startsWith(i.href.split('?')[0] + '/')) ?? null;
+  // Deepest prefix wins. First-match order lit All Clients on a nested
+  // at-risk route simply because it is listed first.
+  const base = (i: NavItem) => (i.matchPrefix ?? i.href).split('?')[0];
+  return all
+    .filter((i) => path.startsWith(base(i) + '/'))
+    .sort((a, b) => base(b).length - base(a).length)[0] ?? null;
 }
 
 // Visibility is exact. An untagged item or group belongs to the studio app,

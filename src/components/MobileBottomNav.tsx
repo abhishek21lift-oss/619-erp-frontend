@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CalendarClock, Users, ScanFace, Bot, Home } from 'lucide-react';
 import { m } from 'framer-motion';
-import { isVisibleForFeature } from '@/lib/nav-config';
+import { findItemByPath, isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 
@@ -29,17 +29,23 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // opens a schedule, not a workout. Called "Schedule" rather than "Sessions"
 // because the drawer's Sessions group is the booking/history category; one
 // label, one meaning.
-const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
-  { href: '/',                   icon: Home,          label: 'Home', alsoActive: ['/pt-os/today'] },
+const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string }[] = [
+  { href: '/',                   icon: Home,          label: 'Home'     },
   { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
   // The AI Suite spans two route prefixes: `/ai-coach` and the `/ai` analysis
-  // tools. Without the extra matches the tab goes dark on the generator
-  // pages, which is exactly where a trainer is most likely to be.
-  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite',
-    alsoActive: ['/ai/workout-generator', '/ai/diet-generator', '/ai/progress-analysis', '/ai/business-insights'] },
-  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Schedule', alsoActive: ['/pt-os/sessions', '/pt-os/schedule-session', '/pt-os/session-balance'] },
+  // tools. The group id covers both without a second list here.
+  { href: '/ai-coach',           icon: Bot,           label: 'AI Coach', feature: 'ai_suite' },
+  { href: '/pt-os/my-schedule',  icon: CalendarClock, label: 'Schedule' },
   { href: '/checkin/qr-scanner', icon: ScanFace,      label: 'Check-in', feature: 'attendance' },
 ];
+
+// Each tab follows the sidebar group it belongs to, so a page added to that
+// group lights the right tab without editing a hand-kept alsoActive list.
+const TAB_GROUP: Record<string, string> = {
+  '/pt-os/clients': 'clients',
+  '/ai-coach': 'ai-coach',
+  '/pt-os/my-schedule': 'sessions',
+};
 
 // This bar used to swap in four control-plane tabs — Overview, Studios,
 // Finance, Activity, all pointing at /platform — whenever the signed-in
@@ -77,6 +83,16 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
   const { reducedMotion } = useNavScroll();
   const dur = reducedMotion ? 0 : 0.28;
+  const current = findItemByPath(pathname ?? '');
+  // Check-in owns every /checkin route, so the attendance dashboard does not
+  // light Schedule as well just because it lives in the Sessions group.
+  const isActive = (href: string) => {
+    if (!current) return false;
+    if (current.href.startsWith('/checkin/')) return href === '/checkin/qr-scanner';
+    if (current.href === href) return true;
+    if (href === '/') return current.href === '/pt-os/today';
+    return current.groupId === TAB_GROUP[href];
+  };
 
   return (
     <m.nav
@@ -114,15 +130,14 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       <div className="flex items-stretch" style={{ height: 'var(--bottom-nav-h, 52px)' }}>
         {items.map((item) => {
           const { href, icon: Icon, label } = item;
-          const isActive = [href, ...(item.alsoActive ?? [])]
-            .some((h) => pathname === h || pathname.startsWith(h + '/'));
+          const active = isActive(href);
 
           return (
             <Link
               key={href}
               href={href}
               className="group relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
-              aria-current={isActive ? 'page' : undefined}
+              aria-current={active ? 'page' : undefined}
               style={{ gap: 1, minHeight: 44 }}
             >
               {/* Focus ring for keyboard nav */}
@@ -132,7 +147,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               />
 
               {/* Active pill background */}
-              {isActive && (
+              {active && (
                 <m.span
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-1.5 rounded-xl pointer-events-none"
@@ -153,9 +168,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               >
                 <Icon
                   size={17}
-                  strokeWidth={isActive ? 2.3 : 1.7}
+                  strokeWidth={active ? 2.3 : 1.7}
                   style={{
-                    color: isActive ? BOTTOM_NAV_COLORS.activeIcon : BOTTOM_NAV_COLORS.inactiveIcon,
+                    color: active ? BOTTOM_NAV_COLORS.activeIcon : BOTTOM_NAV_COLORS.inactiveIcon,
                     transition: 'color 200ms ease',
                   }}
                   aria-hidden="true"
@@ -170,7 +185,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                 className="relative z-10 select-none whitespace-nowrap text-[10.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
-                  color: isActive ? BOTTOM_NAV_COLORS.activeLabel : BOTTOM_NAV_COLORS.inactiveLabel,
+                  color: active ? BOTTOM_NAV_COLORS.activeLabel : BOTTOM_NAV_COLORS.inactiveLabel,
                   transition: 'color 200ms ease',
                 }}
               >
