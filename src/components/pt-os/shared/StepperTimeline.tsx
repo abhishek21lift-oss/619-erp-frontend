@@ -3,7 +3,16 @@
 import { useEffect, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { semantic } from '@/lib/palette';
+import { gray, semantic } from '@/lib/palette';
+
+/** White on dark accents, near-black on light ones: at 11px the active number
+ *  has to clear AA, and amber/green cannot carry white. */
+function activeInk(hex: string): string {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? gray[900] : '#FFFFFF';
+}
 
 export interface StepperTimelineStep<Id extends number = number> {
   id: Id;
@@ -17,12 +26,19 @@ interface StepperTimelineProps<Id extends number> {
   /** The surface the stepper sits on. The studio wizards are dark; the public
    *  signing page is the same light stage as the marketing site. */
   tone?: 'dark' | 'light';
+  /** `path` is the fitness wizard's numbered light rail: labels under the
+   *  nodes, chapter-accent active step. `classic` is unchanged. */
+  variant?: 'classic' | 'path';
+  /** Path only, indexed by step array position. */
+  accents?: readonly string[];
 }
 
 /** Numbered circles with animated fill bars, click-to-jump when a step is
  *  reachable (`step.id <= current + 1`). Every assessment wizard passes its
  *  own `steps` list rather than keeping a near-identical wrapper. */
-export function StepperTimeline<Id extends number>({ steps, current, onStep, tone = 'dark' }: StepperTimelineProps<Id>) {
+export function StepperTimeline<Id extends number>({
+  steps, current, onStep, tone = 'dark', variant = 'classic', accents,
+}: StepperTimelineProps<Id>) {
   const light = tone === 'light';
   // Reachability is computed by array *position*, not raw numeric id — a
   // caller (e.g. PAR-Q) may pass a `steps` list with gaps in `id` when a
@@ -37,6 +53,80 @@ export function StepperTimeline<Id extends number>({ steps, current, onStep, ton
   useEffect(() => {
     activeRef.current?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }, [current]);
+
+  const activeLabel = steps.find((s) => s.id === current)?.label ?? '';
+
+  if (variant === 'path') {
+    return (
+      <div className="mt-1">
+        <div className="mb-2.5 flex items-baseline justify-between gap-3 sm:hidden">
+          <span className="text-[10.5px] font-[700] uppercase tracking-[0.13em]" style={{ color: 'var(--text-muted)' }}>
+            Step {currentIndex + 1} of {steps.length}
+          </span>
+          <strong className="truncate text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>{activeLabel}</strong>
+        </div>
+        <div className="flex items-start">
+          {steps.map((s, i) => {
+            const done = currentIndex > -1 && i < currentIndex;
+            const active = current === s.id;
+            const reachable = currentIndex === -1 || i <= currentIndex + 1;
+            const accent = accents?.[i] ?? '#A33757';
+            return (
+              <div key={s.id} className="flex min-w-0 flex-1 items-start last:flex-none">
+                <button
+                  type="button"
+                  ref={active ? activeRef : undefined}
+                  aria-label={s.label}
+                  aria-current={active ? 'step' : undefined}
+                  aria-disabled={!reachable}
+                  onClick={() => { if (reachable) onStep(s.id); }}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:w-[84px] sm:flex-none"
+                >
+                  <span
+                    className={`relative grid shrink-0 place-items-center rounded-full text-[11px] font-[750] transition-all duration-200 ${
+                      active
+                        ? '-mt-0.5 h-[30px] w-[30px] sm:h-[34px] sm:w-[34px]'
+                        : 'h-[26px] w-[26px] sm:h-[30px] sm:w-[30px]'
+                    }`}
+                    style={{
+                      background: done
+                        ? 'color-mix(in srgb, #A33757 9%, var(--bg-card))'
+                        : active ? accent : 'var(--bg-card)',
+                      border: `1.5px solid ${done
+                        ? 'color-mix(in srgb, #A33757 28%, transparent)'
+                        : active ? accent : 'var(--border)'}`,
+                      color: done ? 'color-mix(in srgb, #A33757 65%, var(--text-primary))' : active ? activeInk(accent) : 'var(--text-muted)',
+                      boxShadow: active ? `0 0 0 5px ${accent}24` : 'none',
+                    }}
+                  >
+                    {done ? <Check size={14} strokeWidth={3} /> : i + 1}
+                  </span>
+                  <span
+                    className="hidden max-w-[84px] text-center text-[10.5px] font-[680] leading-tight tracking-tight sm:block"
+                    style={{
+                      color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                </button>
+                {i < steps.length - 1 && (
+                  <div
+                    className="mt-[13px] h-[2px] min-w-1 flex-1 rounded-full sm:mt-[15px]"
+                    style={{
+                      background: done
+                        ? 'color-mix(in srgb, #A33757 30%, var(--bg-card))'
+                        : 'var(--bg-subtle)',
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto pb-1">

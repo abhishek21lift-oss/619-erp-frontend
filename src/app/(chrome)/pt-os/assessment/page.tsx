@@ -42,7 +42,7 @@ import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessA
 import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
-import { bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
+import { bandInk, chapterAccents, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
 import { emerald, tint } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
@@ -675,8 +675,15 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   return (
     <PageContainer>
-      <PageHero icon={<ClipboardCheck size={18} />} title="Fitness Testing">
-        {!reviewMode && !lastSaved && <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />}
+      <PageHero
+        compact
+        icon={<ClipboardCheck size={18} />}
+        title="Fitness Testing"
+        subtitle={clientName ? `${clientName} · ${form.assessmentDate}` : undefined}
+      >
+        {!reviewMode && !lastSaved && (
+          <StepperTimeline variant="path" accents={chapterAccents} steps={STEPS} current={step} onStep={goToStep} />
+        )}
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">
