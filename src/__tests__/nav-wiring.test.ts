@@ -9,7 +9,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { NAV_GROUPS, QUICK_ACTIONS } from '@/lib/nav-config';
+import { NAV_GROUPS, QUICK_ACTIONS, SETTINGS_GROUP } from '@/lib/nav-config';
 import { readApp, srcPath } from '@/__tests__/helpers/app-routes';
 
 const read = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
@@ -46,9 +46,17 @@ describe('quick actions are trainer-only', () => {
   });
 });
 
-describe('support is reachable from the avatar menu', () => {
-  it('links /support, not only /help', () => {
-    expect(shell).toContain('href="/support"');
+describe('support is reachable from the sidebar settings group', () => {
+  it('keeps /support in SETTINGS_GROUP', () => {
+    expect(SETTINGS_GROUP.items.map((i) => i.href)).toContain('/support');
+  });
+});
+
+describe('the topbar does not duplicate sidebar destinations', () => {
+  it('renders neither the settings nor the profile menu', () => {
+    expect(shell).not.toContain('topbar-settings-menu');
+    expect(shell).not.toContain('topbar-profile-menu');
+    expect(shell).not.toContain('SETTINGS_GROUP');
   });
 });
 

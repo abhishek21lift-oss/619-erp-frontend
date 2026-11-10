@@ -2,10 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
-  LogOut, Bell, Settings,
-  User, HelpCircle, ChevronDown, CreditCard,
+  Bell,
   Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
-  KeyRound, Fingerprint, Zap, LifeBuoy,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -14,13 +12,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
-import StudioMark from '@/components/StudioMark';
-import UserPhoto from '@/components/UserPhoto';
-import { palette } from '@/lib/palette';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
-import { roleLabel } from '@/lib/roles';
-import { allNavItems, isVisibleForFeature, isVisibleForRole, SETTINGS_GROUP } from '@/lib/nav-config';
+import { allNavItems, isVisibleForFeature, isVisibleForRole } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
@@ -30,7 +24,6 @@ import TrialBanner from '@/components/TrialBanner';
 import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
 import useViewportDesyncFix from '@/hooks/useViewportDesyncFix';
-import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -122,17 +115,13 @@ function AppShellContent({ children }: AppShellProps) {
   // was wrong. BOTTOM-NAV.md has the full account.
   useViewportDesyncFix();
 
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features, user?.role), [features, user?.role]);
 
-  // One top-bar menu at a time. Three independent booleans let settings, the
-  // bell and the avatar all stand open together; a single id means opening
-  // any of them closes the rest by construction.
-  const [openMenu, setOpenMenu] = useState<'settings' | 'notifications' | 'profile' | null>(null);
-  const settingsOpen = openMenu === 'settings';
-  const notifOpen = openMenu === 'notifications';
-  const profileOpen = openMenu === 'profile';
+  // The top bar has one menu left: notifications. Settings and the profile
+  // moved to the sidebar, so a single boolean is the whole state.
+  const [notifOpen, setNotifOpen] = useState(false);
   // Desktop sidebar starts expanded; the user's manual collapse/expand choice
   // is restored from localStorage by the Sidebar on mount. No hover auto-toggle.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -153,7 +142,6 @@ function AppShellContent({ children }: AppShellProps) {
   const { theme, toggle: toggleDark } = useTheme();
   const darkMode = theme === 'dark';
 
-  const studioName = user?.organization_name || 'PT Studio';
   const router = useRouter();
   const pathname = usePathname();
 
@@ -169,8 +157,6 @@ function AppShellContent({ children }: AppShellProps) {
     return new Promise<void>((resolve) => setTimeout(resolve, 450));
   }, []);
 
-  const settingsRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   // Where focus goes back to when a menu closes by Escape.
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -185,30 +171,6 @@ function AppShellContent({ children }: AppShellProps) {
   const EASE = [0.22, 1, 0.36, 1] as const;
   const dur  = reducedMotion ? 0 : 0.28;
   const transConfig = { duration: dur, ease: EASE };
-
-
-  // The settings (gear) menu. It was removed on the belief that the sidebar
-  // listed these pages; it does not — SETTINGS_GROUP feeds search only — so
-  // Member Passkeys and Integrations became reachable by search alone. It is
-  // back, built from SETTINGS_GROUP so the two cannot drift, and filtered by
-  // role and plan feature like the sidebar (the old hand-written list ignored
-  // feature flags). My Profile, Support and Subscription stay in the avatar
-  // menu. UPI Payment Settings is a tab inside My Profile, not a link here.
-  const settingsLinks = useMemo(() => {
-    const inAvatarMenu = new Set(['/settings/profile', '/support', '/subscription']);
-    const items = SETTINGS_GROUP.items.filter((i) => !inAvatarMenu.has(i.href));
-    return items
-      .filter((i) => isVisibleForRole(i, user?.role) && isVisibleForFeature(i, features))
-      .map((i) => ({ href: i.href, label: i.label, icon: SETTINGS_ICONS[i.href] ?? Settings }));
-  }, [user?.role, features]);
-
-  const handleLogout = async () => {
-    // Search history is one person's names and phone numbers. On a shared
-    // studio machine it must not greet the next person who signs in.
-    clearSearchHistory();
-    await logout();
-    router.push('/login');
-  };
 
   const fetchNotifications = useCallback(async (force = false) => {
     if (!force && Date.now() - notifLastFetchedRef.current < 30_000) return;
@@ -248,21 +210,20 @@ function AppShellContent({ children }: AppShellProps) {
         setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
       } catch { /* ignore */ }
     }
-    if (n.link) { setOpenMenu(null); router.push(n.link); }
+    if (n.link) { setNotifOpen(false); router.push(n.link); }
   };
 
   useEffect(() => {
-    // Outside click, or focus leaving the three triggers/panels, closes the
-    // open menu. focusin rather than a per-wrapper onBlur: the wrapper is not
-    // an interactive element, and a document listener covers Tab and clicks
+    // Outside click, or focus leaving the bell and its panel, closes it.
+    // focusin rather than a per-wrapper onBlur: the wrapper is not an
+    // interactive element, and a document listener covers Tab and clicks
     // alike.
-    const isInside = (target: Node) =>
-      [settingsRef, notifRef, profileRef].some((r) => r.current?.contains(target));
+    const isInside = (target: Node) => Boolean(notifRef.current?.contains(target));
     const handleClickOutside = (e: MouseEvent) => {
-      if (!isInside(e.target as Node)) setOpenMenu(null);
+      if (!isInside(e.target as Node)) setNotifOpen(false);
     };
     const handleFocusIn = (e: FocusEvent) => {
-      if (!isInside(e.target as Node)) setOpenMenu(null);
+      if (!isInside(e.target as Node)) setNotifOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('focusin', handleFocusIn);
@@ -273,19 +234,19 @@ function AppShellContent({ children }: AppShellProps) {
   }, []);
 
   // Escape closes the open top-bar menu and puts focus back on its trigger.
-  // The old handler cleared openMenu from anywhere on the page, so a keyboard
+  // The old handler cleared the menu from anywhere on the page, so a keyboard
   // user who had tabbed into a panel landed on <body> when it vanished.
   useEffect(() => {
-    if (!openMenu) return;
+    if (!notifOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setOpenMenu(null);
+        setNotifOpen(false);
         menuTriggerRef.current?.focus();
       }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [openMenu]);
+  }, [notifOpen]);
 
   // The mobile drawer is modal: lock the page behind it and let Escape close
   // it, returning focus to the toggle that opened it.
@@ -351,14 +312,10 @@ function AppShellContent({ children }: AppShellProps) {
           {/* ── Top header bar ── */}
           <m.header
             className={cn(
-              'fixed top-0 right-0 z-40',
+              'topbar-surface fixed top-0 right-0 z-40',
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
             )}
             style={{
-              background: 'var(--topbar-bg)',
-              borderBottom: '1px solid var(--topbar-border)',
-              backdropFilter: 'blur(24px) saturate(200%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(200%)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
               transition: 'left 300ms cubic-bezier(0.16,1,0.3,1)',
               willChange: 'transform',
@@ -366,15 +323,15 @@ function AppShellContent({ children }: AppShellProps) {
             animate={{
               y: 0,
               boxShadow: topBar === 'compact'
-                ? darkMode ? '0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)'
-                : darkMode ? '0 2px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)'  : '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+                ? darkMode ? '0 1px 2px rgba(0,0,0,0.45), 0 6px 20px rgba(0,0,0,0.28)' : '0 1px 2px rgba(15,23,42,0.05), 0 6px 20px rgba(163,55,87,0.06)'
+                : darkMode ? '0 2px 6px rgba(0,0,0,0.5), 0 14px 36px rgba(0,0,0,0.32)' : '0 2px 6px rgba(15,23,42,0.06), 0 14px 36px rgba(163,55,87,0.09)',
             }}
             transition={transConfig}
             initial={false}
           >
 
             <m.div
-              className="flex items-center gap-1.5 px-3 sm:gap-2.5 sm:px-4 lg:gap-3 lg:px-6"
+              className="relative flex items-center gap-1.5 px-3 sm:gap-2.5 sm:px-4 lg:gap-3 lg:px-6"
               animate={{ height: topBar === 'compact' ? TOPBAR_COMPACT_H : TOPBAR_EXPANDED_H }}
               transition={transConfig}
             >
@@ -386,7 +343,7 @@ function AppShellContent({ children }: AppShellProps) {
               <button ref={mobileMenuButtonRef} type="button" aria-label="Open navigation menu"
                 aria-expanded={mobileMenuOpen} aria-controls="mobile-navigation"
                 onClick={() => setMobileMenuOpen(true)}
-                className="menu-toggle topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden">
+                className="menu-toggle topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200 lg:hidden">
                 <Menu size={17} strokeWidth={2} />
               </button>
 
@@ -401,111 +358,63 @@ function AppShellContent({ children }: AppShellProps) {
                   in the row grows to fill the space. */}
               <div className="flex-1" />
 
-              {/* ── Dark / Light toggle ── */}
-              <m.button
-                type="button"
-                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                onClick={toggleDark}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={cn('topbar-hit flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
-                style={{ background: 'transparent', color: darkMode ? '#94A3B8' : '#64748B' }}
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  <m.div key={darkMode ? 'moon' : 'sun'}
-                    initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
-                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                    exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                  >
-                    {darkMode ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
-                  </m.div>
-                </AnimatePresence>
-              </m.button>
-
-              {/* ── Settings dropdown ── */}
-              <div
-                ref={settingsRef}
-                className="relative"
-              >
+              {/* ── Control capsule ──
+                  Theme and notifications ride in one glass capsule, the way
+                  iOS groups bar controls. It is all the right corner needs
+                  now that Settings and the profile live in the sidebar. */}
+              <div className="topbar-cluster flex shrink-0 items-center gap-0.5 rounded-full p-0.5">
+                {/* ── Dark / Light toggle ── */}
                 <m.button
                   type="button"
-                  aria-label="Settings"
-                  aria-expanded={settingsOpen}
-                  aria-controls="topbar-settings-menu"
-                  onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'settings' ? null : 'settings')); }}
+                  aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                  onClick={toggleDark}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={cn('topbar-hit relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
-                  style={{
-                    background: settingsOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
-                  }}
+                  className="topbar-hit flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 hover:bg-[var(--topbar-control-hover)]"
+                  style={{ color: 'var(--topbar-control)' }}
                 >
-                  <m.div
-                    animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
-                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ color: settingsOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }}
-                  >
-                    <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
-                  </m.div>
-                </m.button>
-                <AnimatePresence>
-                  {settingsOpen && (
-                    <m.div
-                      id="topbar-settings-menu"
-                      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-                      transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.12)]"
+                  <AnimatePresence mode="wait" initial={false}>
+                    <m.div key={darkMode ? 'moon' : 'sun'}
+                      initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+                      animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                      exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
                     >
-                      <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
-                      <div className="pb-2">
-                        {settingsLinks.map((link) => {
-                          const Icon = link.icon;
-                          return (
-                            <Link key={link.href} href={link.href} onClick={() => setOpenMenu(null)}
-                              className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                              <Icon size={14} strokeWidth={1.5} />
-                              {link.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
+                      {darkMode ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
                     </m.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* ── Notification bell ── */}
-              <div
-                ref={notifRef}
-                className="relative"
-              >
-                <m.button
-                  type="button"
-                  aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-                  aria-expanded={notifOpen}
-                  aria-controls="topbar-notifications-menu"
-                  onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'notifications' ? null : 'notifications')); }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={cn('topbar-hit relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
-                  style={{
-                    background: notifOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
-                  }}
-                >
-                  <Bell size={16} strokeWidth={1.5} style={{ color: notifOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }} />
-                  {unreadCount > 0 && (
-                    <m.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white shadow-[0_0_6px_rgba(239,68,68,0.6)]"
-                    >
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </m.span>
-                  )}
+                  </AnimatePresence>
                 </m.button>
+
+                {/* ── Notification bell ── */}
+                <div
+                  ref={notifRef}
+                  className="relative"
+                >
+                  <m.button
+                    type="button"
+                    aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+                    aria-expanded={notifOpen}
+                    aria-controls="topbar-notifications-menu"
+                    onClick={(e) => { menuTriggerRef.current = e.currentTarget; setNotifOpen(v => !v); }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="topbar-hit relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 hover:bg-[var(--topbar-control-hover)]"
+                    style={{
+                      background: notifOpen ? 'var(--topbar-control-active)' : 'transparent',
+                      color: notifOpen ? 'var(--topbar-control-fg)' : 'var(--topbar-control)',
+                    }}
+                  >
+                    <Bell size={16} strokeWidth={1.5} />
+                    {unreadCount > 0 && (
+                      <m.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white shadow-[0_0_6px_rgba(239,68,68,0.6)]"
+                      >
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </m.span>
+                    )}
+                  </m.button>
 
                 <AnimatePresence>
                   {notifOpen && (
@@ -519,7 +428,7 @@ function AppShellContent({ children }: AppShellProps) {
                       // it; pulling the page down behind it is wrong at any
                       // scroll position.
                       data-no-pull-refresh
-                      className="notif-panel absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
+                      className="notif-panel absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-[var(--topbar-border)] bg-[var(--bg-elevated)] shadow-[0_24px_64px_rgba(163,55,87,0.18)] backdrop-blur-2xl"
                     >
                       {/* Header */}
                       <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
@@ -589,7 +498,7 @@ function AppShellContent({ children }: AppShellProps) {
 
                       {/* Footer */}
                       <div className="border-t border-[var(--border)] px-4 py-2.5">
-                        <Link href="/engagement/notifications" onClick={() => setOpenMenu(null)}
+                        <Link href="/engagement/notifications" onClick={() => setNotifOpen(false)}
                           className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--brand)] hover:text-[var(--text-primary)] transition-colors">
                           View all notifications
                           <ChevronRight size={11} />
@@ -598,90 +507,11 @@ function AppShellContent({ children }: AppShellProps) {
                     </m.div>
                   )}
                 </AnimatePresence>
+                </div>
               </div>
 
-              {/* ── Profile dropdown ── */}
-              <div
-                ref={profileRef}
-                className="relative"
-              >
-                <button
-                  type="button"
-                  aria-expanded={profileOpen}
-                  aria-controls="topbar-profile-menu"
-                  aria-current={pathname.startsWith('/settings/profile') ? 'page' : undefined}
-                  onClick={(e) => { menuTriggerRef.current = e.currentTarget; setOpenMenu(m => (m === 'profile' ? null : 'profile')); }}
-                  className="topbar-hit flex items-center gap-2.5 pl-3 transition-opacity duration-200 hover:opacity-80"
-                  style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
-                  {/* The trainer's photo when they have one, else the studio's
-                      logo, else its letters — never letters when a picture
-                      exists. */}
-                  <UserPhoto url={user?.avatar_url} name={user?.name} size={32}
-                    ring={pathname.startsWith('/settings/profile')
-                      ? 'linear-gradient(135deg, var(--brand), var(--brand-lo))'
-                      : `linear-gradient(135deg, ${palette.blue[300]}, ${palette.blue[600]})`}
-                    fallback={<StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />} />
-                  <div className="hidden sm:block text-left">
-                    <p className={cn('max-w-[150px] truncate text-[12px] font-semibold uppercase leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>{studioName}</p>
-                    <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{roleLabel(user?.role) || '—'}</p>
-                  </div>
-                  <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0', darkMode ? 'text-slate-500' : 'text-slate-400')} />
-                </button>
-                <AnimatePresence>
-                  {profileOpen && (
-                    <m.div
-                      id="topbar-profile-menu"
-                      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-                      transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.10)]"
-                    >
-                      <div className="px-3 py-2.5 border-b border-[var(--border)]">
-                        <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Trainer'}</p>
-                        <p className="text-[10px] text-[var(--text-muted)]">{user?.email || '—'}</p>
-                        <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                          style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
-                          {/* roleLabel, never the raw identifier. */}
-                          {roleLabel(user?.role) || 'Trainer'}
-                        </span>
-                      </div>
-                      <div className="py-1">
-                        <Link href="/settings/profile" onClick={() => setOpenMenu(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <User size={14} strokeWidth={1.5} /> My Profile
-                        </Link>
-                        {/* The studio app is the trainer's alone — the platform
-                            operator never reaches it on their own session — so
-                            there is no operator branch here. */}
-                        <Link href="/settings/profile?tab=security" onClick={() => setOpenMenu(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <Settings size={14} strokeWidth={1.5} /> Security
-                        </Link>
-                        {user?.organization_name && (
-                          <Link href="/subscription" onClick={() => setOpenMenu(null)}
-                            className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                            <CreditCard size={14} strokeWidth={1.5} /> Subscription &amp; Billing
-                          </Link>
-                        )}
-                        <Link href="/help" onClick={() => setOpenMenu(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <HelpCircle size={14} strokeWidth={1.5} /> Help Center
-                        </Link>
-                        <Link href="/support" onClick={() => setOpenMenu(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <LifeBuoy size={14} strokeWidth={1.5} /> Support
-                        </Link>
-                        <hr className="my-1 border-[var(--border)]" />
-                        <button onClick={handleLogout}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger-text)] hover:bg-[var(--danger)]/5 transition-colors">
-                          <LogOut size={14} strokeWidth={1.5} /> Logout
-                        </button>
-                      </div>
-                    </m.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {/* The profile menu is gone: My Profile, Security, Subscription,
+                  Support and Logout all live in the sidebar. */}
             </m.div>
           </m.header>
 
@@ -765,13 +595,6 @@ function AppShellContent({ children }: AppShellProps) {
     </LazyMotion>
   );
 }
-
-/** Icons for the gear menu, by page. */
-const SETTINGS_ICONS: Record<string, React.ElementType> = {
-  '/settings/passkeys': KeyRound,
-  '/settings/biometrics': Fingerprint,
-  '/settings/integrations': Zap,
-};
 
 export default function AppShell(props: AppShellProps) {
   // Mounted once, from src/app/(chrome)/layout.tsx — see the note there. It
