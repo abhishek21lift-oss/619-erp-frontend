@@ -261,7 +261,7 @@
   --topbar-capsule:        rgba(255,255,255,0.55);
   --topbar-capsule-border: rgba(255,255,255,0.85);
   --topbar-capsule-sheen:  rgba(255,255,255,0.75);
-  --topbar-control:        #6B5B63;
+  --topbar-control:        #64748B;
   --topbar-control-hover:  rgba(163,55,87,0.10);
   --topbar-control-active: rgba(163,55,87,0.14);
   --topbar-control-fg:     #A33757;
@@ -452,7 +452,7 @@
   --topbar-capsule:        rgba(255,255,255,0.06);
   --topbar-capsule-border: rgba(255,255,255,0.12);
   --topbar-capsule-sheen:  rgba(255,255,255,0.08);
-  --topbar-control:        #B6C0CF;
+  --topbar-control:        #94A3B8;
   --topbar-control-hover:  rgba(255,255,255,0.10);
   --topbar-control-active: rgba(255,255,255,0.14);
   --topbar-control-fg:     #F8FAFC;
