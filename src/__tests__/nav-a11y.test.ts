@@ -92,16 +92,13 @@ describe('the bottom nav shows keyboard focus', () => {
 });
 
 describe('the top bar exposes which menu is open', () => {
-  it('marks each trigger expanded and points at its panel', () => {
-    for (const [state, id] of [
-      ['settingsOpen', 'topbar-settings-menu'],
-      ['notifOpen', 'topbar-notifications-menu'],
-      ['profileOpen', 'topbar-profile-menu'],
-    ]) {
-      expect(shell).toMatch(new RegExp(`aria-expanded=\\{${state}\\}`));
-      expect(shell).toContain(`aria-controls="${id}"`);
-      expect(shell).toContain(`id="${id}"`);
-    }
+  it('keeps only the notification menu; settings and profile live in the sidebar', () => {
+    expect(shell).toMatch(/aria-expanded=\{notifOpen\}/);
+    expect(shell).toContain('aria-controls="topbar-notifications-menu"');
+    expect(shell).toContain('id="topbar-notifications-menu"');
+    expect(shell).not.toContain('topbar-settings-menu');
+    expect(shell).not.toContain('topbar-profile-menu');
+    expect(shell).not.toMatch(/settingsOpen|profileOpen/);
   });
 
   it('returns focus to the trigger when Escape closes a menu', () => {
@@ -191,7 +188,9 @@ describe('the phone search sheet is modal', () => {
 describe('the top-bar controls have a 44px touch target', () => {
   it('extends the hit area without growing the compact bar', () => {
     expect(css).toMatch(/\.topbar-hit::after\s*\{[^}]*inset:\s*-6px/);
-    expect((shell.match(/topbar-hit/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    // Menu toggle, theme toggle and the bell — Settings and the profile left
+    // the bar, so three controls is now every control up here.
+    expect((shell.match(/topbar-hit/g) ?? []).length).toBeGreaterThanOrEqual(3);
     expect(search).toContain('topbar-hit');
   });
 });

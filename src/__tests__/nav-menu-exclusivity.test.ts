@@ -17,23 +17,21 @@ const read = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 describe('the shell keeps one menu open at a time', () => {
   const shell = read('components', 'AppShell.tsx');
 
-  it('drives settings, notifications and the profile from one open id', () => {
-    expect(shell).toMatch(/useState<'settings' \| 'notifications' \| 'profile' \| null>/);
-    for (const m of ['settings', 'notifications', 'profile']) {
-      expect(shell).toContain(`openMenu === '${m}'`);
-    }
+  it('leaves one top-bar menu after settings and profile moved to the sidebar', () => {
+    expect(shell).toMatch(/const \[notifOpen, setNotifOpen\] = useState\(false\)/);
+    expect(shell).toContain('topbar-notifications-menu');
+    expect(shell).not.toMatch(/topbar-settings-menu|topbar-profile-menu/);
+    expect(shell).not.toMatch(/settingsOpen|profileOpen/);
     // A toggle that closes what it opened: click-again closes.
-    expect(shell.match(/setOpenMenu\(m => \(m === '/g)).toHaveLength(3);
-    // No per-menu boolean survives to be opened independently.
-    expect(shell).not.toMatch(/\[(settingsOpen|notifOpen|profileOpen), set/);
+    expect(shell).toMatch(/setNotifOpen\(v => !v\)/);
   });
 
   it('closes on an outside click and on Escape', () => {
     expect(shell).toMatch(/addEventListener\('mousedown'/);
     expect(shell).toMatch(/addEventListener\('keydown'/);
     // Escape still closes it; closing now also returns focus to the trigger.
-    expect(shell).toMatch(/if \(e\.key === 'Escape'\) \{[\s\S]{0,120}setOpenMenu\(null\);/);
-    expect(shell).toMatch(/setOpenMenu\(null\);[\s\S]{0,80}menuTriggerRef\.current\?\.focus\(\)/);
+    expect(shell).toMatch(/if \(e\.key === 'Escape'\) \{[\s\S]{0,120}setNotifOpen\(false\);/);
+    expect(shell).toMatch(/setNotifOpen\(false\);[\s\S]{0,80}menuTriggerRef\.current\?\.focus\(\)/);
     // Both listeners come off on unmount.
     expect(shell).toContain("removeEventListener('mousedown'");
     expect(shell).toContain("removeEventListener('keydown'");

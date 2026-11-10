@@ -898,10 +898,10 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
     : undefined;
 
   const inputChrome = cn(
-    'relative w-full rounded-2xl py-[7px] pl-9 pr-8 text-[13px] outline-none transition-all duration-300',
+    'relative w-full rounded-full py-[7px] pl-9 pr-8 text-[13px] outline-none backdrop-blur-md transition-all duration-300',
     darkMode
-      ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12'
-      : 'border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white',
+      ? 'border border-white/[0.12] bg-white/[0.06] text-slate-100 placeholder:text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] focus:border-white/25 focus:bg-white/[0.12] focus:shadow-[0_0_0_3px_rgba(163,55,87,0.22)]'
+      : 'border border-white/70 bg-white/60 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(15,23,42,0.04)] focus:border-[rgba(163,55,87,0.35)] focus:bg-white/85 focus:shadow-[0_0_0_3px_rgba(163,55,87,0.12)]',
   );
 
   return (
@@ -915,8 +915,10 @@ export default function GlobalSearch({ pages, darkMode }: GlobalSearchProps) {
         aria-controls="global-search-sheet"
         onClick={() => setSheetOpen(true)}
         className={cn(
-          'topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 sm:hidden',
-          darkMode ? 'text-slate-300 hover:bg-white/10 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700',
+          'topbar-hit flex h-9 w-9 shrink-0 items-center justify-center rounded-full border backdrop-blur-md transition-colors duration-200 sm:hidden',
+          darkMode
+            ? 'border-white/[0.12] bg-white/[0.06] text-slate-300 hover:bg-white/[0.12] hover:text-white'
+            : 'border-white/70 bg-white/60 text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white/85 hover:text-slate-700',
         )}
       >
         <Search size={17} strokeWidth={1.6} />

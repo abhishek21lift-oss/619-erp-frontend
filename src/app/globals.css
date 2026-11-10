@@ -253,8 +253,18 @@
   --sidebar-w-collapsed: 68px;
 
   /* ── Top bar ─────────────────────────────────────────────── */
-  --topbar-bg:     rgba(248,250,252,0.85);
-  --topbar-border: rgba(15,23,42,0.08);
+  --topbar-bg:     rgba(252,250,251,0.72);
+  --topbar-border: rgba(163,55,87,0.14);
+  /* Rose → amber → sky, kept faint: a wash, not a rainbow. */
+  --topbar-wash:   linear-gradient(105deg, rgba(163,55,87,0.10) 0%, rgba(245,158,11,0.08) 38%, rgba(236,72,153,0.05) 62%, rgba(56,189,248,0.09) 100%);
+  --topbar-hairline: linear-gradient(90deg, rgba(163,55,87,0) 0%, rgba(163,55,87,0.38) 16%, rgba(245,158,11,0.34) 48%, rgba(56,189,248,0.30) 78%, rgba(56,189,248,0) 100%);
+  --topbar-capsule:        rgba(255,255,255,0.55);
+  --topbar-capsule-border: rgba(255,255,255,0.85);
+  --topbar-capsule-sheen:  rgba(255,255,255,0.75);
+  --topbar-control:        #6B5B63;
+  --topbar-control-hover:  rgba(163,55,87,0.10);
+  --topbar-control-active: rgba(163,55,87,0.14);
+  --topbar-control-fg:     #A33757;
 
   /* ── Shape ───────────────────────────────────────────────── */
   --radius-xs:   6px;
@@ -435,8 +445,17 @@
   --sidebar-icon-active: #FFBB94;
 
   /* Top bar */
-  --topbar-bg:     rgba(15,23,42,0.85);
-  --topbar-border: rgba(255,255,255,0.08);
+  --topbar-bg:     rgba(15,23,42,0.78);
+  --topbar-border: rgba(255,255,255,0.10);
+  --topbar-wash:   linear-gradient(105deg, rgba(163,55,87,0.22) 0%, rgba(245,158,11,0.10) 42%, rgba(56,189,248,0.14) 100%);
+  --topbar-hairline: linear-gradient(90deg, rgba(163,55,87,0) 0%, rgba(244,114,182,0.45) 18%, rgba(245,158,11,0.35) 50%, rgba(56,189,248,0.40) 80%, rgba(56,189,248,0) 100%);
+  --topbar-capsule:        rgba(255,255,255,0.06);
+  --topbar-capsule-border: rgba(255,255,255,0.12);
+  --topbar-capsule-sheen:  rgba(255,255,255,0.08);
+  --topbar-control:        #B6C0CF;
+  --topbar-control-hover:  rgba(255,255,255,0.10);
+  --topbar-control-active: rgba(255,255,255,0.14);
+  --topbar-control-fg:     #F8FAFC;
 
   /* Elevation / shadows */
   --shadow-xs:    0 1px 2px rgba(0,0,0,0.38);
@@ -581,6 +600,42 @@ body {
 }
 .menu-toggle:hover { background: var(--logo-blue-soft-h); }
 .menu-toggle:active { transform: scale(0.94); }
+
+/* Top-bar glass: a translucent surface with a rose/amber/sky wash and a
+   gradient hairline instead of a flat border. Tokens carry both themes, so the
+   component has no darkMode branch for the surface. */
+.topbar-surface {
+  background: var(--topbar-bg);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
+}
+.topbar-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--topbar-wash);
+  pointer-events: none;
+}
+.topbar-surface::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--topbar-hairline);
+  pointer-events: none;
+}
+/* The right-hand controls sit in one glass capsule, the way iOS groups bar
+   buttons. Kept separate from .topbar-surface so the bell panel can still
+   anchor to its own wrapper. */
+.topbar-cluster {
+  background: var(--topbar-capsule);
+  border: 1px solid var(--topbar-capsule-border);
+  box-shadow: inset 0 1px 0 var(--topbar-capsule-sheen), 0 6px 18px rgba(163,55,87,0.10);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
 
 /* The top-bar controls are 32–36px so they fit the 32px compact bar. Apple asks
    for 44px targets; this extends the hit area without changing what is drawn.
