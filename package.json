@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "knip": "knip",
     "api-contract": "node scripts/api-contract-check.mjs",
+    "verify:android": "node scripts/verify-android-identities.mjs",
     "device-check": "node scripts/device-check/run.mjs",
     "e2e": "playwright test",
     "e2e:api": "playwright test --project=api"
