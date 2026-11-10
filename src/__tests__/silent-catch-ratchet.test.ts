@@ -117,10 +117,10 @@ const KNOWN = [
   // unchanged — line numbers only. 1861/2153 -> 1966/2364 and 949/950 ->
   // 1010/1011: the My Profile title row, grouped tablist, preview and discard
   // dialogs were added above these sites.
-  'app/(chrome)/settings/profile/page.tsx:1966',
-  'app/(chrome)/settings/profile/page.tsx:2364',
-  'app/(chrome)/settings/profile/page.tsx:1010',
-  'app/(chrome)/settings/profile/page.tsx:1011',
+  'app/(chrome)/settings/profile/page.tsx:1975',
+  'app/(chrome)/settings/profile/page.tsx:2374',
+  'app/(chrome)/settings/profile/page.tsx:1012',
+  'app/(chrome)/settings/profile/page.tsx:1013',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
   'app/(platform)/platform/_tabs/ActivityTab.tsx:47',

@@ -251,7 +251,10 @@ export const profile = {
     setup: () => http<{ secret: string; qrUrl: string }>('/api/profile/mfa/setup', { method: 'POST' }),
     verify: (code: string) =>
       http<{ recoveryCodes: string[] }>('/api/profile/mfa/verify', { method: 'POST', body: JSON.stringify({ code }) }),
-    disable: () => http<{ message: string }>('/api/profile/mfa', { method: 'DELETE' }),
+    disable: (currentPassword: string) =>
+      http<{ message: string }>('/api/profile/mfa', {
+        method: 'DELETE', body: JSON.stringify({ currentPassword }),
+      }),
   },
   notifications: {
     get: () => http<NotificationPreferences>('/api/profile/notifications'),
