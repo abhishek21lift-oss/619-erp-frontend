@@ -142,8 +142,9 @@ function Today() {
         title="Today"
         subtitle={roster?.day_of_week}
       >
-        {/* How far through the day, without spending a row on it. */}
-        {clients.length > 0 && (
+        {/* How far through the day, without spending a row on it. One client
+            is not a progress bar — a 0/1 track reads as a divider, not progress. */}
+        {clients.length > 1 && (
           <div
             className="h-1.5 w-full overflow-hidden rounded-full"
             style={{ background: 'rgba(255,255,255,0.18)' }}

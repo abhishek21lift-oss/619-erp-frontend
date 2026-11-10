@@ -23,12 +23,14 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // Session History, which is where the tab used to land. It stays lit on the
 // other session screens (history, booking) so the bar still says where you are.
 // Home opens the studio dashboard at `/` — the first screen after sign-in —
-// and uses the same Home icon as the member portal's first tab. Schedule uses
-// a calendar rather than a dumbbell — it opens a schedule, not a workout.
-// Called "Schedule" rather than "Sessions" because the drawer's Sessions group
-// is the booking/history category; one label, one meaning.
+// and uses the same Home icon as the member portal's first tab. It stays lit
+// on the Today queue, which the dashboard links to and which belongs to the
+// same Home section. Schedule uses a calendar rather than a dumbbell — it
+// opens a schedule, not a workout. Called "Schedule" rather than "Sessions"
+// because the drawer's Sessions group is the booking/history category; one
+// label, one meaning.
 const BASE_ITEMS: { href: string; icon: typeof Home; label: string; feature?: string; alsoActive?: string[] }[] = [
-  { href: '/',                   icon: Home,          label: 'Home'     },
+  { href: '/',                   icon: Home,          label: 'Home', alsoActive: ['/pt-os/today'] },
   { href: '/pt-os/clients',      icon: Users,         label: 'Clients'  },
   // The AI Suite spans two route prefixes: `/ai-coach` and the `/ai` analysis
   // tools. Without the extra matches the tab goes dark on the generator

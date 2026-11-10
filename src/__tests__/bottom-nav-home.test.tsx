@@ -72,6 +72,14 @@ describe('the mobile bottom bar', () => {
     expect(screen.getByRole('link', { name: /home/i })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('keeps Home current on the Today queue the dashboard links to', () => {
+    pathname.current = '/pt-os/today';
+    render(<MobileBottomNav />);
+
+    expect(screen.getByRole('link', { name: /home/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /schedule/i })).not.toHaveAttribute('aria-current');
+  });
+
   it('does not mark Home as current on another page, but keeps that page current', () => {
     pathname.current = '/pt-os/clients';
     render(<MobileBottomNav />);

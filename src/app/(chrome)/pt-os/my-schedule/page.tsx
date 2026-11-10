@@ -12,6 +12,7 @@ import ClientAvatar, { initialsOf } from '@/components/pt-os/ClientAvatar';
 import { Button, EmptyState, PageActions, PageHero, PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
+import { countDay } from '@/lib/schedule-stats';
 import type { PtSession, PtSessionStatus, TodayClient } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
@@ -358,13 +359,7 @@ export default function MySchedulePage() {
   // that made this page look broken: the figures came from pt_sessions while
   // the list now comes from the roster, and two sources describing one screen
   // will always drift apart.
-  const dayStats = useMemo(() => ({
-    total: dayRows.length,
-    done: dayRows.filter((r) => r.client?.session_status === 'completed').length,
-    toDo: dayRows.filter((r) => r.client && r.client.session_status !== 'completed').length,
-    missed: dayRows.filter((r) => r.booking
-      && (r.booking.status === 'cancelled' || r.booking.status === 'no_show')).length,
-  }), [dayRows]);
+  const dayStats = useMemo(() => countDay(dayRows), [dayRows]);
 
   const shiftWeek = useCallback((delta: number) => {
     const next = addDays(weekStart, delta * 7);
@@ -452,6 +447,7 @@ export default function MySchedulePage() {
               className="mb-3"
               icon={<CalendarCheck size={20} />}
               title="My Schedule"
+              compact
             />
             <PageActions className="mb-5">
               <Button iconLeft={<CalendarPlus size={15} />}
@@ -469,7 +465,7 @@ export default function MySchedulePage() {
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <button type="button" onClick={() => shiftWeek(-1)} aria-label="Previous week"
-                      className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
+                      className="flex h-11 w-11 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ border: '1px solid var(--border)' }}>
                       <ChevronLeft size={15} style={{ color: 'var(--text-muted)' }} />
                     </button>
@@ -482,7 +478,7 @@ export default function MySchedulePage() {
                       </button>
                     </div>
                     <button type="button" onClick={() => shiftWeek(1)} aria-label="Next week"
-                      className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
+                      className="flex h-11 w-11 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ border: '1px solid var(--border)' }}>
                       <ChevronRight size={15} style={{ color: 'var(--text-muted)' }} />
                     </button>
@@ -493,7 +489,9 @@ export default function MySchedulePage() {
                       const ymd = toYmd(d);
                       const isSelected = ymd === selectedDay;
                       const isToday = ymd === todayYmd;
-                      const count = (byDay[ymd] ?? []).length;
+                      // The selected day has the roster, so its dot matches
+                      // "On This Day"; the rest of the week only has bookings.
+                      const count = ymd === selectedDay ? dayRows.length : (byDay[ymd] ?? []).length;
                       return (
                         <button key={ymd} type="button" onClick={() => setSelectedDay(ymd)}
                           className="flex flex-col items-center gap-1 rounded-[12px] py-2 transition-all"
