@@ -64,18 +64,13 @@ describe('cockpit section order', () => {
   it('orders the day: schedule, next action, who to call, board, money', async () => {
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
-    // The target card carries the month, and the month is the first stable
-    // string that marks the shift from today's work to the month's numbers.
-    // Its section label was removed: it said "This month" above a card that
-    // already does.
-    const monthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
     await assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
       'Who to call',
       'AI Coach',
       'Progress Radar',
-      monthLabel,
+      'This Month',
       'Key Metrics',
     ]);
   }, 30_000);
