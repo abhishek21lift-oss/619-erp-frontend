@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { HeartPulse, AlertTriangle, Check } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
+import { HeartPulse, AlertTriangle } from 'lucide-react';
 import { assessVitalsSafety, classifyBp, classifyRhr, classifySpo2 } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
-import { StepHeader } from './StepHeader';
-import { bpPill, rhrPill, spo2Pill, stepTones } from './fitnessTheme';
+import { StepCard } from './StepCard';
+import { ReadingHero, ReadingInput, StatusChip, SupportInput, SupportItem } from './ReadingHero';
+import { bpPill, chapterAccent, rhrPill, spo2Pill } from './fitnessTheme';
 
 interface StepBloodPressureProps {
   form: AssessmentFormData;
@@ -35,19 +35,38 @@ export function StepBloodPressure({ form, set, error, athlete = false }: StepBlo
   const spo2Badge = spo2Category ? spo2Pill(spo2Category) : null;
 
   return (
-    <div>
-      <StepHeader
-        icon={HeartPulse}
-        tone={stepTones[1]}
-        title="Blood Pressure"
-        subtitle="Step 1 of 7 — resting cardiovascular baseline."
-      />
+    <StepCard
+      icon={HeartPulse}
+      accent={chapterAccent[1]}
+      title="Blood Pressure"
+      description="Resting cardiovascular baseline"
+      badge="Step 1 of 7"
+    >
+      <ReadingHero label="Blood pressure" accent={chapterAccent[1]}>
+        <ReadingInput label="Systolic (mmHg)" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
+        <span className="text-[26px] font-[300]" style={{ color: 'var(--text-muted)' }}>/</span>
+        <ReadingInput label="Diastolic (mmHg)" value={form.bpDiastolic} onChange={(v) => set('bpDiastolic', v)} />
+        <span className="text-[12px] font-[600]" style={{ color: 'var(--text-muted)' }}>mmHg</span>
+        {category && bpBadge && <StatusChip pill={bpBadge}>{category}</StatusChip>}
+      </ReadingHero>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FloatInput label="Systolic (mmHg)" numeric="integer" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
-        <FloatInput label="Diastolic (mmHg)" numeric="integer" value={form.bpDiastolic} onChange={(v) => set('bpDiastolic', v)} />
-        <FloatInput label="Resting Heart Rate (bpm)" numeric="integer" value={form.restingHeartRate} onChange={(v) => set('restingHeartRate', v)} />
-        <FloatInput label="Resting SpO₂ (%)" numeric="integer" value={form.restingSpo2} onChange={(v) => set('restingSpo2', v)} />
+      <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+        <SupportItem label="Resting HR" accent={chapterAccent[1]} tag="bpm">
+          <SupportInput
+            label="Resting Heart Rate (bpm)"
+            value={form.restingHeartRate}
+            onChange={(v) => set('restingHeartRate', v)}
+          />
+          {rhrCategory && rhrBadge && <StatusChip pill={rhrBadge}>{rhrCategory}</StatusChip>}
+        </SupportItem>
+        <SupportItem label="SpO₂" accent={chapterAccent[1]} tag="%">
+          <SupportInput
+            label="Resting SpO₂ (%)"
+            value={form.restingSpo2}
+            onChange={(v) => set('restingSpo2', v)}
+          />
+          {spo2Category && spo2Badge && <StatusChip pill={spo2Badge}>{spo2Category}</StatusChip>}
+        </SupportItem>
       </div>
 
       {/* No reading at all used to walk straight on into a step test and a
@@ -55,13 +74,18 @@ export function StepBloodPressure({ form, set, error, athlete = false }: StepBlo
           the record. */}
       {!form.bpSystolic && !form.bpDiastolic && (
         <button
-          type="button" onClick={() => set('bpNotMeasured', !form.bpNotMeasured)} aria-pressed={form.bpNotMeasured}
-          className="mt-4 flex w-full items-start gap-3 rounded-[14px] px-4 py-3 text-left"
+          type="button" role="switch" aria-checked={form.bpNotMeasured} onClick={() => set('bpNotMeasured', !form.bpNotMeasured)}
+          className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3 text-left"
           style={{ background: form.bpNotMeasured ? 'rgba(217,119,6,0.08)' : 'var(--bg-subtle)', border: `1.5px solid ${form.bpNotMeasured ? '#d97706' : 'var(--border)'}` }}
         >
-          <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]"
-            style={{ background: form.bpNotMeasured ? '#d97706' : 'var(--bg-card)', border: form.bpNotMeasured ? 'none' : '1.5px solid var(--border-2)' }}>
-            {form.bpNotMeasured && <Check size={13} color="#fff" strokeWidth={3} />}
+          <span
+            className="relative mt-0.5 h-5 w-9 flex-shrink-0 rounded-full transition-colors"
+            style={{ background: form.bpNotMeasured ? '#d97706' : 'var(--border-2)' }}
+          >
+            <span
+              className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all"
+              style={{ left: form.bpNotMeasured ? '18px' : '2px' }}
+            />
           </span>
           <span className="text-[13px] font-[600] leading-snug" style={{ color: 'var(--text-primary)' }}>
             Blood pressure not measured today — I confirm the client is fit for cardio, strength and endurance testing.
@@ -69,33 +93,10 @@ export function StepBloodPressure({ form, set, error, athlete = false }: StepBlo
         </button>
       )}
 
-      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
-
-      {(category || rhrCategory || spo2Category) && (
-        <div className="mt-6">
-          <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Classification</span>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {category && bpBadge && (
-              <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: bpBadge.bg, color: bpBadge.color }}>
-                BP · {category}
-              </span>
-            )}
-            {rhrCategory && rhrBadge && (
-              <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: rhrBadge.bg, color: rhrBadge.color }}>
-                HR · {rhrCategory}
-              </span>
-            )}
-            {spo2Category && spo2Badge && (
-              <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: spo2Badge.bg, color: spo2Badge.color }}>
-                SpO₂ · {spo2Category}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 
       {safety.level === 'stop' && (
-        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+        <div className="flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
           <AlertTriangle size={18} style={{ color: 'var(--danger-text)', flexShrink: 0, marginTop: 1 }} />
           <div>
             <p className="text-[13px] font-[640]" style={{ color: 'var(--danger-text)' }}>
@@ -109,7 +110,7 @@ export function StepBloodPressure({ form, set, error, athlete = false }: StepBlo
       )}
 
       {safety.level === 'caution' && (
-        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)' }}>
+        <div className="flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)' }}>
           <AlertTriangle size={18} style={{ color: '#b45309', flexShrink: 0, marginTop: 1 }} />
           <div>
             <p className="text-[13px] font-[640]" style={{ color: '#92400e' }}>
@@ -123,23 +124,23 @@ export function StepBloodPressure({ form, set, error, athlete = false }: StepBlo
       )}
 
       {safety.repeatBp && (
-        <p className="mt-3 text-[12px] font-[600]" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-[12px] font-[600]" style={{ color: 'var(--text-secondary)' }}>
           Rest 5–10 minutes and recheck blood pressure before exertion testing; record the second reading.
         </p>
       )}
 
       {safety.athleteLowRhr && (
-        <p className="mt-3 text-[12px] font-[600]" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-[12px] font-[600]" style={{ color: 'var(--text-secondary)' }}>
           Low resting heart rate is common in trained athletes and is not flagged here. Confirm the client feels well.
         </p>
       )}
 
       {safety.reasons.length > 0 && (
-        <p className="mt-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
           These classifications describe a single resting reading. They are not a diagnosis; repeat abnormal readings and refer when indicated.
         </p>
       )}
-    </div>
+    </StepCard>
   );
 }
 

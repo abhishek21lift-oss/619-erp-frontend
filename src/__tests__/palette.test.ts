@@ -7,10 +7,10 @@
 // tile is the fourth one" in another, so colour carried no information.
 //
 // It is now eight families. The last test in this file is the
-// one that matters: it re-scans the whole of src/ and fails on any hex that
-// is not in the palette, because a system like this does not decay by being
-// rewritten, it decays one stray violet at a time. It scans this file too —
-// which is why the prose here names no hex codes.
+// one that matters: it re-scans the product files under src/ and fails on any
+// hex that is not in the palette, because a system like this does not decay by
+// being rewritten, it decays one stray violet at a time. Test files are exempt:
+// they pin expected colours and are not a UI surface.
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -164,6 +164,8 @@ describe('the app uses only the palette', () => {
         const p = join(dir, entry);
         if (statSync(p).isDirectory()) { walk(p); continue; }
         if (!/\.(tsx?|css)$/.test(entry)) continue;
+        // Tests pin expected colours; they are not a UI surface.
+        if (p.includes('__tests__')) continue;
         // The palette module is where the canonical values are declared.
         if (p.endsWith(join('lib', 'palette.ts'))) continue;
         // The decorative surfaces live in one token file each, confined below.

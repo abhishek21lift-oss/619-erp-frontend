@@ -8,8 +8,8 @@ import { calc1RM, classifyStrengthDetail, scoreCategory, scoreTestBattery } from
 import type { Gender, FitnessCategory, StrengthPercentile } from '@/lib/fitness-calculations';
 import type { AssessmentFormData, StrengthExercise } from './types';
 import { n } from './types';
-import { StepHeader } from './StepHeader';
-import { categoryPill, gradient, stepTones } from './fitnessTheme';
+import { StepCard } from './StepCard';
+import { categoryPill, chapterAccent, gradient, stepTones } from './fitnessTheme';
 import { strengthCategoryGap } from './strengthGuidance';
 
 const EXERCISES: StrengthExercise[] = ['Bench Press', 'Leg Press', 'Squat', 'Deadlift', 'Shoulder Press', 'Custom Exercise'];
@@ -73,14 +73,13 @@ export function StepStrength({ form, set, gender, age, error, isBeginner }: Step
   ].filter((gap): gap is string => gap != null))];
 
   return (
-    <div>
-      <StepHeader
-        icon={Dumbbell}
-        tone={TONE}
-        title="Muscular Strength"
-        subtitle={`Step 5 of 7 — ${isBeginner ? 'optional; two one-rep max tests.' : 'two one-rep max tests, e.g. an upper-body lift plus a lower-body lift.'}`}
-      />
-
+    <StepCard
+      icon={Dumbbell}
+      accent={chapterAccent[5]}
+      title="Muscular Strength"
+      description={isBeginner ? 'Optional — two one-rep max tests' : 'Two one-rep max tests'}
+      badge="Step 5 of 7"
+    >
       {isBeginner && (
         <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(163,55,87,0.06)', border: '1px solid rgba(163,55,87,0.18)' }}>
           <Info size={15} style={{ color: '#852E4E', flexShrink: 0, marginTop: 1 }} />
@@ -141,7 +140,7 @@ export function StepStrength({ form, set, gender, age, error, isBeginner }: Step
           ))}
         </div>
       )}
-    </div>
+    </StepCard>
   );
 }
 
