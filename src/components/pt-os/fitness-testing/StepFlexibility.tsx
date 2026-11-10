@@ -91,10 +91,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
           ) : (
             <p className="mt-3 text-[13px]" style={{ color: 'var(--text-muted)' }}>{legacyBlobSummary(blob)}</p>
           )}
-          <p className="mt-4 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            The four K11 tests need their own measurements, so this older result cannot be converted. It stays attached to the
-            assessment unless you re-record with the current protocol.
-          </p>
           <Button
             variant="outline" size="sm" className="mt-3"
             iconLeft={<RefreshCw size={13} />}
@@ -205,8 +201,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                       <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{content.name}</p>
                       <span className="text-[11px] font-[700]" style={{ color: status.color }}>{status.text}</span>
                     </div>
-                    <p className="mt-0.5 text-[12px] leading-[1.45]" style={{ color: 'var(--text-secondary)' }}>{content.purpose}</p>
-                    <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{content.setup}</p>
                     <p className="mt-1 text-[11.5px] font-[640]" style={{ color: 'var(--text-muted)' }}>
                       {state.unable
                         ? `Not performed: ${state.unableReason.trim() || 'reason missing'}`
@@ -246,9 +240,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                 autoGrow
                 maxLength={500}
               />
-              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                Stored as an override on the assessment, with your name and the time.
-              </p>
             </div>
           )}
 

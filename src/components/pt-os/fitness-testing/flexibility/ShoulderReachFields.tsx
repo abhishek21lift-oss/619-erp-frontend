@@ -40,7 +40,6 @@ export function ShoulderReachFields({ state: s, derived, patch }: Props) {
               options={['', ...SHOULDER_REACH_RESULTS] as const}
               optionLabel={(v) => (v === '' ? 'Not recorded' : REACH_LABEL[v])}
               onChange={(v) => setReach(side, v)}
-              description="Other hand reaches up the back. Compare the fingertips without forcing."
             />
             <YesNoChips label="Pain reported" value={s.pain[side]} onChange={(v) => setPain(side, v)} compact />
           </div>
@@ -59,9 +58,7 @@ export function ShoulderReachFields({ state: s, derived, patch }: Props) {
               detail: reach == null ? 'reach not recorded' : REACH_LABEL[reach],
             };
           })}
-        >
-          Overlap and touch are clear; a gap on either side is a possible restriction.
-        </Insight>
+        />
       ) : (
         <InsightUnavailable />
       )}
