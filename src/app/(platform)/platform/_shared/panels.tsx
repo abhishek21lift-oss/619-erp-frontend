@@ -28,6 +28,11 @@ export const NotificationCentre = dynamic(() => import('@/components/platform/no
 export const SecurityCentre = dynamic(() => import('@/components/platform/security-centre'), {
   loading: () => <PanelSkeleton label="Checking security posture…" />,
 });
+// Self-service, above the read-only overview: the operator's own second factor
+// lives in this tab because /settings/profile refuses a platform session.
+export const MyMfaCard = dynamic(() => import('@/components/platform/my-mfa-card'), {
+  loading: () => <PanelSkeleton label="Reading your security settings…" />,
+});
 export const SupportCentre = dynamic(() => import('@/components/platform/support-centre'), {
   loading: () => <PanelSkeleton label="Loading tickets…" />,
 });
