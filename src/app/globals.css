@@ -867,6 +867,29 @@ select.form-control { cursor: pointer; }
 .form-hint { font-size: 11px; color: var(--text-muted); }
 .form-error { font-size: 11px; color: var(--danger-text); }
 .form-control.is-error { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
+
+/* Filled, borderless field used by the fitness assessment wizard. Lives here
+   because the control's surface is inline and an inline style cannot express
+   :focus. --brand/--brand-soft are set by FloatInput (and tinted per chapter
+   by StepCard), so the ring follows the field's accent. */
+.control-soft {
+  min-height: 48px;
+  border-radius: 14px;
+  background: var(--bg-subtle);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 550;
+}
+textarea.control-soft { padding-top: 12px; padding-bottom: 12px; }
+.control-soft:hover { background: var(--bg-hover); }
+.control-soft:disabled { background: var(--bg-subtle); }
+.control-soft[aria-invalid="true"] { border-color: var(--danger-border); }
+.control-soft:focus {
+  background: var(--bg-card);
+  border-color: var(--brand, var(--action));
+  box-shadow: 0 0 0 4px var(--brand-soft, rgba(163,55,87,0.10));
+  outline: none;
+}
 .input-group { display: flex; }
 .input-group .form-control { border-radius: var(--radius-sm) 0 0 var(--radius-sm); flex: 1; }
 .input-group .btn { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }

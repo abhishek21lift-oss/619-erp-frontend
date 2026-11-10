@@ -48,7 +48,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
         </p>
       )}
 
-      <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <div>
         <div className="mb-4">
           <SearchableSelect
             label="Assessment Method" allowCustom={false}

@@ -168,7 +168,7 @@ function StrengthTestBlock({
   const pill = result.category ? categoryPill(result.category) : null;
 
   return (
-    <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+    <div>
       <div className="mb-3 flex items-center gap-2">
         <span className="h-2.5 w-2.5 rounded-[4px]" style={{ background: gradient(TONE) }} aria-hidden />
         <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
