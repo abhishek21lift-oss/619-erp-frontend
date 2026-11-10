@@ -1,8 +1,9 @@
 'use client';
 
-import { useId } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { clampNumericText } from '@/components/ui/FloatInput';
+import { FormField } from '@/components/ui/form/FormField';
+import { TextInput } from '@/components/ui/form/controls';
 
 /** The one reading a card leads with: 36px numeral, unit and status beside it. */
 export function ReadingHero({ label, accent, children }: {
@@ -28,23 +29,22 @@ export function ReadingInput({ label, value, onChange, unit, width = 'default' }
   unit?: string;
   width?: 'default' | 'narrow';
 }) {
-  const id = useId();
   return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <input
-        id={id}
-        aria-label={label}
-        inputMode="numeric"
-        value={value}
-        placeholder="—"
-        onChange={(e) => onChange(clampNumericText(e.target.value, 'integer'))}
-        className={`h-12 border-0 bg-transparent p-0 text-[36px] font-[760] leading-none tracking-[-0.045em] ${
-          width === 'narrow' ? 'w-[62px]' : 'w-[78px]'
-        }`}
-        style={{ color: 'var(--text-primary)' }}
-      />
+    <div className="inline-flex items-baseline gap-1.5">
+      <FormField label={label} labelHidden>
+        <TextInput
+          inputMode="numeric"
+          value={value}
+          placeholder="—"
+          onChange={(e) => onChange(clampNumericText(e.target.value, 'integer'))}
+          className={`h-12 rounded-none p-0 text-[36px] font-[760] leading-none tracking-[-0.045em] ${
+            width === 'narrow' ? 'w-[62px]' : 'w-[78px]'
+          }`}
+          style={{ background: 'transparent', border: 0, color: 'var(--text-primary)' }}
+        />
+      </FormField>
       {unit && <span className="text-[12px] font-[600]" style={{ color: 'var(--text-muted)' }}>{unit}</span>}
-    </span>
+    </div>
   );
 }
 
@@ -81,21 +81,20 @@ export function SupportInput({ label, value, onChange, unit }: {
   onChange: (v: string) => void;
   unit?: string;
 }) {
-  const id = useId();
   return (
-    <span className="flex min-w-0 flex-1 items-baseline justify-end gap-1">
-      <input
-        id={id}
-        aria-label={label}
-        inputMode="numeric"
-        value={value}
-        placeholder="—"
-        onChange={(e) => onChange(clampNumericText(e.target.value, 'integer'))}
-        className="h-11 w-full min-w-0 border-0 bg-transparent p-0 text-right text-[15px] font-[700]"
-        style={{ color: 'var(--text-primary)' }}
-      />
+    <div className="flex min-w-0 flex-1 items-baseline justify-end gap-1">
+      <FormField label={label} labelHidden className="min-w-0 flex-1">
+        <TextInput
+          inputMode="numeric"
+          value={value}
+          placeholder="—"
+          onChange={(e) => onChange(clampNumericText(e.target.value, 'integer'))}
+          className="h-11 min-w-0 rounded-none p-0 text-right text-[15px] font-[700]"
+          style={{ background: 'transparent', border: 0, color: 'var(--text-primary)' }}
+        />
+      </FormField>
       {unit && <span className="shrink-0 text-[10.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>{unit}</span>}
-    </span>
+    </div>
   );
 }
 
