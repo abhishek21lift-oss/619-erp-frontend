@@ -42,6 +42,7 @@ import {
 } from '@/lib/checkin';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { cameraBlockedHint } from '@/lib/camera-permission';
 import { tones, gradient, checkinMesh, scanGlow, type ToneName } from '@/components/attendance/attendanceTheme';
 
 // ─── The decoder ──────────────────────────────────────────────────────────────
@@ -183,7 +184,7 @@ function HeaderStat({ icon, value, label, loading }: {
 function RoundButton({ label, onClick, href, pressed, children }: {
   label: string; onClick?: () => void; href?: string; pressed?: boolean; children: React.ReactNode;
 }) {
-  const cls = 'grid h-10 w-10 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95';
+  const cls = 'grid h-11 w-11 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95';
   const style = { background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.24)' };
   return href
     ? <Link href={href} aria-label={label} className={cls} style={style}>{children}</Link>
@@ -467,6 +468,19 @@ function CheckinScanner() {
       return;
     }
 
+    // A denial is remembered: getUserMedia would reject without prompting
+    // again, so "Try again" alone loops. Ask first and name the way back.
+    try {
+      const permission = await navigator.permissions?.query({ name: 'camera' as PermissionName });
+      if (permission?.state === 'denied') {
+        setCameraErr(cameraBlockedHint(navigator.userAgent));
+        setScanState('error');
+        return;
+      }
+    } catch {
+      // Permissions API missing (Safari): getUserMedia below still answers.
+    }
+
     // The decoder and the camera are two independent waits — run them together.
     const decoder = decoderRef.current ? Promise.resolve(decoderRef.current) : makeDecoder();
 
@@ -487,7 +501,7 @@ function CheckinScanner() {
     } catch (err: unknown) {
       const name = err instanceof Error ? err.name : '';
       setCameraErr(
-        name === 'NotAllowedError' ? 'Camera permission denied. Allow camera access and try again.'
+        name === 'NotAllowedError' ? cameraBlockedHint(navigator.userAgent)
           : name === 'NotReadableError' ? 'The camera is in use by another app. Close it and try again.'
             : 'No camera available on this device.',
       );
@@ -683,14 +697,14 @@ function CheckinScanner() {
               )}
 
               {cameraErr && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center"
+                <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center"
                   style={{ background: 'rgba(2,6,23,0.95)' }}>
                   <span className="grid h-14 w-14 place-items-center rounded-[18px]" style={{ background: rgba(C.danger, 0.16) }}>
                     <Camera size={26} color={palette.red[400]} />
                   </span>
                   <p className="max-w-[280px] text-[13px] font-[650]" style={{ color: palette.red[400] }}>{cameraErr}</p>
                   <button type="button" onClick={() => void startCamera()}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-full px-5 text-[13px] font-[780] text-white"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[13px] font-[780] text-white"
                     style={{ background: `linear-gradient(135deg, ${scanGlow[0]}, ${scanGlow[1]})` }}>
                     <RefreshCw size={13} /> Try again
                   </button>
