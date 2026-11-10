@@ -192,6 +192,28 @@ describe('<AICoach />', () => {
     expect(screen.queryByText(/Suggested action/i)).toBeNull();
   });
 
+  // The board reads renewals, dues and birthdays. The roster sweep reads
+  // training silence and can answer "unknown" — which the board cannot see.
+  // An all-clear over an unknown client is the one lie this screen must not
+  // tell, so every non-zero verdict from the sweep wins.
+  it('never says all clear over a client the roster could not assess', () => {
+    renderCard({ d: clean, ops: empty, birthdays: [], notAssessable: 1 });
+    expect(screen.queryByText(/Nothing needs you right now/i)).toBeNull();
+    expect(screen.getByText(/1 client could not be assessed — see Who to call/i)).toBeTruthy();
+  });
+
+  it('does not turn a failed roster check into an all-clear', () => {
+    renderCard({ d: clean, ops: empty, birthdays: [], notAssessable: null });
+    expect(screen.queryByText(/Nothing needs you right now/i)).toBeNull();
+    expect(screen.getByText(/not an all-clear/i)).toBeTruthy();
+  });
+
+  it('stays neutral while the roster check is still running', () => {
+    renderCard({ d: clean, ops: empty, birthdays: [], notAssessable: 'pending' });
+    expect(screen.queryByText(/Nothing needs you right now/i)).toBeNull();
+    expect(screen.getByText(/Checking the roster/i)).toBeTruthy();
+  });
+
   it('carries urgency in words, not only in colour', () => {
     renderCard();
     const row = screen.getByRole('radio', { name: /packages expired/i });
