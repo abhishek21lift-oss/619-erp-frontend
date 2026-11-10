@@ -16,8 +16,6 @@ interface YesNoChipsProps {
   /** null = not answered yet. Absent is a state, not a "No". */
   value: boolean | null;
   onChange: (v: boolean | null) => void;
-  /** Right-aligned hint, e.g. the protocol's rule for this answer. */
-  hint?: string;
   compact?: boolean;
 }
 
@@ -26,7 +24,7 @@ interface YesNoChipsProps {
  * which is the only way back to "not answered" after a misclick — a trainer
  * should not have to reload the draft to fix a wrong tap.
  */
-export function YesNoChips({ label, value, onChange, hint, compact }: YesNoChipsProps) {
+export function YesNoChips({ label, value, onChange, compact }: YesNoChipsProps) {
   const chip = (v: boolean, text: string) => {
     const selected = value === v;
     return (
@@ -56,7 +54,6 @@ export function YesNoChips({ label, value, onChange, hint, compact }: YesNoChips
         {chip(false, 'No')}
         {value === null && <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>not answered</span>}
       </span>
-      {hint && <span className="w-full text-[11px]" style={{ color: 'var(--text-muted)' }}>{hint}</span>}
     </div>
   );
 }
@@ -68,12 +65,11 @@ interface EnumSelectProps<T extends string> {
   onChange: (v: T) => void;
   /** Display text per option, when the stored value reads badly. */
   optionLabel?: (v: T) => string;
-  description?: string;
 }
 
-export function EnumSelect<T extends string>({ label, value, options, onChange, optionLabel, description }: EnumSelectProps<T>) {
+export function EnumSelect<T extends string>({ label, value, options, onChange, optionLabel }: EnumSelectProps<T>) {
   return (
-    <FormField label={label} description={description} density="compact">
+    <FormField label={label} density="compact">
       <SelectInput value={value} onChange={(e) => onChange(e.target.value as T)}>
         {options.map((o) => <option key={o} value={o}>{optionLabel ? optionLabel(o) : o}</option>)}
       </SelectInput>
@@ -86,13 +82,12 @@ interface MeasurementProps {
   value: string;
   onChange: (v: string) => void;
   suffix?: string;
-  hint?: string;
   min?: number;
   max?: number;
 }
 
 /** A measured number on a flexibility screen. cm / degrees / inches. */
-export function Measurement({ label, value, onChange, suffix, hint, min, max }: MeasurementProps) {
+export function Measurement({ label, value, onChange, suffix, min, max }: MeasurementProps) {
   const num = value.trim() === '' ? null : Number(value);
   const outOfRange = num != null && Number.isFinite(num) && ((min != null && num < min) || (max != null && num > max));
   return (
@@ -105,7 +100,6 @@ export function Measurement({ label, value, onChange, suffix, hint, min, max }: 
         suffix={suffix}
         error={outOfRange ? `Expected ${min}–${max}${suffix ? ` ${suffix}` : ''}.` : undefined}
       />
-      {hint && !outOfRange && <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{hint}</p>}
     </div>
   );
 }
