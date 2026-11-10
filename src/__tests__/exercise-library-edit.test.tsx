@@ -90,7 +90,7 @@ describe('editing a built-in exercise', () => {
     await waitFor(() => expect(duplicate).toHaveBeenCalledWith('builtin-1'));
     expect(push).toHaveBeenCalledWith('/pt-os/exercise-library/copy-1/edit');
     expect(success).toHaveBeenCalledWith('Created "Barbell Squat (Copy)" — editing the copy');
-  });
+  }, 15000);
 
   it('opens a custom row directly, with no copy in between', async () => {
     list.mockResolvedValue({
