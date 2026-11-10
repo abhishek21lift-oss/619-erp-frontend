@@ -1,26 +1,25 @@
-// Navigation wiring regressions found in the 2026-10-24 review.
+// Navigation wiring regressions found in the 2026-10-24 review, plus the
+// 2026-11-10 wiring pass: the Settings group was configured but never
+// rendered, the attendance dashboard lived only in a second search list, the
+// command palette duplicated GlobalSearch, and both sidebar variants polled
+// the same badges.
 //
-// These are structural on purpose: the failures were dead links, a search
-// index that ignored the signed-in role, and member nav that had drifted from
-// nav-config. Each assertion names the production change that would break it.
+// These are structural on purpose: each assertion names the production change
+// that would break it.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { NAV_GROUPS, QUICK_ACTIONS } from '@/lib/nav-config';
 import { readApp, srcPath } from '@/__tests__/helpers/app-routes';
 
 const read = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 const shell = read('components', 'AppShell.tsx');
-const palette = read('components', 'CommandPalette.tsx');
+const sidebar = read('components', 'sidebar', 'Sidebar.tsx');
 const memberNav = read('components', 'member', 'MemberNav.tsx');
 const search = read('components', 'search', 'GlobalSearch.tsx');
+const layout = read('app', 'layout.tsx');
 
 describe('client records open the canonical profile route', () => {
-  it('uses /pt-os/clients/:id in the command palette', () => {
-    expect(palette).not.toMatch(/href:\s*`\/clients\/\$\{/);
-    expect(palette).toContain('href: `/pt-os/clients/${c.id}`');
-  });
-
   it('uses /pt-os/clients/:id from the transformations table', () => {
     const page = readApp('training', 'transformations', 'page.tsx');
     expect(page).not.toContain('href={`/clients/${c.id}`}');
@@ -45,15 +44,37 @@ describe('quick actions are trainer-only', () => {
     expect(actions.get('qa-book-session')?.roles).toEqual(['trainer']);
     expect(actions.get('qa-checkin')?.roles).toEqual(['trainer']);
   });
-
-  it('does not search clients for a member session', () => {
-    expect(palette).toMatch(/user\?\.role !== 'trainer'/);
-  });
 });
 
 describe('support is reachable from the avatar menu', () => {
   it('links /support, not only /help', () => {
     expect(shell).toContain('href="/support"');
+  });
+});
+
+describe('the sidebar renders every configured group', () => {
+  it('renders the Settings group alongside the studio groups', () => {
+    expect(sidebar).toMatch(/NAV_GROUPS,\s*SETTINGS_GROUP/);
+    expect(sidebar).toContain('SETTINGS_GROUP');
+  });
+
+  it('does not poll the badge counts from both sidebar variants at once', () => {
+    expect(sidebar).toMatch(/poll\?: boolean/);
+    expect(sidebar).toMatch(/if \(!isTrainer \|\| !poll\) return;/);
+    expect(sidebar).toMatch(/poll=\{isMobile \? mobileOpen : isDesktop\}/);
+  });
+});
+
+describe('one search owner', () => {
+  it('does not mount the retired command palette', () => {
+    expect(layout).not.toContain('CommandPalette');
+    expect(existsSync(srcPath('components', 'CommandPalette.tsx'))).toBe(false);
+  });
+
+  it('indexes the attendance dashboard from nav-config, not a second list', () => {
+    const item = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.href === '/checkin/dashboard');
+    expect(item?.feature).toBe('attendance');
+    expect(shell).not.toContain('EXTRA_SEARCH_PAGES');
   });
 });
 
@@ -97,6 +118,10 @@ describe('the member bottom bar is built from nav-config', () => {
   it('keeps Payments lit on the checkout route', () => {
     expect(memberNav).toContain("startsWith('/member/pay/')");
   });
+
+  it('is labelled for assistive technology', () => {
+    expect(memberNav).toContain('aria-label="Member navigation"');
+  });
 });
 
 describe('search cleanup', () => {
@@ -109,11 +134,6 @@ describe('search cleanup', () => {
     ]) {
       expect(shell).not.toContain(`'${href}':`);
     }
-  });
-
-  it('feature-gates the extra attendance dashboard page', () => {
-    expect(shell).toMatch(/href: '\/checkin\/dashboard'[\s\S]{0,120}feature: 'attendance'/);
-    expect(shell).toMatch(/EXTRA_SEARCH_PAGES[\s\S]{0,200}isVisibleForFeature/);
   });
 
   it('uses the one quick-action list from nav-config', () => {

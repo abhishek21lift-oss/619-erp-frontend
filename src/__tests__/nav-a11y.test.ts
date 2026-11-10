@@ -121,9 +121,10 @@ describe('the sidebar says where you are and stays usable collapsed', () => {
 });
 
 describe('every icon in the studio navigation resolves', () => {
-  it('finds all NAV_GROUPS icons in the sidebar allowlist', () => {
+  it('finds all NAV_GROUPS and SETTINGS_GROUP icons in the sidebar allowlist', () => {
     const navGroups = config.split('export const NAV_GROUPS')[1].split('export const SETTINGS_GROUP')[0];
-    const icons = [...new Set([...navGroups.matchAll(/icon:\s*'([^']+)'/g)].map((m) => m[1]))];
+    const settings = config.split('export const SETTINGS_GROUP')[1].split('export const QUICK_ACTIONS')[0];
+    const icons = [...new Set([...navGroups.matchAll(/icon:\s*'([^']+)'/g), ...settings.matchAll(/icon:\s*'([^']+)'/g)].map((m) => m[1]))];
     const map = sidebar.split('const ICON_MAP')[1].split('};')[0];
     const missing = icons.filter((i) => !new RegExp(`\\b${i}\\b`).test(map));
     expect(missing).toEqual([]);

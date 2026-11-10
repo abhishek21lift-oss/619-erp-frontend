@@ -108,6 +108,28 @@ describe('allNavItems inherits the group tag', () => {
   });
 });
 
+describe('progress and reports are not over-gated', () => {
+  it('keeps the progress hub visible when screening is off', () => {
+    const progress = NAV_GROUPS.find((g) => g.id === 'progress')!;
+    expect(progress.feature).toBeUndefined();
+    expect(progress.items.every((i) => isVisibleForFeature(i, { screening: false }))).toBe(true);
+  });
+
+  it('gates the three report pages individually, not the whole Reports group', () => {
+    const reports = NAV_GROUPS.find((g) => g.id === 'insights')!;
+    expect(reports.feature).toBeUndefined();
+    for (const href of ['/insights/revenue', '/insights/renewal', '/insights/traffic']) {
+      expect(reports.items.find((i) => i.href === href)?.feature).toBe('insights');
+    }
+    const visible = reports.items.filter((i) => isVisibleForFeature(i, { insights: false }));
+    expect(visible.map((i) => i.href)).toEqual([
+      '/pt-os/feedback',
+      '/operations/leaderboard',
+      '/pt-os/activity-log',
+    ]);
+  });
+});
+
 describe('the tags match the platform registry', () => {
   // Keys seeded by backend migration 123_feature_manager.sql. A tag that is
   // not in this list can never be switched off, so it would be dead config
