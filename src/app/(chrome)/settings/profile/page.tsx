@@ -976,6 +976,8 @@ function ProfilePageInner() {
   const [mfaBusy, setMfaBusy] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
   const [disableMfaOpen, setDisableMfaOpen] = useState(false);
+  const [disableMfaPw, setDisableMfaPw] = useState('');
+  const [disableMfaError, setDisableMfaError] = useState<string | null>(null);
   const [signOutAllOpen, setSignOutAllOpen] = useState(false);
 
   /* Re-authentication for changing the sign-in email (server requires it) */
@@ -1303,14 +1305,17 @@ function ProfilePageInner() {
   };
 
   const disableMfa = async () => {
+    if (!disableMfaPw) return;
     setMfaBusy(true);
+    setDisableMfaError(null);
     try {
-      await api.profile.mfa.disable();
+      await api.profile.mfa.disable(disableMfaPw);
       setMe(prev => prev ? { ...prev, mfaEnabled: false } : prev);
       setDisableMfaOpen(false);
+      setDisableMfaPw('');
       toast.success('Two-factor authentication disabled');
     } catch (err: unknown) {
-      toast.error(errorMessage(err, 'Failed to disable two-factor authentication'));
+      setDisableMfaError(errorMessage(err, 'Failed to disable two-factor authentication'));
     } finally {
       setMfaBusy(false);
     }
@@ -1502,7 +1507,9 @@ function ProfilePageInner() {
               <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
                 {[
                   { icon: <Calendar size={17} />, label: 'Member since', value: fmtDate(me?.createdAt), tone: 'indigo' as const },
-                  { icon: <Shield size={17} />, label: 'Two-factor auth', value: me?.mfaEnabled ? 'Enabled' : 'Disabled', tone: (me?.mfaEnabled ? 'mint' : 'gold') as ToneName },
+                  // Login only challenges super_admin for a second factor; for
+                  // any other role this chip reported a setting that did nothing.
+                  ...(me?.role === 'super_admin' ? [{ icon: <Shield size={17} />, label: 'Two-factor auth', value: me?.mfaEnabled ? 'Enabled' : 'Disabled', tone: (me?.mfaEnabled ? 'mint' : 'gold') as ToneName }] : []),
                   { icon: <ShieldCheck size={17} />, label: 'Role', value: roleLabel, tone: 'berry' as const },
                   { icon: <History size={17} />, label: 'All-time actions', value: String(activityTotal), tone: 'sunset' as const },
                   ...(me ? [{ icon: <Award size={17} />, label: 'Certifications', value: String(me.credentialSummary.total - me.credentialSummary.expired), tone: 'lime' as const }] : []),
@@ -1934,7 +1941,9 @@ function ProfilePageInner() {
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-                {/* Two-Factor Authentication */}
+                {/* Two-Factor Authentication — platform operators only, since
+                    that is the only role routes/auth.js challenges for it. */}
+                {me?.role === 'super_admin' && (
                 <FadeUp>
                   <GlassCard className="p-6" glow tone="mint">
                     <SectionHeader tone="mint" icon={<Fingerprint size={15} />} title="Two-Factor Authentication" subtitle="Authenticator app (TOTP)" />
@@ -2002,6 +2011,7 @@ function ProfilePageInner() {
                     )}
                   </GlassCard>
                 </FadeUp>
+                )}
 
                 {/* Login Alerts + Sign out everywhere */}
                 <FadeUp delay={0.05}>
@@ -2412,27 +2422,37 @@ function ProfilePageInner() {
         </Dialog>
 
         {/* ── DISABLE MFA CONFIRM ── */}
-        <Dialog open={disableMfaOpen} onOpenChange={setDisableMfaOpen}>
+        <Dialog open={disableMfaOpen} onOpenChange={(open) => {
+          if (!open && !mfaBusy) { setDisableMfaOpen(false); setDisableMfaPw(''); setDisableMfaError(null); }
+        }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Disable two-factor authentication?</DialogTitle>
             </DialogHeader>
-            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              Your account will only be protected by your password. You can re-enable 2FA at any time.
-            </p>
-            <DialogFooter>
-              <button onClick={() => setDisableMfaOpen(false)}
-                className="rounded-[10px] px-4 py-2 text-[12.5px] font-[700]"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                Cancel
-              </button>
-              <button onClick={disableMfa} disabled={mfaBusy}
-                className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[12.5px] font-[700] text-white"
-                style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', opacity: mfaBusy ? 0.6 : 1 }}>
-                {mfaBusy ? <Loader2 size={13} className="animate-spin" /> : null}
-                Disable 2FA
-              </button>
-            </DialogFooter>
+            <form onSubmit={(e) => { e.preventDefault(); void disableMfa(); }} className="flex flex-col gap-3">
+              <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                Your account will only be protected by your password. Enter your current password to confirm.
+              </p>
+              <FloatInput
+                tone="brand" upperLifted label="Current Password" type="password"
+                value={disableMfaPw}
+                onChange={(v) => { setDisableMfaPw(v); setDisableMfaError(null); }}
+                error={disableMfaError ?? undefined} required
+              />
+              <DialogFooter>
+                <button type="button" onClick={() => { setDisableMfaOpen(false); setDisableMfaPw(''); setDisableMfaError(null); }}
+                  className="rounded-[10px] px-4 py-2 text-[12.5px] font-[700]"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={mfaBusy || !disableMfaPw}
+                  className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[12.5px] font-[700] text-white"
+                  style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', opacity: (mfaBusy || !disableMfaPw) ? 0.6 : 1 }}>
+                  {mfaBusy ? <Loader2 size={13} className="animate-spin" /> : null}
+                  Disable 2FA
+                </button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 
