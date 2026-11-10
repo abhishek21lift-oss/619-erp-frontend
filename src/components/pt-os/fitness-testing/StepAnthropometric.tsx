@@ -73,7 +73,7 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
       description="Body measurements"
       badge="Step 2 of 7"
     >
-      <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Height (cm)" numeric="decimal" value={form.heightCm} onChange={(v) => set('heightCm', v)} />
           <FloatInput label="Weight (kg)" numeric="decimal" value={form.weight} onChange={(v) => set('weight', v)} />
@@ -87,7 +87,7 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
         </div>
       </div>
 
-      <div className="mt-5 rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <div className="mt-5">
         <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Limbs (Right / Left)</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <FloatInput label="Right Arm (cm)" numeric="decimal" value={form.armRightCm} onChange={(v) => set('armRightCm', v)} />

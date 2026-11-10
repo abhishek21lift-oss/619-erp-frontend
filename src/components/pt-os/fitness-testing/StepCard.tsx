@@ -20,7 +20,15 @@ export function StepCard({ icon: Icon, accent, title, description, badge, childr
   return (
     <section
       className="rounded-[24px] border bg-[var(--bg-card)] p-5 sm:p-7"
-      style={{ borderColor: 'var(--border)' }}
+      style={{
+        borderColor: 'var(--border)',
+        // FloatInput focuses to --brand/--brand-soft, both derived from --gold.
+        // Tinting them here gives each chapter's fields its own focus ring
+        // without touching the 39 other screens that use the default amber.
+        '--gold': accent,
+        '--brand': accent,
+        '--brand-soft': `color-mix(in srgb, ${accent} 12%, transparent)`,
+      } as React.CSSProperties}
     >
       <div className="flex flex-wrap items-start gap-x-3.5 gap-y-2">
         <span

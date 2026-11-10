@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { clampNumericText } from '@/components/ui/FloatInput';
 import { FormField } from '@/components/ui/form/FormField';
-import { TextInput } from '@/components/ui/form/controls';
+import { FieldSurface, TextInput } from '@/components/ui/form/controls';
 
 /** The one reading a card leads with: 36px numeral, unit and status beside it. */
 export function ReadingHero({ label, accent, children }: {
@@ -12,13 +12,17 @@ export function ReadingHero({ label, accent, children }: {
   children: ReactNode;
 }) {
   return (
-    <div
-      className="rounded-[18px] bg-[var(--bg-subtle)] px-4 py-3.5 focus-within:ring-2 focus-within:ring-[var(--accent)]"
-      style={{ '--accent': accent } as CSSProperties}
-    >
-      <p className="text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">{children}</div>
-    </div>
+    // These numerals are not standard fields: they are borderless 36px digits
+    // sitting on the card's own tint. Opt out of the wizard's soft surface.
+    <FieldSurface surface="default">
+      <div
+        className="rounded-[18px] bg-[var(--bg-subtle)] px-4 py-3.5 focus-within:ring-2 focus-within:ring-[var(--accent)]"
+        style={{ '--accent': accent } as CSSProperties}
+      >
+        <p className="text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">{children}</div>
+      </div>
+    </FieldSurface>
   );
 }
 
