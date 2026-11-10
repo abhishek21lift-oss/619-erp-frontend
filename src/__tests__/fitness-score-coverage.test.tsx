@@ -12,6 +12,7 @@ import {
   FitnessDashboard,
   type FitnessScores,
 } from '@/components/pt-os/fitness-testing/FitnessDashboard';
+import { bandBg, bandFill, bandInk, bandLabel } from '@/components/pt-os/fitness-testing/fitnessTheme';
 
 const { radarSpy } = vi.hoisted(() => ({ radarSpy: vi.fn() }));
 vi.mock('@/components/pt-os/FitnessRadarChart', () => ({
@@ -124,6 +125,18 @@ describe('computeOverallScore (stored formula unchanged)', () => {
         strength: null,
       }),
     ).toBeNull();
+  });
+});
+
+describe('band tokens', () => {
+  it('maps a score onto the status tokens at the 80/40 cutoffs', () => {
+    expect([bandLabel(80), bandLabel(79), bandLabel(40), bandLabel(39)]).toEqual([
+      'Strong', 'Fair', 'Fair', 'Needs work',
+    ]);
+    // Fill, ink and tint must all come from the theme, never a hard-coded hex.
+    expect(bandFill(90)).toBe('var(--success-text)');
+    expect(bandInk(60)).toBe('var(--warning-text)');
+    expect(bandBg(10)).toBe('var(--danger-bg)');
   });
 });
 

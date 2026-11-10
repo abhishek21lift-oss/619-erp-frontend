@@ -5,7 +5,7 @@ import { Activity, Dumbbell, Gauge, HeartPulse, Move, Repeat, ShieldCheck } from
 import { m } from 'framer-motion';
 import FitnessRadarChart, { type RadarDatum } from '@/components/pt-os/FitnessRadarChart';
 import { scoreCoverage, formatCoverage } from '@/lib/fitness-calculations';
-import { bandFill, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
+import { bandFill, bandLabel, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
 
 export interface FitnessScores {
   cardioScore: number | null;
@@ -88,7 +88,7 @@ function ScoreRing({ score, size = 208 }: { score: number | null; size?: number 
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={score == null ? 'Overall score not available' : `Overall score ${score} of 100`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={score == null ? 'Overall fitness score not available' : `Overall fitness score ${score} of 100`}>
         <defs>
           <linearGradient id="fitness-score-ring" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor={ringStops[0]} />
@@ -109,7 +109,7 @@ function ScoreRing({ score, size = 208 }: { score: number | null; size?: number 
         <span className="text-[46px] font-[850] leading-none tabular-nums tracking-[-0.04em]" style={{ color: 'var(--text-primary)' }}>
           {score ?? '—'}
         </span>
-        <span className="mt-2 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>Overall Score</span>
+        <span className="mt-2 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>Overall Fitness</span>
       </div>
     </div>
   );
@@ -138,8 +138,7 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
             <Gauge size={20} />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>Fitness Dashboard</h2>
-            <p className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
               {coverage.isComplete
                 ? 'Overall performance across all 6 categories.'
                 : `Partial assessment — ${formatCoverage(coverage)}.`}
@@ -147,8 +146,8 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
             <p
               className="mt-2 inline-block rounded-full px-3 py-1 text-[12px] font-[700]"
               style={coverage.isComplete
-                ? { background: 'rgba(16,185,129,0.12)', color: '#059669' }
-                : { background: 'rgba(245,158,11,0.12)', color: '#d97706' }}
+                ? { background: 'var(--success-bg)', color: 'var(--success-text)' }
+                : { background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
             >
               {coverage.isComplete ? `Complete · ${formatCoverage(coverage)}` : `Partial · ${formatCoverage(coverage)}`}
             </p>
@@ -194,12 +193,17 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
                   <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px] text-white" style={{ background: gradient(tone) }}>
                     <Icon size={15} />
                   </span>
-                  <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                  <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>{label}</p>
                 </div>
-                <p className="mt-2.5 text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: score == null ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                  {score ?? '—'}
-                </p>
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+                <div className="mt-2.5 flex items-baseline justify-between gap-2">
+                  <p className="text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: score == null ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                    {score ?? '—'}
+                  </p>
+                  {score != null && (
+                    <p className="text-right text-[11px] font-[600] leading-tight" style={{ color: 'var(--text-secondary)' }}>{bandLabel(score)}</p>
+                  )}
+                </div>
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full" aria-hidden="true" style={{ background: 'var(--border)' }}>
                   {score != null && (
                     <div
                       className="h-full rounded-full"
@@ -211,6 +215,10 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
             );
           })}
         </div>
+
+        <p className="mt-4 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+          Strong 80+ · Fair 40–79 · Needs work below 40.
+        </p>
       </div>
     </div>
   );
