@@ -94,7 +94,12 @@ function initials(name: string): string {
     .join('');
 }
 
-export default function RosterSignalsCard() {
+export default function RosterSignalsCard({ onSweep }: {
+  /** Lifts the sweep's verdict to the screen. The AI Coach board reads
+   *  renewals, dues and birthdays and cannot see this list at all, so without
+   *  this it prints an all-clear over a client the sweep could not assess. */
+  onSweep?: (notAssessable: number | null) => void;
+}) {
   const [sweep, setSweep] = useState<RosterSignalSweep | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -111,18 +116,19 @@ export default function RosterSignalsCard() {
       // `clients_detail.length`, so a body without that array is treated as
       // the failed read it is; one bad response must not take the app to its
       // error boundary. `data: null` keeps its old meaning: nothing to say.
-      if (body == null) setSweep(null);
-      else if (Array.isArray(body.clients_detail)) setSweep(body);
-      else setFailed(true);
+      if (body == null) { setSweep(null); onSweep?.(null); }
+      else if (Array.isArray(body.clients_detail)) { setSweep(body); onSweep?.(body.not_assessable ?? 0); }
+      else { setFailed(true); onSweep?.(null); }
     } catch {
       // No toast. This card is below the fold of the screen a trainer opens to
       // start a session, and a toast about a secondary read would cover the
       // Start button. It says so in place instead, where it stays.
       setFailed(true);
+      onSweep?.(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [onSweep]);
 
   useEffect(() => { load(); }, [load]);
 
