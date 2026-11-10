@@ -1,15 +1,13 @@
-// The K11 test screen's protocol panel.
+// The K11 test screen's instructions.
 //
-// On a laptop the protocol is a side column beside the fields and nothing is
-// hidden. On a phone it used to render first, whole (Purpose → Safety), and
-// pushed the first measurement input most of a screen down. Now the phone
-// keeps the two things a test cannot be run correctly without — the
-// measurement rules and Safety — and puts equipment, positioning and
-// procedure behind one "Instructions" disclosure.
+// Safety is the only protocol copy that stays on the page; equipment,
+// positioning and procedure sit behind one closed "Instructions" disclosure.
+// Measurement rules and the test's purpose were field guidance repeated beside
+// the inputs, so they no longer render at all.
 //
-// This file guards that split: safety and measurement stay in the open, the
-// long protocol stays present and reachable, and neither copy can silently
-// vanish when someone edits the panel.
+// This file guards that split: the safety warnings stay visible, the long
+// protocol stays present and reachable, and the removed copy cannot creep back
+// in when someone edits the panel.
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -30,15 +28,9 @@ function renderScreen() {
   );
 }
 
-describe('K11 flexibility test screen — protocol panel', () => {
-  it('keeps measurement rules and safety in the open', () => {
+describe('K11 flexibility test screen — instructions', () => {
+  it('keeps every safety warning in the open', () => {
     renderScreen();
-    // One visible panel on a phone, one on a laptop — the label appears in each.
-    expect(screen.getAllByText('Measurement').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText('Safety').length).toBeGreaterThanOrEqual(2);
-    for (const rule of QUADRICEPS_PROTOCOL.measurement) {
-      expect(screen.getAllByText(rule).length).toBeGreaterThan(0);
-    }
     for (const warning of QUADRICEPS_PROTOCOL.safety) {
       expect(screen.getAllByText(warning).length).toBeGreaterThan(0);
     }
@@ -60,5 +52,21 @@ describe('K11 flexibility test screen — protocol panel', () => {
       expect(details[0]).toHaveTextContent(cue);
     }
     expect(details[0]).toHaveTextContent(QUADRICEPS_PROTOCOL.equipment[0]);
+  });
+
+  it('no longer renders the test purpose or the measurement rules', () => {
+    renderScreen();
+    expect(screen.queryByText(QUADRICEPS_PROTOCOL.purpose)).toBeNull();
+    for (const rule of QUADRICEPS_PROTOCOL.measurement) {
+      expect(screen.queryByText(rule)).toBeNull();
+    }
+  });
+
+  it('no longer renders field-level guidance', () => {
+    renderScreen();
+    expect(screen.queryByText('Distance is only measured when contact is No.')).toBeNull();
+    expect(screen.queryByText('Hip lifting or pelvis rotating during the movement.')).toBeNull();
+    expect(screen.queryByText(/Your own observation/)).toBeNull();
+    expect(screen.queryByText(/Normal needs both sides clear/)).toBeNull();
   });
 });

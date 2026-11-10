@@ -78,6 +78,17 @@ export const stepTones = {
   7: tones.gold,
 } as const;
 
+/** One accent per wizard chapter, in order. Decoration only; clinical state
+ *  still comes from the five palette families below. */
+export const chapterAccent = {
+  1: '#a33757', 2: '#d95f7a', 3: '#ff9500', 4: '#30b0c7',
+  5: '#4a9fe0', 6: '#5856d6', 7: '#34c759',
+} as const;
+export const chapterAccents = [
+  chapterAccent[1], chapterAccent[2], chapterAccent[3], chapterAccent[4],
+  chapterAccent[5], chapterAccent[6], chapterAccent[7],
+] as const;
+
 /** For the small dark cards that carry text on the light page — the AI
  *  motivation quote. Deep enough that white body text stays readable. */
 export const deepMesh = `linear-gradient(135deg, ${spectrum.indigo[700]} 0%, ${spectrum.violet[600]} 100%)`;

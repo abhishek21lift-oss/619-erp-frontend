@@ -8,8 +8,8 @@ import { calcLeanBodyMass, calcFatMass, calcBmr, classifyBodyFat } from '@/lib/f
 import type { Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
-import { StepHeader } from './StepHeader';
-import { bodyFatPill, stepTones } from './fitnessTheme';
+import { StepCard } from './StepCard';
+import { bodyFatPill, chapterAccent, stepTones } from './fitnessTheme';
 
 const METHODS = ['BIA Machine', 'Skinfold', 'DEXA', 'Manual', 'Other'];
 
@@ -35,21 +35,20 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
   );
 
   return (
-    <div>
-      <StepHeader
-        icon={Activity}
-        tone={stepTones[3]}
-        title="Body Composition"
-        subtitle="Step 3 of 7 — choose an assessment method."
-      />
-
+    <StepCard
+      icon={Activity}
+      accent={chapterAccent[3]}
+      title="Body Composition"
+      description="Choose an assessment method"
+      badge="Step 3 of 7"
+    >
       {(gender === null || gender === 'Other') && (
         <p className="mb-4 rounded-[14px] px-4 py-3 text-[12px] leading-snug" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: 'var(--text-secondary)' }}>
           Body Composition score needs a male/female reference range, so it is not computed for this client — body-fat % and the other measurements are still recorded. No score is invented.
         </p>
       )}
 
-      <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <div>
         <div className="mb-4">
           <SearchableSelect
             label="Assessment Method" allowCustom={false}
@@ -107,7 +106,7 @@ export function StepBodyComposition({ form, set, age, gender, error }: StepBodyC
           )}
         </div>
       )}
-    </div>
+    </StepCard>
   );
 }
 

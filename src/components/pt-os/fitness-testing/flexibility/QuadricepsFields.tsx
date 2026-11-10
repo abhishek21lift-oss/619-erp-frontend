@@ -36,7 +36,6 @@ export function QuadricepsFields({ state: q, derived, patch }: Props) {
               label="Heel touched the buttock (contact)"
               value={q.contact[side]}
               onChange={(v) => setContact(side, v)}
-              hint={q.contact[side] === false ? 'Measure the gap below.' : 'Distance is only measured when contact is No.'}
             />
             {q.contact[side] !== true && (
               <Measurement
@@ -48,15 +47,13 @@ export function QuadricepsFields({ state: q, derived, patch }: Props) {
                 max={60}
               />
             )}
-            <YesNoChips label="Pelvic compensation" value={q.pelvic[side]} onChange={(v) => setPelvic(side, v)} compact
-              hint="Hip lifting or pelvis rotating during the movement." />
+            <YesNoChips label="Pelvic compensation" value={q.pelvic[side]} onChange={(v) => setPelvic(side, v)} compact />
             <YesNoChips label="Pain reported" value={q.pain[side]} onChange={(v) => setPain(side, v)} compact />
             <EnumSelect
               label="Tightness observed"
               value={q.tightness[side]}
               options={TIGHTNESS}
               onChange={(v) => setTightness(side, v)}
-              description="Your own observation — the interpretation below is derived from contact, pain and pelvis control."
             />
           </div>
         </div>
@@ -76,7 +73,7 @@ export function QuadricepsFields({ state: q, derived, patch }: Props) {
             ].join(' · '),
           }))}
         >
-          Overall: <strong>{derived.overall_interpretation ?? 'Awaiting measurement'}</strong> — Normal needs both sides clear.
+          Overall: <strong>{derived.overall_interpretation ?? 'Awaiting measurement'}</strong>
         </Insight>
       ) : (
         <InsightUnavailable />

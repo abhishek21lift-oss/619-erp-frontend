@@ -46,7 +46,7 @@ import {
  * So the surface is a property of the REGION, declared once by the row, rather
  * than a prop repeated on every field inside it.
  */
-export type ControlSurface = 'default' | 'nested';
+export type ControlSurface = 'default' | 'nested' | 'soft';
 
 const SurfaceContext = createContext<ControlSurface>('default');
 
@@ -62,13 +62,18 @@ export function FieldSurface({
 }
 
 /** The one surface every control in the system shares. */
-export function controlClassName(w: FieldWiring | null, extra?: string) {
+export function controlClassName(
+  w: FieldWiring | null,
+  extra?: string,
+  surface: ControlSurface = 'default',
+) {
   return cn(
     'w-full rounded-[var(--radius-sm)] px-3.5 text-[13px] font-[500]',
     'transition-[border-color,background-color] duration-150',
     'motion-reduce:transition-none',
     'placeholder:text-[var(--text-muted)]',
     w?.disabled && 'cursor-not-allowed',
+    surface === 'soft' && 'control-soft',
     extra,
   );
 }
@@ -78,6 +83,12 @@ export function controlStyle(
   surface: ControlSurface = 'default',
 ): React.CSSProperties {
   const nested = surface === 'nested';
+  // Soft fields are drawn by `.control-soft` in globals.css: a filled,
+  // borderless 48px control whose focus state (white fill, accent border,
+  // 4px ring) cannot be expressed in an inline style.
+  if (surface === 'soft') {
+    return { color: w?.disabled || w?.readOnly ? 'var(--text-muted)' : 'var(--text-primary)' };
+  }
   return {
     minHeight: 44,
     background: w?.disabled || w?.readOnly
@@ -124,7 +135,7 @@ export const TextInput = forwardRef<HTMLInputElement, NativeInput>(
         // `decimal`, because a weight that cannot take 72.5 is worse than a
         // rep count showing a pointless decimal point.
         inputMode={inputMode ?? (numeric ? 'decimal' : undefined)}
-        className={controlClassName(w, className)}
+        className={controlClassName(w, className, surface)}
         style={{ ...controlStyle(w, surface), ...style }}
       />
     );
@@ -141,7 +152,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, NativeArea>(
         rows={rows}
         {...fieldControlProps(w)}
         {...rest}
-        className={controlClassName(w, cn('resize-y py-2.5 leading-[1.5]', className))}
+        className={controlClassName(w, cn('resize-y py-2.5 leading-[1.5]', className), surface)}
         style={{ ...controlStyle(w, surface), ...style }}
       />
     );
@@ -160,7 +171,7 @@ export const SelectInput = forwardRef<HTMLSelectElement, NativeSelect>(
           ref={ref}
           {...fieldControlProps(w)}
           {...rest}
-          className={controlClassName(w, cn('appearance-none pr-9', className))}
+          className={controlClassName(w, cn('appearance-none pr-9', className), surface)}
           style={{ ...controlStyle(w, surface), ...style }}
         >
           {children}
@@ -223,7 +234,7 @@ const SearchControl = forwardRef<HTMLInputElement, NativeInput>(
           type="search"
           {...fieldControlProps(w)}
           {...rest}
-          className={controlClassName(w, cn('pl-9', className))}
+          className={controlClassName(w, cn('pl-9', className), surface)}
           style={{ ...controlStyle(w, surface), ...style }}
         />
       </span>

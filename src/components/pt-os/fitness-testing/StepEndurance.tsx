@@ -8,8 +8,8 @@ import { classifyEndurance, scoreCategory, scoreTestBattery } from '@/lib/fitnes
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
 import type { AssessmentFormData, EnduranceTestType } from './types';
 import { n } from './types';
-import { StepHeader } from './StepHeader';
-import { categoryPill, gradient, stepTones } from './fitnessTheme';
+import { StepCard } from './StepCard';
+import { categoryPill, chapterAccent, gradient, stepTones } from './fitnessTheme';
 
 const ENDURANCE_TESTS: EnduranceTestType[] = ['Push Up Test', 'Curl Up Test', 'Wall Sit', 'Plank', 'Bodyweight Squat', 'Custom'];
 const REP_BASED: EnduranceTestType[] = ['Push Up Test', 'Curl Up Test'];
@@ -51,14 +51,13 @@ export function StepEndurance({ form, set, gender, age, error }: StepEndurancePr
   const options2 = ENDURANCE_TESTS.filter((t) => t !== form.enduranceTestType);
 
   return (
-    <div>
-      <StepHeader
-        icon={Repeat}
-        tone={TONE}
-        title="Muscular Endurance"
-        subtitle="Step 6 of 7 — two sustained-effort tests, e.g. an upper-body test plus a core test."
-      />
-
+    <StepCard
+      icon={Repeat}
+      accent={chapterAccent[6]}
+      title="Muscular Endurance"
+      description="Two sustained-effort tests"
+      badge="Step 6 of 7"
+    >
       <div className="space-y-5">
         <EnduranceTestBlock
           label="Test 1" options={options1}
@@ -108,7 +107,7 @@ export function StepEndurance({ form, set, gender, age, error }: StepEndurancePr
           )}
         </div>
       )}
-    </div>
+    </StepCard>
   );
 }
 
@@ -127,7 +126,7 @@ function EnduranceTestBlock({ label, options, testType, onTestType, valueType, r
   const pill = result.category ? categoryPill(result.category) : null;
 
   return (
-    <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+    <div>
       <div className="mb-3 flex items-center gap-2">
         <span className="h-2.5 w-2.5 rounded-[4px]" style={{ background: gradient(TONE) }} aria-hidden />
         <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>

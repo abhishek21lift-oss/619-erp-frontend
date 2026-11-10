@@ -2,7 +2,7 @@
 
 import { HIP_TIGHTNESS, THIGH_POSITIONS } from '@/lib/flexibility-protocol';
 import type { AbleHipFlexors, FlexibilityFormState, Side, ThighPosition } from '@/lib/flexibility-protocol';
-import { EnumSelect, Insight, InsightUnavailable, Measurement, NotesField, YesNoChips } from './fields';
+import { EnumSelect, Insight, Measurement, NotesField, YesNoChips } from './fields';
 
 type SideKey = keyof Side<unknown>;
 
@@ -38,7 +38,7 @@ export function HipFlexorsFields({ state: x, derived, patch }: Props) {
       verdict: measured && derived ? (derived.sides_interpretation[side] ?? 'Awaiting measurement') : 'Awaiting measurement',
       detail: measured
         ? [position ? POSITION_LABEL[position] : '', x.pelvic[side] === true ? 'pelvis moved' : 'pelvis controlled'].filter(Boolean).join(' · ')
-        : 'Record the thigh position and the pelvis answer.',
+        : undefined,
     };
   });
 
@@ -56,7 +56,6 @@ export function HipFlexorsFields({ state: x, derived, patch }: Props) {
               options={['', ...THIGH_POSITIONS] as const}
               optionLabel={(v) => (v === '' ? 'Not recorded' : POSITION_LABEL[v])}
               onChange={(v) => setPosition(side, v)}
-              description="Against the horizontal line of the table, with the leg fully relaxed."
             />
             <Measurement
               label={`Knee flexion (${side})`}
@@ -65,25 +64,20 @@ export function HipFlexorsFields({ state: x, derived, patch }: Props) {
               suffix="°"
               min={0}
               max={160}
-              hint="Only when the thigh sits above the line; leave blank otherwise."
             />
-            <YesNoChips label="Pelvic compensation" value={x.pelvic[side]} onChange={(v) => setPelvic(side, v)} compact
-              hint="Lumbar flattening or a pelvic tilt that lets the leg drop." />
+            <YesNoChips label="Pelvic compensation" value={x.pelvic[side]} onChange={(v) => setPelvic(side, v)} compact />
             <YesNoChips label="Pain reported" value={x.pain[side]} onChange={(v) => setPain(side, v)} compact />
             <EnumSelect
               label="Tightness observed"
               value={x.tightness[side]}
               options={HIP_TIGHTNESS}
               onChange={(v) => setTightness(side, v)}
-              description="Your own observation — the wording below stays possible, never a diagnosis."
             />
           </div>
         </div>
       ))}
 
-      <Insight label="Live interpretation" tone={flagged ? 'watch' : 'ok'} rows={rows}>
-        Clear needs the thigh below the table line AND the pelvis controlled. Thigh position alone never diagnoses.
-      </Insight>
+      <Insight label="Live interpretation" tone={flagged ? 'watch' : 'ok'} rows={rows} />
 
       <NotesField value={x.notes} onChange={(v) => patch({ notes: v })} />
     </div>

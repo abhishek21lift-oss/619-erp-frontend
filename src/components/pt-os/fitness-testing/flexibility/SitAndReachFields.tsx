@@ -29,7 +29,7 @@ export function SitAndReachFields({ state: s, derived, patch }: Props) {
     <div className="space-y-4">
       <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
         <p className="mb-3 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Attempts (best valid attempt is scored)
+          Attempts
         </p>
         <div className="space-y-3">
           {s.attempts.map((a, i) => (
@@ -41,7 +41,6 @@ export function SitAndReachFields({ state: s, derived, patch }: Props) {
                 suffix="in"
                 min={0}
                 max={60}
-                hint={derived?.best_attempt_index === i && a.valid ? 'Best valid attempt — this is the score.' : undefined}
               />
               <div className="flex items-center gap-2 pb-1">
                 <YesNoChips label="Valid" value={a.valid} onChange={(v) => setAttempt(i, { valid: v !== false })} />
@@ -72,10 +71,8 @@ export function SitAndReachFields({ state: s, derived, patch }: Props) {
 
       <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
         <div className="space-y-3">
-          <YesNoChips label="Knees bent during any attempt" value={s.kneeBending} onChange={(v) => patch({ kneeBending: v === true })} compact
-            hint="Observation on the test — mark the affected attempt invalid too." />
-          <YesNoChips label="Bouncing / ballistic reach" value={s.bouncing} onChange={(v) => patch({ bouncing: v === true })} compact
-            hint="Observation on the test — mark the affected attempt invalid too." />
+          <YesNoChips label="Knees bent during any attempt" value={s.kneeBending} onChange={(v) => patch({ kneeBending: v === true })} compact />
+          <YesNoChips label="Bouncing / ballistic reach" value={s.bouncing} onChange={(v) => patch({ bouncing: v === true })} compact />
         </div>
       </div>
 
@@ -91,15 +88,12 @@ export function SitAndReachFields({ state: s, derived, patch }: Props) {
                 <strong>{score != null ? score.toFixed(1) : '—'} in</strong>
               </p>
               <p style={{ color: 'var(--text-muted)' }}>
-                The 15-inch mark is the box zero point, so a short reach is a negative score — that is a real result, not an error.
-              </p>
-              <p style={{ color: 'var(--text-muted)' }}>
                 Norm: {norm?.category ? `${norm.category} — ${norm.message}` : norm?.message ?? 'Norm classification unavailable'}
               </p>
               {derived.best_attempt_index == null && <p style={{ color: 'var(--warning-text)' }}>No valid attempt yet: at least one attempt must be marked valid.</p>}
             </div>
           ) : (
-            <p style={{ color: 'var(--text-muted)' }}>Record at least one reach to score the test.</p>
+            <p style={{ color: 'var(--text-muted)' }}>Awaiting measurement.</p>
           )}
         </Insight>
       ) : (

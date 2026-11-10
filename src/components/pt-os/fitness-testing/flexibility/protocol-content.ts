@@ -1,9 +1,10 @@
 // The K11 flexibility battery's instructions, one entry per test.
 //
-// Content, not code: the trainer reads these beside the fields so a test is
-// performed the same way every time. The reference wording (the 15-inch
-// zero point on the YMCA box, the 70–80° hamstrings band) is the supplied K11
-// protocol's — it is not a universal clinical norm, and the UI says so.
+// Content, not code: safety stays on the screen, while equipment, positioning
+// and procedure sit in the collapsed Instructions panel. The reference wording
+// (the 15-inch zero point on the YMCA box, the 70–80° hamstrings band) is the
+// supplied K11 protocol's — it is not a universal clinical norm, and the UI
+// says so where a reference is shown.
 
 import type { FlexibilityTestKey } from '@/lib/flexibility-protocol';
 

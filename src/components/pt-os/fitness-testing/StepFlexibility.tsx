@@ -7,8 +7,8 @@ import { deriveFlexibility, buildFlexibilityPayload, formTest, legacyBlobSummary
 import type { FlexibilityDerived, FlexibilityFormState, FlexibilityTestKey } from '@/lib/flexibility-protocol';
 import type { Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
-import { StepHeader } from './StepHeader';
-import { gradient, stepTones } from './fitnessTheme';
+import { StepCard } from './StepCard';
+import { chapterAccent, gradient, stepTones } from './fitnessTheme';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from './flexibility/protocol-content';
 import TestScreen from './flexibility/TestScreen';
 import FlexibilitySummary, { type PreviousAssessment } from './flexibility/FlexibilitySummary';
@@ -63,13 +63,13 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
       .map((k) => (blob[k] && typeof blob[k] === 'object' ? blob[k] as Record<string, unknown> : {}))
       .filter((t) => Object.keys(t).length > 0);
     return (
-      <div>
-        <StepHeader
-          icon={Move}
-          tone={TONE}
-          title="Flexibility & Mobility"
-          subtitle="Step 7 of 7 — recorded with the earlier two-test workflow."
-        />
+      <StepCard
+        icon={Move}
+        accent={chapterAccent[7]}
+        title="Flexibility & Mobility"
+        description="Recorded with the earlier two-test workflow"
+        badge="Step 7 of 7"
+      >
         <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
           <p className="text-[11.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Recorded (read-only)</p>
           {legacy.length ? (
@@ -91,10 +91,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
           ) : (
             <p className="mt-3 text-[13px]" style={{ color: 'var(--text-muted)' }}>{legacyBlobSummary(blob)}</p>
           )}
-          <p className="mt-4 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            The four K11 tests need their own measurements, so this older result cannot be converted. It stays attached to the
-            assessment unless you re-record with the current protocol.
-          </p>
           <Button
             variant="outline" size="sm" className="mt-3"
             iconLeft={<RefreshCw size={13} />}
@@ -104,7 +100,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
           </Button>
         </div>
         {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
-      </div>
+      </StepCard>
     );
   }
 
@@ -148,14 +144,13 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
   };
 
   return (
-    <div>
-      <StepHeader
-        icon={Move}
-        tone={TONE}
-        title="Flexibility & Mobility"
-        subtitle="Step 7 of 7 — the K11 five-test battery: quadriceps, hamstrings, hip flexors, YMCA Sit and Reach and Shoulder Reach."
-      />
-
+    <StepCard
+      icon={Move}
+      accent={chapterAccent[7]}
+      title="Flexibility & Mobility"
+      description="The K11 five-test battery"
+      badge="Step 7 of 7"
+    >
       {typeof view === 'object' ? (
         <TestScreen
           test={view.test}
@@ -206,8 +201,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                       <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{content.name}</p>
                       <span className="text-[11px] font-[700]" style={{ color: status.color }}>{status.text}</span>
                     </div>
-                    <p className="mt-0.5 text-[12px] leading-[1.45]" style={{ color: 'var(--text-secondary)' }}>{content.purpose}</p>
-                    <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{content.setup}</p>
                     <p className="mt-1 text-[11.5px] font-[640]" style={{ color: 'var(--text-muted)' }}>
                       {state.unable
                         ? `Not performed: ${state.unableReason.trim() || 'reason missing'}`
@@ -247,9 +240,6 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
                 autoGrow
                 maxLength={500}
               />
-              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                Stored as an override on the assessment, with your name and the time.
-              </p>
             </div>
           )}
 
@@ -265,7 +255,7 @@ export function StepFlexibility({ form, set, age, gender, clientName, previous, 
       )}
 
       {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger-text)' }}>{error}</p>}
-    </div>
+    </StepCard>
   );
 }
 

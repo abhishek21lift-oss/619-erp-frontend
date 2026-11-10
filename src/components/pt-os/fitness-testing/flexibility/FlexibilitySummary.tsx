@@ -132,7 +132,7 @@ export function FlexibilitySummary({ form, derived, previous }: SummaryProps) {
 
       {derived.override_used && (
         <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-          <strong>Override:</strong> {form.overrideReason.trim() || 'no reason recorded yet'} — the assessment is saved as completed with an override.
+          <strong>Override:</strong> {form.overrideReason.trim() || 'no reason recorded yet'}
         </p>
       )}
 

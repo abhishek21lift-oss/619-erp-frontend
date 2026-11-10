@@ -178,7 +178,7 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
     await next.click(); // 3 → 4
 
     // 4: a cardiorespiratory test is the step's only requirement.
-    await pick(page, 'Test', 0, 'YMCA 3-Minute Step Test');
+    await page.getByRole('radio', { name: 'YMCA 3-Minute Step Test' }).click();
     await next.click(); // 4 → 5
 
     // 5: two distinct strength exercises.
@@ -331,6 +331,8 @@ test.describe('K11 flexibility battery (fitness assessment step 7)', () => {
       page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
     test('step 7 offers the five tests without sideways scrolling', async ({ page }) => {
+      // Seven-step walk plus a dev-server cold compile does not fit 30s.
+      test.slow();
       await walkToStep7(page);
       await expect(page.getByText('YMCA Sit and Reach', { exact: true })).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText('Shoulder Reach', { exact: true })).toBeVisible();

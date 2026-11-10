@@ -9,8 +9,8 @@ import {
 import type { AnthropometricRisk, BmiCategory, Gender } from '@/lib/fitness-calculations';
 import type { AssessmentFormData } from './types';
 import { n } from './types';
-import { StepHeader } from './StepHeader';
-import { bmiPill, riskPill, stepTones } from './fitnessTheme';
+import { StepCard } from './StepCard';
+import { bmiPill, chapterAccent, riskPill, stepTones } from './fitnessTheme';
 
 interface StepAnthropometricProps {
   form: AssessmentFormData;
@@ -66,15 +66,14 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
   const sexUnsupported = gender === null || gender === 'Other';
 
   return (
-    <div>
-      <StepHeader
-        icon={Ruler}
-        tone={stepTones[2]}
-        title="Anthropometric Assessment"
-        subtitle="Step 2 of 7 — body measurements."
-      />
-
-      <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+    <StepCard
+      icon={Ruler}
+      accent={chapterAccent[2]}
+      title="Anthropometric data"
+      description="Body measurements"
+      badge="Step 2 of 7"
+    >
+      <div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatInput label="Height (cm)" numeric="decimal" value={form.heightCm} onChange={(v) => set('heightCm', v)} />
           <FloatInput label="Weight (kg)" numeric="decimal" value={form.weight} onChange={(v) => set('weight', v)} />
@@ -88,7 +87,7 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
         </div>
       </div>
 
-      <div className="mt-5 rounded-[18px] p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <div className="mt-5">
         <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Limbs (Right / Left)</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <FloatInput label="Right Arm (cm)" numeric="decimal" value={form.armRightCm} onChange={(v) => set('armRightCm', v)} />
@@ -122,7 +121,7 @@ export function StepAnthropometric({ form, set, error, gender = null }: StepAnth
           </p>
         </div>
       )}
-    </div>
+    </StepCard>
   );
 }
 

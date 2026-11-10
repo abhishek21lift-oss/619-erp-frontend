@@ -1,6 +1,6 @@
 'use client';
 
-import { HAMSTRINGS_REFERENCE, TIGHTNESS } from '@/lib/flexibility-protocol';
+import { TIGHTNESS } from '@/lib/flexibility-protocol';
 import type { AbleHamstrings, FlexibilityFormState, Side } from '@/lib/flexibility-protocol';
 import { EnumSelect, Insight, InsightUnavailable, Measurement, NotesField, YesNoChips } from './fields';
 
@@ -33,7 +33,7 @@ export function HamstringsFields({ state: h, derived, patch }: Props) {
       verdict: measured && derived ? (derived.sides_interpretation[side] ?? 'Awaiting measurement') : 'Awaiting measurement',
       detail: measured && derived
         ? [`${derived.sides[side].hip_flexion_deg ?? '—'}°`, derived.sides_validity[side] === 'valid' ? 'valid' : 'repeat (knee or pelvis)'].join(' · ')
-        : 'Enter the angle, the knee and the pelvis answers.',
+        : undefined,
     };
   });
 
@@ -52,19 +52,15 @@ export function HamstringsFields({ state: h, derived, patch }: Props) {
               suffix="°"
               min={0}
               max={180}
-              hint={`Reference ${HAMSTRINGS_REFERENCE.min_deg}–${HAMSTRINGS_REFERENCE.max_deg}° from the supplied K11 protocol.`}
             />
-            <YesNoChips label="Knee stayed fully extended" value={h.kneeExtended[side]} onChange={(v) => setKnee(side, v)} compact
-              hint="A bent knee invalidates the angle — repeat the test." />
-            <YesNoChips label="Pelvic compensation" value={h.pelvic[side]} onChange={(v) => setPelvic(side, v)} compact
-              hint="Lift or tilt of the pelvis or the opposite leg — repeat the test." />
+            <YesNoChips label="Knee stayed fully extended" value={h.kneeExtended[side]} onChange={(v) => setKnee(side, v)} compact />
+            <YesNoChips label="Pelvic compensation" value={h.pelvic[side]} onChange={(v) => setPelvic(side, v)} compact />
             <YesNoChips label="Pain reported" value={h.pain[side]} onChange={(v) => setPain(side, v)} compact />
             <EnumSelect
               label="Tightness observed"
               value={h.tightness[side]}
               options={TIGHTNESS}
               onChange={(v) => setTightness(side, v)}
-              description="Your own observation — the band below comes from the angle."
             />
           </div>
         </div>
@@ -73,7 +69,6 @@ export function HamstringsFields({ state: h, derived, patch }: Props) {
       {derived ? (
         <Insight label="Live interpretation" tone={flagged ? 'watch' : 'ok'} rows={rows}>
           Reference {derived.reference.min_deg}–{derived.reference.max_deg}° · {derived.reference.note}.
-          A repeat is prompted when the knee bent or the pelvis moved.
         </Insight>
       ) : (
         <InsightUnavailable />

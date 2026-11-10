@@ -34,10 +34,10 @@ function Bullets({ title, items, ordered }: { title: string; items: string[]; or
 }
 
 /**
- * One test at a time: the protocol's instructions beside the fields, so the
- * procedure is not remembered from a briefing. Save Draft rides the wizard's
- * existing localStorage draft; completion is an explicit trainer decision
- * because only the trainer can see that the procedure was followed.
+ * One test at a time: safety above the fields, the procedure one tap away.
+ * Save Draft rides the wizard's existing localStorage draft; completion is an
+ * explicit trainer decision because only the trainer can see that the
+ * procedure was followed.
  */
 export function TestScreen({ test, form, patchFlex, derived, onBack, onSaveDraft }: TestScreenProps) {
   const content = FLEXIBILITY_PROTOCOLS[test];
@@ -115,56 +115,25 @@ export function TestScreen({ test, form, patchFlex, derived, onBack, onSaveDraft
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,330px)_1fr]">
-        {/* The protocol. On a laptop it is a side column and costs nothing —
-            the fields sit beside it. On a phone it rendered first, so the
-            whole battery (Purpose → Safety) stood between the trainer and the
-            first input. Phones now carry what a test cannot be run correctly
-            without: what it measures, the measurement rules and Safety;
-            positioning and procedure stay one tap away. Both views read the
-            same `content`, so the two cannot disagree. */}
-        <div className="space-y-4 lg:hidden">
-          <div className="rounded-[18px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-            <p className="text-[12.5px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.purpose}</p>
-
-            <div className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-              <Bullets title="Measurement" items={content.measurement} />
-              <Bullets title="Safety" items={content.safety} />
-
-              <Disclosure summary="Instructions">
-                <div className="space-y-3">
-                  <Bullets title="Equipment" items={content.equipment} />
-                  <Bullets title="Positioning" items={content.positioning} />
-                  <Bullets title="Procedure" items={content.procedure} ordered />
-                  {content.reference && (
-                    <div>
-                      <p className="text-[10.5px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Reference</p>
-                      <p className="mt-1 text-[12px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.reference}</p>
-                    </div>
-                  )}
-                </div>
-              </Disclosure>
-            </div>
+      <div className="space-y-4">
+        {/* Safety is the one part of the protocol a test cannot be run without
+            reading first, so it stays on the page; the rest is one tap away. */}
+        <div className="flex items-start gap-2 rounded-[12px] px-3 py-2" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}>
+          <ShieldAlert size={14} aria-hidden className="mt-0.5 shrink-0" style={{ color: 'var(--warning-text)' }} />
+          <div className="space-y-0.5">
+            {content.safety.map((warning) => (
+              <p key={warning} className="text-[11.5px] leading-[1.45]" style={{ color: 'var(--text-secondary)' }}>{warning}</p>
+            ))}
           </div>
         </div>
 
-        <aside className="hidden space-y-4 rounded-[18px] p-4 lg:block" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-          <div>
-            <p className="text-[10.5px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Purpose</p>
-            <p className="mt-1.5 text-[12.5px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.purpose}</p>
+        <Disclosure summary="Instructions">
+          <div className="space-y-3">
+            <Bullets title="Equipment" items={content.equipment} />
+            <Bullets title="Positioning" items={content.positioning} />
+            <Bullets title="Procedure" items={content.procedure} ordered />
           </div>
-          <Bullets title="Equipment" items={content.equipment} />
-          <Bullets title="Positioning" items={content.positioning} />
-          <Bullets title="Procedure" items={content.procedure} ordered />
-          <Bullets title="Measurement" items={content.measurement} />
-          {content.reference && (
-            <div className="rounded-[12px] p-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <p className="text-[10.5px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Reference</p>
-              <p className="mt-1 text-[12px] leading-[1.5]" style={{ color: 'var(--text-secondary)' }}>{content.reference}</p>
-            </div>
-          )}
-          <Bullets title="Safety" items={content.safety} />
-        </aside>
+        </Disclosure>
 
         <div className="space-y-4">
           {fields}
