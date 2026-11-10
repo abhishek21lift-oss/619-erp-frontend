@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PageContainer, PageHero } from '@/components/ui';
+import { FieldSurface } from '@/components/ui/form/controls';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -42,7 +43,7 @@ import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessA
 import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
-import { bandInk, chapterAccents, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
+import { bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
 import { emerald, tint } from '@/lib/palette';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
@@ -675,15 +676,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   return (
     <PageContainer>
-      <PageHero
-        compact
-        icon={<ClipboardCheck size={18} />}
-        title="Fitness Testing"
-        subtitle={clientName ? `${clientName} · ${form.assessmentDate}` : undefined}
-      >
-        {!reviewMode && !lastSaved && (
-          <StepperTimeline variant="path" accents={chapterAccents} steps={STEPS} current={step} onStep={goToStep} />
-        )}
+      <PageHero icon={<ClipboardCheck size={18} />} title="Fitness Testing">
+        {!reviewMode && !lastSaved && <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />}
       </PageHero>
 
       <div className="mx-auto max-w-3xl space-y-5">
@@ -720,25 +714,27 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           </m.div>
         ) : !reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} />}
-            {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} athlete={experienceLevel === 'athlete'} />}
-            {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} gender={gender} />}
-            {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
-            {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
-            {step === 5 && <StepStrength form={form} set={set} gender={gender} age={age} error={errors.strength} isBeginner={isBeginner} />}
-            {step === 6 && <StepEndurance form={form} set={set} gender={gender} age={age} error={errors.endurance} />}
-            {step === 7 && (
-              <StepFlexibility
-                form={form}
-                set={set}
-                age={age}
-                gender={gender}
-                clientName={clientName}
-                previous={previousFlexibility}
-                onSaveDraft={handleSaveDraft}
-                error={errors.flexibility}
-              />
-            )}
+            <FieldSurface surface="soft">
+              {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} />}
+              {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} athlete={experienceLevel === 'athlete'} />}
+              {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} gender={gender} />}
+              {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
+              {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
+              {step === 5 && <StepStrength form={form} set={set} gender={gender} age={age} error={errors.strength} isBeginner={isBeginner} />}
+              {step === 6 && <StepEndurance form={form} set={set} gender={gender} age={age} error={errors.endurance} />}
+              {step === 7 && (
+                <StepFlexibility
+                  form={form}
+                  set={set}
+                  age={age}
+                  gender={gender}
+                  clientName={clientName}
+                  previous={previousFlexibility}
+                  onSaveDraft={handleSaveDraft}
+                  error={errors.flexibility}
+                />
+              )}
+            </FieldSurface>
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>

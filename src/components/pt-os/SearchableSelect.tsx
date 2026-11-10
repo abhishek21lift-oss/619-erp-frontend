@@ -107,8 +107,16 @@ export function SearchableSelect({
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{
           background: open || surface === 'nested' ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: error ? '1.5px solid rgba(239,68,68,0.5)' : open ? '1.5px solid rgba(163,55,87,0.50)' : '1.5px solid var(--border-input)',
-          boxShadow: open ? '0 0 0 3px rgba(163,55,87,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
+          border: error
+            ? '1.5px solid rgba(239,68,68,0.5)'
+            : open
+              ? `1.5px solid ${surface === 'soft' ? 'var(--brand)' : 'rgba(163,55,87,0.50)'}`
+              : surface === 'soft' ? '1px solid transparent' : '1.5px solid var(--border-input)',
+          borderRadius: surface === 'soft' ? 14 : 13,
+          minHeight: surface === 'soft' ? 48 : undefined,
+          boxShadow: open
+            ? (surface === 'soft' ? '0 0 0 4px var(--brand-soft)' : '0 0 0 3px rgba(163,55,87,0.08)')
+            : surface === 'soft' ? 'none' : '0 1px 2px rgba(15,23,42,0.04)',
         }}
       >
         <span className={cn('flex-1 text-[13px] font-[500]', value ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>
