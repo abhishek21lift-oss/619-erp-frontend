@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, ClipboardCheck,
-  History, CheckCircle2, Plus, Download, Sparkles, Pencil, Trash2,
+  History, CheckCircle2, Plus, Download, Sparkles, Pencil, Trash2, MoreHorizontal,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PageContainer, PageHero } from '@/components/ui';
@@ -43,8 +43,9 @@ import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessA
 import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
-import { bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
-import { emerald, tint } from '@/lib/palette';
+import { bandBg, bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
+import { emerald } from '@/lib/palette';
+import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
 import { screeningBlockOf } from '@/lib/screeningBlock';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
@@ -52,6 +53,11 @@ import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 interface TrainerOption { id: string; name: string; }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/** One row in the history action sheet: 48px tall, so it clears the 44px
+ *  touch minimum that the old 28px icon buttons did not. */
+const SHEET_ACTION =
+  'flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-left text-[14px] font-[600] text-[color:var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]';
 
 function buildCardioTestData(form: AssessmentFormData): Record<string, unknown> {
   switch (form.cardioTestType) {
@@ -220,6 +226,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   // unchanged; these also render inline so they are not lost.
   const [saveWarnings, setSaveWarnings] = useState<string[]>([]);
   const [historyAiId, setHistoryAiId] = useState<string | null>(null);
+  /** The history row whose action sheet is open, keyed by assessment id. */
+  const [historyMenuId, setHistoryMenuId] = useState<string | null>(null);
   /** The saved test being corrected, or null for a new one. */
   const [editingId, setEditingId] = useState<string | null>(null);
   const initFormRef = useRef<AssessmentFormData>(initAssessmentForm());
@@ -628,6 +636,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   });
   const initialAssessment = sortedHistory[sortedHistory.length - 1];
   const latestAssessment = sortedHistory[0];
+  const historyMenu = historyMenuId
+    ? sortedHistory.find((a) => String(a.id) === historyMenuId) ?? null
+    : null;
   // Most recent saved flexibility result, for the step's comparison line. The
   // row being edited is skipped so a test never compares to itself.
   const previousFlexibility = (() => {
@@ -755,44 +766,28 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                 </span>
                 <h2 className="text-[15px] font-[760] text-[color:var(--text-primary)]">Assessment History</h2>
               </div>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              <div className="space-y-2 sm:max-h-[400px] sm:overflow-y-auto">
                 {sortedHistory.map((a) => {
                   const overall = scoreNum(a.overall_fitness_score);
                   return (
                   <div key={String(a.id)} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
                     <div>
-                      <p className="text-[13px] font-[700] text-[color:var(--text-secondary)]">{String(a.assessment_date ?? '').slice(0, 10)}</p>
+                      <p className="text-[13px] font-[700] text-[color:var(--text-secondary)]">{fmtDate(a.assessment_date as string)}</p>
                       <p className="text-[11px] text-[color:var(--text-muted)] capitalize">{String(a.assessment_type ?? '').replace(/_/g, ' ')}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {overall != null && (
-                        <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: tint(bandInk(overall), 0.12), color: bandInk(overall) }}>
+                        <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: bandBg(overall), color: bandInk(overall) }}>
                           Score {String(a.overall_fitness_score)}
                         </span>
                       )}
                       <button
-                        type="button" title="AI Recommendations" onClick={() => setHistoryAiId(String(a.id))}
-                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
+                        type="button"
+                        aria-label={`Actions for the ${fmtDate(a.assessment_date as string)} assessment`}
+                        onClick={() => setHistoryMenuId(String(a.id))}
+                        className="flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors hover:bg-[var(--bg-hover)]"
                       >
-                        <Sparkles size={13} style={{ color: 'var(--text-muted)' }} />
-                      </button>
-                      <button
-                        type="button" title="Download PDF" aria-label="Download PDF" onClick={() => downloadAssessmentPdf(pdfRow(a), clientName)}
-                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
-                      >
-                        <Download size={13} style={{ color: 'var(--text-muted)' }} />
-                      </button>
-                      <button
-                        type="button" title="Edit" aria-label={`Edit the ${String(a.assessment_date ?? '').slice(0, 10)} assessment`} onClick={() => handleEdit(a)}
-                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
-                      >
-                        <Pencil size={13} style={{ color: 'var(--text-muted)' }} />
-                      </button>
-                      <button
-                        type="button" title="Delete" aria-label={`Delete the ${String(a.assessment_date ?? '').slice(0, 10)} assessment`} onClick={() => handleDelete(a)}
-                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--bg-hover)]"
-                      >
-                        <Trash2 size={13} style={{ color: '#dc2626' }} />
+                        <MoreHorizontal size={18} style={{ color: 'var(--text-secondary)' }} />
                       </button>
                     </div>
                   </div>
@@ -832,6 +827,46 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!historyMenuId} onOpenChange={(open) => { if (!open) setHistoryMenuId(null); }}>
+        <DialogContent className="!max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Assessment actions</DialogTitle>
+          </DialogHeader>
+          {historyMenu && (
+            <div className="flex flex-col gap-1">
+              <button
+                type="button" className={SHEET_ACTION}
+                onClick={() => { const id = String(historyMenu.id); setHistoryMenuId(null); setHistoryAiId(id); }}
+              >
+                <Sparkles size={16} style={{ color: 'var(--text-secondary)' }} />
+                AI Recommendations
+              </button>
+              <button
+                type="button" className={SHEET_ACTION}
+                onClick={() => { setHistoryMenuId(null); downloadAssessmentPdf(pdfRow(historyMenu), clientName); }}
+              >
+                <Download size={16} style={{ color: 'var(--text-secondary)' }} />
+                Download PDF
+              </button>
+              <button
+                type="button" className={SHEET_ACTION}
+                onClick={() => { setHistoryMenuId(null); handleEdit(historyMenu); }}
+              >
+                <Pencil size={16} style={{ color: 'var(--text-secondary)' }} />
+                Edit
+              </button>
+              <button
+                type="button" className={SHEET_ACTION}
+                onClick={() => { setHistoryMenuId(null); handleDelete(historyMenu); }}
+              >
+                <Trash2 size={16} style={{ color: 'var(--danger-text)' }} />
+                <span style={{ color: 'var(--danger-text)' }}>Delete</span>
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!historyAiId} onOpenChange={(open) => { if (!open) setHistoryAiId(null); }}>
         <DialogContent className="!max-w-2xl max-h-[85vh] overflow-y-auto overscroll-contain">

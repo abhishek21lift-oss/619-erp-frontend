@@ -103,18 +103,33 @@ export const sweep = `linear-gradient(90deg, ${spectrum.pink[400]}, ${spectrum.v
    Everything below is semantic: how the client did, not which domain the
    test belongs to. The 80 / 40 cutoffs are the dashboard's existing ones. */
 
-/** A 0–100 score onto the palette's band, for fills and bars. */
+/** A 0–100 score onto the app's status ramp. The `-text` tokens are the ones
+ *  that clear 3:1 as a 6px fill against --border (amber-500 was 1.78:1) and
+ *  4.5:1 as pill text, in both themes. */
 export function bandFill(score: number): string {
-  if (score >= 80) return emerald[600];
-  if (score >= 40) return amber[500];
-  return red[500];
+  if (score >= 80) return 'var(--success-text)';
+  if (score >= 40) return 'var(--warning-text)';
+  return 'var(--danger-text)';
 }
 
-/** The same score as pill text on a tint — 600 or darker, per the palette. */
+/** The same score as pill text on a tint. Same token as the fill: the band's
+ *  ink has to clear AA at 11.5px, which is the stricter of the two jobs. */
 export function bandInk(score: number): string {
-  if (score >= 80) return emerald[600];
-  if (score >= 40) return amber[600];
-  return red[600];
+  return bandFill(score);
+}
+
+/** The tint behind band text — the status `-bg` pair for the same band. */
+export function bandBg(score: number): string {
+  if (score >= 80) return 'var(--success-bg)';
+  if (score >= 40) return 'var(--warning-bg)';
+  return 'var(--danger-bg)';
+}
+
+/** The band as a word, so a bare number is never the only reading. */
+export function bandLabel(score: number): string {
+  if (score >= 80) return 'Strong';
+  if (score >= 40) return 'Fair';
+  return 'Needs work';
 }
 
 /** A classification pill: the wording is the classification's, the colour
