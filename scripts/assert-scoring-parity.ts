@@ -264,6 +264,73 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
   for (const a of [null, 0, 40, 60, 100]) for (const b of [null, 0, 40, 60, 100]) add('scoreEnduranceBattery', [a, b]);
   for (const a of [null, 0, 50, 100]) for (const b of [null, 50]) for (const c of [null, 75]) add('computeOverallScore', [{ cardio: a, strength: b, endurance: c }]);
 
+  // ── The 100-point framework ────────────────────────────────────────────
+  //
+  // These functions replace the old 0-100 means. A point table or a maximum is
+  // what the trainer sees live and what gets stored, so every category and
+  // every band edge is compared, not only the total.
+  for (const c of BP_CATEGORIES) add('scoreBpPoints', [c]);
+  for (const c of FITNESS_CATEGORIES) add('scoreCardioPoints', [c]);
+  for (const v of FINE) for (const g of GENDERS) add('scoreBodyCompositionPoints', [v, g]);
+  for (const g of ANTHRO_GENDERS) {
+    for (const bmi of BMI_FINE) for (const ratio of RATIO_FINE) {
+      add('scoreAnthropometricPoints', [{ bmi, waistIliacCm: 85, waistHipRatio: ratio }, g]);
+    }
+  }
+  for (const waist of [null, 0, 60, 79.5, 80, 89.5, 90, 120]) {
+    for (const g of ANTHRO_GENDERS) {
+      add('scoreAnthropometricPoints', [{ bmi: 22, waistIliacCm: waist, waistHipRatio: 0.8 }, g]);
+    }
+  }
+  add('scoreAnthropometricPoints', [null, 'Male']);
+  add('scoreAnthropometricPoints', [{}, 'Male']);
+  add('scoreAnthropometricPoints', [{ bmi: 22 }, null]);
+  add('scoreAnthropometricPoints', [{ bmi: 22, waistCm: 85 }, 'Female']);
+  add('scoreAnthropometricPoints', [{ bmi: Number.NaN, waistIliacCm: Number.NaN, waistHipRatio: Number.NaN }, 'Male']);
+
+  const PERCENTILES = [null, 0, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  const STRENGTH_DETAILS: unknown[] = [
+    null, {}, { percentile: null }, { category: 'Below Supported Range' },
+    { category: 'Average' }, { category: 'Below Supported Range', percentile: 10 },
+    ...PERCENTILES.map((percentile) => ({ percentile })),
+  ];
+  for (const a of STRENGTH_DETAILS) for (const b of STRENGTH_DETAILS) add('scoreStrengthBattery', [a, b]);
+  for (const a of FITNESS_CATEGORIES) for (const b of FITNESS_CATEGORIES) add('scoreEnduranceBatteryPoints', [a, b]);
+
+  // Legacy two-slot rows store a 0-100 flexibility composite; the framework
+  // scale is 15 and the conversion is the only thing standing between a
+  // historical row and a wrong tile.
+  for (let v = 0; v <= 100; v += 0.5) add('scoreFlexibilityPoints', [{}, v]);
+  for (const v of [null, -1, 101, Number.NaN]) add('scoreFlexibilityPoints', [{}, v]);
+  for (const derived of [null, {}, { tests: {} }]) add('scoreFlexibilityPoints', [derived]);
+
+  for (let v = 0; v <= 100; v += 0.5) add('tierForScore', [v]);
+  for (const v of [null, -1, 101, Number.NaN]) add('tierForScore', [v]);
+
+  const TOTAL_STEPS: unknown[] = [
+    {},
+    { bp: { points: 10, max: 10 } },
+    { bp: { points: 0, max: 10 } },
+    { bp: { points: null, max: 0 } },
+    { bp: { points: 7, max: 10 }, cardio: { points: 16, max: 20 } },
+    { bp: { points: 7, max: 10 }, cardio: { points: null, max: 0 } },
+    { strength: { points: 7.5, max: 7.5 } },
+    { strength: { points: 7.5, max: 15 } },
+    { strength: { points: 7.5, max: 7.5 }, endurance: { points: 7.5, max: 7.5 } },
+    { bp: { points: 0, max: 10 }, cardio: { points: 0, max: 20 } },
+    {
+      bp: { points: 10, max: 10 }, anthropometric: { points: 10, max: 10 },
+      bodyComposition: { points: 15, max: 15 }, cardio: { points: 20, max: 20 },
+      strength: { points: 15, max: 15 }, endurance: { points: 15, max: 15 },
+      flexibility: { points: 15, max: 15 },
+    },
+    {
+      bp: { points: 7, max: 10 }, anthropometric: { points: 6.7, max: 10 },
+      strength: { points: 7.5, max: 7.5 },
+    },
+  ];
+  for (const steps of TOTAL_STEPS) add('computeTotalScore', [steps]);
+
   return cases;
 }
 
@@ -917,6 +984,15 @@ function main() {
         { fn: 'classifyRhr', args: [72] },
         { fn: 'classifySpo2', args: [98] },
         { fn: 'assessVitalsSafety', args: [{ systolic: 185, diastolic: 70, restingHeartRate: 72, restingSpo2: 98, athlete: false }] },
+        { fn: 'scoreBpPoints', args: ['Normal'] },
+        { fn: 'scoreAnthropometricPoints', args: [{ bmi: 22, waistIliacCm: 85, waistHipRatio: 0.8 }, 'Male'] },
+        { fn: 'scoreBodyCompositionPoints', args: [20, 'Male'] },
+        { fn: 'scoreCardioPoints', args: ['Excellent'] },
+        { fn: 'scoreStrengthBattery', args: [{ percentile: 90 }, { category: 'Below Supported Range' }] },
+        { fn: 'scoreEnduranceBatteryPoints', args: ['Excellent', 'Good'] },
+        { fn: 'scoreFlexibilityPoints', args: [{}, 80] },
+        { fn: 'tierForScore', args: [85] },
+        { fn: 'computeTotalScore', args: [{ bp: { points: 10, max: 10 } }] },
       ],
     },
     {
