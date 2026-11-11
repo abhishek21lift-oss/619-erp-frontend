@@ -68,6 +68,7 @@ export default function AccountDeviceCard() {
       setDeviceId(enrollment.deviceId);
       setOn(true);
       setOff(false);
+      window.dispatchEvent(new Event('webauthn-credentials-changed'));
       // Best effort: the row id is only needed for the turn-off button.
       api.webauthn.listCredentials()
         .then((list) => {
@@ -96,6 +97,8 @@ export default function AccountDeviceCard() {
       setOn(false);
       setOff(true);
       setCredentialId(null);
+      // The list on the same page must drop the row this card just revoked.
+      window.dispatchEvent(new Event('webauthn-credentials-changed'));
     } catch {
       setError('Could not turn off fingerprint sign-in. Try again.');
     } finally {

@@ -39,6 +39,13 @@ export default function MemberNativeDevices() {
     load().catch(() => setRows([]));
   }, [load]);
 
+  // The card above can revoke the same row this list shows.
+  useEffect(() => {
+    const reload = () => { load().catch(() => setRows([])); };
+    window.addEventListener('webauthn-credentials-changed', reload);
+    return () => window.removeEventListener('webauthn-credentials-changed', reload);
+  }, [load]);
+
   async function revoke(id: string) {
     setBusyId(id);
     setError('');
