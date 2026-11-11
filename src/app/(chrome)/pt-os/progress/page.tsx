@@ -15,7 +15,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity, AlertCircle, AlertTriangle, ArrowRight, BatteryCharging, CalendarClock, CheckCircle2,
-  ClipboardList, Flag, Flame, Footprints, HeartPulse, LineChart, Loader2, Moon, Ruler, Search,
+  ClipboardList, Flag, Flame, Footprints, HeartPulse, LineChart, Loader2, Moon, RefreshCw, Ruler, Search,
   Sparkles, TrendingUp, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -86,7 +86,7 @@ function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: Re
 export default function TrainerProgressPage() {
   return (
     <Guard>
-      <Suspense fallback={<LoadingShell />}>
+      <Suspense fallback={<LoadingShell compact />}>
         <ProgressHubSwitch />
       </Suspense>
     </Guard>
@@ -150,19 +150,12 @@ function ProgressRoster() {
   return (
     <PageContainer>
       <PageHero
+        compact
+        accent="brand"
         title="Progress Hub"
-        subtitle={data
-          ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${date(data.today)} · ${data.timezone}`
-          : 'Re-tests · daily habits · seven-domain change'}
+        subtitle={data ? `Studio date ${date(data.today)}` : 'Re-tests · daily habits · seven-domain change'}
         icon={<LineChart size={18} />}
       />
-      <PageActions>
-        <Button variant="secondary"
-          onClick={() => setReloadKey((k) => k + 1)} disabled={loading}
-          iconLeft={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}>
-          Refresh
-        </Button>
-      </PageActions>
 
       <div>
         <SectionLabel icon={<AlertTriangle size={10} />}>Re-test status</SectionLabel>
@@ -171,11 +164,13 @@ function ProgressRoster() {
             accent={counts?.overdue ? 'coral' : 'graphite'} />
           <KpiCard icon={<CalendarClock size={13} />} label="Due today" value={String(counts?.due ?? '—')} hint="Book the re-test"
             accent={counts?.due ? 'amber' : 'graphite'} />
-          <KpiCard icon={<TrendingUp size={13} />} label="Upcoming" value={String((counts?.upcoming ?? 0) + (counts?.rescheduled ?? 0))}
-            hint="Scheduled ahead" accent="rose" />
+          <KpiCard icon={<TrendingUp size={13} />} label="Scheduled"
+            value={counts ? String(counts.upcoming + counts.rescheduled) : '—'}
+            hint="Scheduled ahead"
+            accent={counts && counts.upcoming + counts.rescheduled > 0 ? 'blue' : 'graphite'} />
           <KpiCard icon={<Users size={13} />} label="No open cycle"
-            value={String((counts?.not_scheduled ?? 0) + (counts?.missing_baseline ?? 0))}
-            hint="Not scheduled / no baseline" accent="graphite" />
+            value={counts ? String(counts.not_scheduled + counts.missing_baseline) : '—'}
+            hint="No baseline / schedule" accent="graphite" />
         </div>
       </div>
 
@@ -183,16 +178,24 @@ function ProgressRoster() {
         <SectionLabel icon={<Users size={10} />}>Clients</SectionLabel>
         <div className="space-y-2.5">
           <div className="glass-panel space-y-2.5 p-3.5">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-              <input
-                aria-label="Search clients by name, email or mobile"
-                type="search"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+                <input
+                  aria-label="Search clients by name, email or mobile"
+                  type="search"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#A33757]"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <button type="button" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}
+                aria-label="Refresh roster"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] transition-colors disabled:opacity-50"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                <RefreshCw size={15} className={loading ? 'animate-spin' : undefined} />
+              </button>
             </div>
             <div className="flex flex-wrap gap-1 rounded-[14px] p-1" role="group" aria-label="Filter by re-test state"
               style={{ background: 'var(--bg-subtle)' }}>
@@ -208,7 +211,7 @@ function ProgressRoster() {
                     style={active
                       ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
                       : { color: 'var(--text-muted)' }}>
-                    {f.label}{count != null && <span className="ml-1 opacity-70 tabular-nums">{count}</span>}
+                    {f.label}{count != null && <span className="ml-1 tabular-nums">{count}</span>}
                   </button>
                 );
               })}
@@ -261,8 +264,12 @@ function ProgressRoster() {
                           {c.assessment_count === 0
                             ? 'No assessment on file'
                             : `${c.assessment_count} assessment${c.assessment_count === 1 ? '' : 's'} · latest ${date(c.latest_date)}${c.latest_score == null ? '' : ` · ${Math.round(c.latest_score)}/100`}`}
-                          {c.scheduled_date ? ` · next ${date(c.scheduled_date)} (${timing(c)})` : ` · ${timing(c)}`}
                         </p>
+                        {c.scheduled_date && (
+                          <p className="mt-0.5 truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                            Next re-test <span className="font-[750]" style={{ color: 'var(--text-primary)' }}>{date(c.scheduled_date)}</span> · {timing(c)}
+                          </p>
+                        )}
                       </div>
                       <span className="hidden shrink-0 text-right text-[11px] font-[680] sm:block"
                         style={{ color: c.state.state === 'overdue' || c.state.state === 'due' ? 'var(--warning-text)' : 'var(--text-muted)' }}>
@@ -503,10 +510,12 @@ function ProgressHub({ clientId }: { clientId: string }) {
 
 /* ── shared bits ───────────────────────────────────────────── */
 
-function LoadingShell() {
+function LoadingShell({ compact }: { compact?: boolean }) {
   return (
     <PageContainer>
-      <Skeleton className="h-[176px] w-full rounded-[24px] sm:h-[112px] sm:rounded-[30px]" />
+      <Skeleton className={compact
+        ? 'h-[72px] w-full rounded-[20px]'
+        : 'h-[176px] w-full rounded-[24px] sm:h-[112px] sm:rounded-[30px]'} />
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[104px] rounded-[18px]" />)}
       </div>
