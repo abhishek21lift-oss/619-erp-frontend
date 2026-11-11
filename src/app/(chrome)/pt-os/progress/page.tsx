@@ -11,7 +11,7 @@
  * Cooper run with a step test would be a fabricated improvement.
  */
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity, AlertCircle, AlertTriangle, ArrowRight, BatteryCharging, CalendarClock, CheckCircle2,
@@ -31,11 +31,14 @@ import { indigo, emerald } from '@/lib/palette';
 import { DateFieldControl, SelectField, TextAreaField, useStandaloneField } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type {
+  Client,
   ProgressComparison, ProgressComparisonDomain, ProgressComparisonMetric, ProgressDashboard,
   ProgressHabitLog, ProgressHabitPreferences, ProgressInsight, ProgressInsightReview,
   ProgressRetestOverview, ProgressRetestRoster, ProgressRetestRosterRow, ProgressRetestSettings,
 } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { fmtDateMedium, fmtDayMonth } from '@/lib/format';
+import { useNavScroll } from '@/contexts/nav-scroll-context';
 
 type SectionKey = 'overview' | 'history' | 'comparison' | 'calendar' | 'journal' | 'analytics' | 'insights';
 
@@ -149,7 +152,7 @@ function ProgressRoster() {
       <PageHero
         title="Progress Hub"
         subtitle={data
-          ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${data.today} · ${data.timezone}`
+          ? `${data.total} client${data.total === 1 ? '' : 's'} · studio date ${date(data.today)} · ${data.timezone}`
           : 'Re-tests · daily habits · seven-domain change'}
         icon={<LineChart size={18} />}
       />
@@ -294,6 +297,7 @@ function ProgressRoster() {
 }
 
 interface HubData {
+  client: Client;
   overview: ProgressRetestOverview;
   dashboard: ProgressDashboard;
   assessments: Record<string, unknown>[];
@@ -310,21 +314,84 @@ function ProgressHub({ clientId }: { clientId: string }) {
   const [failed, setFailed] = useState('');
   const [days, setDays] = useState(30);
   const [tab, setTab] = useState<SectionKey>('overview');
+  const { reducedMotion } = useNavScroll();
+  const railRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Partial<Record<SectionKey, HTMLButtonElement | null>>>({});
+  const [railEdges, setRailEdges] = useState({ left: false, right: false });
+
+  const updateRailEdges = useCallback(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const left = rail.scrollLeft > 4;
+    const right = rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 4;
+    // Same shape as the nav scroll state: a scroll that changes nothing must
+    // not re-render the whole hub tree.
+    setRailEdges((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+  }, []);
+
+  useEffect(() => {
+    updateRailEdges();
+    const rail = railRef.current;
+    if (!rail) return;
+    const observer = new ResizeObserver(updateRailEdges);
+    observer.observe(rail);
+    return () => observer.disconnect();
+    // `data` because the rail only mounts once the client's data has loaded.
+  }, [updateRailEdges, data]);
+
+  const revealTab = useCallback((key: SectionKey) => {
+    const rail = railRef.current;
+    const button = tabRefs.current[key];
+    if (!rail || !button) return;
+    rail.scrollTo({
+      left: button.offsetLeft - (rail.clientWidth - button.offsetWidth) / 2,
+      behavior: reducedMotion ? 'auto' : 'smooth',
+    });
+  }, [reducedMotion]);
+
+  const selectTab = useCallback((key: SectionKey) => {
+    setTab(key);
+    requestAnimationFrame(() => {
+      revealTab(key);
+      // The rail is sticky, so bring the panel in under it, not under the shell bar.
+      panelRef.current?.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+    });
+  }, [reducedMotion, revealTab]);
+
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const count = SECTIONS.length;
+    let next = -1;
+    if (event.key === 'ArrowRight') next = (index + 1) % count;
+    else if (event.key === 'ArrowLeft') next = (index - 1 + count) % count;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = count - 1;
+    if (next < 0) return;
+    event.preventDefault();
+    const key = SECTIONS[next].key;
+    setTab(key);
+    requestAnimationFrame(() => {
+      tabRefs.current[key]?.focus();
+      revealTab(key);
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
     setFailed('');
     try {
-      const [overview, dashboard, assessments, preferences, reviews, settings] = await Promise.all([
+      const [overview, dashboard, assessments, preferences, reviews, settings, client] = await Promise.all([
         api.progress.retest.get(clientId),
         api.progress.habits.dashboard(clientId, { days }),
         api.progress.assessments.list({ client_id: clientId }),
         api.progress.habits.preferences(clientId),
         api.progress.habits.reviews(clientId),
         api.progress.retest.settings(),
+        api.clients.get(clientId),
       ]);
       const logs = await api.progress.habits.list(clientId, dashboard.data.period.start_date, dashboard.data.period.end_date);
       setData({
+        client,
         overview: overview.data,
         dashboard: dashboard.data,
         assessments: assessments.data as Record<string, unknown>[],
@@ -360,8 +427,8 @@ function ProgressHub({ clientId }: { clientId: string }) {
     <PageContainer>
       <PageHero
         title="Progress Hub"
-        subtitle={`${data.dashboard.period.start_date} to ${data.dashboard.period.end_date} · studio time ${data.dashboard.timezone}`}
-        icon={<LineChart size={18} />}
+        subtitle={`${data.client.name} · ${periodLabel(data.dashboard.period.start_date, data.dashboard.period.end_date)}`}
+        icon={<ClientAvatar name={data.client.name} photoUrl={data.client.photo_url} />}
       >
         {/* One badge, and only when it names the next action. The unlogged-day
             count and the assessments-on-file count that used to sit here were
@@ -386,35 +453,50 @@ function ProgressHub({ clientId }: { clientId: string }) {
         </div>
       )}
 
-      <div className="below-topbar sticky z-20 -mx-1 overflow-x-auto px-1 py-2"
+      <div className="below-topbar sticky z-20 -mx-1 px-1 py-2"
         style={{ background: 'color-mix(in srgb, var(--bg-canvas) 86%, transparent)', backdropFilter: 'blur(16px)' }}>
-        <div className="flex min-w-max gap-1.5" role="tablist" aria-label="Progress sections">
-          {SECTIONS.map((s) => {
-            const Icon = s.icon;
-            const active = tab === s.key;
-            const tone = SECTION_TONE[s.key];
-            return (
-              <button key={s.key} role="tab" aria-selected={active}
-                onClick={() => setTab(s.key)}
-                className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[750] transition-all"
-                style={active ? {
-                  background: `linear-gradient(135deg,${tone.from},${tone.to})`, color: '#fff',
-                  boxShadow: `0 6px 16px -8px ${tone.to}, inset 0 1px 0 rgba(255,255,255,0.22)`,
-                } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                <Icon size={14} style={{ color: active ? '#fff' : tone.ink }} /> {s.label}
-              </button>
-            );
-          })}
+        <div ref={railRef} onScroll={updateRailEdges} className="overflow-x-auto"
+          style={{
+            scrollbarWidth: 'none',
+            // The rail scrolls but no longer looks cut off: the edge the next
+            // tab is hiding behind fades instead of ending mid-word.
+            maskImage: `linear-gradient(to right, ${railEdges.left ? 'transparent' : '#000'} 0, #000 ${railEdges.left ? '20px' : '0px'}, #000 ${railEdges.right ? 'calc(100% - 20px)' : '100%'}, ${railEdges.right ? 'transparent' : '#000'} 100%)`,
+            WebkitMaskImage: `linear-gradient(to right, ${railEdges.left ? 'transparent' : '#000'} 0, #000 ${railEdges.left ? '20px' : '0px'}, #000 ${railEdges.right ? 'calc(100% - 20px)' : '100%'}, ${railEdges.right ? 'transparent' : '#000'} 100%)`,
+          }}>
+          <div className="flex min-w-max gap-1.5" role="tablist" aria-label="Progress sections">
+            {SECTIONS.map((s, index) => {
+              const Icon = s.icon;
+              const active = tab === s.key;
+              const tone = SECTION_TONE[s.key];
+              return (
+                <button key={s.key} role="tab" id={`progress-tab-${s.key}`}
+                  aria-selected={active} aria-controls="progress-panel" tabIndex={active ? 0 : -1}
+                  ref={(el) => { tabRefs.current[s.key] = el; }}
+                  onKeyDown={(event) => onTabKeyDown(event, index)}
+                  onClick={() => selectTab(s.key)}
+                  className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12px] font-[750] transition-all"
+                  style={active ? {
+                    background: `linear-gradient(135deg,${tone.from},${tone.to})`, color: '#fff',
+                    boxShadow: `0 6px 16px -8px ${tone.to}, inset 0 1px 0 rgba(255,255,255,0.22)`,
+                  } : { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                  <Icon size={14} style={{ color: active ? '#fff' : tone.ink }} /> {s.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {tab === 'overview' && <OverviewSection data={data} days={days} setDays={setDays} />}
-      {tab === 'history' && <HistorySection data={data} />}
-      {tab === 'comparison' && <ComparisonSection comparison={data.dashboard.assessment.comparison} />}
-      {tab === 'calendar' && <CalendarSection clientId={clientId} data={data} reload={load} />}
-      {tab === 'journal' && <JournalSection data={data} />}
-      {tab === 'analytics' && <AnalyticsSection data={data} days={days} setDays={setDays} />}
-      {tab === 'insights' && <InsightsSection clientId={clientId} data={data} reload={load} />}
+      <div id="progress-panel" role="tabpanel" aria-labelledby={`progress-tab-${tab}`} ref={panelRef}
+        className="scroll-mt-[calc(var(--topbar-h)_+_3.5rem)]">
+        {tab === 'overview' && <OverviewSection data={data} days={days} setDays={setDays} />}
+        {tab === 'history' && <HistorySection data={data} />}
+        {tab === 'comparison' && <ComparisonSection comparison={data.dashboard.assessment.comparison} />}
+        {tab === 'calendar' && <CalendarSection clientId={clientId} data={data} reload={load} />}
+        {tab === 'journal' && <JournalSection data={data} />}
+        {tab === 'analytics' && <AnalyticsSection data={data} days={days} setDays={setDays} />}
+        {tab === 'insights' && <InsightsSection clientId={clientId} data={data} reload={load} />}
+      </div>
     </PageContainer>
   );
 }
@@ -462,7 +544,21 @@ const fmt = (v: unknown, digits = 1) => {
   return Number.isFinite(n) ? n.toFixed(digits).replace(/\.0+$/, '') : '—';
 };
 const text = (v: unknown) => (v == null || v === '' ? '—' : String(v));
-const date = (v: unknown) => (v ? String(v).slice(0, 10) : '—');
+// The API returns YYYY-MM-DD; the page used to print that raw. One date shape
+// on screen, and it is a date a person reads.
+const date = (v: unknown) => (v == null || v === '' ? '—' : fmtDateMedium(String(v)));
+// "fat_loss" → "Fat loss": enum members are data, not labels.
+const humanise = (v: unknown) => {
+  if (v == null || v === '') return '—';
+  const s = String(v).replace(/_/g, ' ').trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
+};
+// "13 Oct – 11 Nov 2026": the year belongs once, on the end of the range.
+const periodLabel = (start: unknown, end: unknown) => {
+  const a = start ? fmtDayMonth(String(start)) : '';
+  const b = date(end);
+  return a && a !== '—' ? `${a} – ${b}` : b;
+};
 const stamp = (v: unknown) => {
   if (!v) return '—';
   const d = new Date(String(v));
@@ -524,11 +620,11 @@ function OverviewSection({ data, days, setDays }: {
             style={{ background: 'radial-gradient(circle,rgba(255,187,148,0.42),transparent 70%)', filter: 'blur(26px)' }} />
           <div className="relative flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10.5px] font-[760] uppercase tracking-[0.12em] text-white/50">Next fitness re-test</p>
+              <p className="text-[10.5px] font-[760] uppercase tracking-[0.12em] text-white/80">Next fitness re-test</p>
               <p className="mt-1.5 text-[27px] font-[870] tracking-[-0.035em]">
                 {schedule ? date(schedule.scheduled_date) : overview.state.label}
               </p>
-              <p className="mt-1 text-[12px] text-white/55">
+              <p className="mt-1 text-[12px] text-white/80">
                 {schedule
                   ? `${overview.state.days_until == null ? '' : overview.state.days_until === 0 ? 'Due today' : overview.state.days_until > 0 ? `In ${overview.state.days_until} days` : `${Math.abs(overview.state.days_until)} days overdue`} · ${schedule.cadence_months}-month cadence`
                   : overview.prompt || 'Create the next test from the latest assessment.'}
@@ -539,7 +635,7 @@ function OverviewSection({ data, days, setDays }: {
             </span>
           </div>
           {schedule?.next_reminder && (
-            <p className="relative mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-[650] text-white/75">
+            <p className="relative mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-[650] text-white/85">
               <CalendarClock size={12} /> Next reminder {date(schedule.next_reminder.on_date)} ({schedule.next_reminder.stage_days} days before)
             </p>
           )}
@@ -560,14 +656,16 @@ function OverviewSection({ data, days, setDays }: {
       </div>
 
       <Panel title="Today's checklist" subtitle={`${date(dashboard.today)} · ${Math.round(dashboard.habits.today.completion * 100)}% complete`}
-        action={<span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{dashboard.habits.today.log ? 'Journal entry recorded' : 'No entry yet'}</span>}>
+        action={dashboard.habits.today.log ? <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Journal entry recorded</span> : undefined}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {dashboard.habits.today.checklist.map((item) => (
             <div key={item.key} className="rounded-[11px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
               <p className="flex items-center gap-1.5 text-[11.5px] font-[740]" style={{ color: item.done ? 'var(--success-text)' : 'var(--text-muted)' }}>
                 {item.done
                   ? <CheckCircle2 size={13} aria-hidden />
-                  : <span aria-hidden className="inline-block h-[11px] w-[11px] rounded-full" style={{ border: '1.5px solid var(--border)' }} />}
+                  // A read-only list: an empty circle read as a checkbox the
+                  // trainer could tap. A plain dot says "not done", not "do it".
+                  : <span aria-hidden className="inline-block h-[5px] w-[5px] shrink-0 rounded-full" style={{ background: 'currentColor', opacity: 0.55 }} />}
                 <span className="sr-only">{item.done ? 'Done:' : 'Not done:'}</span> {item.label}
               </p>
               <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{item.detail || 'Not recorded'}</p>
@@ -580,12 +678,21 @@ function OverviewSection({ data, days, setDays }: {
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Baseline to latest" subtitle={comparison ? `${date(comparison.baseline?.assessment_date)} → ${date(comparison.latest?.assessment_date)}` : 'A second test unlocks comparison'}>
           {!comparison ? (
-            // The panel's own subtitle and the comparison section below both
-            // carry this story; a third copy here was the third place to read
-            // the same sentence.
-            overview.assessment_count < 2 ? null : (
-              <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Comparison unavailable.</p>
-            )
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                {overview.assessment_count >= 2
+                  ? 'Comparison unavailable.'
+                  : base
+                    ? `Baseline ${date(base.assessment_date)}${base.overall_fitness_score == null ? '' : ` · ${fmt(base.overall_fitness_score, 0)}/100`}.`
+                    : 'No baseline yet — the seven-step test records the starting point.'}
+              </p>
+              {overview.assessment_count < 2 && (
+                <Button variant="secondary"
+                  onClick={() => window.location.assign(`/pt-os/assessment?client_id=${encodeURIComponent(dashboard.client_id)}`)}>
+                  Start fitness testing
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <KpiCard label="Improved" value={String(comparison.summary?.improved ?? 0)} accent="emerald" />
@@ -596,7 +703,7 @@ function OverviewSection({ data, days, setDays }: {
           )}
         </Panel>
 
-        <Panel title="Goal progress" subtitle={dashboard.goal ? `${dashboard.goal.goal_type} · ${date(dashboard.goal.target_date)}` : 'No active goal'}>
+        <Panel title="Goal progress" subtitle={dashboard.goal ? `${humanise(dashboard.goal.goal_type)} · ${date(dashboard.goal.target_date)}` : 'No active goal'}>
           {!dashboard.goal ? (
             <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No numeric goal is active for this client.</p>
           ) : (
@@ -862,7 +969,7 @@ function CalendarSection({ clientId, data, reload }: { clientId: string; data: H
             <div className="flex flex-wrap items-center gap-2">
               <StatePill state={data.overview.state.state} />
               <span className="text-[17px] font-[830] tabular-nums" style={{ color: 'var(--text-primary)' }}>{date(schedule.scheduled_date)}</span>
-              <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{schedule.cadence_months}-month cadence · {schedule.source}</span>
+              <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{schedule.cadence_months}-month cadence · {humanise(schedule.source)}</span>
             </div>
             <div className="grid gap-2 sm:grid-cols-[1fr_1.3fr]">
               <div>
@@ -918,7 +1025,7 @@ function CalendarSection({ clientId, data, reload }: { clientId: string; data: H
               <div key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] px-3 py-2"
                 style={{ background: 'var(--bg-subtle)' }}>
                 <span className="text-[12px] font-[720] tabular-nums" style={{ color: 'var(--text-primary)' }}>{date(h.scheduled_date)}</span>
-                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{h.status} · {h.cadence_months} months{h.rescheduled_from ? ` · moved from ${date(h.rescheduled_from)}` : ''}</span>
+                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{humanise(h.status)} · {h.cadence_months} months{h.rescheduled_from ? ` · moved from ${date(h.rescheduled_from)}` : ''}</span>
               </div>
             ))}
           </div>
@@ -963,7 +1070,7 @@ function JournalSection({ data }: { data: HubData }) {
   const logs = useMemo(() => [...data.logs].sort((a, b) => b.log_date.localeCompare(a.log_date)), [data.logs]);
   return (
     <div className="space-y-3.5">
-      <Panel title="Today" subtitle={`Studio date ${data.dashboard.today} · journal completion ${Math.round(data.dashboard.habits.today.completion * 100)}%`}>
+      <Panel title="Today" subtitle={`Studio date ${date(data.dashboard.today)} · journal completion ${Math.round(data.dashboard.habits.today.completion * 100)}%`}>
         {!data.dashboard.habits.today.log ? (
           <EmptyState icon={<Ruler size={18} />} title="Nothing logged today"
             description="The member can add sleep, steps, water and recovery in the member app. The trainer view is read-only." />
@@ -1002,7 +1109,7 @@ function JournalSection({ data }: { data: HubData }) {
                     {[l.stress_level, l.energy_level, l.fatigue_level, l.soreness_level, l.recovery_level].map((v, k) => (
                       <td key={k} className="px-2 py-2 tabular-nums" style={{ color: 'var(--text-muted)' }}>{v ?? '—'}</td>
                     ))}
-                    <td className="px-2 py-2" style={{ color: 'var(--text-muted)' }}>{l.source}{l.steps_source && l.steps_source !== 'manual' ? ` (${l.steps_source} steps)` : ''}</td>
+                    <td className="px-2 py-2" style={{ color: 'var(--text-muted)' }}>{humanise(l.source)}{l.steps_source && l.steps_source !== 'manual' ? ` (${humanise(l.steps_source)} steps)` : ''}</td>
                     <td className="whitespace-nowrap px-2 py-2" style={{ color: 'var(--text-muted)' }}>{stamp(l.updated_at)}</td>
                     <td className="max-w-[180px] truncate px-2 py-2" style={{ color: 'var(--text-muted)' }}>{l.notes || '—'}</td>
                   </tr>
