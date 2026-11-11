@@ -51,7 +51,6 @@ describe('<TrainerProgressPage /> roster', () => {
     expect(screen.getByText(/18 days overdue/)).toBeTruthy();
     expect(screen.getByText(/1 assessment/)).toBeTruthy();
     expect(screen.getByText(/Next re-test/)).toBeTruthy();
-    expect(screen.getByPlaceholderText('Search by name, email or mobile')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Refresh roster' })).toBeTruthy();
     expect(screen.getByText('Scheduled')).toBeTruthy();
     expect(screen.getByText('No baseline / schedule')).toBeTruthy();

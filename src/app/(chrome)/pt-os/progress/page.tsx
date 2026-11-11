@@ -183,7 +183,6 @@ function ProgressRoster() {
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
                 <input
                   aria-label="Search clients by name, email or mobile"
-                  placeholder="Search by name, email or mobile"
                   type="search"
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
