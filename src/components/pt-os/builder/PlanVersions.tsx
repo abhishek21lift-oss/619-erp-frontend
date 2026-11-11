@@ -26,7 +26,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
-import { History, Loader2, Save } from 'lucide-react';
+import { ChevronDown, History, Loader2, Save } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { WorkoutPlanVersion } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -67,7 +67,7 @@ export default function PlanVersions({ planId, version, onSaved, beforeSave }: P
     } catch {
       setHistoryError(true);
       setRows([]);
-      toast.error('Could not load the version history');
+      toast.error('Could not load the history');
     } finally {
       setLoadingHistory(false);
     }
@@ -88,9 +88,9 @@ export default function PlanVersions({ planId, version, onSaved, beforeSave }: P
       onSaved(res.plan.version ?? version + 1);
       setRows(null);          // force a refetch; the list has a new entry
       setOpen(true);
-      toast.success(res.message);
+      toast.success('Saved to history');
     } catch {
-      toast.error('Could not save a version');
+      toast.error('Could not save to history');
     } finally {
       setSaving(false);
     }
@@ -98,40 +98,54 @@ export default function PlanVersions({ planId, version, onSaved, beforeSave }: P
 
   return (
     <div
-      className="rounded-[20px] p-4"
+      className="rounded-[20px]"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* A reference tool, not the work. It says what it is in one quiet row;
+          the filled button belongs to "Add exercise", not here. */}
+      <div className="flex min-h-[56px] items-center gap-2 py-2.5 pl-4 pr-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls="plan-version-history"
-          className="flex min-h-[44px] items-center gap-2 text-left"
+          className="flex min-h-[56px] min-w-0 flex-1 items-center gap-2.5 text-left"
         >
-          <History size={15} style={{ color: 'var(--text-muted)' }} />
-          <span>
-            <span className="block text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-              Version {version}
+          <History size={15} style={{ color: 'var(--brand)' }} aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span
+              className="block text-[10px] font-[700] uppercase tracking-wide"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              History
             </span>
-            <span className="block text-[11px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-              {open ? 'Hide history' : 'View history'}
+            <span
+              className="block truncate text-[13px] font-[750]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Older copies
             </span>
           </span>
+          <ChevronDown
+            size={14}
+            aria-hidden
+            style={{
+              color: 'var(--text-muted)',
+              transform: open ? 'rotate(180deg)' : 'none',
+              transition: 'transform .18s',
+            }}
+          />
         </button>
 
         <button
           type="button"
           onClick={save}
           disabled={saving}
-          className="flex h-[44px] items-center gap-1.5 rounded-[14px] px-3.5 text-[12.5px] font-[700] text-white transition-transform active:scale-[0.98] disabled:opacity-60"
-          style={{
-            background: 'var(--gradient-brand)',
-            boxShadow: '0 4px 14px -4px rgba(163,55,87,0.5)',
-          }}
+          className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-2.5 text-[12.5px] font-[700] transition-transform active:scale-[0.98] disabled:opacity-60"
+          style={{ color: 'var(--brand)' }}
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          Save this version
+          Save to history
         </button>
       </div>
 
@@ -141,12 +155,13 @@ export default function PlanVersions({ planId, version, onSaved, beforeSave }: P
           initial={reduce ? false : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduce ? 0 : 0.16 }}
-          className="mt-3"
+          className="border-t px-4 pb-4 pt-3"
+          style={{ borderColor: 'var(--border)' }}
         >
           {historyError ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-[12px]" style={{ color: 'var(--danger-text)' }}>
-                Could not load the version history.
+                Could not load the history.
               </p>
               <button
                 type="button"
@@ -160,11 +175,11 @@ export default function PlanVersions({ planId, version, onSaved, beforeSave }: P
           ) : loadingHistory || rows === null ? (
             <div role="status" aria-live="polite" className="flex justify-center py-4">
               <Loader2 size={16} className="animate-spin" aria-hidden style={{ color: 'var(--text-muted)' }} />
-              <span className="sr-only">Loading version history</span>
+              <span className="sr-only">Loading history</span>
             </div>
           ) : rows.length === 0 ? (
             <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              No saved versions yet. Save one before a big rewrite and you can always see what the
+              Nothing saved yet. Save before a big rewrite and you can always look back at what the
               programme used to say.
             </p>
           ) : (
@@ -176,10 +191,10 @@ export default function PlanVersions({ planId, version, onSaved, beforeSave }: P
                   style={{ background: 'var(--bg-subtle)' }}
                 >
                   <span className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
-                    Version {v.version}
+                    {formatDate(v.created_at)}
                   </span>
                   <span className="text-[11px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-                    {v.exercise_count} exercise{v.exercise_count === 1 ? '' : 's'} · {formatDate(v.created_at)}
+                    {v.exercise_count} exercise{v.exercise_count === 1 ? '' : 's'}
                     {v.created_by_name ? ` · ${v.created_by_name}` : ''}
                   </span>
                 </li>

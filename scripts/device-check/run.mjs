@@ -198,7 +198,7 @@ const ROUTES = [
     await page.waitForTimeout(600);
   }],
   ['builder-version-history', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.plan}`, async (page) => {
-    await page.getByRole('button', { name: /view history/i }).first().click();
+    await page.getByRole('button', { name: /older copies/i }).first().click();
     await page.waitForTimeout(600);
   }],
   ['builder-empty-day', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.emptyPlan}`],
