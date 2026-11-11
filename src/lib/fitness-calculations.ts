@@ -2,9 +2,8 @@
 // Fitness Testing module. Backend twin: 619-erp-backend/src/modules/progress/fitness-scoring.js
 //
 // Formula-bundle version. Bump whenever any formula in this module changes.
-// Persisting it per assessment requires the approval-gated migration described
-// in F10 (new nullable `scoring_formula_version` column on pt_assessments);
-// until then this is documentation only and legacy rows are treated as unknown.
+// The per-row framework version is stored in pt_assessments.scoring_formula_version
+// (2 = the 100-point framework); this constant tracks the bundle for parity tests.
 export const FITNESS_SCORING_VERSION = '7';
 // (same formulas, duplicated deliberately since there's no shared package
 // between the two apps). These are used client-side for live preview only —

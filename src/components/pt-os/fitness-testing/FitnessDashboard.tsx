@@ -5,7 +5,7 @@ import { Activity, Dumbbell, Gauge, HeartPulse, Move, Repeat, Ruler } from 'luci
 import { m } from 'framer-motion';
 import FitnessRadarChart, { type RadarDatum } from '@/components/pt-os/FitnessRadarChart';
 import { scoreCoverage, formatCoverage, STEP_MAX, tierForScore } from '@/lib/fitness-calculations';
-import { bandFill, bandLabel, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
+import { bandFill, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
 
 export interface FitnessScores {
   bpPoints: number | null;
