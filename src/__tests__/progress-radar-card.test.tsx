@@ -21,14 +21,14 @@ import ProgressRadarCard from '@/components/dashboards/cockpit/ProgressRadarCard
 // A sparse row can still be the newest — the card must look past it.
 const SPARSE = {
   id: 'a2', client_id: 'c2', assessment_date: '2026-10-01', assessment_number: 2,
-  cardio_score_computed: '50',
+  cardio_score_computed: '10',
 };
 const FULL = {
   id: 'a1', client_id: 'c1', assessment_date: '2026-09-12', assessment_number: 1,
-  cardio_score_computed: '70', strength_score_computed: '64',
-  endurance_score_computed: null, mobility_score_computed: '61',
-  body_composition_score: '58', health_risk_score: '80',
-  overall_fitness_score: '66',
+  bp_points: '7', anthropometric_points: '6', body_composition_score: '11',
+  cardio_score_computed: '13', strength_score_computed: '7.5',
+  endurance_score_computed: null, mobility_score_computed: '12',
+  overall_fitness_score: '66', overall_points: '49.5', overall_max: '85',
 };
 const CLIENTS = [{ id: 'c1', name: 'Asha Nair', photo_url: null }];
 
@@ -52,19 +52,19 @@ describe('progress radar card', () => {
       variant?: string;
     };
     expect(props.data.map((r) => r.category)).toEqual(
-      ['Cardio', 'Strength', 'Endurance', 'Flexibility', 'Body Comp.', 'Health Score']);
-    expect(props.data.map((r) => r.score)).toEqual([70, 64, null, 61, 58, 80]);
+      ['Blood Pressure', 'Anthropometrics', 'Body Comp.', 'Cardio', 'Strength', 'Endurance', 'Flexibility']);
+    expect(props.data.map((r) => r.score)).toEqual([70, 60, 73.3, 65, 50, null, 80]);
     expect(props.variant).toBe('onCard');
   });
 
   it('speaks about the newest test by date, not the order the endpoint happened to send', async () => {
     const older = { ...FULL };
-    const newer = { ...FULL, id: 'a3', assessment_date: '2026-10-05', cardio_score_computed: '80' };
+    const newer = { ...FULL, id: 'a3', assessment_date: '2026-10-05', cardio_score_computed: '16' };
     route([older, newer]); // oldest first: the card's claim is "the latest"
     render(<ProgressRadarCard />);
     expect(await screen.findByTestId('radar-mock')).toBeTruthy();
-    const props = radarSpy.mock.calls[0][0] as { data: Array<{ score: number | null }> };
-    expect(props.data[0].score).toBe(80);
+    const props = radarSpy.mock.calls[0][0] as { data: Array<{ category: string; score: number | null }> };
+    expect(props.data.find((r) => r.category === 'Cardio')?.score).toBe(80);
   });
 
   it('names the client from the roster, dates the test and shows the overall', async () => {
@@ -74,7 +74,7 @@ describe('progress radar card', () => {
     expect(screen.getByText(/12-09-2026/)).toBeTruthy();
     expect(screen.getByText('Overall 66/100')).toBeTruthy();
     // The radar is a shape; these are its readings as text.
-    expect(screen.getByText('Cardio: 70 out of 100')).toBeTruthy();
+    expect(screen.getByText('Cardio: 65 out of 100')).toBeTruthy();
     expect(screen.getByText('Endurance: not measured')).toBeTruthy();
   });
 
@@ -83,7 +83,7 @@ describe('progress radar card', () => {
     // saying the studio has never tested anyone would be false.
     route([{
       id: 'a9', client_id: 'c1', assessment_date: '2026-10-08',
-      cardio_score_computed: '52', overall_fitness_score: '66',
+      cardio_score_computed: '10', overall_fitness_score: '66',
     }]);
     render(<ProgressRadarCard />);
     expect(await screen.findByText('Overall 66/100')).toBeTruthy();
