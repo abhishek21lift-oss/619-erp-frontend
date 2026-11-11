@@ -48,17 +48,45 @@ describe('vocabulary', () => {
     expect(mapExperience(' Beginner ')).toBe('beginner');
     expect(mapExperience('olympian')).toBe('');
 
-    expect(mapWorkoutGoal('fat_loss')).toBe('weight_loss');
+    expect(mapWorkoutGoal('fat_loss')).toBe('fat_loss');
+    expect(mapWorkoutGoal('weight_loss')).toBe('fat_loss');
+    expect(mapWorkoutGoal('muscle_gain')).toBe('hypertrophy');
     expect(mapWorkoutGoal('body_recomposition')).toBe('body_recomposition');
     expect(mapWorkoutGoal('recomposition')).toBe('body_recomposition');
-    expect(mapWorkoutGoal('recovery')).toBe('');           // not a chip on the workout form
+    expect(mapWorkoutGoal('recovery')).toBe('recovery');
+    expect(mapWorkoutGoal('custom')).toBe('');
     expect(mapDietGoal('fat_loss')).toBe('weight_loss');
+    expect(mapDietGoal('body_recomposition')).toBe('recomposition');
+    expect(mapDietGoal('hypertrophy')).toBe('muscle_gain');
     expect(mapDietGoal('general_fitness')).toBe('');        // not a chip on the diet form
 
     expect(mapBudget('high')).toBe('premium');
     expect(mapBudget('medium')).toBe('moderate');
     expect(mapActivityLevel('Very Active')).toBe('very_active');
     expect(mapActivityLevel('moderately_active')).toBe('moderately_active');
+  });
+
+  it('maps every stored workout goal to one the form can select', () => {
+    // pt_goals.goal_type (migration 055) plus the names pt_clients.goal accepts.
+    // Every one the backend can classify must land on a selectable option,
+    // otherwise the select renders blank and the trainer reads "no goal".
+    const stored: Record<string, string> = {
+      fat_loss: 'fat_loss', weight_loss: 'fat_loss',
+      muscle_gain: 'hypertrophy', hypertrophy: 'hypertrophy',
+      strength: 'strength', strength_gain: 'strength', athletic_performance: 'strength',
+      endurance: 'endurance', marathon_prep: 'endurance',
+      general_fitness: 'general_fitness', medical_fitness: 'general_fitness', senior_fitness: 'general_fitness',
+      body_recomposition: 'body_recomposition', recomposition: 'body_recomposition',
+      wedding_transformation: 'body_recomposition',
+      recovery: 'recovery',
+      flexibility_mobility: 'flexibility_mobility', mobility: 'flexibility_mobility', flexibility: 'flexibility_mobility',
+      powerlifting: 'powerlifting',
+    };
+    for (const [raw, expected] of Object.entries(stored)) {
+      expect(mapWorkoutGoal(raw), raw).toBe(expected);
+    }
+    // The trainer's own label is not a prescription, so it is not guessed at.
+    expect(mapWorkoutGoal('custom')).toBe('');
   });
 
   it('takes a training frequency only when the chips can show it', () => {
@@ -107,7 +135,7 @@ describe('loadAiClientFacts', () => {
 
     expect(facts.workout).toMatchObject({
       age: '36', weight_kg: '68.4', height_cm: '165',
-      goal: 'weight_loss',                 // fat_loss, translated
+      goal: 'fat_loss',                    // the form's own goal vocabulary
       experience_level: 'advanced',        // athlete → advanced
       injuries: 'Left knee',               // the client row beats the interview
       training_days: '3',                  // frequency beats the interview's 4

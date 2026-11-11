@@ -65,19 +65,35 @@ const EXPERIENCE: Record<string, string> = {
   beginner: 'beginner', intermediate: 'intermediate', advanced: 'advanced', athlete: 'advanced',
 };
 
+/**
+ * The workout form offers the canonical nine — the vocabulary the programming
+ * engines and workout_plans.goal share. pt_goals.goal_type still stores the
+ * older names, so both are translated here, mirroring the server's
+ * classifyGoal (backend modules/pt-os/goal-classification.js). A mapped value
+ * that is not one of the nine renders as a blank select, which is what a
+ * fat_loss or muscle_gain client used to see. `custom` is absent on purpose:
+ * the trainer's own label is not a prescription to guess from.
+ */
 const WORKOUT_GOAL: Record<string, string> = {
-  weight_loss: 'weight_loss', fat_loss: 'weight_loss', muscle_gain: 'muscle_gain',
-  strength: 'strength', endurance: 'endurance', general_fitness: 'general_fitness',
-  flexibility: 'flexibility',
-  // The studio's own goal. It was missing here AND from the model's schema, so
-  // a body-recomposition client was shown, and programmed as, general fitness.
-  body_recomposition: 'body_recomposition',
-  recomposition: 'body_recomposition', recomp: 'body_recomposition',
+  hypertrophy: 'hypertrophy', muscle_gain: 'hypertrophy',
+  strength: 'strength', strength_gain: 'strength', athletic_performance: 'strength',
+  fat_loss: 'fat_loss', weight_loss: 'fat_loss',
+  endurance: 'endurance', marathon_prep: 'endurance',
+  general_fitness: 'general_fitness', medical_fitness: 'general_fitness', senior_fitness: 'general_fitness',
+  body_recomposition: 'body_recomposition', recomposition: 'body_recomposition', recomp: 'body_recomposition',
+  wedding_transformation: 'body_recomposition',
+  recovery: 'recovery',
+  flexibility_mobility: 'flexibility_mobility', mobility: 'flexibility_mobility', flexibility: 'flexibility_mobility',
+  powerlifting: 'powerlifting',
 };
 
+/** The diet form's own four goals: weight_loss, muscle_gain, maintenance, recomposition. */
 const DIET_GOAL: Record<string, string> = {
-  weight_loss: 'weight_loss', fat_loss: 'weight_loss', muscle_gain: 'muscle_gain',
-  maintenance: 'maintenance', recomposition: 'recomposition', recomp: 'recomposition',
+  weight_loss: 'weight_loss', fat_loss: 'weight_loss',
+  muscle_gain: 'muscle_gain', hypertrophy: 'muscle_gain',
+  maintenance: 'maintenance',
+  recomposition: 'recomposition', recomp: 'recomposition',
+  body_recomposition: 'recomposition', wedding_transformation: 'recomposition',
 };
 
 /** pt_lifestyle_assessments.activity_level stores display labels (`lib/lifestyle-calculations.ts`). */
