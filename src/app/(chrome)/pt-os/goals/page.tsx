@@ -776,13 +776,13 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
       ? [a.stepTest, a.vo2Max != null ? `VO₂ max ${a.vo2Max}` : a.cardioCategory].filter(Boolean).join(' · ')
       : '—';
     const flexibility = a.flexibilityCategory
-      || (a.flexibilityScore != null ? `${a.flexibilityScore} / 100` : '—');
+      || (a.flexibilityScore != null ? `${a.flexibilityScore} / 15` : '—');
     return [
       { label: 'Blood pressure', value: bp },
       { label: 'BMI', value: a.bmi != null ? String(a.bmi) : '—' },
       { label: 'Body fat', value: a.bodyFat != null ? `${a.bodyFat}%` : '—' },
       { label: 'Step test', value: stepTest },
-      { label: 'Strength', value: a.strengthScore != null ? `${a.strengthScore} / 100` : '—' },
+      { label: 'Strength', value: a.strengthScore != null ? `${a.strengthScore} / 15` : '—' },
       { label: 'Flexibility', value: flexibility },
     ];
   }, [baseline.assessment]);

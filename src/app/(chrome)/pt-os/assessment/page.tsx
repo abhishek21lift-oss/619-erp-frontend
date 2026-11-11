@@ -19,8 +19,9 @@ import {
   computeAge, calcBmi, calcWhr, classifyBmi, classifyWaistRisk, classifyWhrRisk, classifyBodyFat,
   classifyBp, classifyRhr, classifySpo2, assessVitalsSafety, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
-  calc1RM, classifyStrength, classifyEndurance,
-  scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
+  calc1RM, classifyStrengthDetail, classifyEndurance,
+  scoreBpPoints, scoreAnthropometricPoints, scoreBodyCompositionPoints, scoreCardioPoints,
+  scoreStrengthBattery, scoreEnduranceBatteryPoints, scoreFlexibilityPoints, computeTotalScore,
   scoreNum, scoresFromAssessmentRow,
 } from '@/lib/fitness-calculations';
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
@@ -38,7 +39,7 @@ import StepStrength from '@/components/pt-os/fitness-testing/StepStrength';
 import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
 import { FLEXIBILITY_PROTOCOLS, FLEXIBILITY_TEST_ORDER } from '@/components/pt-os/fitness-testing/flexibility/protocol-content';
-import { buildFlexibilityPayload, formTest, legacyMobilityScore, requiredFlexibilityTests } from '@/lib/flexibility-protocol';
+import { buildFlexibilityPayload, deriveFlexibility, formTest, legacyMobilityScore, requiredFlexibilityTests } from '@/lib/flexibility-protocol';
 import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessAnthropometric } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
@@ -301,8 +302,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const liveScores = useMemo<FitnessScores>(() => {
     const bmi = calcBmi(n(form.weight), n(form.heightCm));
     const bpCategory = classifyBp(n(form.bpSystolic), n(form.bpDiastolic));
-    const healthRiskScore = scoreHealthRisk(bpCategory, bmi);
-    const bodyCompositionScore = scoreBodyComposition(n(form.bodyFatPct), gender);
 
     let vo2: number | null = null;
     let cardioCategory: FitnessCategory | null = null;
@@ -319,13 +318,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       cardioCategory = classifyStepTestRecovery(n(form.cardioRecoveryHr), age, gender);
     }
     if (vo2 != null && !cardioCategory) cardioCategory = classifyVo2Max(vo2, age, gender);
-    const cardioScore = scoreCategory(cardioCategory);
 
     const oneRM = estimateOneRM(form, 1);
-    const strengthCategory = classifyStrength(oneRM, n(form.weight), form.strengthExercise || null, gender, age);
+    const strengthDetail = classifyStrengthDetail(oneRM, n(form.weight), form.strengthExercise || null, gender, age);
     const oneRM2 = estimateOneRM(form, 2);
-    const strengthCategory2 = classifyStrength(oneRM2, n(form.weight), form.strengthExercise2 || null, gender, age);
-    const strengthScore = scoreTestBattery(scoreCategory(strengthCategory), scoreCategory(strengthCategory2));
+    const strengthDetail2 = classifyStrengthDetail(oneRM2, n(form.weight), form.strengthExercise2 || null, gender, age);
 
     // Interpret the result by the test's own protocol, not by a stored flag that
     // can drift out of sync with the selected test type (F7).
@@ -334,19 +331,39 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     const enduranceCategory = classifyEndurance(form.enduranceTestType || null, enduranceValue, gender, age);
     const enduranceValue2 = isRepBased(form.enduranceTestType2) ? n(form.enduranceReps2) : n(form.enduranceDurationSec2);
     const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender, age);
-    const enduranceScore = scoreTestBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
 
-    // A v3 battery has no single mobility score — four incompatible units, so
-    // the derived columns stay null on purpose. Only a legacy {test1,test2}
-    // blob still yields the old composite.
-    const mobilityScore = form.flexibility.recording ? null : legacyMobilityScore(form.flexibility.legacy);
+    const steps = {
+      bp: scoreBpPoints(bpCategory),
+      anthropometric: scoreAnthropometricPoints({
+        bmi,
+        waistIliacCm: n(form.waistIliacCm),
+        waistCm: n(form.waistCm),
+        waistHipRatio: calcWhr(n(form.waistCm), n(form.hipsCm)),
+      }, gender),
+      bodyComposition: scoreBodyCompositionPoints(n(form.bodyFatPct), gender),
+      cardio: scoreCardioPoints(cardioCategory),
+      strength: scoreStrengthBattery(strengthDetail, strengthDetail2),
+      endurance: scoreEnduranceBatteryPoints(enduranceCategory, enduranceCategory2),
+      // A v3 battery scores its recorded tests; a legacy blob only has the old
+      // 0-100 composite, converted to the 15-point step.
+      flexibility: form.flexibility.recording
+        ? scoreFlexibilityPoints(deriveFlexibility(buildFlexibilityPayload(form.flexibility), { age, gender }))
+        : scoreFlexibilityPoints(null, legacyMobilityScore(form.flexibility.legacy)),
+    };
+    const total = computeTotalScore(steps);
 
-    const overallScore = computeOverallScore({
-      bodyComposition: bodyCompositionScore, endurance: enduranceScore,
-      mobility: mobilityScore, cardio: cardioScore, healthRisk: healthRiskScore, strength: strengthScore,
-    });
-
-    return { cardioScore, strengthScore, enduranceScore, mobilityScore, bodyCompositionScore, healthRiskScore, overallScore };
+    return {
+      bpPoints: steps.bp.points,
+      anthropometricPoints: steps.anthropometric.points,
+      bodyCompositionScore: steps.bodyComposition.points,
+      cardioScore: steps.cardio.points,
+      strengthScore: steps.strength.points,
+      enduranceScore: steps.endurance.points,
+      mobilityScore: steps.flexibility.points,
+      overallScore: total.score,
+      overallPoints: total.points,
+      overallMax: total.max,
+    };
   }, [form, age, gender]);
 
   const isBeginner = experienceLevel === 'beginner';

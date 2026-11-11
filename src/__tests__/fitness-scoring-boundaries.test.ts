@@ -3,8 +3,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   classifyFlexibilityScore,
-  scoreBodyComposition,
-  scoreHealthRisk,
   FITNESS_SCORING_VERSION,
 } from '@/lib/fitness-calculations';
 
@@ -28,45 +26,6 @@ describe('classifyFlexibilityScore bounds (F2a)', () => {
     expect(classifyFlexibilityScore(2)).toBe('Below Average');
     expect(classifyFlexibilityScore(5)).toBe('Average');
     expect(classifyFlexibilityScore(9)).toBe('Excellent');
-  });
-});
-
-describe('scoreBodyComposition prerequisites (F14)', () => {
-  it('returns null for missing or unsupported gender — no invented range', () => {
-    expect(scoreBodyComposition(15, null)).toBeNull();
-    expect(scoreBodyComposition(15, 'Other')).toBeNull();
-  });
-  it('still scores supported genders', () => {
-    expect(scoreBodyComposition(15, 'Male')).toBe(100);
-    expect(scoreBodyComposition(25, 'Female')).toBe(80);
-  });
-  it('returns null when body fat is missing', () => {
-    expect(scoreBodyComposition(null, 'Male')).toBeNull();
-  });
-});
-
-describe('scoreHealthRisk direction and bands (F15)', () => {
-  it('higher score = better health; 100 is normal BP + healthy BMI', () => {
-    expect(scoreHealthRisk('Normal', 22)).toBe(100);
-  });
-  it('BMI band discontinuity: 24.9 → 100, 25.0 → 80 (with normal BP)', () => {
-    expect(scoreHealthRisk('Normal', 24.9)).toBe(100);
-    expect(scoreHealthRisk('Normal', 25)).toBe(80);
-  });
-  it('BMI 30+ → 65 with normal BP (100+30)/2', () => {
-    expect(scoreHealthRisk('Normal', 30)).toBe(65);
-  });
-  it('underweight (<18.5) is treated like overweight (60), no separate penalty', () => {
-    expect(scoreHealthRisk('Normal', 17)).toBe(80);
-  });
-  it('BP-only input still scores (BMI missing)', () => {
-    expect(scoreHealthRisk('Hypertension Stage 1', null)).toBe(55);
-  });
-  it('both missing → null, never 0', () => {
-    expect(scoreHealthRisk(null, null)).toBeNull();
-  });
-  it('Hypertension Stage 2 is the worst BP band (20)', () => {
-    expect(scoreHealthRisk('Hypertension Stage 2', 22)).toBe(60);
   });
 });
 

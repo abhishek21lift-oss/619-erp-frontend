@@ -25,7 +25,7 @@ interface FitnessRadarChartProps {
   accent?: string;
 }
 
-/** 6-category fitness score radar (Body Composition / Strength / Endurance / Flexibility / Cardio / Health Score). */
+/** Seven-step fitness radar (BP / Anthropometrics / Body Composition / Cardio / Strength / Endurance / Flexibility). */
 export function FitnessRadarChart({
   data, height = 280, variant = 'onDark', accent = '#A33757',
 }: FitnessRadarChartProps) {

@@ -29,8 +29,8 @@ const isRow = (v: unknown): v is Row => !!v && typeof v === 'object' && !Array.i
 
 function measuredCount(s: FitnessScores): number {
   return [
-    s.cardioScore, s.strengthScore, s.enduranceScore,
-    s.mobilityScore, s.bodyCompositionScore, s.healthRiskScore,
+    s.bpPoints, s.anthropometricPoints, s.bodyCompositionScore, s.cardioScore,
+    s.strengthScore, s.enduranceScore, s.mobilityScore,
   ].filter((v) => v !== null).length;
 }
 
@@ -139,7 +139,7 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
       {measured >= 3 ? (
         <>
           <FitnessRadarChart data={radar} height={250} variant="onCard" accent={palette.blue[450]} />
-          {/* The chart is a shape with no text of its own. Same six readings,
+          {/* The chart is a shape with no text of its own. Same seven readings,
               written out, so a screen reader (or anyone who cannot separate
               the axes) gets the scores rather than a picture. */}
           <ul className="sr-only">
@@ -154,8 +154,8 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
         <p className="mt-3 rounded-[12px] px-3 py-2.5 text-[11.5px] leading-snug"
           style={{ background: rgba(palette.blue[500], 0.06), color: 'var(--text-muted)' }}>
           {measured > 0
-            ? `Only ${measured} of the 6 categories were measured on this test, so there is no radar to draw — the assessment itself has the detail.`
-            : 'No category scores on this test, so there is no radar to draw — the assessment itself has the detail.'}
+            ? `Only ${measured} of the 7 steps were measured on this test, so there is no radar to draw — the assessment itself has the detail.`
+            : 'No step scores on this test, so there is no radar to draw — the assessment itself has the detail.'}
         </p>
       )}
 

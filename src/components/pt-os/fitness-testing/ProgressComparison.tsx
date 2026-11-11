@@ -8,8 +8,10 @@ interface MetricConfig {
   label: string;
   unit?: string;
   higherIsBetter: boolean;
-  /** The domain hue, for the rows that map to one of the six scores. */
+  /** The domain hue, for the rows that map to one of the seven steps. */
   tone?: Tone;
+  /** The same column means a different thing under a different formula. */
+  versionGuard?: boolean;
 }
 
 const METRICS: MetricConfig[] = [
@@ -18,11 +20,13 @@ const METRICS: MetricConfig[] = [
   { key: 'body_fat_pct', label: 'Body Fat', unit: '%', higherIsBetter: false },
   { key: 'waist_cm', label: 'Waist', unit: 'cm', higherIsBetter: false },
   { key: 'vo2_max', label: 'VO₂ Max', unit: 'mL/kg/min', higherIsBetter: true, tone: tones.berry },
-  { key: 'strength_score_computed', label: 'Strength Score', higherIsBetter: true, tone: tones.sunset },
-  { key: 'cardio_score_computed', label: 'Cardio Score', higherIsBetter: true, tone: tones.berry },
-  { key: 'endurance_score_computed', label: 'Endurance Score', higherIsBetter: true, tone: tones.aqua },
-  { key: 'mobility_score_computed', label: 'Flexibility Score', higherIsBetter: true, tone: tones.gold },
-  { key: 'overall_fitness_score', label: 'Overall Fitness Score', higherIsBetter: true, tone: tones.violet },
+  { key: 'bp_points', label: 'BP Score', unit: '/ 10', higherIsBetter: true, tone: tones.sky, versionGuard: true },
+  { key: 'anthropometric_points', label: 'Anthropometric Score', unit: '/ 10', higherIsBetter: true, tone: tones.indigo, versionGuard: true },
+  { key: 'strength_score_computed', label: 'Strength Score', unit: '/ 15', higherIsBetter: true, tone: tones.sunset, versionGuard: true },
+  { key: 'cardio_score_computed', label: 'Cardio Score', unit: '/ 20', higherIsBetter: true, tone: tones.berry, versionGuard: true },
+  { key: 'endurance_score_computed', label: 'Endurance Score', unit: '/ 15', higherIsBetter: true, tone: tones.aqua, versionGuard: true },
+  { key: 'mobility_score_computed', label: 'Flexibility Score', unit: '/ 15', higherIsBetter: true, tone: tones.gold, versionGuard: true },
+  { key: 'overall_fitness_score', label: 'Overall Fitness Score', higherIsBetter: true, tone: tones.violet, versionGuard: true },
 ];
 
 interface ProgressComparisonProps {
@@ -36,6 +40,9 @@ function num(v: unknown): number | null {
 }
 
 export function ProgressComparison({ initial, latest }: ProgressComparisonProps) {
+  const initialVersion = String(initial.scoring_formula_version ?? '');
+  const latestVersion = String(latest.scoring_formula_version ?? '');
+
   return (
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
       <div className="h-1.5 w-full" style={{ background: sweep }} />
@@ -57,7 +64,8 @@ export function ProgressComparison({ initial, latest }: ProgressComparisonProps)
             const a = num(initial[m.key]);
             const b = num(latest[m.key]);
             if (a == null && b == null) return null;
-            const delta = a != null && b != null ? Math.round((b - a) * 100) / 100 : null;
+            const comparable = !m.versionGuard || initialVersion === latestVersion;
+            const delta = comparable && a != null && b != null ? Math.round((b - a) * 100) / 100 : null;
             const improved = delta != null && delta !== 0 ? (delta > 0) === m.higherIsBetter : null;
             return (
               <div key={m.key} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
@@ -69,7 +77,14 @@ export function ProgressComparison({ initial, latest }: ProgressComparisonProps)
                   <span className="text-[12.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                     {a ?? '—'} {m.unit || ''} <span className="mx-1">→</span> {b ?? '—'} {m.unit || ''}
                   </span>
-                  {delta != null && (
+                  {!comparable ? (
+                    <span
+                      className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]"
+                      style={{ background: 'rgba(148,163,184,0.14)', color: 'var(--text-muted)' }}
+                    >
+                      Not comparable
+                    </span>
+                  ) : delta != null && (
                     <span
                       className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-[700]"
                       style={{

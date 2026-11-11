@@ -1,24 +1,28 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { Activity, Dumbbell, Gauge, HeartPulse, Move, Repeat, ShieldCheck } from 'lucide-react';
+import { Activity, Dumbbell, Gauge, HeartPulse, Move, Repeat, Ruler } from 'lucide-react';
 import { m } from 'framer-motion';
 import FitnessRadarChart, { type RadarDatum } from '@/components/pt-os/FitnessRadarChart';
-import { scoreCoverage, formatCoverage } from '@/lib/fitness-calculations';
-import { bandFill, bandLabel, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
+import { scoreCoverage, formatCoverage, STEP_MAX, tierForScore } from '@/lib/fitness-calculations';
+import { bandFill, domain, gradient, ringStops, sweep, type Tone } from './fitnessTheme';
 
 export interface FitnessScores {
+  bpPoints: number | null;
+  anthropometricPoints: number | null;
+  bodyCompositionScore: number | null;
   cardioScore: number | null;
   strengthScore: number | null;
   enduranceScore: number | null;
   mobilityScore: number | null;
-  bodyCompositionScore: number | null;
-  healthRiskScore: number | null;
+  /** The 0-100 headline, scaled over `overallMax`; partial by design. */
   overallScore: number | null;
+  overallPoints: number | null;
+  overallMax: number | null;
 }
 
-/** The resting vitals behind the Health Score. Optional: the dashboard still
- *  renders for callers that only have the six performance scores. */
+/** The resting vitals behind the BP step. Optional: the dashboard still
+ *  renders for callers that only have the step scores. */
 export interface FitnessVitals {
   bpSystolic: number | null;
   bpDiastolic: number | null;
@@ -41,25 +45,32 @@ export interface FitnessAnthropometric {
   whrRisk: string | null;
 }
 
-// Order is load-bearing: the radar plots these six in this order.
-const CATEGORY_META: { key: keyof FitnessScores; label: string; tone: Tone; Icon: LucideIcon }[] = [
-  { key: 'cardioScore', label: 'Cardio', tone: domain.cardio, Icon: HeartPulse },
-  { key: 'strengthScore', label: 'Strength', tone: domain.strength, Icon: Dumbbell },
-  { key: 'enduranceScore', label: 'Endurance', tone: domain.endurance, Icon: Repeat },
+// Order is load-bearing: these seven are the framework's steps, in order, and
+// the radar plots them in this order. The fixed max is the tile and radar
+// denominator — only the headline ring uses the measured `overallMax`.
+const CATEGORY_META: { key: keyof FitnessScores; label: string; max: number; tone: Tone; Icon: LucideIcon }[] = [
+  { key: 'bpPoints', label: 'Blood Pressure', max: STEP_MAX.bp, tone: domain.healthRisk, Icon: HeartPulse },
+  { key: 'anthropometricPoints', label: 'Anthropometrics', max: STEP_MAX.anthropometric, tone: domain.anthropometric, Icon: Ruler },
+  { key: 'bodyCompositionScore', label: 'Body Comp.', max: STEP_MAX.bodyComposition, tone: domain.bodyComposition, Icon: Activity },
+  { key: 'cardioScore', label: 'Cardio', max: STEP_MAX.cardio, tone: domain.cardio, Icon: HeartPulse },
+  { key: 'strengthScore', label: 'Strength', max: STEP_MAX.strength, tone: domain.strength, Icon: Dumbbell },
+  { key: 'enduranceScore', label: 'Endurance', max: STEP_MAX.endurance, tone: domain.endurance, Icon: Repeat },
   // The stored column is still `mobility_score_computed` (backward compat), but
-  // the value is the flexibility composite, so the card reads "Flexibility".
-  { key: 'mobilityScore', label: 'Flexibility', tone: domain.mobility, Icon: Move },
-  { key: 'bodyCompositionScore', label: 'Body Comp.', tone: domain.bodyComposition, Icon: Activity },
-  // Higher is better, like the other five: 100 is normal BP and a healthy BMI.
-  // The column keeps its historical `health_risk_score` name for compatibility.
-  { key: 'healthRiskScore', label: 'Health Score', tone: domain.healthRisk, Icon: ShieldCheck },
+  // the value is the flexibility step, so the card reads "Flexibility".
+  { key: 'mobilityScore', label: 'Flexibility', max: STEP_MAX.flexibility, tone: domain.mobility, Icon: Move },
 ];
 
-/** Scores as radar data, labels in the plotting order above. Missing
- *  categories stay null all the way into the radar — never 0, so a skipped
- *  test is a gap, not a measured zero. */
+/** Step points as radar data, each axis plotted as points / fixed max × 100.
+ *  A missing step stays null all the way into the radar — never 0, so a
+ *  skipped test is a gap, not a measured zero. */
 export function radarDataFromScores(scores: FitnessScores): RadarDatum[] {
-  return CATEGORY_META.map((c) => ({ category: c.label, score: scores[c.key] }));
+  return CATEGORY_META.map((c) => {
+    const points = scores[c.key];
+    return {
+      category: c.label,
+      score: points == null ? null : Math.round((points / c.max) * 1000) / 10,
+    };
+  });
 }
 
 interface FitnessDashboardProps {
@@ -119,6 +130,12 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
   const coverage = scoreCoverage(scores);
   const radarData = radarDataFromScores(scores);
   const overall = scores.overallScore;
+  const overallPoints = scores.overallPoints;
+  const overallMax = scores.overallMax;
+  // Seven non-null steps are not a complete battery: a step whose norm is
+  // unavailable (unknown sex, no age table) still scores points but adds no
+  // max. Only a full 100-point denominator earns an overall tier.
+  const isComplete = coverage.isComplete && overallMax === 100;
   const bp = vitals?.bpSystolic != null || vitals?.bpDiastolic != null
     ? `${vitals?.bpSystolic ?? '—'}/${vitals?.bpDiastolic ?? '—'} mmHg` : '—';
   const rhr = vitals?.restingHeartRate != null ? `${vitals.restingHeartRate} bpm` : '—';
@@ -139,17 +156,17 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
           </div>
           <div>
             <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
-              {coverage.isComplete
-                ? 'Overall performance across all 6 categories.'
+              {isComplete
+                ? 'Complete assessment — all 7 steps scored.'
                 : `Partial assessment — ${formatCoverage(coverage)}.`}
             </p>
             <p
               className="mt-2 inline-block rounded-full px-3 py-1 text-[12px] font-[700]"
-              style={coverage.isComplete
+              style={isComplete
                 ? { background: 'var(--success-bg)', color: 'var(--success-text)' }
                 : { background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
             >
-              {coverage.isComplete ? `Complete · ${formatCoverage(coverage)}` : `Partial · ${formatCoverage(coverage)}`}
+              {isComplete ? `Complete · ${formatCoverage(coverage)}` : `Partial · ${formatCoverage(coverage)}`}
             </p>
           </div>
         </div>
@@ -173,11 +190,17 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="flex flex-col items-center">
             <ScoreRing score={overall} />
-            {!coverage.isComplete && (
+            {isComplete ? (
+              overall != null && (
+                <p className="mt-4 text-center text-[13px] font-[760]" style={{ color: 'var(--text-secondary)' }}>
+                  {tierForScore(overall)}
+                </p>
+              )
+            ) : (
               <p className="mt-4 text-center text-[12px] font-[600]" style={{ color: 'var(--text-muted)' }}>
-                {coverage.available === 0
-                  ? 'No categories scored yet — no overall score.'
-                  : `Overall score based on ${formatCoverage(coverage)}.`}
+                {coverage.available === 0 || overallMax == null
+                  ? 'No steps scored yet — no overall score.'
+                  : `${coverage.available} of 7 steps · ${overallPoints ?? 0}/${overallMax} pts`}
               </p>
             )}
           </div>
@@ -185,8 +208,9 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
         </div>
 
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {CATEGORY_META.map(({ key, label, tone, Icon }) => {
-            const score = scores[key];
+          {CATEGORY_META.map(({ key, label, max, tone, Icon }) => {
+            const points = scores[key];
+            const pct = points == null ? null : (points / max) * 100;
             return (
               <div key={key} className="rounded-[18px] p-4" style={{ background: tone.wash, border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2.5">
@@ -196,18 +220,18 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
                   <p className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>{label}</p>
                 </div>
                 <div className="mt-2.5 flex items-baseline justify-between gap-2">
-                  <p className="text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: score == null ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                    {score ?? '—'}
+                  <p className="text-[24px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: points == null ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                    {points == null ? '—' : `${points} / ${max}`}
                   </p>
-                  {score != null && (
-                    <p className="text-right text-[11px] font-[600] leading-tight" style={{ color: 'var(--text-secondary)' }}>{bandLabel(score)}</p>
+                  {pct != null && (
+                    <p className="text-right text-[11px] font-[600] leading-tight" style={{ color: 'var(--text-secondary)' }}>{tierForScore(pct)}</p>
                   )}
                 </div>
                 <div className="mt-3 h-2 w-full overflow-hidden rounded-full" aria-hidden="true" style={{ background: 'var(--border)' }}>
-                  {score != null && (
+                  {pct != null && (
                     <div
                       className="h-full rounded-full"
-                      style={{ width: `${Math.min(100, Math.max(0, score))}%`, minWidth: score > 0 ? 4 : undefined, background: bandFill(score) }}
+                      style={{ width: `${Math.min(100, Math.max(0, pct))}%`, minWidth: points != null && points > 0 ? 4 : undefined, background: bandFill(pct) }}
                     />
                   )}
                 </div>
@@ -217,7 +241,7 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
         </div>
 
         <p className="mt-4 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-          Strong 80+ · Fair 40–79 · Needs work below 40.
+          Optimal 85+ · Fit 70–84 · Moderate 50–69 · Needs attention below 50.
         </p>
       </div>
     </div>

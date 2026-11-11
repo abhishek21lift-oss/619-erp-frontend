@@ -9,10 +9,9 @@ import type { AiFitnessTestAnalysis } from './api';
 import { printWindowCloseButtonHtml } from './printWindowChrome';
 import { deriveFlexibility } from './flexibility-protocol';
 import type { FlexibilityDerived, FlexibilityRecorded } from './flexibility-protocol';
+import { STEP_MAX } from './fitness-calculations';
 
 type Row = Record<string, unknown>;
-
-const CATEGORY_BY_SCORE: Record<number, string> = { 95: 'Excellent', 80: 'Good', 60: 'Average', 40: 'Below Average', 20: 'Poor' };
 
 // Every value rendered into the report is escaped on the way in, because this
 // HTML is written into a same-origin popup where the enforced CSP still allows
@@ -32,15 +31,13 @@ function v(val: unknown, unit = ''): string {
   return e(`${val}${unit}`);
 }
 
-function scoreLabel(score: unknown): string {
-  const n = typeof score === 'number' ? score : parseFloat(String(score ?? ''));
+// A step score is points earned out of a fixed maximum. A category word
+// belongs to the step's own classification field, never to its points: 20
+// cardio points is a perfect step, not the word "Poor".
+function pointsLabel(points: unknown, max: number): string {
+  const n = typeof points === 'number' ? points : parseFloat(String(points ?? ''));
   if (!Number.isFinite(n)) return '—';
-  // Only print a band when the score is one of the discrete category buckets.
-  // Battery means (e.g. 88), continuous Body Composition (e.g. 84) and Health
-  // Score values (e.g. 55) are not category labels, so printing "55 (—)"
-  // would imply a classification that does not exist (F8).
-  const band = CATEGORY_BY_SCORE[n];
-  return band ? `${n} (${band})` : `${n}`;
+  return `${n} / ${max}`;
 }
 
 function field(label: string, value: string): string {
@@ -110,7 +107,7 @@ function flexibilitySection(assessment: Row): string {
       field('Test 1 Classification', v(assessment.flexibility_category)),
       field('Test 2 Classification', v(assessment.flexibility_category_2)),
       field('Asymmetry Detected', assessment.has_asymmetry ? 'Yes' : 'No'),
-      field('Combined Flexibility Score', scoreLabel(assessment.mobility_score_computed)),
+      field('Combined Flexibility Score', pointsLabel(assessment.mobility_score_computed, STEP_MAX.flexibility)),
     ].join(''));
   }
 
@@ -233,7 +230,7 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Test 1 Classification', strengthClassification(assessment.strength_category, sd.test1)),
     field('Test 2', v(assessment.strength_exercise_2)),
     field('Test 2 Classification', strengthClassification(assessment.strength_category_2, sd.test2)),
-    field('Combined Strength Score', scoreLabel(assessment.strength_score_computed)),
+    field('Combined Strength Score', pointsLabel(assessment.strength_score_computed, STEP_MAX.strength)),
     field('Norm', 'K11 relative strength (1RM ÷ body weight), by sex and age at testing. Supplied tables cover Bench Press and Leg Press only.'),
   ].join(''));
 
@@ -242,7 +239,7 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Test 1 Classification', v(assessment.endurance_category)),
     field('Test 2', v(assessment.endurance_test_type_2)),
     field('Test 2 Classification', v(assessment.endurance_category_2)),
-    field('Combined Endurance Score', scoreLabel(assessment.endurance_score_computed)),
+    field('Combined Endurance Score', pointsLabel(assessment.endurance_score_computed, STEP_MAX.endurance)),
   ].join(''));
 
   const flexibility = flexibilitySection(assessment);
@@ -250,12 +247,13 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
   const dashboard = `<div class="dashboard">
     <div class="dscore"><label>Overall Fitness Score</label><div class="big">${v(assessment.overall_fitness_score)}</div></div>
     <div class="dgrid">
-      ${field('Body Composition', scoreLabel(assessment.body_composition_score))}
-      ${field('Health Score', scoreLabel(assessment.health_risk_score))}
-      ${field('Cardio', scoreLabel(assessment.cardio_score_computed))}
-      ${field('Strength', scoreLabel(assessment.strength_score_computed))}
-      ${field('Endurance', scoreLabel(assessment.endurance_score_computed))}
-      ${field('Flexibility', scoreLabel(assessment.mobility_score_computed))}
+      ${field('Blood Pressure', pointsLabel(assessment.bp_points, STEP_MAX.bp))}
+      ${field('Anthropometrics', pointsLabel(assessment.anthropometric_points, STEP_MAX.anthropometric))}
+      ${field('Body Composition', pointsLabel(assessment.body_composition_score, STEP_MAX.bodyComposition))}
+      ${field('Cardio', pointsLabel(assessment.cardio_score_computed, STEP_MAX.cardio))}
+      ${field('Strength', pointsLabel(assessment.strength_score_computed, STEP_MAX.strength))}
+      ${field('Endurance', pointsLabel(assessment.endurance_score_computed, STEP_MAX.endurance))}
+      ${field('Flexibility', pointsLabel(assessment.mobility_score_computed, STEP_MAX.flexibility))}
     </div>
   </div>`;
 

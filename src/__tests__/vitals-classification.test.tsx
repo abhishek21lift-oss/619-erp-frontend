@@ -200,8 +200,9 @@ describe('assessVitalsSafety — the exercise decision, separate from labels', (
 });
 
 const SCORES: FitnessScores = {
-  cardioScore: 70, strengthScore: 70, enduranceScore: 70,
-  mobilityScore: 70, bodyCompositionScore: 70, healthRiskScore: 70, overallScore: 70,
+  bpPoints: 7, anthropometricPoints: 7, bodyCompositionScore: 10,
+  cardioScore: 13, strengthScore: 7.5, enduranceScore: 7.5, mobilityScore: 7.5,
+  overallScore: 70, overallPoints: 59.5, overallMax: 85,
 };
 
 describe('FitnessDashboard — vitals display', () => {
