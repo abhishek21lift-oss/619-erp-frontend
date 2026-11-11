@@ -132,6 +132,10 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
   const overall = scores.overallScore;
   const overallPoints = scores.overallPoints;
   const overallMax = scores.overallMax;
+  // Seven non-null steps are not a complete battery: a step whose norm is
+  // unavailable (unknown sex, no age table) still scores points but adds no
+  // max. Only a full 100-point denominator earns an overall tier.
+  const isComplete = coverage.isComplete && overallMax === 100;
   const bp = vitals?.bpSystolic != null || vitals?.bpDiastolic != null
     ? `${vitals?.bpSystolic ?? '—'}/${vitals?.bpDiastolic ?? '—'} mmHg` : '—';
   const rhr = vitals?.restingHeartRate != null ? `${vitals.restingHeartRate} bpm` : '—';
@@ -152,17 +156,17 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
           </div>
           <div>
             <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
-              {coverage.isComplete
+              {isComplete
                 ? 'Complete assessment — all 7 steps scored.'
                 : `Partial assessment — ${formatCoverage(coverage)}.`}
             </p>
             <p
               className="mt-2 inline-block rounded-full px-3 py-1 text-[12px] font-[700]"
-              style={coverage.isComplete
+              style={isComplete
                 ? { background: 'var(--success-bg)', color: 'var(--success-text)' }
                 : { background: 'var(--warning-bg)', color: 'var(--warning-text)' }}
             >
-              {coverage.isComplete ? `Complete · ${formatCoverage(coverage)}` : `Partial · ${formatCoverage(coverage)}`}
+              {isComplete ? `Complete · ${formatCoverage(coverage)}` : `Partial · ${formatCoverage(coverage)}`}
             </p>
           </div>
         </div>
@@ -186,7 +190,7 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="flex flex-col items-center">
             <ScoreRing score={overall} />
-            {coverage.isComplete ? (
+            {isComplete ? (
               overall != null && (
                 <p className="mt-4 text-center text-[13px] font-[760]" style={{ color: 'var(--text-secondary)' }}>
                   {tierForScore(overall)}

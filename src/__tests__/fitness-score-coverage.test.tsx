@@ -157,6 +157,26 @@ describe('FitnessDashboard', () => {
     expect(data.every((d) => typeof d.score === 'number')).toBe(true);
   });
 
+  it('seven steps present but a reduced measured max stays partial: no overall tier', () => {
+    // Every step has points, but a one-test strength battery measures only 7.5
+    // of the step's 15, so the denominator is 92.5. Tier would read incomplete.
+    render(
+      <FitnessDashboard
+        scores={{
+          bpPoints: 7, anthropometricPoints: 8, bodyCompositionScore: 11, cardioScore: 16,
+          strengthScore: 7.5, enduranceScore: 12, mobilityScore: 12,
+          overallScore: 79, overallPoints: 73.5, overallMax: 92.5,
+        }}
+      />,
+    );
+    expect(screen.getByText('Partial · 7 of 7 steps scored')).toBeTruthy();
+    expect(screen.getByText('Partial assessment — 7 of 7 steps scored.')).toBeTruthy();
+    expect(screen.getByText('7 of 7 steps · 73.5/92.5 pts')).toBeTruthy();
+    expect(screen.getByText('7.5 / 15')).toBeTruthy();
+    expect(screen.queryByText('Optimal')).toBeNull();
+    expect(screen.getByText('79')).toBeTruthy();
+  });
+
   it('partial assessment: points over fixed max, coverage shown, no overall tier, radar nulls not zeros', () => {
     render(<FitnessDashboard scores={PARTIAL} />);
     expect(screen.getByText('Partial · 4 of 7 steps scored')).toBeTruthy();
