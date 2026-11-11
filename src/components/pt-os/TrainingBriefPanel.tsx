@@ -350,10 +350,10 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
         present={s.capacity.present}
       >
         <div className="grid grid-cols-2 gap-2">
-          <ScoreTile label="Strength" score={s.capacity.strength?.score} category={s.capacity.strength?.category} />
-          <ScoreTile label="Cardio" score={s.capacity.cardio?.score} category={s.capacity.cardio?.category} />
-          <ScoreTile label="Endurance" score={s.capacity.endurance?.score} category={s.capacity.endurance?.category} />
-          <ScoreTile label="Flexibility" score={s.capacity.flexibility?.score} category={s.capacity.flexibility?.category} />
+          <ScoreTile label="Strength" score={s.capacity.strength?.score} max={s.capacity.strength?.max} category={s.capacity.strength?.category} />
+          <ScoreTile label="Cardio" score={s.capacity.cardio?.score} max={s.capacity.cardio?.max} category={s.capacity.cardio?.category} />
+          <ScoreTile label="Endurance" score={s.capacity.endurance?.score} max={s.capacity.endurance?.max} category={s.capacity.endurance?.category} />
+          <ScoreTile label="Flexibility" score={s.capacity.flexibility?.score} max={s.capacity.flexibility?.max} category={s.capacity.flexibility?.category} />
         </div>
       </Card>
 
@@ -542,12 +542,12 @@ function Chips({ label, items, tone, emptyNote }: { label: string; items?: strin
 }
 
 /** A score never appears without the word that goes with it. */
-function ScoreTile({ label, score, category }: { label: string; score?: number | null; category?: string | null }) {
+function ScoreTile({ label, score, max, category }: { label: string; score?: number | null; max?: number | null; category?: string | null }) {
   return (
     <div className="rounded-[12px] px-3 py-2" style={{ background: 'var(--bg-subtle)' }}>
       <p className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <p className="mt-0.5 text-[15px] font-[820] tabular-nums" style={{ color: 'var(--text-primary)' }}>
-        {score != null ? score : '—'}
+        {score != null ? (max != null ? `${score} / ${max}` : score) : '—'}
       </p>
       {category && <p className="text-[10px] font-[650] capitalize" style={{ color: 'var(--text-muted)' }}>{category}</p>}
     </div>
@@ -621,7 +621,9 @@ export function briefAsText(b: TrainingBrief): string {
       Strength: s.capacity.strength, Cardio: s.capacity.cardio,
       Endurance: s.capacity.endurance, Flexibility: s.capacity.flexibility,
     })) {
-      if (v?.score != null || v?.category) L.push(`- ${k}: ${v.score ?? '—'}${v.category ? ` (${v.category})` : ''}`);
+      if (v?.score != null || v?.category) {
+        L.push(`- ${k}: ${v.score ?? '—'}${v.max != null ? ` / ${v.max}` : ''}${v.category ? ` (${v.category})` : ''}`);
+      }
     }
   }
   if (s.body.present) {

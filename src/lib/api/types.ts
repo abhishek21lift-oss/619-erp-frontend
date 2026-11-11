@@ -4600,7 +4600,7 @@ export interface BriefBody extends BriefSectionBase {
   bp?: string | null; bp_category?: string | null; vitals_safety?: string | null;
 }
 
-export interface BriefScore { score: number | null; category: string | null; vo2_max?: number | null }
+export interface BriefScore { score: number | null; category: string | null; vo2_max?: number | null; /** The step's measured maximum; absent on briefs from older servers. */ max?: number | null }
 
 export interface BriefCapacity extends BriefSectionBase {
   overall?: number | null;

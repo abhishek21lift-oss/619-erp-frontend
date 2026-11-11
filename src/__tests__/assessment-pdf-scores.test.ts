@@ -1,6 +1,6 @@
-// PDF score/classification display (F1, F8). The report must never imply a
-// classification that does not exist: battery means, continuous Body
-// Composition and Health Score values print as bare numbers.
+// PDF score display. The framework reports seven steps as points out of
+// their fixed maximum, plus one bare 0-100 total. Points never borrow a
+// category word: 20/20 is a perfect cardio step, not "Poor".
 import { describe, it, expect } from 'vitest';
 import { generateAssessmentReportHTML } from '@/lib/assessment-pdf';
 
@@ -8,63 +8,63 @@ const base = {
   assessment_number: 3,
   assessment_date: '2026-10-01',
   assessment_type: 'initial',
-  health_risk_score: 55,
+  scoring_formula_version: 2,
+  bp_points: 8,
+  anthropometric_points: 6.7,
+  body_composition_score: 11,
   cardio_score_computed: 20,
-  strength_score_computed: 80,
-  endurance_score_computed: 60,
-  mobility_score_computed: 87,
-  body_composition_score: 84,
-  overall_fitness_score: 35,
+  strength_score_computed: 12,
+  endurance_score_computed: 9,
+  mobility_score_computed: 10,
+  overall_points: 76.7,
+  overall_max: 100,
+  overall_fitness_score: 72,
 };
 
 describe('assessment report — score presentation', () => {
-  it('labels the higher-is-better score "Health Score" and never "Health Risk"', () => {
+  it('lists the seven steps as points out of their fixed maximum', () => {
     const html = generateAssessmentReportHTML(base, 'Test Client');
-    expect(html).toContain('<label>Health Score</label>');
+    expect(html).toContain('<label>Blood Pressure</label><p>8 / 10</p>');
+    expect(html).toContain('<label>Anthropometrics</label><p>6.7 / 10</p>');
+    expect(html).toContain('<label>Body Composition</label><p>11 / 15</p>');
+    expect(html).toContain('<label>Cardio</label><p>20 / 20</p>');
+    expect(html).toContain('<label>Strength</label><p>12 / 15</p>');
+    expect(html).toContain('<label>Endurance</label><p>9 / 15</p>');
+    expect(html).toContain('<label>Flexibility</label><p>10 / 15</p>');
+    // The per-step sections carry the same denominator.
+    expect(html).toContain('<label>Combined Strength Score</label><p>12 / 15</p>');
+    expect(html).toContain('<label>Combined Endurance Score</label><p>9 / 15</p>');
+    expect(html).toContain('<label>Combined Flexibility Score</label><p>10 / 15</p>');
+  });
+
+  it('drops the retired Health Score row', () => {
+    const html = generateAssessmentReportHTML(base, 'Test Client');
+    expect(html).not.toContain('Health Score');
     expect(html).not.toContain('Health Risk');
   });
 
-  it('a missing health score prints as an em dash, not a risk label or zero', () => {
-    const html = generateAssessmentReportHTML({ ...base, health_risk_score: null }, 'Test Client');
-    expect(html).toContain('<label>Health Score</label><p>—</p>');
-  });
-
-  it('a bucket score (20) keeps its band label', () => {
+  it('never attaches a category to a points value', () => {
     const html = generateAssessmentReportHTML(base, 'Test Client');
-    expect(html).toContain('20 (Poor)');
+    expect(html).toContain('20 / 20');
+    expect(html).not.toContain('20 (Poor)');
+    expect(html).not.toContain('20 (Excellent)');
   });
 
-  it('a battery mean (87) prints as a bare number, no misleading band', () => {
+  it('prints the overall score bare, without a denominator or a band', () => {
     const html = generateAssessmentReportHTML(base, 'Test Client');
-    expect(html).toContain('87');
-    expect(html).not.toContain('87 (');
+    expect(html).toContain('<label>Overall Fitness Score</label><div class="big">72</div>');
+    expect(html).not.toContain('72 /');
+    expect(html).not.toContain('72 (');
   });
 
-  it('a continuous body-composition score (84) prints as a bare number', () => {
-    const html = generateAssessmentReportHTML(base, 'Test Client');
-    expect(html).toContain('84');
-    expect(html).not.toContain('84 (');
+  it('a missing step prints as an em dash, not zero and not a denominator', () => {
+    const html = generateAssessmentReportHTML({ ...base, cardio_score_computed: null }, 'Test Client');
+    expect(html).toContain('<label>Cardio</label><p>—</p>');
   });
 
-  it('a health score (55) prints as a bare number, not "55 (—)"', () => {
-    const html = generateAssessmentReportHTML(base, 'Test Client');
-    expect(html).toContain('<label>Health Score</label><p>55</p>');
-    expect(html).not.toContain('55 (');
-  });
-
-  it('a zero score is a valid scored value, not a missing one', () => {
+  it('a zero point score is a valid scored value, not a missing one', () => {
     const html = generateAssessmentReportHTML({ ...base, body_composition_score: 0 }, 'Test Client');
-    expect(html).toContain('0');
-    expect(html).not.toContain('<label>Body Composition</label><p>—</p>');
-  });
-
-  it('a continuous body-composition score equal to a category bucket still prints bare', () => {
-    // 70 and 10 are K11 category buckets; a Body Composition score is
-    // continuous, so the same number must not borrow a classification.
-    for (const score of [70, 10]) {
-      const html = generateAssessmentReportHTML({ ...base, body_composition_score: score }, 'Test Client');
-      expect(html).not.toContain(`${score} (`);
-    }
+    expect(html).toContain('<label>Body Composition</label><p>0 / 15</p>');
   });
 
   it('prints a stored K11 classification verbatim', () => {
@@ -85,10 +85,6 @@ describe('assessment report — score presentation', () => {
   });
 });
 
-// Anthropometric norms (MPTS): adult Asian BMI bands, plus sex-specific
-// low-risk waist and WHR labels. Every classification printed here is the
-// stored value — the report never derives one from a legacy row whose
-// classification was not recorded.
 describe('assessment report — anthropometric norms', () => {
   const anthro = {
     bmi: 24.2, bmi_category: 'Overweight',

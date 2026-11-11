@@ -40,7 +40,7 @@ const FULL = {
       resting_spo2: 92, spo2_category: 'Mild Hypoxia',
       vitals_safety: 'caution',
     },
-    capacity: { present: true, as_of: '2026-07-01', strength: { score: 6, category: 'fair' } },
+    capacity: { present: true, as_of: '2026-07-01', strength: { score: 6, max: 15, category: 'fair' } },
     limitations: {
       present: true,
       posture: { as_of: '2026-07-01', risk_level: 'low', issues: ['rounded shoulders'], notes: null },
@@ -78,6 +78,8 @@ describe('TrainingBriefPanel — the render is total', () => {
     // Vitals categories and the exercise-safety decision reach the brief too.
     expect(screen.getByText('135/85 · Hypertension Stage 1')).toBeTruthy();
     expect(screen.getByText('72 bpm · Normal')).toBeTruthy();
+    // Capacity is points out of the step maximum, never a bare number.
+    expect(screen.getByText('6 / 15')).toBeTruthy();
     expect(screen.getByText('92% · Mild Hypoxia')).toBeTruthy();
     expect(screen.getByText('Caution — recheck before exertion')).toBeTruthy();
   });
@@ -156,7 +158,7 @@ describe('normaliseBrief', () => {
 
   it('keeps a present section intact', () => {
     const b = normaliseBrief(FULL)!;
-    expect(b.sections.capacity.strength).toEqual({ score: 6, category: 'fair' });
+    expect(b.sections.capacity.strength).toEqual({ score: 6, max: 15, category: 'fair' });
     expect(b.sections.limitations.mobility?.findings).toHaveLength(1);
   });
 
@@ -198,6 +200,7 @@ describe('briefAsText', () => {
     expect(text).toContain('WHR 0.98 (Above low-risk threshold)');
     expect(text).toContain('Vitals: BP 135/85 (Hypertension Stage 1)');
     expect(text).toContain('Vitals safety: caution');
+    expect(text).toContain('Strength: 6 / 15 (fair)');
   });
 
   it('does not throw on a degraded brief', () => {
