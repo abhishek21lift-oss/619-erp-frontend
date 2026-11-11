@@ -336,6 +336,6 @@ describe('K11 flexibility battery norm', () => {
 
 describe('K11 formula bundle', () => {
   it('version 5', () => {
-    expect(FITNESS_SCORING_VERSION).toBe('6');
+    expect(FITNESS_SCORING_VERSION).toBe('7');
   });
 });

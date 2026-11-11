@@ -1,12 +1,12 @@
 // Phase 1 — score coverage and missing-data transparency for the Fitness
-// Dashboard. The stored scoring formula is untouched; these tests pin the
-// derived coverage display and that nulls are never rendered as zeros.
+// Dashboard. Coverage is derived from the seven framework steps; these tests
+// pin the derived coverage display and that nulls are never rendered as zeros.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
   scoreCoverage,
   formatCoverage,
-  computeOverallScore,
+  computeTotalScore,
 } from '@/lib/fitness-calculations';
 import {
   FitnessDashboard,
@@ -23,69 +23,81 @@ vi.mock('@/components/pt-os/FitnessRadarChart', () => ({
 }));
 
 const FULL: FitnessScores = {
-  cardioScore: 80,
-  strengthScore: 60,
-  enduranceScore: 95,
-  mobilityScore: 40,
-  bodyCompositionScore: 100,
-  healthRiskScore: 80,
-  overallScore: 76,
+  bpPoints: 7,
+  anthropometricPoints: 10,
+  bodyCompositionScore: 11,
+  cardioScore: 20,
+  strengthScore: 15,
+  enduranceScore: 12,
+  mobilityScore: 12,
+  overallScore: 87,
+  overallPoints: 87,
+  overallMax: 100,
 };
 
 const PARTIAL: FitnessScores = {
-  cardioScore: 80,
+  bpPoints: 7,
+  anthropometricPoints: 6,
+  bodyCompositionScore: 11,
+  cardioScore: 16,
   strengthScore: null,
   enduranceScore: null,
   mobilityScore: null,
-  bodyCompositionScore: 100,
-  healthRiskScore: 80,
-  overallScore: 87,
+  overallScore: 73,
+  overallPoints: 40,
+  overallMax: 55,
 };
 
 const SINGLE_HIGH: FitnessScores = {
-  cardioScore: null,
-  strengthScore: null,
-  enduranceScore: 95,
-  mobilityScore: null,
+  bpPoints: null,
+  anthropometricPoints: null,
   bodyCompositionScore: null,
-  healthRiskScore: null,
-  overallScore: 95,
+  cardioScore: 20,
+  strengthScore: null,
+  enduranceScore: null,
+  mobilityScore: null,
+  overallScore: 100,
+  overallPoints: 20,
+  overallMax: 20,
 };
 
 const EMPTY: FitnessScores = {
+  bpPoints: null,
+  anthropometricPoints: null,
+  bodyCompositionScore: null,
   cardioScore: null,
   strengthScore: null,
   enduranceScore: null,
   mobilityScore: null,
-  bodyCompositionScore: null,
-  healthRiskScore: null,
   overallScore: null,
+  overallPoints: null,
+  overallMax: null,
 };
 
 beforeEach(() => radarSpy.mockClear());
 
 describe('scoreCoverage', () => {
-  it('all six scores available → 6/6 and complete', () => {
-    expect(scoreCoverage(FULL)).toEqual({ available: 6, total: 6, isComplete: true });
-    expect(formatCoverage(scoreCoverage(FULL))).toBe('6 of 6 categories scored');
+  it('all seven steps available → 7/7 and complete', () => {
+    expect(scoreCoverage(FULL)).toEqual({ available: 7, total: 7, isComplete: true });
+    expect(formatCoverage(scoreCoverage(FULL))).toBe('7 of 7 steps scored');
   });
 
-  it('three scores available → 3/6 and partial', () => {
+  it('four steps available → 4/7 and partial', () => {
     const c = scoreCoverage(PARTIAL);
-    expect(c).toEqual({ available: 3, total: 6, isComplete: false });
-    expect(formatCoverage(c)).toBe('3 of 6 categories scored');
+    expect(c).toEqual({ available: 4, total: 7, isComplete: false });
+    expect(formatCoverage(c)).toBe('4 of 7 steps scored');
   });
 
-  it('one high score available → 1/6 and partial', () => {
+  it('one high score available → 1/7 and partial', () => {
     const c = scoreCoverage(SINGLE_HIGH);
-    expect(c).toEqual({ available: 1, total: 6, isComplete: false });
-    expect(formatCoverage(c)).toBe('1 of 6 categories scored');
+    expect(c).toEqual({ available: 1, total: 7, isComplete: false });
+    expect(formatCoverage(c)).toBe('1 of 7 steps scored');
   });
 
-  it('no scores available → 0/6', () => {
+  it('no steps available → 0/7', () => {
     const c = scoreCoverage(EMPTY);
-    expect(c).toEqual({ available: 0, total: 6, isComplete: false });
-    expect(formatCoverage(c)).toBe('0 of 6 categories scored');
+    expect(c).toEqual({ available: 0, total: 7, isComplete: false });
+    expect(formatCoverage(c)).toBe('0 of 7 steps scored');
   });
 
   it('a legitimate score of zero counts as available', () => {
@@ -100,38 +112,28 @@ describe('scoreCoverage', () => {
   });
 });
 
-describe('computeOverallScore (stored formula unchanged)', () => {
-  it('a single available 95 still averages to 95', () => {
+describe('computeTotalScore', () => {
+  it('a partial battery scales over the measured max, not 100', () => {
     expect(
-      computeOverallScore({
-        bodyComposition: null,
-        endurance: 95,
-        mobility: null,
-        cardio: null,
-        healthRisk: null,
-        strength: null,
+      computeTotalScore({
+        bp: { points: 7, max: 10 },
+        anthropometric: { points: 6, max: 10 },
+        bodyComposition: { points: 11, max: 15 },
+        cardio: { points: 16, max: 20 },
       }),
-    ).toBe(95);
+    ).toEqual({ points: 40, max: 55, score: 73, tier: null });
   });
 
-  it('no scores still yields null, not zero', () => {
-    expect(
-      computeOverallScore({
-        bodyComposition: null,
-        endurance: null,
-        mobility: null,
-        cardio: null,
-        healthRisk: null,
-        strength: null,
-      }),
-    ).toBeNull();
+  it('no steps still yields no score, not zero', () => {
+    expect(computeTotalScore({ cardio: { points: null, max: 0 } }))
+      .toEqual({ points: 0, max: 0, score: null, tier: null });
   });
 });
 
 describe('band tokens', () => {
-  it('maps a score onto the status tokens at the 80/40 cutoffs', () => {
-    expect([bandLabel(80), bandLabel(79), bandLabel(40), bandLabel(39)]).toEqual([
-      'Strong', 'Fair', 'Fair', 'Needs work',
+  it('maps a score onto the framework tiers at the 85/70/50 cutoffs', () => {
+    expect([bandLabel(85), bandLabel(84), bandLabel(70), bandLabel(69), bandLabel(50), bandLabel(49)]).toEqual([
+      'Optimal', 'Fit', 'Fit', 'Moderate', 'Moderate', 'Needs Attention',
     ]);
     // Fill, ink and tint must all come from the theme, never a hard-coded hex.
     expect(bandFill(90)).toBe('var(--success-text)');
@@ -141,50 +143,58 @@ describe('band tokens', () => {
 });
 
 describe('FitnessDashboard', () => {
-  it('complete assessment keeps working: scores visible, complete label, full radar', () => {
+  it('complete assessment keeps working: seven tiles, tier, complete label, full radar', () => {
     render(<FitnessDashboard scores={FULL} />);
-    expect(screen.getByText('Complete · 6 of 6 categories scored')).toBeTruthy();
-    expect(screen.getByText('Overall performance across all 6 categories.')).toBeTruthy();
-    expect(screen.getByText('76')).toBeTruthy();
+    expect(screen.getByText('Complete · 7 of 7 steps scored')).toBeTruthy();
+    expect(screen.getByText('Complete assessment — all 7 steps scored.')).toBeTruthy();
+    expect(screen.getByText('87')).toBeTruthy();
+    expect(screen.getAllByText('Optimal').length).toBeGreaterThan(0);
     const data = radarSpy.mock.calls[0][0].data as { category: string; score: number | null }[];
     expect(data.map((d) => d.category)).toEqual([
-      'Cardio',
-      'Strength',
-      'Endurance',
-      'Flexibility',
-      'Body Comp.',
-      'Health Score',
+      'Blood Pressure', 'Anthropometrics', 'Body Comp.', 'Cardio',
+      'Strength', 'Endurance', 'Flexibility',
     ]);
     expect(data.every((d) => typeof d.score === 'number')).toBe(true);
   });
 
-  it('partial assessment: tiles keep scores and — indicators, coverage shown, radar has nulls not zeros', () => {
+  it('partial assessment: points over fixed max, coverage shown, no overall tier, radar nulls not zeros', () => {
     render(<FitnessDashboard scores={PARTIAL} />);
-    expect(screen.getByText('Partial · 3 of 6 categories scored')).toBeTruthy();
-    expect(screen.getByText('Partial assessment — 3 of 6 categories scored.')).toBeTruthy();
-    expect(
-      screen.getByText('Overall score based on 3 of 6 categories scored.'),
-    ).toBeTruthy();
-    // Valid scores stay visible; the three missing tiles keep the — indicator.
-    expect(screen.getAllByText('80').length).toBe(2); // Cardio + Health Score tiles
-    expect(screen.getByText('87')).toBeTruthy(); // overall center value
+    expect(screen.getByText('Partial · 4 of 7 steps scored')).toBeTruthy();
+    expect(screen.getByText('Partial assessment — 4 of 7 steps scored.')).toBeTruthy();
+    expect(screen.getByText('4 of 7 steps · 40/55 pts')).toBeTruthy();
+    expect(screen.queryByText('Optimal')).toBeNull();
+    // The points and the step denominator are visible; the three missing tiles
+    // keep the — indicator rather than a zero.
+    expect(screen.getByText('7 / 10')).toBeTruthy();
+    expect(screen.getByText('16 / 20')).toBeTruthy();
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3);
     const data = radarSpy.mock.calls[0][0].data as { category: string; score: number | null }[];
     expect(data.filter((d) => d.score === 0)).toEqual([]);
     expect(data.filter((d) => d.score == null).length).toBe(3);
   });
 
-  it('single high score is flagged partial, never presented as a full result', () => {
+  it('a single one-test strength score reads as 7.5 / 15, never 15 / 15', () => {
+    render(
+      <FitnessDashboard
+        scores={{ ...EMPTY, strengthScore: 7.5, overallScore: 100, overallPoints: 7.5, overallMax: 7.5 }}
+      />,
+    );
+    expect(screen.getByText('7.5 / 15')).toBeTruthy();
+    expect(screen.queryByText('15 / 15')).toBeNull();
+    expect(screen.getByText('Partial · 1 of 7 steps scored')).toBeTruthy();
+  });
+
+  it('single high step is flagged partial, never presented as a full result', () => {
     render(<FitnessDashboard scores={SINGLE_HIGH} />);
-    expect(screen.getByText('Partial · 1 of 6 categories scored')).toBeTruthy();
-    expect(screen.queryByText('Overall performance across all 6 categories.')).toBeNull();
+    expect(screen.getByText('Partial · 1 of 7 steps scored')).toBeTruthy();
+    expect(screen.getByText('1 of 7 steps · 20/20 pts')).toBeTruthy();
   });
 
   it('no scores: no meaningful overall, missing-data explanation shown', () => {
     render(<FitnessDashboard scores={EMPTY} />);
-    expect(screen.getByText('Partial · 0 of 6 categories scored')).toBeTruthy();
+    expect(screen.getByText('Partial · 0 of 7 steps scored')).toBeTruthy();
     expect(
-      screen.getByText('No categories scored yet — no overall score.'),
+      screen.getByText('No steps scored yet — no overall score.'),
     ).toBeTruthy();
     const data = radarSpy.mock.calls[0][0].data as { category: string; score: number | null }[];
     expect(data.every((d) => d.score == null)).toBe(true);

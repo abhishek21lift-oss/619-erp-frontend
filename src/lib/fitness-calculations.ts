@@ -5,7 +5,7 @@
 // Persisting it per assessment requires the approval-gated migration described
 // in F10 (new nullable `scoring_formula_version` column on pt_assessments);
 // until then this is documentation only and legacy rows are treated as unknown.
-export const FITNESS_SCORING_VERSION = '6';
+export const FITNESS_SCORING_VERSION = '7';
 // (same formulas, duplicated deliberately since there's no shared package
 // between the two apps). These are used client-side for live preview only —
 // the backend recomputes and stores the authoritative values.
@@ -33,16 +33,21 @@ export function scoreNum(v: unknown): number | null {
   return Number.isFinite(f) ? f : null;
 }
 
-/** A stored assessment row, read back as the seven scores the UI renders. */
+/** A stored assessment row, read back as the seven step points and the
+ *  0-100 total the UI renders. `overallMax` is stored because the denominator
+ *  cannot be re-derived from the points. */
 export function scoresFromAssessmentRow(row: Record<string, unknown>): FitnessScores {
   return {
+    bpPoints: scoreNum(row.bp_points),
+    anthropometricPoints: scoreNum(row.anthropometric_points),
+    bodyCompositionScore: scoreNum(row.body_composition_score),
     cardioScore: scoreNum(row.cardio_score_computed),
     strengthScore: scoreNum(row.strength_score_computed),
     enduranceScore: scoreNum(row.endurance_score_computed),
     mobilityScore: scoreNum(row.mobility_score_computed),
-    bodyCompositionScore: scoreNum(row.body_composition_score),
-    healthRiskScore: scoreNum(row.health_risk_score),
     overallScore: scoreNum(row.overall_fitness_score),
+    overallPoints: scoreNum(row.overall_points),
+    overallMax: scoreNum(row.overall_max),
   };
 }
 
@@ -801,6 +806,209 @@ export function computeOverallScore(scores: Record<string, number | null>): numb
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }
 
+// ── 100-point framework: seven steps, fixed maxima ──
+// Backend twin: scoreBpPoints / scoreAnthropometricPoints / ... in
+// 619-erp-backend/src/modules/progress/fitness-scoring.js. A step with no
+// measured input returns max 0 so it cannot lower the client's ceiling.
+
+export interface StepPoints {
+  points: number | null;
+  max: number;
+}
+
+export const STEP_MAX = Object.freeze({
+  bp: 10, anthropometric: 10, bodyComposition: 15, cardio: 20,
+  strength: 15, endurance: 15, flexibility: 15,
+});
+
+export type FitnessTier = 'Optimal' | 'Fit' | 'Moderate' | 'Needs Attention';
+
+/** 0-100 score → framework tier. Null for "no score", never for 0. */
+export function tierForScore(score: number | null): FitnessTier | null {
+  if (score == null || !Number.isFinite(score)) return null;
+  if (score >= 85) return 'Optimal';
+  if (score >= 70) return 'Fit';
+  if (score >= 50) return 'Moderate';
+  return 'Needs Attention';
+}
+
+const BP_POINTS: Record<BpCategory, number> = {
+  Normal: 10, Elevated: 7, Hypotension: 7,
+  'Hypertension Stage 1': 4, 'Hypertension Stage 2': 0, 'Hypertensive Crisis': 0,
+};
+export function scoreBpPoints(category: BpCategory | null): StepPoints {
+  const points = category == null ? null : BP_POINTS[category] ?? null;
+  return points == null ? { points: null, max: 0 } : { points, max: STEP_MAX.bp };
+}
+
+// Each of the three parameters this client can be measured on contributes a
+// third of the step; each one out of range costs a band. Waist and WHR need a
+// known sex, so without one they contribute no max.
+const ANTHRO_OUT_RATIO = [1, 0.7, 0.4, 0.2];
+export interface AnthropometricPointsInput {
+  bmi?: number | null;
+  waistIliacCm?: number | null;
+  waistCm?: number | null;
+  waistHipRatio?: number | null;
+}
+export function scoreAnthropometricPoints(input: AnthropometricPointsInput, gender: Gender | null): StepPoints {
+  const g = sexOf(gender);
+  const waist = input.waistIliacCm ?? input.waistCm ?? null;
+  let present = 0;
+  let out = 0;
+  if (input.bmi != null && Number.isFinite(input.bmi)) {
+    present += 1;
+    if (!(input.bmi >= 18.5 && input.bmi < 23)) out += 1;
+  }
+  if (g && waist != null && Number.isFinite(waist)) {
+    present += 1;
+    if (!(waist < WAIST_LOW_RISK_CM[g])) out += 1;
+  }
+  if (g && input.waistHipRatio != null && Number.isFinite(input.waistHipRatio)) {
+    present += 1;
+    if (!(input.waistHipRatio < WHR_LOW_RISK[g])) out += 1;
+  }
+  if (present === 0) return { points: null, max: 0 };
+  const max = round((STEP_MAX.anthropometric * present) / 3, 1);
+  return { points: round(max * ANTHRO_OUT_RATIO[Math.min(out, 3)], 1), max };
+}
+
+// Points follow the stored category, so a tile's label and its points agree.
+const BODY_FAT_POINTS: Record<BodyFatCategory, number> = {
+  'Essential Fat': 15, 'Athletic / Ideal': 15,
+  'Acceptable / Average': 11, 'Above Ideal Range': 7, 'Overfat / High Risk': 3,
+};
+export function scoreBodyCompositionPoints(bodyFatPct: number | null, gender: Gender | null): StepPoints {
+  const category = classifyBodyFat(bodyFatPct, gender);
+  if (!category) return { points: null, max: 0 };
+  return { points: BODY_FAT_POINTS[category], max: STEP_MAX.bodyComposition };
+}
+
+// The framework prints six buckets; the classifiers emit their own vocabulary,
+// mapped onto the nearest bucket.
+const CARDIO_POINTS: Partial<Record<FitnessCategory, number>> = {
+  Superior: 20, Excellent: 20, 'Very Good': 16, Good: 16,
+  'Above Average': 13, Average: 10, Fair: 10,
+  'Below Average': 6, Poor: 2, 'Very Poor': 2, 'Below Supported Range': 2,
+};
+export function scoreCardioPoints(category: FitnessCategory | null): StepPoints {
+  const points = category == null ? null : CARDIO_POINTS[category] ?? null;
+  return points == null ? { points: null, max: 0 } : { points, max: STEP_MAX.cardio };
+}
+
+const STRENGTH_POINTS_BY_PERCENTILE: Record<StrengthPercentile, number> = {
+  90: 7.5, 80: 6, 70: 6, 60: 4.5, 50: 4.5, 40: 3, 30: 3, 20: 1.5, 10: 1.5,
+};
+function strengthPointsFor(detail: StrengthClassification | null): number | null {
+  if (!detail) return null;
+  if (detail.percentile != null) return STRENGTH_POINTS_BY_PERCENTILE[detail.percentile] ?? null;
+  // A valid ratio below every supplied K11 row has no percentile but is still
+  // a performed test, below the 10th-percentile bucket.
+  return detail.category === 'Below Supported Range' ? 1.5 : null;
+}
+function batteryPoints(perTest: (number | null)[]): StepPoints {
+  const measured = perTest.filter((p): p is number => p != null);
+  if (!measured.length) return { points: null, max: 0 };
+  return { points: round(measured.reduce((a, b) => a + b, 0), 1), max: measured.length * 7.5 };
+}
+export function scoreStrengthBattery(
+  detail1: StrengthClassification | null,
+  detail2: StrengthClassification | null,
+): StepPoints {
+  return batteryPoints([strengthPointsFor(detail1), strengthPointsFor(detail2)]);
+}
+
+const ENDURANCE_POINTS_BY_CATEGORY: Partial<Record<FitnessCategory, number>> = {
+  Excellent: 7.5, 'Well Above Average': 7.5,
+  'Very Good': 6, 'Above Average': 6,
+  Good: 4.5, Average: 4.5,
+  Fair: 3, 'Below Average': 3,
+  Poor: 1.5, 'Well Below Average': 1.5, 'Below Supported Range': 1.5,
+};
+export function scoreEnduranceBatteryPoints(
+  category1: FitnessCategory | null,
+  category2: FitnessCategory | null,
+): StepPoints {
+  const per = [category1, category2].map((c) => (c == null ? null : ENDURANCE_POINTS_BY_CATEGORY[c] ?? null));
+  return batteryPoints(per);
+}
+
+const SIT_AND_REACH_POINTS: Partial<Record<FitnessCategory, number>> = {
+  Excellent: 7, Good: 5, Average: 3, 'Below Average': 1, 'Well Below Average': 0,
+};
+
+/** The derived K11 battery, shaped loosely so this module does not import the
+ *  protocol module that imports it. */
+export interface FlexibilityPointsInput {
+  tests?: {
+    quadriceps?: { overall_interpretation?: string | null } | null;
+    hamstrings?: {
+      sides_interpretation?: { left: string | null; right: string | null } | null;
+      sides_validity?: { left: string | null; right: string | null } | null;
+    } | null;
+    hip_flexors?: { sides_interpretation?: { left: string | null; right: string | null } | null } | null;
+    shoulder_reach?: { sides_interpretation?: { left: string | null; right: string | null } | null } | null;
+    sit_and_reach?: {
+      norm?: { category?: string | null } | null;
+      unable_to_complete?: boolean;
+    } | null;
+  };
+}
+
+function bothSides(
+  values: { left: string | null; right: string | null } | null | undefined,
+  ok: (v: string | null) => boolean,
+): boolean {
+  return values != null && ok(values.left) && ok(values.right);
+}
+
+/**
+ * 2 points per recorded ROM test (max 8) plus 7 for the sit-and-reach norm. A
+ * test absent from the payload adds no max; one recorded but not passed keeps
+ * its max and earns 0.
+ */
+export function scoreFlexibilityPoints(derived: FlexibilityPointsInput | null, legacyComposite: number | null = null): StepPoints {
+  if (legacyComposite != null) {
+    return { points: Math.round(legacyComposite * 0.15), max: STEP_MAX.flexibility };
+  }
+  const tests = (derived && derived.tests) || {};
+  let points = 0;
+  let max = 0;
+  const add = (key: keyof NonNullable<FlexibilityPointsInput['tests']>, stepMax: number, earned: boolean) => {
+    if (!(key in tests)) return;
+    max += stepMax;
+    if (earned) points += stepMax;
+  };
+  add('quadriceps', 2, tests.quadriceps?.overall_interpretation === 'Normal');
+  add('hamstrings', 2,
+    bothSides(tests.hamstrings?.sides_interpretation,
+      (i) => i === 'Within reference range' || i === 'Above reference range')
+    && bothSides(tests.hamstrings?.sides_validity, (v) => v === 'valid'));
+  add('hip_flexors', 2, bothSides(tests.hip_flexors?.sides_interpretation, (i) => i === 'Clear'));
+  add('shoulder_reach', 2, bothSides(tests.shoulder_reach?.sides_interpretation, (i) => i === 'Clear'));
+  const sar = tests.sit_and_reach;
+  if (sar) {
+    const category = sar.norm && sar.norm.category;
+    if (category != null || sar.unable_to_complete === true) {
+      max += 7;
+      points += SIT_AND_REACH_POINTS[category as FitnessCategory] ?? 0;
+    }
+  }
+  return max === 0 ? { points: null, max: 0 } : { points, max };
+}
+
+/** Sum the measured steps; the tier is only a claim a complete 100-point
+ *  assessment can make. */
+export function computeTotalScore(steps: Partial<Record<string, StepPoints | undefined>>): {
+  points: number; max: number; score: number | null; tier: FitnessTier | null;
+} {
+  const measured = Object.values(steps).filter((s): s is StepPoints => !!s && s.points != null && s.max > 0);
+  const points = round(measured.reduce((a, s) => a + (s.points ?? 0), 0), 1);
+  const max = round(measured.reduce((a, s) => a + s.max, 0), 1);
+  const score = max > 0 ? Math.round((points / max) * 100) : null;
+  return { points, max, score, tier: max === 100 ? tierForScore(score) : null };
+}
+
 // ── Score coverage ── derived, never stored ──
 // How many of the six dashboard categories actually have a result, so a
 // partial battery (a skipped step, an unscored Custom test, a BP-unsafe skip
@@ -809,12 +1017,13 @@ export function computeOverallScore(scores: Record<string, number | null>): numb
 // legitimate 0 — and treats null/undefined as missing. Nulls are never
 // converted to zero here or anywhere downstream.
 export const SCORED_CATEGORY_KEYS = [
+  'bpPoints',
+  'anthropometricPoints',
+  'bodyCompositionScore',
   'cardioScore',
   'strengthScore',
   'enduranceScore',
   'mobilityScore',
-  'bodyCompositionScore',
-  'healthRiskScore',
 ] as const;
 
 export type ScoredCategoryKey = (typeof SCORED_CATEGORY_KEYS)[number];
@@ -831,7 +1040,7 @@ export function scoreCoverage(scores: Partial<Record<ScoredCategoryKey, number |
 }
 
 export function formatCoverage(coverage: ScoreCoverage): string {
-  return `${coverage.available} of ${coverage.total} categories scored`;
+  return `${coverage.available} of ${coverage.total} steps scored`;
 }
 
 export function computeAge(dob: string | null): number | null {

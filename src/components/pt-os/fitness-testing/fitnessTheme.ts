@@ -63,6 +63,7 @@ export const domain = {
   endurance:       tones.aqua,
   mobility:        tones.gold,
   bodyComposition: tones.violet,
+  anthropometric:  tones.sky,
   healthRisk:      tones.indigo,
 } as const;
 
@@ -101,14 +102,15 @@ export const sweep = `linear-gradient(90deg, ${spectrum.pink[400]}, ${spectrum.v
 
 /* ── State, from the five families ─────────────────────────────────────────
    Everything below is semantic: how the client did, not which domain the
-   test belongs to. The 80 / 40 cutoffs are the dashboard's existing ones. */
+   test belongs to. The 85 / 70 / 50 cutoffs are the 100-point framework's
+   tiers. */
 
-/** A 0–100 score onto the app's status ramp. The `-text` tokens are the ones
- *  that clear 3:1 as a 6px fill against --border (amber-500 was 1.78:1) and
- *  4.5:1 as pill text, in both themes. */
+/** A 0–100 score onto the app's status ramp: Optimal and Fit share the good
+ *  family, Moderate is amber, below 50 is red. The `-text` tokens are the ones
+ *  that clear 3:1 as a 6px fill against --border and 4.5:1 as pill text. */
 export function bandFill(score: number): string {
-  if (score >= 80) return 'var(--success-text)';
-  if (score >= 40) return 'var(--warning-text)';
+  if (score >= 70) return 'var(--success-text)';
+  if (score >= 50) return 'var(--warning-text)';
   return 'var(--danger-text)';
 }
 
@@ -120,16 +122,17 @@ export function bandInk(score: number): string {
 
 /** The tint behind band text — the status `-bg` pair for the same band. */
 export function bandBg(score: number): string {
-  if (score >= 80) return 'var(--success-bg)';
-  if (score >= 40) return 'var(--warning-bg)';
+  if (score >= 70) return 'var(--success-bg)';
+  if (score >= 50) return 'var(--warning-bg)';
   return 'var(--danger-bg)';
 }
 
-/** The band as a word, so a bare number is never the only reading. */
+/** The tier as a word, so a bare number is never the only reading. */
 export function bandLabel(score: number): string {
-  if (score >= 80) return 'Strong';
-  if (score >= 40) return 'Fair';
-  return 'Needs work';
+  if (score >= 85) return 'Optimal';
+  if (score >= 70) return 'Fit';
+  if (score >= 50) return 'Moderate';
+  return 'Needs Attention';
 }
 
 /** A classification pill: the wording is the classification's, the colour
