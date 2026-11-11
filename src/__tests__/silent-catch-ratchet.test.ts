@@ -149,9 +149,18 @@ const KNOWN = [
   'components/pt-os/workout-log/ExercisePicker.tsx:297',
   // The portal-aware session init and unified cache comments added lines above
   // the keep-alive effect. File set and per-file count are unchanged
-  // (217/219 -> 236/238), so these are line-number moves, not new catches.
-  'lib/auth-context.tsx:236',
-  'lib/auth-context.tsx:238',
+  // (217/219 -> 236/238 -> 244/246), so these are line-number moves, not new
+  // catches.
+  'lib/auth-context.tsx:244',
+  'lib/auth-context.tsx:246',
+  // Device biometric sign-in. Both are fire-and-forget after the server has
+  // already confirmed the outcome; neither fallback is rendered as fact.
+  // NativeBiometricPrompt: re-probe after enrolment — the prompt has already
+  // shown success from the verified response.
+  'components/auth/NativeBiometricPrompt.tsx:100',
+  // SignInScreen: local key cleanup after the server answered REVOKED. The
+  // credential row is already gone, so the key can never authenticate.
+  'components/auth/SignInScreen.tsx:405',
 ].sort();
 
 describe('silent catches are listed, and the list only shrinks', () => {
