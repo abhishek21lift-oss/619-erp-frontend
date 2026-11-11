@@ -93,6 +93,14 @@ function PasskeysContent() {
     loadCreds();
   }, []);
 
+  // The "this phone" card above can enroll or revoke a credential without
+  // touching this list's state; reload when it says so.
+  useEffect(() => {
+    const reload = () => { loadCreds(); };
+    window.addEventListener('webauthn-credentials-changed', reload);
+    return () => window.removeEventListener('webauthn-credentials-changed', reload);
+  }, []);
+
   useEffect(() => {
     if (renameId) setTimeout(() => renameRef.current?.focus(), 60);
   }, [renameId]);
