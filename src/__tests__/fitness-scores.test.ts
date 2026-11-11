@@ -5,7 +5,7 @@
 // behaviour are pinned here once, in both consumers' name.
 import { describe, it, expect } from 'vitest';
 import {
-  scoresFromAssessmentRow, classifyBmi, scoreHealthRisk,
+  scoresFromAssessmentRow,
   STEP_MAX, scoreBpPoints, scoreAnthropometricPoints, scoreBodyCompositionPoints,
   scoreCardioPoints, scoreStrengthBattery, scoreEnduranceBatteryPoints,
   scoreFlexibilityPoints, tierForScore, computeTotalScore,
@@ -55,22 +55,6 @@ describe('scoresFromAssessmentRow', () => {
     expect(s.overallScore).toBeNull();
     expect(s.overallPoints).toBeNull();
     expect(s.overallMax).toBeNull();
-  });
-});
-
-// The anthropometric block uses the adult Asian BMI bands, but the stored
-// Health Score deliberately keeps its older project bands (18.5–<25 healthy).
-// The divergence is intentional and stays visible; it is pinned here so a
-// future "cleanup" cannot silently move Health Score bands.
-describe('Health Score vs anthropometric BMI category', () => {
-  it.each([
-    [18.4, 'Underweight', 80],
-    [23.0, 'Overweight', 100],
-    [24.9, 'Overweight', 100],
-    [25.0, 'Obese', 80],
-  ] as const)('BMI %p is %s while Health Score remains %p', (bmi, category, healthScore) => {
-    expect(classifyBmi(bmi)).toBe(category);
-    expect(scoreHealthRisk('Normal', bmi)).toBe(healthScore);
   });
 });
 

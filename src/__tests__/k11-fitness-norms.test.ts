@@ -9,7 +9,6 @@ import {
   classifySitAndReach,
   classifyVo2Max,
   FITNESS_SCORING_VERSION,
-  scoreBodyComposition,
 } from '@/lib/fitness-calculations';
 import { deriveFlexibility, PROTOCOL_VERSION } from '@/lib/flexibility-protocol';
 import type { FlexibilityRecorded } from '@/lib/flexibility-protocol';
@@ -293,24 +292,6 @@ describe('K11 sit-and-reach norms', () => {
     expect(classifySitAndReach(20, 30, null)).toBeNull();
     expect(classifySitAndReach(20, 30, 'Other')).toBeNull();
     expect(classifySitAndReach(-1, 30, 'Male')).toBeNull();
-  });
-});
-
-describe('K11 body-fat ideal', () => {
-  it('male ideal is <=15%, female <=20%, with no lower-bound penalty', () => {
-    expect(scoreBodyComposition(15, 'Male')).toBe(100);
-    expect(scoreBodyComposition(16, 'Male')).toBe(96);
-    expect(scoreBodyComposition(25, 'Male')).toBe(60);
-    expect(scoreBodyComposition(5, 'Male')).toBe(100);
-    expect(scoreBodyComposition(20, 'Female')).toBe(100);
-    expect(scoreBodyComposition(21, 'Female')).toBe(96);
-    expect(scoreBodyComposition(25, 'Female')).toBe(80);
-    expect(scoreBodyComposition(5, 'Female')).toBe(100);
-  });
-
-  it('missing or unsupported sex still has no score', () => {
-    expect(scoreBodyComposition(15, null)).toBeNull();
-    expect(scoreBodyComposition(15, 'Other')).toBeNull();
   });
 });
 

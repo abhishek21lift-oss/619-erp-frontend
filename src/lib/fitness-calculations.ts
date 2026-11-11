@@ -742,51 +742,8 @@ export function scoreCategory(category: FitnessCategory | null): number | null {
   return category ? CATEGORY_SCORES[category] : null;
 }
 
-// Body Composition Score: K11 gives an upper bound only — 100 at or below 15%
-// for men and 20% for women, then four points off per percentage point above
-// it. No lower-bound penalty is invented where K11 supplies none. Returns null
-// when gender is missing or 'Other' — no sex-neutral reference exists (F14).
-const K11_IDEAL_BODY_FAT_MAX: Record<'Male' | 'Female', number> = { Male: 15, Female: 20 };
-export function scoreBodyComposition(bodyFatPct: number | null, gender: Gender | null): number | null {
-  if (bodyFatPct == null || !Number.isFinite(bodyFatPct)) return null;
-  const g = sexOf(gender);
-  if (!g) return null;
-  const max = K11_IDEAL_BODY_FAT_MAX[g];
-  if (bodyFatPct <= max) return 100;
-  return Math.max(0, Math.round(100 - (bodyFatPct - max) * 4));
-}
-
-// Health Score (stored column `health_risk_score`): average of a BP-category
-// subscore and a BMI-category subscore. Higher is better — 100 is normal BP
-// within the healthy BMI band — same direction as the other five categories.
-// BP_RISK_SCORE bands follow AHA BP categories.
-//
-// The BMI bands below are deliberately NOT the MPTS/Asian anthropometric
-// categories in classifyBmi(): they are the pre-existing project risk proxy,
-// left unchanged so stored Health Scores stay comparable. A BMI of 23–24.9 is
-// therefore "Overweight" in the anthropometric block while this score still
-// treats 18.5–<25 as healthy. This divergence is documented and pinned by a
-// regression test; do not silently reconcile it here.
-//
-// Healthy band 100, overweight/underweight 60, obese 30 — no separate
-// underweight penalty. Discontinuity: BMI 24.9 → 100, BMI 25.0 → 60.
-const BP_RISK_SCORE: Record<string, number> = { Normal: 100, Elevated: 80, 'Hypertension Stage 1': 55, 'Hypertension Stage 2': 20, 'Hypertensive Crisis': 5, Hypotension: 40 };
-function scoreBmiRisk(bmi: number | null): number | null {
-  if (bmi == null) return null;
-  if (bmi >= 18.5 && bmi < 25) return 100;
-  if (bmi < 30) return 60;
-  return 30;
-}
-export function scoreHealthRisk(bpCategory: BpCategory | null, bmi: number | null): number | null {
-  const bpScore = bpCategory ? BP_RISK_SCORE[bpCategory] ?? null : null;
-  const bmiScore = scoreBmiRisk(bmi);
-  const scores = [bpScore, bmiScore].filter((s): s is number => s != null);
-  if (!scores.length) return null;
-  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-}
-
-// Combined score for a two-test battery: average of both tests' sub-scores
-// (same averaging pattern as scoreHealthRisk above). Originally written for
+// Combined score for a two-test battery: average of both tests' sub-scores.
+// Originally written for
 // Muscular Endurance, then reused as-is for Muscular Strength and
 // Flexibility once they adopted the same "2 distinct tests required"
 // pattern — the maths has never been endurance-specific, just an average of
@@ -799,12 +756,6 @@ export function scoreTestBattery(score1: number | null, score2: number | null): 
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
 export const scoreEnduranceBattery = scoreTestBattery;
-
-export function computeOverallScore(scores: Record<string, number | null>): number | null {
-  const vals = Object.values(scores).filter((v): v is number => v != null);
-  if (!vals.length) return null;
-  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-}
 
 // ── 100-point framework: seven steps, fixed maxima ──
 // Backend twin: scoreBpPoints / scoreAnthropometricPoints / ... in
@@ -941,13 +892,14 @@ const SIT_AND_REACH_POINTS: Partial<Record<FitnessCategory, number>> = {
  *  protocol module that imports it. */
 export interface FlexibilityPointsInput {
   tests?: {
-    quadriceps?: { overall_interpretation?: string | null } | null;
+    quadriceps?: { overall_interpretation?: string | null; unable_to_complete?: boolean } | null;
     hamstrings?: {
       sides_interpretation?: { left: string | null; right: string | null } | null;
       sides_validity?: { left: string | null; right: string | null } | null;
+      unable_to_complete?: boolean;
     } | null;
-    hip_flexors?: { sides_interpretation?: { left: string | null; right: string | null } | null } | null;
-    shoulder_reach?: { sides_interpretation?: { left: string | null; right: string | null } | null } | null;
+    hip_flexors?: { sides_interpretation?: { left: string | null; right: string | null } | null; unable_to_complete?: boolean } | null;
+    shoulder_reach?: { sides_interpretation?: { left: string | null; right: string | null } | null; unable_to_complete?: boolean } | null;
     sit_and_reach?: {
       norm?: { category?: string | null } | null;
       unable_to_complete?: boolean;

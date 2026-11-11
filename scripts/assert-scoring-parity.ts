@@ -207,7 +207,6 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
     add('calcBmi', [v, 175]);
     add('calcWhr', [v, 100]);
     for (const g of GENDERS) {
-      add('scoreBodyComposition', [v / 2, g]);
       add('classifyVo2Max', [v / 2, 35, g]);
       add('classifyEndurance', ['Push Up Test', v, g, 30]);
       add('classifyEndurance', ['Curl Up Test', v, g, 50]);
@@ -215,7 +214,6 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
       add('classifyStrength', [v * 2, 80, 'Bench Press', g, 35]);
       add('classifyStrengthDetail', [v * 2, 80, 'Bench Press', g, 35]);
     }
-    add('scoreHealthRisk', ['Normal', v / 4]);
     // Asymmetry is a RATIO, so one side is pinned and the other walked: this
     // is the sweep that the 10%-to-12% drift slipped through.
     add('checkAsymmetry', [100, v]);
@@ -259,10 +257,7 @@ function buildFitnessCases(): Array<{ fn: string; args: unknown[] }> {
       }
     }
   }
-  for (const f of NUMS) for (const g of GENDERS) add('scoreBodyComposition', [f, g]);
-  for (const bp of BP_CATEGORIES) for (const bmi of NUMS) add('scoreHealthRisk', [bp, bmi]);
   for (const a of [null, 0, 40, 60, 100]) for (const b of [null, 0, 40, 60, 100]) add('scoreEnduranceBattery', [a, b]);
-  for (const a of [null, 0, 50, 100]) for (const b of [null, 50]) for (const c of [null, 75]) add('computeOverallScore', [{ cardio: a, strength: b, endurance: c }]);
 
   // ── The 100-point framework ────────────────────────────────────────────
   //
@@ -964,8 +959,6 @@ function main() {
         { fn: 'classifyEndurance', args: ['Push Up Test', 30, 'Male', 30] },
         { fn: 'classifyEndurance', args: ['Curl Up Test', 60, 'Female', 30] },
         { fn: 'classifySitAndReach', args: [22, 30, 'Male'] },
-        { fn: 'scoreHealthRisk', args: ['Normal', 22] },
-        { fn: 'scoreHealthRisk', args: ['Hypertensive Crisis', 22] },
         { fn: 'scoreCategory', args: ['Good'] },
         { fn: 'scoreCategory', args: ['Above Average'] },
         { fn: 'scoreCategory', args: ['Very Poor'] },
