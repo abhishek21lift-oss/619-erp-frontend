@@ -20,6 +20,8 @@ import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
 import MemberPrivacy from '@/components/member/MemberPrivacy';
+import AccountDeviceCard from '@/components/auth/AccountDeviceCard';
+import MemberNativeDevices from '@/components/member/MemberNativeDevices';
 import {
   Card, LoadError, MC, goalLabel, PageSkeleton, PageTitle, Section, SubmitButton, longDate,
 } from '@/components/member/MemberUI';
@@ -102,6 +104,10 @@ function AccountBody() {
       </Section>
 
       <ContactForm profile={profile} onSaved={(c) => setProfile({ ...profile, ...c })} />
+      <Section title="Sign-in & security">
+        <AccountDeviceCard />
+        <MemberNativeDevices />
+      </Section>
       <PasswordForm />
       <MemberPrivacy />
 

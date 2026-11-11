@@ -290,10 +290,10 @@ describe('impersonation does not survive a session change', () => {
     // exercising Google and passkey needs their whole SDK surface mocked, and a
     // test that heavy tends to be the one that gets deleted.
     expect(src).toMatch(/const _adoptSession = useCallback/);
-    // Four call sites: password, Google login, Google link, passkey. The
-    // definition itself is `= useCallback` and the dep arrays carry no paren,
+    // Five call sites: password, Google login, Google link, passkey, device.
+    // The definition itself is `= useCallback` and the dep arrays carry no paren,
     // so this counts calls and nothing else.
-    expect(src.match(/_adoptSession\(/g) ?? []).toHaveLength(4);
+    expect(src.match(/_adoptSession\(/g) ?? []).toHaveLength(5);
     // No sign-in path may still write the cache itself — that is the shape the
     // triplication had, and the shape a fourth login would copy.
     const logins = src.slice(src.indexOf('const login ='));

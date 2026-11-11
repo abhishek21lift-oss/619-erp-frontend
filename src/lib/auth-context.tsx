@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { clearAllDrafts, clearDraftsOutside, draftScopeFor, DraftScopeContext } from '@/hooks/useAutoSaveDraft';
 import { api, type User, http } from './api';
 import { resetRedirectLock, refreshSession, clearImpersonation } from './http';
+import { deviceAuthSign } from './device-auth';
 // Minimal non-sensitive user fields cached in sessionStorage (cleared on tab
 // close); the full user, email included, stays in memory only. The key and its
 // accessors live in session-cache.ts rather than here because http.ts clears
@@ -22,6 +23,12 @@ interface Ctx {
   loginWithGoogle: (credential: string, portal?: PagePortal) => Promise<User>;
   linkGoogle: (credential: string, password: string, portal?: PagePortal) => Promise<User>;
   loginWithPasskey: (email?: string) => Promise<void>;
+  /**
+   * Android shell only: sign a fresh server challenge with the phone's
+   * Keystore key, after a strong biometric. The account is selected by the
+   * device credential, so no email is involved.
+   */
+  loginWithDevice: (deviceId: string, portal?: PagePortal) => Promise<void>;
   logout: () => void;
   /**
    * Merge fields into the signed-in user — the photo or studio logo just
@@ -38,6 +45,7 @@ const AuthContext = createContext<Ctx>({
   loginWithGoogle: async () => { throw new Error('AuthProvider is not mounted'); },
   linkGoogle: async () => { throw new Error('AuthProvider is not mounted'); },
   loginWithPasskey: async () => {},
+  loginWithDevice: async () => {},
   logout: () => {},
   updateUser: () => {},
 });
@@ -340,13 +348,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     _adoptSession(data.user as User);
   }, [_adoptSession]);
 
+  const loginWithDevice = useCallback(async function (
+    deviceId: string, portal?: PagePortal,
+  ): Promise<void> {
+    // A fresh challenge per tap: a consumed or expired one must never be
+    // replayed, and the server refuses a second signature over the same value.
+    const opts = await api.deviceAuth.loginOptions({ deviceId });
+    const signature = await deviceAuthSign(`MPS-DEVICE-LOGIN-V1\n${opts.challenge}`);
+    const data = await api.deviceAuth.loginVerify({
+      deviceId, challenge: opts.challenge, signature, portal,
+    });
+    _adoptSession(data.user as User);
+  }, [_adoptSession]);
+
   const logout = useCallback(function (): void {
     _clearSession();
     backToSignIn();
   }, [_clearSession, backToSignIn]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, linkGoogle, loginWithPasskey, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, linkGoogle, loginWithPasskey, loginWithDevice, logout, updateUser }}>
       <DraftScopeContext.Provider value={draftScopeFor(user)}>
         {children}
       </DraftScopeContext.Provider>

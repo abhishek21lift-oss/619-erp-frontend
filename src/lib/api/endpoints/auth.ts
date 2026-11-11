@@ -5,6 +5,7 @@
 // back into the same `api` object every consumer already imports.
 
 import { http } from '../../http';
+import type { PagePortal } from '../../portals';
 import type {
   NotificationPreferences, PortfolioItem, PortfolioKind, ProfileMe, ProfileUpdate, StudioContact,
   StudioContactInput, User, UserPreferences,
@@ -119,7 +120,7 @@ export const webauthn = {
 
   // Credential management (user's own passkeys)
   listCredentials: () =>
-    http<{ credentials: { id: string; device_name: string; device_type: string; backed_up: boolean; is_active: boolean; created_at: string; last_used_at: string | null }[] }>(
+    http<{ credentials: { id: string; credential_id: string; device_name: string; device_type: string; backed_up: boolean; is_active: boolean; created_at: string; last_used_at: string | null }[] }>(
       '/api/auth/webauthn/credentials'
     ),
   deleteCredential: (id: string) =>
@@ -148,6 +149,29 @@ export const webauthn = {
     http<{ success: boolean }>(`/api/auth/webauthn/admin/credentials/${id}`, { method: 'DELETE' }),
   studioAuditLogs: (limit = 100) =>
     http<{ logs: StudioPasskeyAuditLog[] }>(`/api/auth/webauthn/admin/audit-logs?limit=${limit}`),
+};
+
+// ── Android device biometric sign-in ───────────────────────────────────────
+// Native shell only: the server verifies an ECDSA signature from a Keystore key
+// bound to a strong biometric. No token is returned — the response sets the
+// same httpOnly cookies as password login.
+export const deviceAuth = {
+  registerOptions: () =>
+    http<{ challenge: string }>('/api/auth/device/register/options', { method: 'POST' }),
+  registerVerify: (body: {
+    challenge: string; deviceId: string; publicKey: string; signature: string; label?: string;
+  }) =>
+    http<{ success: boolean; deviceId: string }>('/api/auth/device/register/verify', {
+      method: 'POST', body: JSON.stringify(body),
+    }),
+  loginOptions: (body: { deviceId: string }) =>
+    http<{ challenge: string }>('/api/auth/device/login/options', {
+      method: 'POST', body: JSON.stringify(body),
+    }),
+  loginVerify: (body: { deviceId: string; challenge: string; signature: string; portal?: PagePortal }) =>
+    http<{ user: User }>('/api/auth/device/login/verify', {
+      method: 'POST', body: JSON.stringify(body),
+    }),
 };
 
 export type StudioPasskeyStats = {

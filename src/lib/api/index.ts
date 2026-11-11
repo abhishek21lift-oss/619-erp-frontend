@@ -11,7 +11,7 @@
 // re-exported helpers. No consumer file was touched, which is the property
 // __tests__/api-shape.test.ts pins with a snapshot of all 462 endpoints.
 
-import { auth, webauthn, profile } from './endpoints/auth';
+import { auth, webauthn, deviceAuth, profile } from './endpoints/auth';
 import { clients, attendance } from './endpoints/people';
 import { payments, invoices, expenses, offers, upiPayments } from './endpoints/money';
 import { workouts, exercises, workoutGenerator, diet } from './endpoints/training';
@@ -38,6 +38,7 @@ export type { FormSigningPreview, ScreeningLinkResult } from './endpoints/ptOs';
 export const api = {
   auth,
   webauthn,
+  deviceAuth,
   profile,
   clients,
   attendance,
