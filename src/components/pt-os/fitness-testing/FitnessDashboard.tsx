@@ -227,7 +227,7 @@ export function FitnessDashboard({ scores, vitals, anthropometric }: FitnessDash
                   {pct != null && (
                     <div
                       className="h-full rounded-full"
-                      style={{ width: `${Math.min(100, Math.max(0, pct))}%`, minWidth: points > 0 ? 4 : undefined, background: bandFill(pct) }}
+                      style={{ width: `${Math.min(100, Math.max(0, pct))}%`, minWidth: points != null && points > 0 ? 4 : undefined, background: bandFill(pct) }}
                     />
                   )}
                 </div>
