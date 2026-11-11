@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useWebAuthn, isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 import Guard from '@/components/Guard';
+import AccountDeviceCard from '@/components/auth/AccountDeviceCard';
 import { Button, PageActions, PageHero, FormField, TextInput } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
@@ -23,6 +24,7 @@ type Credential = {
 
 function DeviceIcon({ type }: { type: string }) {
   const t = (type || '').toLowerCase();
+  if (t === 'android_native') return <Fingerprint size={17} />;
   if (t === 'platform' || t.includes('phone') || t.includes('mobile'))
     return <Smartphone size={17} />;
   if (t.includes('laptop') || t.includes('mac') || t.includes('windows'))
@@ -223,6 +225,10 @@ function PasskeysContent() {
           </Button>
         </PageActions>
       )}
+
+      {/* Native Android shell: Keystore key + strong biometric. Renders
+          nothing in a browser, so this page is unchanged on the web. */}
+      <AccountDeviceCard />
 
       {/* Stats bar */}
       {credentials.length > 0 && (
@@ -491,7 +497,7 @@ function PasskeysContent() {
                       <span>·</span>
                       <span>Last used {timeAgo(cred.last_used_at)}</span>
                       {cred.device_type && cred.device_type !== 'unknown' && (
-                        <><span>·</span><span style={{ textTransform: 'capitalize' }}>{cred.device_type}</span></>
+                        <><span>·</span><span style={{ textTransform: 'capitalize' }}>{cred.device_type === 'android_native' ? 'Android biometric' : cred.device_type}</span></>
                       )}
                     </div>
                   </div>

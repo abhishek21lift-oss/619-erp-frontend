@@ -22,6 +22,7 @@ import PullToRefresh from '@/components/common/PullToRefresh';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
 import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
+import NativeBiometricPrompt from '@/components/auth/NativeBiometricPrompt';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
 import useViewportDesyncFix from '@/hooks/useViewportDesyncFix';
 
@@ -552,6 +553,7 @@ function AppShellContent({ children }: AppShellProps) {
             {pathname === '/' && <TrialBanner />}
             <div className="mx-auto w-full max-w-7xl">
               <PasskeySetupPrompt />
+              <NativeBiometricPrompt />
             </div>
             {/* Keyed on pathname so each route fades in on arrival. There is
                 deliberately no AnimatePresence and no exit animation here.

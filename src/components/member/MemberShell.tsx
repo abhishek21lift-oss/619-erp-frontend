@@ -2,6 +2,7 @@
 
 import MemberNav, { MEMBER_NAV_CLEARANCE } from './MemberNav';
 import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
+import NativeBiometricPrompt from '@/components/auth/NativeBiometricPrompt';
 
 /**
  * The member portal's page shell: status-bar inset, then the page, then the
@@ -40,6 +41,7 @@ export default function MemberShell({
         }}
       >
         <PasskeySetupPrompt />
+        <NativeBiometricPrompt />
         {children}
       </div>
       <MemberNav />

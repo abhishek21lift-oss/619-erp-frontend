@@ -36,6 +36,7 @@ import { Mail, ArrowRight, Fingerprint, Loader2, Lock, Check, AlertTriangle } fr
 import { useAuth } from '@/lib/auth-context';
 import { rememberKeys, safeReturnTo, postSignInPath, unifiedRedirectTarget, type PagePortal, type Portal } from '@/lib/portals';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
+import { deviceAuthStatus, deviceAuthForget } from '@/lib/device-auth';
 import { errorMessage, mapSignInError } from '@/lib/forms/errors';
 import { signInSchema } from '@/lib/forms/schemas/auth';
 
@@ -151,7 +152,7 @@ export default function SignInScreen({
   // Set when the server says the credentials were right but this is the wrong
   // sign-in page. Turns the error box into a way out rather than a wall.
   const [wrongPortal, setWrongPortal] = useState(false);
-  const { user, login, loginWithGoogle, linkGoogle, loginWithPasskey, loading } = useAuth();
+  const { user, login, loginWithGoogle, linkGoogle, loginWithPasskey, loginWithDevice, loading } = useAuth();
   const router = useRouter();
   const reduce = useReducedMotion();
 
@@ -175,6 +176,11 @@ export default function SignInScreen({
 
   const [passkeyReady, setPasskeyReady] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
+  // Android Keystore device credential. Separate from passkeyReady because it
+  // is a different mechanism and can be unavailable for different reasons.
+  const [deviceReady, setDeviceReady] = useState(false);
+  const [deviceBusy, setDeviceBusy] = useState(false);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   const [googleBusy, setGoogleBusy] = useState(false);
   const [googleCredential, setGoogleCredential] = useState('');
@@ -226,6 +232,20 @@ export default function SignInScreen({
   // Device passkey capability
   useEffect(() => {
     if (isWebAuthnSupported()) isBiometricAvailable().then(setPasskeyReady);
+  }, []);
+
+  // Android shell: the phone's Keystore key, not a WebAuthn passkey. In a
+  // browser the status call answers "unavailable" and nothing renders.
+  useEffect(() => {
+    let cancelled = false;
+    deviceAuthStatus()
+      .then((s) => {
+        if (cancelled) return;
+        setDeviceReady(s.available && s.enrolled);
+        setDeviceId(s.deviceId);
+      })
+      .catch(() => { /* bridge absent or broken: keep the password form */ });
+    return () => { cancelled = true; };
   }, []);
 
   // Restore remembered account
@@ -364,6 +384,48 @@ export default function SignInScreen({
     } catch (err: unknown) {
       justSignedIn.current = false;
       fail(webAuthnError(err));
+    }
+  }
+
+  async function handleDevice() {
+    if (deviceBusy || busy || !deviceId) return;
+    setError('');
+    setWrongPortal(false);
+    setDeviceBusy(true);
+    justSignedIn.current = true;
+    try {
+      await loginWithDevice(deviceId, unified ? 'unified' : portal);
+      setOk(true);
+    } catch (err: unknown) {
+      justSignedIn.current = false;
+      const code = (err as { code?: string })?.code;
+      if (code === 'DEVICE_CREDENTIAL_REVOKED') {
+        // The row is gone server-side; drop the unusable local key too so the
+        // button does not invite a second guaranteed failure.
+        await deviceAuthForget().catch(() => {});
+        deviceAuthStatus()
+          .then((s) => { setDeviceReady(s.available && s.enrolled); setDeviceId(s.deviceId); })
+          .catch(() => setDeviceReady(false));
+        fail('Fingerprint sign-in was turned off for this phone. Sign in with your password and enable it again.');
+        return;
+      }
+      if (code === 'DEVICE_AUTH_INVALIDATED') {
+        // The shell already deleted the key (biometrics changed), so re-probe
+        // instead of forgetting again: the dead button must disappear until
+        // the user enables it from a password session.
+        deviceAuthStatus()
+          .then((s) => { setDeviceReady(s.available && s.enrolled); setDeviceId(s.deviceId); })
+          .catch(() => setDeviceReady(false));
+        fail('Fingerprint sign-in is no longer valid on this phone. Sign in with your password and enable it again.');
+        return;
+      }
+      if (code === 'DEVICE_AUTH_CANCELLED' || code === 'DEVICE_AUTH_TIMEOUT') {
+        fail('Fingerprint not recognised. Use your password.');
+        return;
+      }
+      fail('Fingerprint sign-in failed. Use your password.');
+    } finally {
+      setDeviceBusy(false);
     }
   }
 
@@ -799,6 +861,20 @@ export default function SignInScreen({
                   : <><Fingerprint size={18} style={{ color: C.blueHi }} /> Sign in with Face ID / Fingerprint</>}
               </button>
             </>
+          )}
+          {/* Android shell: Keystore key + strong biometric. The WebView has
+              no WebAuthn, so this is the native door. */}
+          {deviceReady && deviceId && (
+            <button
+              type="button"
+              onClick={handleDevice}
+              disabled={deviceBusy || busy || ok || googleBusy || passkeyBusy}
+              className={`${SECONDARY_BUTTON} mt-3 h-12 w-full text-[14px] disabled:opacity-70`}
+            >
+              {deviceBusy
+                ? <><Loader2 size={17} className="animate-spin" /> Waiting for biometric…</>
+                : <><Fingerprint size={18} style={{ color: C.blueHi }} /> Sign in with fingerprint</>}
+            </button>
           )}
         </AuthCard>
       </m.div>
