@@ -66,6 +66,7 @@ const GROUPS: Group[] = [
       { href: '/member/goals', label: 'Goals', sub: 'Targets with a projected finish date', icon: Target },
       { href: '/member/records', label: 'Records', sub: 'Streaks, milestones and personal bests', icon: Medal },
       { href: '/member/progress', label: 'Progress', sub: 'Weight, measurements and assessment countdown', icon: LineChart },
+      { href: '/member/fitness', label: 'Fitness testing', sub: 'Your six domains, body map and test history', icon: ClipboardCheck },
       { href: '/member/habits', label: 'Daily journal', sub: 'Sleep, steps, water and recovery', icon: ClipboardCheck },
       { href: '/member/photos', label: 'Progress photos', sub: 'Your photo timeline and before/after', icon: Camera },
       { href: '/member/form-check', label: 'Form check', sub: 'Send a lift for your trainer to review', icon: Video },
