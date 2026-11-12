@@ -58,7 +58,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
-  AiDietPlan, AiKnowledgeGrounding, AiProgramState, AiWorkoutContext,
+  AiDietCalculation, AiDietParams, AiDietPlan, AiDietScheduleSlot, AiDietValidation,
+  AiKnowledgeGrounding, AiProgramState, AiWorkoutContext,
   AiWorkoutGenerationResult, AiWorkoutPlan,
 } from '@/lib/api';
 import { STEP_LABEL, stepHref, type ClientJourney } from '@/lib/journey';
@@ -185,6 +186,10 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
     evidence?: AiWorkoutGenerationResult;
     /** Diet carries only the knowledge-grounding report. */
     grounding?: AiKnowledgeGrounding;
+    /** The engine's own numbers and checks, printed rather than recomputed. */
+    calculation?: AiDietCalculation;
+    schedule?: AiDietScheduleSlot[];
+    validation?: AiDietValidation;
   } | null>(null);
   const [saving, setSaving] = useState(false);
   // A saved diet stays on screen (there is no builder to jump to), so the
@@ -294,11 +299,25 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
         // is now shown instead of being papered over with 175cm and 75kg.
         const res = await api.ai.generateDiet({
           client_id: client.id,
-          // The only trainer-stated field the diet resolver reads. Sending it
-          // is what lets the pre-flight count a typed goal as answered.
+          // The only trainer-stated fields the diet resolver reads. Sending
+          // them is what lets the pre-flight count a typed value as answered.
           ...(stated.goal ? { goal: stated.goal } : {}),
+          ...(stated.target_weight_kg ? { target_weight_kg: Number(stated.target_weight_kg) } : {}),
+          ...(stated.workout_time ? { workout_time: stated.workout_time } : {}),
+          ...(stated.workout_duration_minutes
+            ? { workout_duration_minutes: Number(stated.workout_duration_minutes) } : {}),
+          ...(stated.food_culture
+            ? { food_culture: stated.food_culture as AiDietParams['food_culture'] } : {}),
+          ...(stated.dietary_pattern
+            ? { dietary_pattern: stated.dietary_pattern as AiDietParams['dietary_pattern'] } : {}),
+          ...(stated.meal_timing_preference
+            ? { meal_timing_preference: stated.meal_timing_preference as AiDietParams['meal_timing_preference'] } : {}),
         });
-        setResult({ kind, plan: res.data, grounding: res.grounding });
+        setResult({
+          kind, plan: res.data, generationId: res.generation_id ?? null,
+          calculation: res.calculation, schedule: res.schedule, validation: res.validation,
+          grounding: res.grounding,
+        });
       }
       setRefusedProgram(null);
     } catch (err) {
@@ -341,9 +360,15 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
       savingRef.current = true;
       setSaving(true);
       try {
-        const out = await api.diet.saveFromAi({ client_id: client.id, plan: result.plan as AiDietPlan });
+        const out = await api.diet.saveFromAi(result.generationId
+          ? { client_id: client.id, generation_id: result.generationId }
+          : { client_id: client.id, plan: result.plan as AiDietPlan });
         setSavedDiet(true);
-        toast.success(`Saved ${out.name}`, { description: `Now the active diet for ${client.name}.` });
+        toast.success(`Saved ${out.name}`, {
+          description: out.targets_stale
+            ? `Now the active diet. The client's weight changed since this plan was calculated — targets may need regenerating.`
+            : `Now the active diet for ${client.name}.`,
+        });
       } catch (err) {
         toast.error(errorMessage(err, 'Could not save the diet'));
       } finally {
@@ -440,7 +465,7 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
   const critical = result?.kind === 'workout'
     ? (result.evidence?.audit?.violations ?? []).filter((v) => v.severity === 'critical')
     : [];
-  const canSave = result?.kind === 'diet'
+  const canSave = (result?.kind === 'diet' && result.validation?.ok !== false)
     || (result?.kind === 'workout' && Boolean(result.generationId) && critical.length === 0);
 
   return (
@@ -671,7 +696,8 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
               {result.kind === 'workout' ? (
                 <WorkoutPreview plan={result.plan as AiWorkoutPlan} />
               ) : (
-                <DietPreview plan={result.plan as AiDietPlan} />
+                <DietPreview plan={result.plan as AiDietPlan}
+                  calculation={result.calculation} schedule={result.schedule} />
               )}
 
               {result.evidence && <GenerationEvidence result={result.evidence} />}
@@ -701,10 +727,13 @@ export default function ClientAiGenerateCard({ client, goalType }: ClientAiGener
                   {/* A workout whose ledger row was not written has nothing
                       to save against, and a critical audit finding must not
                       be saved at all, so it says which rather than offering
-                      a button that fails. */}
-                  {critical.length
-                    ? `Cannot save — ${critical.length} critical safety finding${critical.length === 1 ? '' : 's'}. Regenerate the programme.`
-                    : <>Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.</>}
+                      a button that fails. A diet that failed its delivery
+                      checks is refused by the save route for the same reason. */}
+                  {result?.kind === 'diet' && result.validation?.ok === false
+                    ? 'Cannot save — the plan failed its delivery checks. Regenerate it.'
+                    : critical.length
+                      ? `Cannot save — ${critical.length} critical safety finding${critical.length === 1 ? '' : 's'}. Regenerate the programme.`
+                      : <>Preview only &mdash; nothing has been saved to {client.name}&rsquo;s record.</>}
                 </p>
               )}
             </m.div>
@@ -740,7 +769,11 @@ function WorkoutPreview({ plan }: { plan: AiWorkoutPlan }) {
   );
 }
 
-function DietPreview({ plan }: { plan: AiDietPlan }) {
+function DietPreview({ plan, calculation, schedule }: {
+  plan: AiDietPlan;
+  calculation?: AiDietCalculation;
+  schedule?: AiDietScheduleSlot[];
+}) {
   const m = plan.macros;
   return (
     <div className="space-y-1">
@@ -749,6 +782,17 @@ function DietPreview({ plan }: { plan: AiDietPlan }) {
         {plan.total_calories} kcal &middot; P {m?.protein_g ?? '—'}g / C {m?.carbs_g ?? '—'}g / F {m?.fat_g ?? '—'}g
         {' '}&middot; {plan.hydration_ml ? `${plan.hydration_ml} ml water` : ''}
       </p>
+      {calculation && (
+        <p className="text-[11px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+          Engine target {calculation.calorie_target} kcal &middot; P {calculation.macros.protein_g}g
+          {' '}&middot; TDEE {calculation.tdee_kcal} kcal
+        </p>
+      )}
+      {schedule && schedule.length > 0 && (
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          {schedule.map((s) => `${s.label} ${s.time}${s.day_offset === 1 ? ' (next day)' : ''}`).join(' · ')}
+        </p>
+      )}
       <ul className="space-y-0.5 pt-1">
         {(plan.meals ?? []).slice(0, 4).map((meal, i) => (
           <li key={`${meal.name}-${i}`} className="text-[11px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>

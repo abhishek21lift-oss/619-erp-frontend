@@ -47,18 +47,34 @@ import { palette, rgba } from '@/lib/palette';
 export type StatedValues = Partial<Record<
   Extract<AiClientFactField, 'goal' | 'experience_level' | 'training_days' | 'equipment'>,
   string
->> & { injuries?: string };
+>> & {
+  injuries?: string;
+  /** Diet fields the resolver reads; none of them is an `AiClientFactField`. */
+  target_weight_kg?: string;
+  workout_time?: string;
+  workout_duration_minutes?: string;
+  food_culture?: string;
+  dietary_pattern?: string;
+  meal_timing_preference?: string;
+};
 
 const FIELDS: Array<{
   key: keyof StatedValues;
   label: string;
   numeric?: boolean;
+  diet?: true;
 }> = [
   { key: 'goal', label: 'Goal' },
   { key: 'experience_level', label: 'Experience' },
   { key: 'training_days', label: 'Days / week', numeric: true },
   { key: 'equipment', label: 'Equipment today' },
   { key: 'injuries', label: 'Constraint today' },
+  { key: 'target_weight_kg', label: 'Target weight', numeric: true, diet: true },
+  { key: 'workout_time', label: 'Workout time', diet: true },
+  { key: 'workout_duration_minutes', label: 'Session min', numeric: true, diet: true },
+  { key: 'food_culture', label: 'Food culture', diet: true },
+  { key: 'dietary_pattern', label: 'Diet pattern', diet: true },
+  { key: 'meal_timing_preference', label: 'Meal timing', diet: true },
 ];
 
 export default function TrainerStatedFields({
@@ -102,6 +118,33 @@ export default function TrainerStatedFields({
   };
 
   const count = Object.keys(values).length;
+
+  const renderField = (f: (typeof FIELDS)[number]) => {
+    // Diet keys are not in `AiClientFactField`, so there is no recorded row to
+    // defer to; the server still prefers its own record where it has one.
+    const recorded = !f.diet && f.key !== 'injuries'
+      && context?.facts[f.key as AiClientFactField]?.origin === 'recorded';
+    return (
+      <label key={f.key} className="flex items-center gap-2 text-[11.5px]">
+        <span className="w-[104px] shrink-0 font-[650]" style={{ color: 'var(--text-secondary)' }}>
+          {f.label}
+        </span>
+        <input
+          type="text"
+          inputMode={f.numeric ? 'numeric' : undefined}
+          value={values[f.key] ?? ''}
+          onChange={(e) => set(f.key, e.target.value)}
+          className="min-w-0 flex-1 rounded-[9px] px-2 py-1 text-[11.5px] outline-none"
+          style={{
+            background: 'var(--bg-base)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-primary)',
+            opacity: recorded && f.key !== 'equipment' ? 0.55 : 1,
+          }}
+        />
+      </label>
+    );
+  };
 
   return (
     <div className="mt-2">
@@ -164,30 +207,11 @@ export default function TrainerStatedFields({
           )}
 
           <div className="space-y-1.5">
-            {FIELDS.map((f) => {
-              const recorded = f.key !== 'injuries'
-                && context?.facts[f.key as AiClientFactField]?.origin === 'recorded';
-              return (
-                <label key={f.key} className="flex items-center gap-2 text-[11.5px]">
-                  <span className="w-[104px] shrink-0 font-[650]" style={{ color: 'var(--text-secondary)' }}>
-                    {f.label}
-                  </span>
-                  <input
-                    type="text"
-                    inputMode={f.numeric ? 'numeric' : undefined}
-                    value={values[f.key] ?? ''}
-                    onChange={(e) => set(f.key, e.target.value)}
-                    className="min-w-0 flex-1 rounded-[9px] px-2 py-1 text-[11.5px] outline-none"
-                    style={{
-                      background: 'var(--bg-base)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text-primary)',
-                      opacity: recorded && f.key !== 'equipment' ? 0.55 : 1,
-                    }}
-                  />
-                </label>
-              );
-            })}
+            {FIELDS.filter((f) => !f.diet).map(renderField)}
+            <p className="pt-1.5 text-[10.5px] font-[750] uppercase tracking-[0.07em]" style={{ color: palette.indigo[500] }}>
+              Diet for this generation
+            </p>
+            {FIELDS.filter((f) => f.diet).map(renderField)}
           </div>
         </div>
       )}
