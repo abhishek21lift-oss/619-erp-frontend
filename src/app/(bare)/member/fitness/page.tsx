@@ -29,7 +29,7 @@ import {
 import BodyScoreMap from '@/components/member/fitness/BodyScoreMap';
 import { assessmentLabel, domainsFrom, type DomainKey, type DomainScore } from '@/components/member/fitness/domains';
 import { ProgressComparison } from '@/components/pt-os/fitness-testing/ProgressComparison';
-import { SelectInput } from '@/components/ui/form';
+import { FormField, SelectInput } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type { MeFitnessAssessment, MeFitnessHistory, MeMobilityAssessment } from '@/lib/api';
 import { classifyBodyFat, scoreNum, type FitnessTier, type Gender } from '@/lib/fitness-calculations';
@@ -330,10 +330,7 @@ function FitnessBody() {
             <Section title="Compare two tests">
               <Card className="p-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="min-w-0">
-                    <span className="mb-1 block text-[10px] font-[740] uppercase tracking-[0.08em]" style={{ color: MC.muted }}>
-                      First test
-                    </span>
+                  <FormField label="First test" density="compact" className="min-w-0">
                     <SelectInput
                       value={compareA ?? ''}
                       onChange={(e) => setCompareA(e.target.value)}
@@ -345,11 +342,8 @@ function FitnessBody() {
                         </option>
                       ))}
                     </SelectInput>
-                  </label>
-                  <label className="min-w-0">
-                    <span className="mb-1 block text-[10px] font-[740] uppercase tracking-[0.08em]" style={{ color: MC.muted }}>
-                      Second test
-                    </span>
+                  </FormField>
+                  <FormField label="Second test" density="compact" className="min-w-0">
                     <SelectInput
                       value={compareB ?? ''}
                       onChange={(e) => setCompareB(e.target.value)}
@@ -361,7 +355,7 @@ function FitnessBody() {
                         </option>
                       ))}
                     </SelectInput>
-                  </label>
+                  </FormField>
                 </div>
                 {!canCompare && (
                   <p className="mt-2 text-[11.5px]" style={{ color: MC.muted }}>
