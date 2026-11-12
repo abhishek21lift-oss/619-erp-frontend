@@ -99,6 +99,9 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [pickerOpen, setPickerOpen] = useState(false);
   const [previousByExercise, setPreviousByExercise] = useState<Record<string, WorkoutPreviousExercise | null>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // Exercise id → were ALL of its sets done at the last refresh? A block that
+  // has just crossed over folds away and hands the screen to the next one.
+  const allDoneRef = useRef<Record<string, boolean>>({});
   const [savingHeader, setSavingHeader] = useState(false);
   const [headerOpen, setHeaderOpen] = useState(false);
   const [dayOptions, setDayOptions] = useState<string[]>([]);
@@ -137,9 +140,22 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         if (!prev) setHeaderOpen(!data.program_name && !data.workout_day);
         return data;
       });
+      const doneNow: Record<string, boolean> = {};
+      data.exercises.forEach((ex) => {
+        doneNow[ex.id] = ex.sets.length > 0 && ex.sets.every((st) => st.completed);
+      });
+      // Only a transition false → true folds a block. An exercise that was
+      // already complete when the page opened stays as the trainer left it.
+      const justFinished = data.exercises.find((ex) => doneNow[ex.id] && allDoneRef.current[ex.id] === false);
+      allDoneRef.current = doneNow;
       setExpanded((prev) => {
         const next = { ...prev };
         data.exercises.forEach((ex) => { if (next[ex.id] === undefined) next[ex.id] = true; });
+        if (justFinished) {
+          next[justFinished.id] = false;
+          const following = data.exercises[data.exercises.indexOf(justFinished) + 1];
+          if (following) next[following.id] = true;
+        }
         return next;
       });
     } catch (err: unknown) {
@@ -773,7 +789,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 
   return (
     <div className="rounded-[20px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
-      <button onClick={onToggle} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
+      <button onClick={onToggle} aria-expanded={expanded} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
         <div className="flex items-center gap-3 min-w-0">
           <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
             <Dumbbell size={15} style={{ color: '#94a3b8' }} />
