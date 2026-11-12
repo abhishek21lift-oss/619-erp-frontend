@@ -7,7 +7,7 @@ import {
   Plus, Search, List as ListIcon, Calendar as CalendarIcon,
   History, Loader2, AlertCircle, ChevronLeft, ChevronRight, Dumbbell,
   TrendingUp, Flame, CheckCircle2, Clock, Sparkles, Activity,
-  Timer, Trophy, Percent, CalendarDays,
+  Timer, Trophy, Percent, CalendarDays, ClipboardCheck,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import {
@@ -22,7 +22,7 @@ import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
 import type {
   WorkoutSession, WorkoutProgressPoint, WorkoutAssignment,
-  WorkoutAssignmentDetail, TrainingAnalytics,
+  WorkoutAssignmentDetail, TrainingAnalytics, WorkoutPendingReview,
 } from '@/lib/api';
 import {
   computeWorkoutAnalytics, muscleDistribution, rangeForPreset,
@@ -128,6 +128,9 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   // Recent history (latest 100), so changing the analytics range never takes
   // away the session you came here to open.
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  // Member workouts waiting on this trainer. Shown above the history so they
+  // are not lost among a year of sessions.
+  const [pending, setPending] = useState<WorkoutPendingReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [creating, setCreating] = useState(false);
@@ -164,15 +167,17 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, sessionsRes, assignRes] = await Promise.all([
+      const [clientRes, sessionsRes, assignRes, pendingRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.workoutLog.sessions.list({ client_id: clientId, limit: 100 }),
         api.workouts.assignments.list({ client_id: clientId, status: 'active' }).catch(() => []),
+        api.progress.workoutLog.pendingReview({ client_id: clientId }).catch(() => ({ data: [] })),
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
       setSessions(sessionsRes?.data ?? []);
+      setPending(pendingRes?.data ?? []);
       const assignment = Array.isArray(assignRes) && assignRes.length > 0 ? assignRes[0] : null;
       setActiveAssignment(assignment);
       if (assignment) {
@@ -642,6 +647,51 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             />
           )}
         </div>
+
+        {/* ── Pending review ──
+            Trainer-written workouts go straight into history; a member's own
+            submitted workout waits here until the trainer has seen it. */}
+        {pending.length > 0 && (
+          <div className="rounded-[22px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -20px rgba(245,158,11,0.45)' }}>
+            <div className="mb-3 flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
+                style={{ background: 'linear-gradient(140deg,#D97706,#92400E)', boxShadow: '0 6px 14px -6px #92400E' }}>
+                <ClipboardCheck size={15} />
+              </span>
+              <h3 className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>Pending review</h3>
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-[800] tabular-nums"
+                style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
+                {pending.length}
+              </span>
+            </div>
+            <ul>
+              {pending.map((p) => (
+                <li key={p.id} style={{ borderTop: '1px solid var(--border)' }}>
+                  <button type="button"
+                    onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log/${p.id}?review=1`)}
+                    className="flex w-full flex-wrap items-center justify-between gap-2 py-3 text-left">
+                    <span className="min-w-0">
+                      <span className="block text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+                        {fmtDate(p.session_date)}
+                        {p.program_name ? ` · ${p.program_name}` : ''}
+                        {p.workout_day ? ` · ${p.workout_day}` : ''}
+                      </span>
+                      <span className="mt-0.5 block text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                        {p.exercise_count} exercises · {p.set_count} sets ·{' '}
+                        {Math.round(p.volume).toLocaleString()} kg
+                        {p.duration_minutes ? ` · ${p.duration_minutes} min` : ''}
+                      </span>
+                    </span>
+                    <span className="rounded-[10px] px-3 py-1.5 text-[11.5px] font-[750]"
+                      style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
+                      Review
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* ── History ── */}
         <div className="rounded-[22px] p-4 sm:p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -20px rgba(255,133,61,0.45)' }}>

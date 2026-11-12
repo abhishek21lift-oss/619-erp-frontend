@@ -8,6 +8,7 @@ import {
   Dumbbell, ChevronDown, Award, Clock, X, Minus, Pencil, ClipboardList, Layers,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import ReviewPanel from '@/components/pt-os/workout-log/ReviewPanel';
 import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import ExercisePicker from '@/components/pt-os/workout-log/ExercisePicker';
@@ -107,6 +108,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [dayOptions, setDayOptions] = useState<string[]>([]);
   const [loadingPlanned, setLoadingPlanned] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+
+  // A member's submitted workout is theirs: the trainer reads and reviews it,
+  // never edits it. The server refuses the writes too (409); this keeps the
+  // page from offering controls that cannot work.
+  const locked = session?.source === 'member' && (session.submitted_at != null || session.review_status != null);
 
   // Only the FIRST load may blank the page.
   //
@@ -470,7 +476,8 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
               </p>
             </div>
 
-            <button onClick={() => setHeaderOpen((o) => !o)}
+            {!locked && (
+              <button onClick={() => setHeaderOpen((o) => !o)}
               aria-expanded={headerOpen}
               aria-label={headerOpen ? 'Close session details' : 'Edit session details'}
               className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] transition-transform active:scale-95"
@@ -478,7 +485,8 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
               {headerOpen
                 ? <ChevronDown size={16} style={{ color: 'rgba(255,255,255,0.85)' }} />
                 : <Pencil size={14} style={{ color: 'rgba(255,255,255,0.85)' }} />}
-            </button>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -488,6 +496,9 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
           now that nothing is cancelled, keeping it would indent the content
           twice and leave the cards narrower than the hero above them. */}
       <div className="mx-auto max-w-3xl space-y-5 py-5">
+        {session.review_status === 'pending' && (
+          <ReviewPanel detail={session} onReviewed={loadSession} />
+        )}
         {/* The editable detail, unchanged in behaviour: still a disclosure, so
             the exercises stay reachable without scrolling past a wall of
             fields. It now hangs below the hero rather than inside a card. */}
@@ -496,7 +507,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
             shadow, which paints a 1px line and a smudge under the hero for a
             card that is not there. */}
         <AnimatePresence initial={false}>
-            {headerOpen && (
+            {headerOpen && !locked && (
               <m.div
                 initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: EASE }}
@@ -625,6 +636,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
               onToggle={() => setExpanded((prev) => ({ ...prev, [ex.id]: !prev[ex.id] }))}
               onRemove={() => handleRemoveExercise(ex.id)}
               onChanged={loadSession}
+              locked={locked}
             />
           ))}
           {session.exercises.length === 0 && (
@@ -635,9 +647,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
           )}
         </div>
 
-        <Button variant="outline" iconLeft={<Plus size={14} />} onClick={() => setPickerOpen(true)} className="h-[44px] w-full">
-          Add Exercise
-        </Button>
+        {!locked && (
+          <Button variant="outline" iconLeft={<Plus size={14} />} onClick={() => setPickerOpen(true)} className="h-[44px] w-full">
+            Add Exercise
+          </Button>
+        )}
       </div>
 
       <SessionSummary
@@ -689,9 +703,11 @@ interface ExerciseBlockProps {
   onToggle: () => void;
   onRemove: () => void;
   onChanged: () => Promise<void>;
+  /** A submitted member session — show it, do not edit it. */
+  locked?: boolean;
 }
 
-function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onChanged }: ExerciseBlockProps) {
+function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onChanged, locked = false }: ExerciseBlockProps) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
 
@@ -813,7 +829,8 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <span onClick={(e) => { e.stopPropagation(); onRemove(); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onRemove(); } }} role="button" tabIndex={0} aria-label="Remove exercise"
-            className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-red-50">
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-red-50"
+            style={locked ? { display: 'none' } : undefined}>
             <Trash2 size={14} style={{ color: '#ef4444' }} />
           </span>
           <span className="flex h-11 w-11 items-center justify-center rounded-[10px]">
@@ -825,7 +842,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
       <AnimatePresence initial={false}>
         {expanded && (
           <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: EASE }}>
-            <div className="px-5 pb-5 space-y-4">
+            <fieldset disabled={locked} className="px-5 pb-5 space-y-4 min-w-0">
               {previous && previous.sets.length > 0 && (
                 <div className="rounded-[12px] p-3" style={{ background: 'rgba(148,163,184,0.08)' }}>
                   <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>
@@ -893,7 +910,7 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
                   </Button>
                 </div>
               </div>
-            </div>
+            </fieldset>
           </m.div>
         )}
       </AnimatePresence>
