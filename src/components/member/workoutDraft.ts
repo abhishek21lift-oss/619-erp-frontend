@@ -26,6 +26,10 @@ export type DraftSet = {
   time?: string;
   /** Carries in metres, cardio in kilometres (see `distanceUnit`). */
   distance?: string;
+  /** Effort, as the member records it: 0–10, 0–5, and a one-line note. */
+  rpe?: string;
+  rir?: string;
+  notes?: string;
   done: boolean;
 };
 
@@ -79,12 +83,16 @@ export type DraftExercise = {
   last_summary: string | null;
   /** 'YYYY-MM-DD' of that session. */
   last_date: string | null;
+  /** Position in the prescription snapshot, so the server can line them up. */
+  prescribed_index?: number | null;
   sets: DraftSet[];
 };
 
 export type WorkoutDraft = {
   version: 1;
   request_id: string;
+  /** The server session this draft belongs to, once one exists. */
+  session_id?: string;
   started_at: string;
   title: string;
   assignment_id: string | null;
@@ -204,6 +212,7 @@ export function newDraft(input: {
     notes?: string | null;
     media_url?: string | null;
     video_url?: string | null;
+    prescribed_index?: number | null;
   })[];
   last: MeLastPerformance;
   now?: Date;
@@ -229,6 +238,7 @@ export function newDraft(input: {
       best_kg: input.last[keyOf(x.name)]?.best_kg ?? null,
       last_summary: lastSummary(input.last[keyOf(x.name)]),
       last_date: input.last[keyOf(x.name)]?.date?.slice(0, 10) ?? null,
+      prescribed_index: x.prescribed_index ?? null,
       sets: prefillSets(x, input.last[keyOf(x.name)]),
     })),
   };
@@ -263,6 +273,12 @@ export function isLogged(s: DraftSet): boolean {
 
 export function loggedSetCount(d: WorkoutDraft): number {
   return d.exercises.reduce((n, x) => n + x.sets.filter(isLogged).length, 0);
+}
+
+/** The next exercise still to log: the first with an unfinished set, else the last. */
+export function nextExerciseIndex(d: WorkoutDraft): number {
+  const i = d.exercises.findIndex((x) => x.sets.some((s) => !isLogged(s)));
+  return i === -1 ? Math.max(0, d.exercises.length - 1) : i;
 }
 
 /** Exercises with at least one logged set. */
@@ -303,6 +319,7 @@ export function toLogInput(d: WorkoutDraft, now: Date = new Date()): MeWorkoutLo
         // Omitted when empty so the payload for an ordinary exercise is
         // unchanged; the server treats absent and null the same.
         ...(x.notes ? { notes: x.notes } : {}),
+        ...(x.prescribed_index != null ? { prescribed_index: x.prescribed_index } : {}),
         sets: x.sets.filter(isLogged).map((s) => toLogSet(s, x.kind)),
       }))
       .filter((x) => x.sets.length > 0),
@@ -324,6 +341,14 @@ function toLogSet(s: DraftSet, kind: TrackingKind | undefined): MeWorkoutLogInpu
   if (shape.distance && distance !== null) {
     out.distance_m = Math.round((kind === 'cardio' ? distance * 1000 : distance) * 100) / 100;
   }
+  // Clamped here: the server rejects an out-of-range effort and the whole
+  // workout would be lost to one typo.
+  const rpe = num(s.rpe ?? '');
+  if (rpe !== null) out.rpe = Math.max(0, Math.min(10, rpe));
+  const rir = num(s.rir ?? '');
+  if (rir !== null) out.rir = Math.max(0, Math.min(5, rir));
+  const notes = s.notes?.trim();
+  if (notes) out.notes = notes.slice(0, 200);
   return out;
 }
 

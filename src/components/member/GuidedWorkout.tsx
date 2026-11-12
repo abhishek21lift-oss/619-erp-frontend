@@ -23,30 +23,34 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import {
-  Check, ChevronLeft, ChevronRight, Dumbbell, Flag, History, Loader2, Minus, Plus, Timer, Trophy, X,
+  Check, ChevronLeft, ChevronRight, Dumbbell, Flag, History, Loader2, Minus, Pause, Plus, Timer, Trophy, X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { MeWorkoutSummary } from '@/lib/api';
+import type { MeWorkoutSession, MeWorkoutSummary } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 import { palette, rgba } from '@/lib/palette';
 import { EASE, MC } from './MemberUI';
 import {
   DEFAULT_REST, beatsBest, clearDraft, exercisesDone, fmtKg, isLogged, loggedSetCount, num, saveDraft,
-  toLogInput, volumeOf, hasWork, setColumns,
+  nextExerciseIndex, toLogInput, volumeOf, hasWork, setColumns,
   type DraftExercise, type DraftSet, type SetColumn, type SetField, type WorkoutDraft,
 } from './workoutDraft';
 
 const GOOD = palette.emerald[500];
 
 type Phase = 'train' | 'saving' | 'done';
+type SaveState = 'idle' | 'saving' | 'saved' | 'local';
 
 export default function GuidedWorkout({
   initial,
+  session,
   onClose,
   onSaved,
 }: {
   initial: WorkoutDraft;
+  /** The server session this draft belongs to; null for a draft from before server sessions. */
+  session: MeWorkoutSession | null;
   /** The screen closed — the draft may still be saved on the phone. */
   onClose: () => void;
   /** The workout reached the server. */
@@ -59,10 +63,24 @@ export default function GuidedWorkout({
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
   const titleId = useId();
 
   // Every change is on the phone before the next tap.
   useEffect(() => { if (phase !== 'done') saveDraft(draft); }, [draft, phase]);
+
+  // And, a moment later, on the server — so a new phone can resume it too.
+  useEffect(() => {
+    if (!session || phase === 'done') return;
+    let alive = true;
+    setSaveState('saving');
+    const t = window.setTimeout(() => {
+      api.me.autosaveWorkout(session.id, draft)
+        .then(() => { if (alive) setSaveState('saved'); })
+        .catch(() => { if (alive) setSaveState('local'); });
+    }, 800);
+    return () => { alive = false; window.clearTimeout(t); };
+  }, [draft, phase, session]);
 
   const requestClose = useCallback(() => {
     if (phase === 'done') { onClose(); return; }
@@ -100,7 +118,17 @@ export default function GuidedWorkout({
     const s = ex.sets[i];
     const becomingDone = !s.done;
     if (becomingDone && !hasWork(s)) return;
-    update((d) => { d.exercises[d.current].sets[i].done = becomingDone; return d; });
+    const next = structuredClone(draft);
+    next.exercises[next.current].sets[i].done = becomingDone;
+    if (becomingDone) {
+      // A finished exercise folds away and the next unfinished one opens.
+      const target = nextExerciseIndex(next);
+      if (target !== next.current) {
+        next.current = target;
+        document.getElementById('gw-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+    setDraft(next);
     if (!becomingDone) return;
     if (beatsBest(s, ex.best_kg)) {
       setFlash(`New best on ${ex.name}: ${fmtKg(num(s.weight))} kg`);
@@ -126,6 +154,11 @@ export default function GuidedWorkout({
     return d;
   });
 
+  const setMeta = (i: number, patch: Partial<DraftSet>) => update((d) => {
+    d.exercises[d.current].sets[i] = { ...d.exercises[d.current].sets[i], ...patch };
+    return d;
+  });
+
   const go = (index: number) => {
     update((d) => { d.current = Math.max(0, Math.min(d.exercises.length - 1, index)); return d; });
     document.getElementById('gw-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -137,15 +170,27 @@ export default function GuidedWorkout({
     setError(null);
     setPhase('saving');
     try {
-      const res = await api.me.logWorkout(toLogInput(draft));
+      if (!session) {
+        // A draft kept before server sessions still uses the one-shot route.
+        const res = await api.me.logWorkout(toLogInput(draft));
+        clearDraft();
+        setSummary(res.data);
+        setPhase('done');
+        buzz([80, 60, 120]);
+        onSaved?.(res.data);
+        return;
+      }
+      const res = await api.me.submitWorkout(session.id, draft);
       clearDraft();
-      setSummary(res.data);
+      setSummary(res.data.summary);
       setPhase('done');
       buzz([80, 60, 120]);
-      onSaved?.(res.data);
+      onSaved?.(res.data.summary);
     } catch (err) {
       setPhase('train');
-      if (err instanceof ApiError && err.status === 403) {
+      if (err instanceof ApiError && err.status === 409) {
+        setError('This workout was already submitted.');
+      } else if (err instanceof ApiError && err.status === 403) {
         setError('Your health screening needs your trainer\'s clearance before you log workouts. Your workout is saved on this phone.');
       } else if (err instanceof ApiError && err.status === 429) {
         setError(err.message);
@@ -157,6 +202,15 @@ export default function GuidedWorkout({
     }
   };
 
+  const discard = async () => {
+    if (session) {
+      try { await api.me.discardWorkout(session.id); } catch { /* the local copy still goes */ }
+    }
+    clearDraft();
+    setConfirmClose(false);
+    onClose();
+  };
+
   const elapsedFrom = useMemo(() => new Date(draft.started_at).getTime(), [draft.started_at]);
 
   return (
@@ -166,7 +220,7 @@ export default function GuidedWorkout({
           <Summary summary={summary} draft={draft} titleId={titleId} onDone={onClose} />
         ) : (
           <>
-            <Header draft={draft} titleId={titleId} startedAt={elapsedFrom} onClose={requestClose} />
+            <Header draft={draft} titleId={titleId} startedAt={elapsedFrom} onClose={requestClose} saveState={saveState} />
 
             <div id="gw-scroll" className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-3">
               <div className="mx-auto max-w-[560px]">
@@ -176,7 +230,7 @@ export default function GuidedWorkout({
                     initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
                     transition={{ duration: 0.28, ease: EASE }}>
                     <ExerciseCard ex={ex} />
-                    <SetTable ex={ex} onField={setField} onStep={step} onToggle={toggleDone} onRemove={removeSet} />
+                    <SetTable ex={ex} onField={setField} onStep={step} onToggle={toggleDone} onRemove={removeSet} onMeta={setMeta} />
                     <button type="button" onClick={addSet}
                       className="mt-2 flex h-11 w-full items-center justify-center gap-1.5 rounded-[12px] text-[13px] font-[700]"
                       style={{ border: '1px dashed var(--border)', color: MC.muted }}>
@@ -201,7 +255,8 @@ export default function GuidedWorkout({
               logged={logged}
               onBack={() => go(draft.current - 1)}
               onNext={() => go(draft.current + 1)}
-              onFinish={() => void finish()}
+              onSubmit={() => void finish()}
+              onPause={requestClose}
             />
           </>
         )}
@@ -222,7 +277,7 @@ export default function GuidedWorkout({
       {confirmClose && (
         <CloseSheet
           onKeep={() => { setConfirmClose(false); onClose(); }}
-          onDiscard={() => { clearDraft(); setConfirmClose(false); onClose(); }}
+          onDiscard={() => void discard()}
           onCancel={() => setConfirmClose(false)}
         />
       )}
@@ -236,11 +291,14 @@ function buzz(pattern: number[]) {
 
 // ── Header ───────────────────────────────────────────────────────────────────
 
-function Header({ draft, titleId, startedAt, onClose }: {
-  draft: WorkoutDraft; titleId: string; startedAt: number; onClose: () => void;
+function Header({ draft, titleId, startedAt, onClose, saveState }: {
+  draft: WorkoutDraft; titleId: string; startedAt: number; onClose: () => void; saveState: SaveState;
 }) {
   const done = exercisesDone(draft);
   const pct = Math.round((done / draft.exercises.length) * 100);
+  const saved = saveState === 'saving' ? 'Saving…'
+    : saveState === 'saved' ? 'Saved'
+      : saveState === 'local' ? 'Saved on this phone' : '';
   return (
     <header className="shrink-0 px-4 pt-[max(12px,env(safe-area-inset-top))]"
       style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}>
@@ -253,7 +311,7 @@ function Header({ draft, titleId, startedAt, onClose }: {
         <div className="min-w-0 flex-1">
           <h2 id={titleId} className="truncate text-[15px] font-[800]" style={{ color: MC.ink }}>{draft.title}</h2>
           <p className="text-[11.5px] font-[650] tabular-nums" style={{ color: MC.muted }}>
-            <Elapsed since={startedAt} /> · {done}/{draft.exercises.length} exercises
+            <Elapsed since={startedAt} /> · {done}/{draft.exercises.length} exercises{saved ? ` · ${saved}` : ''}
           </p>
         </div>
       </div>
@@ -369,12 +427,13 @@ function shortDate(ymd: string): string {
 
 // ── Sets ─────────────────────────────────────────────────────────────────────
 
-function SetTable({ ex, onField, onStep, onToggle, onRemove }: {
+function SetTable({ ex, onField, onStep, onToggle, onRemove, onMeta }: {
   ex: DraftExercise;
   onField: (i: number, field: SetField, value: string) => void;
   onStep: (i: number, field: SetField, delta: number) => void;
   onToggle: (i: number) => void;
   onRemove: (i: number) => void;
+  onMeta: (i: number, patch: Partial<DraftSet>) => void;
 }) {
   // kg × reps for a lift, +kg × seconds for a plank, kg × metres for a carry,
   // minutes × km for a run — the same two-column row either way.
@@ -389,43 +448,87 @@ function SetTable({ ex, onField, onStep, onToggle, onRemove }: {
       {ex.sets.map((s, i) => (
         <SetRow key={i} n={i + 1} s={s} best={ex.best_kg} canRemove={ex.sets.length > 1} columns={columns}
           onField={(f, v) => onField(i, f, v)} onStep={(f, d) => onStep(i, f, d)}
-          onToggle={() => onToggle(i)} onRemove={() => onRemove(i)} />
+          onToggle={() => onToggle(i)} onRemove={() => onRemove(i)} onMeta={(p) => onMeta(i, p)} />
       ))}
     </div>
   );
 }
 
-function SetRow({ n, s, best, canRemove, columns, onField, onStep, onToggle, onRemove }: {
+function SetRow({ n, s, best, canRemove, columns, onField, onStep, onToggle, onRemove, onMeta }: {
   n: number; s: DraftSet; best: number | null; canRemove: boolean;
   columns: [SetColumn, SetColumn];
   onField: (f: SetField, v: string) => void;
   onStep: (f: SetField, d: number) => void;
   onToggle: () => void;
   onRemove: () => void;
+  onMeta: (patch: Partial<DraftSet>) => void;
 }) {
+  const [details, setDetails] = useState(false);
   const ready = hasWork(s);
   const pr = s.done && beatsBest(s, best);
+  const effort = [s.rpe ? `RPE ${s.rpe}` : null, s.rir ? `RIR ${s.rir}` : null, s.notes ? 'note' : null]
+    .filter(Boolean).join(' · ');
   return (
-    <m.div layout className="grid grid-cols-[28px_1fr_1fr_48px] items-center gap-2 rounded-[14px] p-1.5"
+    <m.div layout className="rounded-[14px] p-1.5"
       style={{
         background: s.done ? rgba(GOOD, 0.08) : 'var(--bg-card)',
         border: `1px solid ${s.done ? rgba(GOOD, 0.35) : 'var(--border)'}`,
       }}>
-      <button type="button" onClick={canRemove && !s.done ? onRemove : undefined} disabled={!canRemove || s.done}
-        aria-label={canRemove && !s.done ? `Remove set ${n}` : `Set ${n}`}
-        className="grid h-9 w-7 place-items-center text-[13px] font-[800] tabular-nums" style={{ color: pr ? GOOD : MC.muted }}>
-        {pr ? <Trophy size={14} aria-label="New best" /> : n}
-      </button>
-      {columns.map((c) => (
-        <Stepper key={c.field} label={`Set ${n} ${c.spoken}`} value={s[c.field] ?? ''} inputMode={c.inputMode} disabled={s.done}
-          onChange={(v) => onField(c.field, v)} onMinus={() => onStep(c.field, -c.step)} onPlus={() => onStep(c.field, c.step)} />
-      ))}
-      <m.button type="button" onClick={onToggle} disabled={!ready && !s.done} whileTap={{ scale: 0.9 }}
-        aria-pressed={s.done} aria-label={s.done ? `Set ${n} done — tap to undo` : `Mark set ${n} done`}
-        className="grid h-11 w-12 place-items-center rounded-[12px] transition-colors disabled:opacity-40"
-        style={s.done ? { background: GOOD, color: '#fff' } : { background: 'var(--bg-subtle)', color: MC.muted }}>
-        <Check size={20} strokeWidth={3} aria-hidden />
-      </m.button>
+      <div className="grid grid-cols-[28px_1fr_1fr_48px] items-center gap-2">
+        <button type="button" onClick={canRemove && !s.done ? onRemove : undefined} disabled={!canRemove || s.done}
+          aria-label={canRemove && !s.done ? `Remove set ${n}` : `Set ${n}`}
+          className="grid h-9 w-7 place-items-center text-[13px] font-[800] tabular-nums" style={{ color: pr ? GOOD : MC.muted }}>
+          {pr ? <Trophy size={14} aria-label="New best" /> : n}
+        </button>
+        {columns.map((c) => (
+          <Stepper key={c.field} label={`Set ${n} ${c.spoken}`} value={s[c.field] ?? ''} inputMode={c.inputMode} disabled={s.done}
+            onChange={(v) => onField(c.field, v)} onMinus={() => onStep(c.field, -c.step)} onPlus={() => onStep(c.field, c.step)} />
+        ))}
+        <m.button type="button" onClick={onToggle} disabled={!ready && !s.done} whileTap={{ scale: 0.9 }}
+          aria-pressed={s.done} aria-label={s.done ? `Set ${n} done — tap to undo` : `Mark set ${n} done`}
+          className="grid h-11 w-12 place-items-center rounded-[12px] transition-colors disabled:opacity-40"
+          style={s.done ? { background: GOOD, color: '#fff' } : { background: 'var(--bg-subtle)', color: MC.muted }}>
+          <Check size={20} strokeWidth={3} aria-hidden />
+        </m.button>
+      </div>
+
+      <div className="mt-1 flex items-center justify-between gap-2 px-1">
+        <button type="button" onClick={() => setDetails((v) => !v)} aria-expanded={details}
+          aria-label={`Set ${n} effort and notes`}
+          className="text-[10.5px] font-[700]" style={{ color: MC.muted }}>
+          {details ? 'Hide effort' : 'Effort & notes'}
+        </button>
+        {!details && effort && (
+          <span className="truncate text-[10.5px] font-[650] tabular-nums" style={{ color: MC.muted }}>{effort}</span>
+        )}
+      </div>
+
+      {details && (
+        <div className="mt-1 grid grid-cols-2 gap-2 px-1 pb-1">
+          <label className="text-[10.5px] font-[700]" style={{ color: MC.muted }}>
+            RPE (0–10)
+            <input value={s.rpe ?? ''} inputMode="numeric" maxLength={2} aria-label={`Set ${n} RPE`}
+              onChange={(e) => onMeta({ rpe: e.target.value.replace(/[^\d]/g, '').slice(0, 2) })}
+              className="mt-1 h-9 w-full rounded-[10px] px-2 text-center text-[13px] font-[750] tabular-nums outline-none"
+              style={{ background: 'var(--bg-subtle)', color: MC.ink }} />
+          </label>
+          <label className="text-[10.5px] font-[700]" style={{ color: MC.muted }}>
+            RIR (0–5)
+            <input value={s.rir ?? ''} inputMode="numeric" maxLength={1} aria-label={`Set ${n} RIR`}
+              onChange={(e) => onMeta({ rir: e.target.value.replace(/[^\d]/g, '').slice(0, 1) })}
+              className="mt-1 h-9 w-full rounded-[10px] px-2 text-center text-[13px] font-[750] tabular-nums outline-none"
+              style={{ background: 'var(--bg-subtle)', color: MC.ink }} />
+          </label>
+          <label className="col-span-2 text-[10.5px] font-[700]" style={{ color: MC.muted }}>
+            Note
+            <input value={s.notes ?? ''} maxLength={200} aria-label={`Set ${n} note`}
+              onChange={(e) => onMeta({ notes: e.target.value })}
+              placeholder="How did it feel?"
+              className="mt-1 h-9 w-full rounded-[10px] px-2 text-[12.5px] font-[600] outline-none"
+              style={{ background: 'var(--bg-subtle)', color: MC.ink }} />
+          </label>
+        </div>
+      )}
     </m.div>
   );
 }
@@ -454,9 +557,9 @@ function Stepper({ label, value, inputMode, disabled, onChange, onMinus, onPlus 
 
 // ── Footer ───────────────────────────────────────────────────────────────────
 
-function Footer({ canBack, isLast, saving, logged, onBack, onNext, onFinish }: {
+function Footer({ canBack, isLast, saving, logged, onBack, onNext, onSubmit, onPause }: {
   canBack: boolean; isLast: boolean; saving: boolean; logged: number;
-  onBack: () => void; onNext: () => void; onFinish: () => void;
+  onBack: () => void; onNext: () => void; onSubmit: () => void; onPause: () => void;
 }) {
   return (
     <footer className="shrink-0 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3"
@@ -468,27 +571,23 @@ function Footer({ canBack, isLast, saving, logged, onBack, onNext, onFinish }: {
           <ChevronLeft size={20} aria-hidden />
         </button>
         {isLast ? (
-          <button type="button" onClick={onFinish} disabled={saving || logged === 0}
+          <button type="button" onClick={onSubmit} disabled={saving || logged === 0}
             className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-[780] text-white disabled:opacity-50"
             style={{ background: GOOD }}>
-            {saving ? <><Loader2 size={16} className="animate-spin" aria-hidden /> Saving…</> : <><Flag size={16} aria-hidden /> Finish workout</>}
+            {saving ? <><Loader2 size={16} className="animate-spin" aria-hidden /> Submitting…</> : <><Flag size={16} aria-hidden /> Submit workout</>}
           </button>
         ) : (
-          <>
-            <button type="button" onClick={onNext}
-              className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[13px] text-[14px] font-[780] text-white"
-              style={{ background: MC.primary }}>
-              Next exercise <ChevronRight size={18} aria-hidden />
-            </button>
-            {logged > 0 && (
-              <button type="button" onClick={onFinish} disabled={saving} aria-label="Finish workout now"
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] disabled:opacity-50"
-                style={{ background: rgba(GOOD, 0.12), color: GOOD }}>
-                {saving ? <Loader2 size={18} className="animate-spin" aria-hidden /> : <Flag size={18} aria-hidden />}
-              </button>
-            )}
-          </>
+          <button type="button" onClick={onNext}
+            className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-[13px] text-[14px] font-[780] text-white"
+            style={{ background: MC.primary }}>
+            Next exercise <ChevronRight size={18} aria-hidden />
+          </button>
         )}
+        <button type="button" onClick={onPause} aria-label="Pause workout"
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px]"
+          style={{ background: 'var(--bg-subtle)', color: MC.ink }}>
+          <Pause size={18} aria-hidden />
+        </button>
       </div>
     </footer>
   );

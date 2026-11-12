@@ -98,18 +98,21 @@ function storedDraft(s: MeWorkoutSession): WorkoutDraft | null {
 /** Build the draft for a session that has none yet: what they tapped, plus their history. */
 function draftFromSession(s: MeWorkoutSession, source: Source | null, last: MeLastPerformance): WorkoutDraft {
   const stored = storedDraft(s);
-  if (stored) return stored;
+  if (stored) return { ...stored, session_id: s.id };
   const title = source?.title
     ?? ([s.workout_day, s.program_name].filter(Boolean).join(' · ') || 'Workout');
-  return newDraft({
-    title,
-    assignment_id: source?.assignment_id ?? s.workout_assignment_id,
-    program_name: source?.program_name ?? s.program_name,
-    workout_day: source?.workout_day ?? s.workout_day,
-    exercises: source?.exercises ?? s.prescribed?.exercises ?? [],
-    last,
-    now: new Date(s.started_at),
-  });
+  return {
+    ...newDraft({
+      title,
+      assignment_id: source?.assignment_id ?? s.workout_assignment_id,
+      program_name: source?.program_name ?? s.program_name,
+      workout_day: source?.workout_day ?? s.workout_day,
+      exercises: source?.exercises ?? s.prescribed?.exercises ?? [],
+      last,
+      now: new Date(s.started_at),
+    }),
+    session_id: s.id,
+  };
 }
 
 export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, openSession, onSaved }: {
@@ -123,6 +126,7 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
   onSaved: () => void;
 }) {
   const [open, setOpen] = useState<WorkoutDraft | null>(null);
+  const [active, setActive] = useState<MeWorkoutSession | null>(null);
   const [saved, setSaved] = useState<WorkoutDraft | null>(null);
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,9 +148,10 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
     return () => window.removeEventListener('popstate', onPop);
   }, [open]);
 
-  const show = (draft: WorkoutDraft) => {
+  const show = (draft: WorkoutDraft, session: MeWorkoutSession | null) => {
     window.history.pushState({ guidedWorkout: true }, '');
     pushed.current = true;
+    setActive(session);
     setOpen(draft);
   };
 
@@ -159,14 +164,14 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
         assignment_id: source.assignment_id,
         day_of_week: dayOfWeek,
       });
-      if (keep) { show(keep); return; }
+      if (keep) { show({ ...keep, session_id: data.session.id }, data.session); return; }
       let last: MeLastPerformance = {};
       try {
         last = (await api.me.lastPerformance(source.exercises.map((x) => x.name))).data ?? {};
       } catch {
         // Without history the sets start from the plan's targets — still a workout.
       }
-      show(draftFromSession(data.session, source, last));
+      show(draftFromSession(data.session, source, last), data.session);
     } catch (err) {
       setError(err instanceof ApiError && err.code === 'SELF_WORKOUT_NOT_ALLOWED'
         ? 'Your trainer has not enabled self workouts.'
@@ -179,7 +184,7 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
   const resumeOpen = async () => {
     if (!openSession) return;
     const stored = storedDraft(openSession);
-    if (stored) { show(stored); return; }
+    if (stored) { show(stored, openSession); return; }
     const exercises = openSession.prescribed?.exercises ?? [];
     if (exercises.length === 0) return;
     setStarting('resume');
@@ -190,7 +195,7 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
       } catch {
         // The prescription is enough to start.
       }
-      show(draftFromSession(openSession, null, last));
+      show(draftFromSession(openSession, null, last), openSession);
     } finally {
       setStarting(null);
     }
@@ -216,7 +221,7 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
       sub: `${saved.title} · ${n} set${n === 1 ? '' : 's'} logged`,
       icon: <Play size={18} fill="currentColor" aria-hidden />,
       run: () => {
-        if (openSession) show(saved);
+        if (openSession) show(saved, openSession);
         else void start('resume', sourceFromDraft(saved), null, saved);
       },
     };
@@ -300,7 +305,7 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
       )}
 
       {open && (
-        <GuidedWorkout initial={open} onClose={close} onSaved={() => { setSaved(null); onSaved(); }} />
+        <GuidedWorkout initial={open} session={active} onClose={close} onSaved={() => { setSaved(null); onSaved(); }} />
       )}
     </>
   );
