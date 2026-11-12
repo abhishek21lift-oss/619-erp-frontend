@@ -14,7 +14,7 @@ import type {
   FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeCoach, MeMembership, MeSessionBalance, MePayment, MeAttendance, MeMeasurement, MeSession,
-  MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
+  MeWorkoutState, MeWorkoutSession, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
   MeRequestState, MePauseInput, MeFitnessHistory,
   MeFormCheck, SessionFeedback, SessionFeedbackInput,
@@ -949,7 +949,7 @@ export const me = {
     }),
   cancelBooking: (id: string) =>
     http<{ data: { id: string; status: string } }>(`/api/me/booking/${id}`, { method: 'DELETE' }),
-  workout: () => http<{ data: MeWorkoutPlan[] }>('/api/me/workout'),
+  workout: () => http<MeWorkoutState>('/api/me/workout'),
   diet: () => http<{ data: MeDietPlan[] }>('/api/me/diet'),
   checkins: () => http<{ data: { this_week: string; checkins: MeCheckin[] } }>('/api/me/checkins'),
   /** This week's check-in. The server picks the week; nothing here names a client. */
@@ -1017,6 +1017,29 @@ export const me = {
   /** Save a finished workout. 201 when created, 200 when the request id was already logged. */
   logWorkout: (body: MeWorkoutLogInput) =>
     http<{ data: MeWorkoutSummary }>('/api/me/workouts', { method: 'POST', body: JSON.stringify(body) }),
+  /**
+   * Start today's workout, or resume the one already open. The server owns the
+   * decision: the permission, the prescription snapshot and the single open
+   * session. 403 SELF_WORKOUT_NOT_ALLOWED when the trainer has not enabled it.
+   */
+  startWorkout: (body: { assignment_id?: string | null; day_of_week?: number | null } = {}) =>
+    http<{ data: { session: MeWorkoutSession; resumed: boolean } }>('/api/me/workout/sessions', {
+      method: 'POST', body: JSON.stringify(body),
+    }),
+  /** Autosave the in-progress workout. Safe on every change; 409 once submitted. */
+  autosaveWorkout: (id: string, draft: unknown) =>
+    http<{ data: { saved_at: string } }>(`/api/me/workout/sessions/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ draft }),
+    }),
+  /** Finalise the workout and queue it for the trainer's review. */
+  submitWorkout: (id: string, draft?: unknown) =>
+    http<{ data: { created: boolean; session_id: string; summary: MeWorkoutSummary } }>(
+      `/api/me/workout/sessions/${encodeURIComponent(id)}/submit`,
+      { method: 'POST', body: JSON.stringify(draft === undefined ? {} : { draft }) },
+    ),
+  /** Discard an open workout. The row stays as 'abandoned'; nothing is deleted. */
+  discardWorkout: (id: string) =>
+    http<void>(`/api/me/workout/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   /** Module 5: countdown, seven-domain comparison, daily habits, goal and workouts in one read. */
   progress: (params: { date?: string; days?: number } = {}) =>
     http<{ data: ProgressDashboard }>(`/api/me/progress${qsOf(params)}`),

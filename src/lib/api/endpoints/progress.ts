@@ -10,6 +10,7 @@ import type {
   ConsentRecord, InformedConsent, InformedConsentActivity, MedicalClearance, ParqDocument,
   ParqDocumentType, ParqForm, ParqFormDetail, ParqGateStatus, WorkoutPreviousExercise,
   WorkoutProgressPoint, WorkoutSession, WorkoutSessionDetail, WorkoutSessionExercise,
+  WorkoutPendingReview, WorkoutReviewDecision,
   WorkoutSet, WorkoutVolumePoint, TodayRoster, TrainingAnalytics, MuscleLandmark,
   ProgressRetestSettings, ProgressRetestOverview, ProgressRetestRoster, ProgressRetestSchedule,
   ProgressComparison,
@@ -245,6 +246,15 @@ export const progress = {
     },
     previous: (params: { client_id: string; exercise_id?: string; exercise_name?: string; exclude_session_id?: string }) =>
       http<{ data: WorkoutPreviousExercise | null }>(`/api/pt-os/workout-log/previous${buildQs(params)}`),
+    /** Member workouts submitted and not yet reviewed, newest first. */
+    pendingReview: (params?: { client_id?: string }) =>
+      http<{ data: WorkoutPendingReview[] }>(`/api/pt-os/workout-log/pending-review${buildQs(params)}`),
+    /** Approve or ask for changes. The member is notified with the feedback. */
+    reviewSession: (id: string, body: { decision: WorkoutReviewDecision; feedback?: string }) =>
+      http<{ data: { id: string; client_id: string; review_status: WorkoutReviewDecision; review_feedback: string | null } }>(
+        `/api/pt-os/workout-log/sessions/${id}/review`,
+        { method: 'POST', body: JSON.stringify(body) },
+      ),
     progress: (params: { client_id: string; exercise_id?: string; exercise_name?: string }) =>
       http<{ data: WorkoutProgressPoint[] }>(`/api/pt-os/workout-log/progress${buildQs(params)}`),
     volumeSummary: (params: { client_id: string; group_by?: 'week' | 'month' }) =>

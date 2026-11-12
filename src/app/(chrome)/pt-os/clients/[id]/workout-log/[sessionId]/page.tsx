@@ -315,7 +315,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
 
   const handleRemovePlanned = async (ex: WorkoutPlannedExercise) => {
     const planned = session?.planned;
-    if (!planned) return;
+    if (!planned?.plan_id) {
+      toast.error('This session has no linked plan to remove from.');
+      return;
+    }
+    if (!ex.row_id) return;
     const week = planned.week ?? 1;
     const scope = week > 1 ? `from Week ${week} onwards` : 'in every week';
     if (!window.confirm(
