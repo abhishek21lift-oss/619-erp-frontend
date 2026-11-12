@@ -237,7 +237,7 @@ describe('FitnessDashboard', () => {
     render(<FitnessDashboard scores={EMPTY} />);
     expect(screen.getByText('Partial · 0 of 7 steps scored')).toBeTruthy();
     expect(
-      screen.getByText('No steps scored yet — no overall score.'),
+      screen.getByText('No overall score for this test.'),
     ).toBeTruthy();
     const data = radarSpy.mock.calls[0][0].data as { category: string; score: number | null }[];
     expect(data.every((d) => d.score == null)).toBe(true);

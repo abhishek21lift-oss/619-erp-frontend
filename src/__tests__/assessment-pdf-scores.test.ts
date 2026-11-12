@@ -57,6 +57,18 @@ describe('assessment report — score presentation', () => {
     expect(html).not.toContain('72 (');
   });
 
+  it('withholds 100-point scores from a v1 row instead of inventing fractions', () => {
+    const html = generateAssessmentReportHTML(
+      { ...base, scoring_formula_version: 1, overall_points: null, overall_max: null },
+      'Test Client',
+    );
+    expect(html).not.toContain('12 / 15');
+    expect(html).not.toContain('20 / 20');
+    expect(html).toContain('<label>Strength</label><p>—</p>');
+    expect(html).toContain('Scored on the previous formula');
+    expect(html).not.toContain('<div class="big">72</div>');
+  });
+
   it('a missing step prints as an em dash, not zero and not a denominator', () => {
     const html = generateAssessmentReportHTML({ ...base, cardio_score_computed: null }, 'Test Client');
     expect(html).toContain('<label>Cardio</label><p>—</p>');

@@ -267,7 +267,7 @@ export function FitnessDashboard({ scores, vitals, anthropometric, athlete = fal
             ) : (
               <p className="mt-4 text-center text-[12px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                 {coverage.available === 0 || overallMax == null
-                  ? 'No steps scored yet — no overall score.'
+                  ? 'No overall score for this test.'
                   : `${coverage.available} of 7 steps · ${overallPoints ?? 0}/${overallMax} pts`}
               </p>
             )}

@@ -84,6 +84,7 @@ describe('progress radar card', () => {
     route([{
       id: 'a9', client_id: 'c1', assessment_date: '2026-10-08',
       cardio_score_computed: '10', overall_fitness_score: '66',
+      overall_points: '13.2', overall_max: '20',
     }]);
     render(<ProgressRadarCard />);
     expect(await screen.findByText('Overall 66/100')).toBeTruthy();
@@ -92,6 +93,23 @@ describe('progress radar card', () => {
     expect(screen.getByRole('link', { name: /open assessment/i }).getAttribute('href'))
       .toBe('/pt-os/assessment?client_id=c1');
     expect(screen.queryByText(/No fitness tests yet/i)).toBeNull();
+  });
+
+  it('does not plot a legacy v1 row as 100-point step scores', async () => {
+    // v1 stored 0-100 component averages with no denominator; 55 "strength"
+    // would otherwise be plotted as 55 of 15 points. The card names the test
+    // but claims no radar and no overall.
+    route([{
+      id: 'a7', client_id: 'c1', assessment_date: '2026-10-19', assessment_number: 1,
+      cardio_score_computed: '20', strength_score_computed: '55',
+      endurance_score_computed: '20', overall_fitness_score: '38',
+      overall_points: null, overall_max: null,
+    }]);
+    render(<ProgressRadarCard />);
+    expect(await screen.findByText('Asha Nair')).toBeTruthy();
+    expect(screen.queryByTestId('radar-mock')).toBeNull();
+    expect(screen.queryByText(/Overall 38\/100/)).toBeNull();
+    expect(screen.getByText(/scored on the old formula/i)).toBeTruthy();
   });
 
   it('ignores junk rows rather than letting them take the card down', async () => {

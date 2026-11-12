@@ -40,6 +40,13 @@ function pointsLabel(points: unknown, max: number): string {
   return `${n} / ${max}`;
 }
 
+/** Step points only exist on the 100-point framework. A v1 row stored 0-100
+ *  component averages with no denominator; showing 55 against a 15-point step
+ *  would invent a fraction nobody measured. */
+function stepPoints(assessment: Row, points: unknown, max: number): string {
+  return assessment.overall_max == null ? '—' : pointsLabel(points, max);
+}
+
 function field(label: string, value: string): string {
   return `<div class="field"><label>${label}</label><p>${value}</p></div>`;
 }
@@ -107,7 +114,7 @@ function flexibilitySection(assessment: Row): string {
       field('Test 1 Classification', v(assessment.flexibility_category)),
       field('Test 2 Classification', v(assessment.flexibility_category_2)),
       field('Asymmetry Detected', assessment.has_asymmetry ? 'Yes' : 'No'),
-      field('Combined Flexibility Score', pointsLabel(assessment.mobility_score_computed, STEP_MAX.flexibility)),
+      field('Combined Flexibility Score', stepPoints(assessment, assessment.mobility_score_computed, STEP_MAX.flexibility)),
     ].join(''));
   }
 
@@ -230,7 +237,7 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Test 1 Classification', strengthClassification(assessment.strength_category, sd.test1)),
     field('Test 2', v(assessment.strength_exercise_2)),
     field('Test 2 Classification', strengthClassification(assessment.strength_category_2, sd.test2)),
-    field('Combined Strength Score', pointsLabel(assessment.strength_score_computed, STEP_MAX.strength)),
+    field('Combined Strength Score', stepPoints(assessment, assessment.strength_score_computed, STEP_MAX.strength)),
     field('Norm', 'K11 relative strength (1RM ÷ body weight), by sex and age at testing. Supplied tables cover Bench Press and Leg Press only.'),
   ].join(''));
 
@@ -239,21 +246,22 @@ export function generateAssessmentReportHTML(assessment: Row, clientName: string
     field('Test 1 Classification', v(assessment.endurance_category)),
     field('Test 2', v(assessment.endurance_test_type_2)),
     field('Test 2 Classification', v(assessment.endurance_category_2)),
-    field('Combined Endurance Score', pointsLabel(assessment.endurance_score_computed, STEP_MAX.endurance)),
+    field('Combined Endurance Score', stepPoints(assessment, assessment.endurance_score_computed, STEP_MAX.endurance)),
   ].join(''));
 
   const flexibility = flexibilitySection(assessment);
 
   const dashboard = `<div class="dashboard">
-    <div class="dscore"><label>Overall Fitness Score</label><div class="big">${v(assessment.overall_fitness_score)}</div></div>
+    <div class="dscore"><label>Overall Fitness Score</label><div class="big">${assessment.overall_max == null ? '—' : v(assessment.overall_fitness_score)}</div></div>
+    ${assessment.overall_max == null ? '<p style="margin:0;max-width:220px;font-size:12px;color:rgba(255,255,255,0.7)">Scored on the previous formula — this test has no 100-point step or overall scores.</p>' : ''}
     <div class="dgrid">
-      ${field('Blood Pressure', pointsLabel(assessment.bp_points, STEP_MAX.bp))}
-      ${field('Anthropometrics', pointsLabel(assessment.anthropometric_points, STEP_MAX.anthropometric))}
-      ${field('Body Composition', pointsLabel(assessment.body_composition_score, STEP_MAX.bodyComposition))}
-      ${field('Cardio', pointsLabel(assessment.cardio_score_computed, STEP_MAX.cardio))}
-      ${field('Strength', pointsLabel(assessment.strength_score_computed, STEP_MAX.strength))}
-      ${field('Endurance', pointsLabel(assessment.endurance_score_computed, STEP_MAX.endurance))}
-      ${field('Flexibility', pointsLabel(assessment.mobility_score_computed, STEP_MAX.flexibility))}
+      ${field('Blood Pressure', stepPoints(assessment, assessment.bp_points, STEP_MAX.bp))}
+      ${field('Anthropometrics', stepPoints(assessment, assessment.anthropometric_points, STEP_MAX.anthropometric))}
+      ${field('Body Composition', stepPoints(assessment, assessment.body_composition_score, STEP_MAX.bodyComposition))}
+      ${field('Cardio', stepPoints(assessment, assessment.cardio_score_computed, STEP_MAX.cardio))}
+      ${field('Strength', stepPoints(assessment, assessment.strength_score_computed, STEP_MAX.strength))}
+      ${field('Endurance', stepPoints(assessment, assessment.endurance_score_computed, STEP_MAX.endurance))}
+      ${field('Flexibility', stepPoints(assessment, assessment.mobility_score_computed, STEP_MAX.flexibility))}
     </div>
   </div>`;
 

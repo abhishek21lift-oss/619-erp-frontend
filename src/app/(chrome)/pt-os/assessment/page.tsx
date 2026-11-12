@@ -797,7 +797,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
               </div>
               <div className="space-y-2 sm:max-h-[400px] sm:overflow-y-auto">
                 {sortedHistory.map((a) => {
-                  const overall = scoreNum(a.overall_fitness_score);
+                  // Only a v2 row stores a denominator; a v1 component average
+                  // cannot be placed on the 100-point band scale.
+                  const overall = scoreNum(a.overall_max) == null ? null : scoreNum(a.overall_fitness_score);
                   return (
                   <div key={String(a.id)} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
                     <div>
