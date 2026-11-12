@@ -145,8 +145,8 @@ describe('band tokens', () => {
 describe('FitnessDashboard', () => {
   it('complete assessment keeps working: seven tiles, tier, complete label, full radar', () => {
     render(<FitnessDashboard scores={FULL} />);
-    expect(screen.getByText('Complete · 7 of 7 steps scored')).toBeTruthy();
-    expect(screen.getByText('Complete assessment — all 7 steps scored.')).toBeTruthy();
+    expect(screen.getByText('7 of 7 steps scored · 87 of 100 points')).toBeTruthy();
+    expect(screen.queryByText('No overall tier')).toBeNull();
     expect(screen.getByText('87')).toBeTruthy();
     expect(screen.getAllByText('Optimal').length).toBeGreaterThan(0);
     const data = radarSpy.mock.calls[0][0].data as { category: string; score: number | null }[];
@@ -169,10 +169,9 @@ describe('FitnessDashboard', () => {
         }}
       />,
     );
-    expect(screen.getByText('All steps scored · measured on 92.5/100')).toBeTruthy();
-    expect(screen.getByText('All 7 steps scored — this battery measured 92.5 of 100 points.')).toBeTruthy();
+    expect(screen.getByText('7 of 7 steps scored · 73.5 of 92.5 points')).toBeTruthy();
+    expect(screen.getByText('No overall tier')).toBeTruthy();
     expect(screen.queryByText('Partial · 7 of 7 steps scored')).toBeNull();
-    expect(screen.getByText('7 of 7 steps · 73.5/92.5 pts')).toBeTruthy();
     expect(screen.getByText('7.5 / 15')).toBeTruthy();
     expect(screen.queryByText('Optimal')).toBeNull();
     expect(screen.getByText('79')).toBeTruthy();
@@ -202,9 +201,8 @@ describe('FitnessDashboard', () => {
 
   it('partial assessment: points over fixed max, coverage shown, no overall tier, radar nulls not zeros', () => {
     render(<FitnessDashboard scores={PARTIAL} />);
-    expect(screen.getByText('Partial · 4 of 7 steps scored')).toBeTruthy();
-    expect(screen.getByText('Partial assessment — 4 of 7 steps scored.')).toBeTruthy();
-    expect(screen.getByText('4 of 7 steps · 40/55 pts')).toBeTruthy();
+    expect(screen.getByText('4 of 7 steps scored · 40 of 55 points')).toBeTruthy();
+    expect(screen.getByText('No overall tier')).toBeTruthy();
     expect(screen.queryByText('Optimal')).toBeNull();
     // The points and the step denominator are visible; the three missing tiles
     // keep the — indicator rather than a zero.
@@ -224,18 +222,17 @@ describe('FitnessDashboard', () => {
     );
     expect(screen.getByText('7.5 / 15')).toBeTruthy();
     expect(screen.queryByText('15 / 15')).toBeNull();
-    expect(screen.getByText('Partial · 1 of 7 steps scored')).toBeTruthy();
+    expect(screen.getByText('1 of 7 steps scored · 7.5 of 7.5 points')).toBeTruthy();
   });
 
   it('single high step is flagged partial, never presented as a full result', () => {
     render(<FitnessDashboard scores={SINGLE_HIGH} />);
-    expect(screen.getByText('Partial · 1 of 7 steps scored')).toBeTruthy();
-    expect(screen.getByText('1 of 7 steps · 20/20 pts')).toBeTruthy();
+    expect(screen.getByText('1 of 7 steps scored · 20 of 20 points')).toBeTruthy();
   });
 
   it('no scores: no meaningful overall, missing-data explanation shown', () => {
     render(<FitnessDashboard scores={EMPTY} />);
-    expect(screen.getByText('Partial · 0 of 7 steps scored')).toBeTruthy();
+    expect(screen.getByText('No overall tier')).toBeTruthy();
     expect(
       screen.getByText('No steps scored yet — no overall score.'),
     ).toBeTruthy();
