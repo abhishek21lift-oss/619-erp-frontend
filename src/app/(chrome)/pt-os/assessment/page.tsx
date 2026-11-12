@@ -717,10 +717,8 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   return (
     <PageContainer>
       <PageHero
-        compact
         icon={<ClipboardCheck size={18} />}
         title="Fitness Testing"
-        subtitle="Seven-step fitness assessment"
       >
         {!reviewMode && !lastSaved && <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />}
       </PageHero>
