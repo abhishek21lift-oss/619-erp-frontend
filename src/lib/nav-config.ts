@@ -212,7 +212,6 @@ export const SETTINGS_GROUP: NavGroup = {
   label: 'Settings',
   icon: 'Settings',
   items: [
-    { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
     { href: '/support',                   label: 'Support',              icon: 'LifeBuoy' },
     { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['trainer'] },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['trainer'], feature: 'passkeys' },

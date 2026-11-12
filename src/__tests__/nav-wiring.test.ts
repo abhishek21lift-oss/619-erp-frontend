@@ -52,11 +52,17 @@ describe('support is reachable from the sidebar settings group', () => {
   });
 });
 
-describe('the topbar does not duplicate sidebar destinations', () => {
-  it('renders neither the settings nor the profile menu', () => {
-    expect(shell).not.toContain('topbar-settings-menu');
-    expect(shell).not.toContain('topbar-profile-menu');
-    expect(shell).not.toContain('SETTINGS_GROUP');
+describe('the account opens from the topbar avatar', () => {
+  it('moves My Profile out of the sidebar Settings group', () => {
+    expect(SETTINGS_GROUP.items.map((i) => i.href)).not.toContain('/settings/profile');
+  });
+
+  it('renders the profile menu beside the bell', () => {
+    const profileMenu = read('components', 'TopbarProfileMenu.tsx');
+    expect(shell).toContain('TopbarProfileMenu');
+    expect(profileMenu).toContain('/settings/profile');
+    expect(profileMenu).toContain('/settings/profile?tab=preferences');
+    expect(profileMenu).toContain('Log out');
   });
 });
 

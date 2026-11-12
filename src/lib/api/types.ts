@@ -3472,6 +3472,70 @@ export type MeMeasurement = {
   shoulders_cm?: number | string | null;
 };
 
+/** One stored fitness assessment, as the member portal may read it. */
+export type MeFitnessAssessment = {
+  id: string;
+  assessment_number: number | null;
+  assessment_date: string | null;
+  assessment_type: string | null;
+  /** Stored by the trainer's scoring engine; never recomputed in the portal. */
+  overall_fitness_score: number | string | null;
+  overall_points: number | string | null;
+  overall_max: number | string | null;
+  scoring_formula_version: number | null;
+  /**
+   * Only a complete 100-point battery earns a tier. Null on a partial row —
+   * the number is still a percentage, but not a headline category.
+   */
+  tier: 'Optimal' | 'Fit' | 'Moderate' | 'Needs Attention' | null;
+  body_composition_score: number | string | null;
+  cardio_score_computed: number | string | null;
+  strength_score_computed: number | string | null;
+  endurance_score_computed: number | string | null;
+  /** The stored column name predates the rename; this is the flexibility step. */
+  mobility_score_computed: number | string | null;
+  weight: number | string | null;
+  bmi: number | string | null;
+  body_fat_pct: number | string | null;
+  muscle_mass_pct: number | string | null;
+  lean_body_mass_kg: number | string | null;
+  fat_mass_kg: number | string | null;
+  waist_cm: number | string | null;
+  visceral_fat: number | string | null;
+  body_water_pct: number | string | null;
+  body_comp_method: string | null;
+  cardio_test_type: string | null;
+  vo2_max: number | string | null;
+  cardio_category: string | null;
+  strength_exercise: string | null;
+  strength_exercise_2: string | null;
+  strength_category: string | null;
+  strength_category_2: string | null;
+  endurance_test_type: string | null;
+  endurance_test_type_2: string | null;
+  endurance_category: string | null;
+  endurance_category_2: string | null;
+  flexibility_category: string | null;
+  flexibility_category_2: string | null;
+  has_asymmetry: boolean | null;
+  testing_conditions: string | null;
+};
+
+/** A separate mobility screening, read-only like the assessment beside it. */
+export type MeMobilityAssessment = {
+  id: string;
+  assessment_date: string | null;
+  mobility_score: number | string | null;
+  mobility_category: string | null;
+};
+
+export type MeFitnessHistory = {
+  client: { name: string; gender: string | null } | null;
+  /** Newest first. */
+  assessments: MeFitnessAssessment[];
+  latest_mobility: MeMobilityAssessment | null;
+};
+
 /** Consecutive active weeks. `current` survives a week still in progress. */
 export type MeStreak = { current: number; longest: number; this_week: boolean };
 

@@ -16,7 +16,7 @@ import type {
   MeProfile, MeCoach, MeMembership, MeSessionBalance, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutPlan, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
-  MeRequestState, MePauseInput,
+  MeRequestState, MePauseInput, MeFitnessHistory,
   MeFormCheck, SessionFeedback, SessionFeedbackInput,
   MeBooking, MeBookingAvailability,
   ProgressRetestOverview, ProgressComparison, ProgressHabitLog, ProgressHabitDashboard,
@@ -1022,6 +1022,8 @@ export const me = {
     http<{ data: ProgressDashboard }>(`/api/me/progress${qsOf(params)}`),
   retest: () => http<{ data: ProgressRetestOverview }>('/api/me/progress/retest'),
   comparison: () => http<{ data: ProgressComparison }>('/api/me/progress/comparison'),
+  /** Read-only: the member's own fitness assessments, newest first, plus the latest mobility screening. */
+  fitnessTests: () => http<{ data: MeFitnessHistory }>('/api/me/fitness-tests'),
   habitLogs: (from: string, to: string) =>
     http<{ data: ProgressHabitLog[] }>(`/api/me/habits${qsOf({ from, to })}`),
   todayHabit: (date?: string) =>
