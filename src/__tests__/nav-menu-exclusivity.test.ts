@@ -17,24 +17,33 @@ const read = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 describe('the shell keeps one menu open at a time', () => {
   const shell = read('components', 'AppShell.tsx');
 
-  it('leaves one top-bar menu after settings and profile moved to the sidebar', () => {
-    expect(shell).toMatch(/const \[notifOpen, setNotifOpen\] = useState\(false\)/);
+  it('keeps the bell and the avatar in one menu id', () => {
+    expect(shell).toMatch(/const \[topbarMenu, setTopbarMenu\] = useState<'notifications' \| 'profile' \| null>\(null\)/);
     expect(shell).toContain('topbar-notifications-menu');
-    expect(shell).not.toMatch(/topbar-settings-menu|topbar-profile-menu/);
-    expect(shell).not.toMatch(/settingsOpen|profileOpen/);
+    expect(shell).toContain('TopbarProfileMenu');
     // A toggle that closes what it opened: click-again closes.
-    expect(shell).toMatch(/setNotifOpen\(v => !v\)/);
+    expect(shell).toMatch(/setTopbarMenu\(v => v === 'notifications' \? null : 'notifications'\)/);
+    const profile = read('components', 'TopbarProfileMenu.tsx');
+    expect(profile).toContain('id="topbar-profile-menu"');
+    expect(profile).toMatch(/onOpenChange\(!open\)/);
   });
 
   it('closes on an outside click and on Escape', () => {
     expect(shell).toMatch(/addEventListener\('mousedown'/);
     expect(shell).toMatch(/addEventListener\('keydown'/);
     // Escape still closes it; closing now also returns focus to the trigger.
-    expect(shell).toMatch(/if \(e\.key === 'Escape'\) \{[\s\S]{0,120}setNotifOpen\(false\);/);
-    expect(shell).toMatch(/setNotifOpen\(false\);[\s\S]{0,80}menuTriggerRef\.current\?\.focus\(\)/);
+    expect(shell).toMatch(/if \(e\.key === 'Escape'\) \{[\s\S]{0,120}setTopbarMenu\(null\);/);
+    expect(shell).toMatch(/setTopbarMenu\(null\);[\s\S]{0,80}menuTriggerRef\.current\?\.focus\(\)/);
     // Both listeners come off on unmount.
     expect(shell).toContain("removeEventListener('mousedown'");
     expect(shell).toContain("removeEventListener('keydown'");
+
+    // The avatar menu closes the same ways, and returns focus to itself.
+    const profile = read('components', 'TopbarProfileMenu.tsx');
+    expect(profile).toContain("addEventListener('mousedown'");
+    expect(profile).toContain("addEventListener('focusin'");
+    expect(profile).toMatch(/onOpenChange\(false\);[\s\S]{0,80}triggerRef\.current\?\.focus\(\)/);
+    expect(profile).toContain("removeEventListener('mousedown'");
   });
 });
 

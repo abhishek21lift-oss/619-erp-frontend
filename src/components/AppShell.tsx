@@ -20,6 +20,7 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
+import TopbarProfileMenu from '@/components/TopbarProfileMenu';
 import TrialBanner from '@/components/TrialBanner';
 import PasskeySetupPrompt from '@/components/auth/PasskeySetupPrompt';
 import NativeBiometricPrompt from '@/components/auth/NativeBiometricPrompt';
@@ -120,9 +121,11 @@ function AppShellContent({ children }: AppShellProps) {
   const { features } = useFeatures();
   const searchPages = useMemo(() => buildSearchPages(features, user?.role), [features, user?.role]);
 
-  // The top bar has one menu left: notifications. Settings and the profile
-  // moved to the sidebar, so a single boolean is the whole state.
-  const [notifOpen, setNotifOpen] = useState(false);
+  // One top-bar menu at a time: the bell and the avatar share this id, so
+  // opening one closes the other instead of stacking two panels.
+  const [topbarMenu, setTopbarMenu] = useState<'notifications' | 'profile' | null>(null);
+  const notifOpen = topbarMenu === 'notifications';
+  const setProfileOpen = useCallback((next: boolean) => setTopbarMenu(next ? 'profile' : null), []);
   // Desktop sidebar starts expanded; the user's manual collapse/expand choice
   // is restored from localStorage by the Sidebar on mount. No hover auto-toggle.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -211,7 +214,7 @@ function AppShellContent({ children }: AppShellProps) {
         setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
       } catch { /* ignore */ }
     }
-    if (n.link) { setNotifOpen(false); router.push(n.link); }
+    if (n.link) { setTopbarMenu(null); router.push(n.link); }
   };
 
   useEffect(() => {
@@ -221,10 +224,10 @@ function AppShellContent({ children }: AppShellProps) {
     // alike.
     const isInside = (target: Node) => Boolean(notifRef.current?.contains(target));
     const handleClickOutside = (e: MouseEvent) => {
-      if (!isInside(e.target as Node)) setNotifOpen(false);
+      if (!isInside(e.target as Node)) setTopbarMenu(null);
     };
     const handleFocusIn = (e: FocusEvent) => {
-      if (!isInside(e.target as Node)) setNotifOpen(false);
+      if (!isInside(e.target as Node)) setTopbarMenu(null);
     };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('focusin', handleFocusIn);
@@ -241,7 +244,7 @@ function AppShellContent({ children }: AppShellProps) {
     if (!notifOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setNotifOpen(false);
+        setTopbarMenu(null);
         menuTriggerRef.current?.focus();
       }
     };
@@ -396,7 +399,7 @@ function AppShellContent({ children }: AppShellProps) {
                     aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                     aria-expanded={notifOpen}
                     aria-controls="topbar-notifications-menu"
-                    onClick={(e) => { menuTriggerRef.current = e.currentTarget; setNotifOpen(v => !v); }}
+                    onClick={(e) => { menuTriggerRef.current = e.currentTarget; setTopbarMenu(v => v === 'notifications' ? null : 'notifications'); }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="topbar-hit relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 hover:bg-[var(--topbar-control-hover)]"
@@ -499,7 +502,7 @@ function AppShellContent({ children }: AppShellProps) {
 
                       {/* Footer */}
                       <div className="border-t border-[var(--border)] px-4 py-2.5">
-                        <Link href="/engagement/notifications" onClick={() => setNotifOpen(false)}
+                        <Link href="/engagement/notifications" onClick={() => setTopbarMenu(null)}
                           className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--brand)] hover:text-[var(--text-primary)] transition-colors">
                           View all notifications
                           <ChevronRight size={11} />
@@ -511,8 +514,13 @@ function AppShellContent({ children }: AppShellProps) {
                 </div>
               </div>
 
-              {/* The profile menu is gone: My Profile, Security, Subscription,
-                  Support and Logout all live in the sidebar. */}
+              {/* ── Account ──
+                  The avatar sits last, where the signed-in person looks for
+                  their own account. It shares the shell's single menu id with
+                  the bell, so only one panel can be open. */}
+              <div className="ml-0.5 shrink-0">
+                <TopbarProfileMenu open={topbarMenu === 'profile'} onOpenChange={setProfileOpen} />
+              </div>
             </m.div>
           </m.header>
 

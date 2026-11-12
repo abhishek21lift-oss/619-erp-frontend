@@ -92,13 +92,19 @@ describe('the bottom nav shows keyboard focus', () => {
 });
 
 describe('the top bar exposes which menu is open', () => {
-  it('keeps only the notification menu; settings and profile live in the sidebar', () => {
+  it('exposes the bell and the avatar menu, one at a time', () => {
     expect(shell).toMatch(/aria-expanded=\{notifOpen\}/);
     expect(shell).toContain('aria-controls="topbar-notifications-menu"');
     expect(shell).toContain('id="topbar-notifications-menu"');
     expect(shell).not.toContain('topbar-settings-menu');
-    expect(shell).not.toContain('topbar-profile-menu');
-    expect(shell).not.toMatch(/settingsOpen|profileOpen/);
+    expect(shell).not.toMatch(/settingsOpen/);
+    expect(shell).toContain('TopbarProfileMenu');
+
+    const profile = read('components', 'TopbarProfileMenu.tsx');
+    expect(profile).toContain('aria-expanded={open}');
+    expect(profile).toContain('aria-controls="topbar-profile-menu"');
+    expect(profile).toContain('id="topbar-profile-menu"');
+    expect(profile).toContain('aria-label="Account menu"');
   });
 
   it('returns focus to the trigger when Escape closes a menu', () => {
