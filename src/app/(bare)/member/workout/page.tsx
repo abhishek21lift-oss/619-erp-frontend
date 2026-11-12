@@ -20,7 +20,7 @@ import {
   Card, EmptyState, LoadError, MC, PageSkeleton, PageTitle, Section, EASE, longDate,
 } from '@/components/member/MemberUI';
 import { api } from '@/lib/api';
-import type { MeSession, MeSessionSet, MeWorkoutExercise, MeWorkoutPlan } from '@/lib/api';
+import type { MeSession, MeSessionSet, MeWorkoutExercise, MeWorkoutPlan, MeWorkoutSession } from '@/lib/api';
 import { rgba } from '@/lib/palette';
 import WorkoutLauncher from '@/components/member/WorkoutLauncher';
 import { describePrescription, trackingKind } from '@/lib/training-tracking';
@@ -51,6 +51,8 @@ export default function MemberWorkoutPage() {
 
 function WorkoutBody() {
   const [plans, setPlans] = useState<MeWorkoutPlan[] | null>(null);
+  const [allowSelfWorkout, setAllowSelfWorkout] = useState(false);
+  const [openSession, setOpenSession] = useState<MeWorkoutSession | null>(null);
   const [failed, setFailed] = useState(false);
   // Sessions load on their own: a failure there must not blank the programme,
   // so it only hides the history section.
@@ -60,10 +62,23 @@ function WorkoutBody() {
     .then((r) => setSessions(r.data ?? []))
     .catch(() => setSessions([]));
 
+  const loadWorkout = () => api.me.workout()
+    .then((r) => {
+      setPlans(r.data ?? []);
+      setAllowSelfWorkout(r.allow_self_workout === true);
+      setOpenSession(r.open_session ?? null);
+    })
+    .catch(() => setFailed(true));
+
   useEffect(() => {
     let alive = true;
     api.me.workout()
-      .then((r) => { if (alive) setPlans(r.data ?? []); })
+      .then((r) => {
+        if (!alive) return;
+        setPlans(r.data ?? []);
+        setAllowSelfWorkout(r.allow_self_workout === true);
+        setOpenSession(r.open_session ?? null);
+      })
       .catch(() => { if (alive) setFailed(true); });
     api.me.sessions()
       .then((r) => { if (alive) setSessions(r.data ?? []); })
@@ -74,11 +89,21 @@ function WorkoutBody() {
   if (failed) return <><PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme" /><LoadError what="programme" /></>;
   if (!plans) return <PageSkeleton />;
 
+  const gated = !allowSelfWorkout && !openSession;
+  const note = gated ? (
+    <p className="mb-4 rounded-[14px] px-3.5 py-3 text-[12px] leading-relaxed"
+      style={{ background: 'var(--bg-subtle)', color: MC.muted }}>
+      Your trainer controls self workouts. Ask them to enable it.
+    </p>
+  ) : null;
+
   if (plans.length === 0) {
     return (
       <>
         <PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme" />
-        <WorkoutLauncher plans={[]} sessions={sessions} onSaved={() => void loadSessions()} />
+        {note}
+        <WorkoutLauncher plans={[]} sessions={sessions} allowSelfWorkout={allowSelfWorkout}
+          openSession={openSession} onSaved={() => { void loadWorkout(); void loadSessions(); }} />
         <div className="mb-5">
           <EmptyState
             icon={<Dumbbell size={20} />}
@@ -95,7 +120,9 @@ function WorkoutBody() {
     <>
       <PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme"
  />
-      <WorkoutLauncher plans={plans} sessions={sessions} onSaved={() => void loadSessions()} />
+      {note}
+      <WorkoutLauncher plans={plans} sessions={sessions} allowSelfWorkout={allowSelfWorkout}
+        openSession={openSession} onSaved={() => { void loadWorkout(); void loadSessions(); }} />
       {plans.map((p) => <PlanBlock key={p.assignment_id} plan={p} titled={plans.length > 1} />)}
       <SessionHistory sessions={sessions} />
     </>
