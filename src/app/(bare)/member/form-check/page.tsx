@@ -205,7 +205,7 @@ function CheckCard({ check }: { check: MeFormCheck }) {
           <span className="shrink-0 rounded-full px-2 py-1 text-[10px] font-[750]"
             style={{
               background: reviewed ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)',
-              color: reviewed ? MC.success : MC.warning,
+              color: reviewed ? MC.successText : MC.warningText,
             }}>
             {reviewed ? 'Reviewed' : 'Waiting'}
           </span>
@@ -233,7 +233,7 @@ function CheckCard({ check }: { check: MeFormCheck }) {
                     className="flex w-full items-start gap-2 rounded-[11px] px-2.5 py-2 text-left"
                     style={{ background: 'var(--bg-subtle)' }}>
                     <span className="mt-[1px] inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-[800] tabular-nums"
-                      style={{ background: 'rgba(59,130,246,0.14)', color: MC.primary }}>
+                      style={{ background: 'rgba(59,130,246,0.14)', color: MC.primaryText }}>
                       <Play size={9} /> {clock(comment.at_seconds)}
                     </span>
                     <span className="text-[12.5px] leading-relaxed" style={{ color: MC.ink }}>{comment.body}</span>

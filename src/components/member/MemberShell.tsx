@@ -40,9 +40,13 @@ export default function MemberShell({
           paddingBottom: MEMBER_NAV_CLEARANCE,
         }}
       >
-        <PasskeySetupPrompt />
-        <NativeBiometricPrompt />
-        {children}
+        {/* The skip link at the root targets #main-content; without this the
+            first Tab stop on every member page went nowhere. */}
+        <main id="main-content">
+          <PasskeySetupPrompt />
+          <NativeBiometricPrompt />
+          {children}
+        </main>
       </div>
       <MemberNav />
     </div>

@@ -94,7 +94,7 @@ function DietBlock({ plan }: { plan: MeDietPlan }) {
       <Section title="Daily targets"
         aside={plan.start_date ? <span className="text-[10.5px] font-[600]" style={{ color: MC.muted }}>Since {longDate(plan.start_date)}</span> : null}>
         <div className="grid grid-cols-2 gap-2.5">
-          <Stat label="Calories" value={plan.daily.calories != null ? `${plan.daily.calories} kcal` : '—'} tone={MC.primaryDeep} />
+          <Stat label="Calories" value={plan.daily.calories != null ? `${plan.daily.calories} kcal` : '—'} tone={MC.primaryText} />
           <Stat label="Protein" value={g(plan.daily.protein_g)} />
           <Stat label="Carbs" value={g(plan.daily.carbs_g)} />
           <Stat label="Fats" value={g(plan.daily.fats_g)} />

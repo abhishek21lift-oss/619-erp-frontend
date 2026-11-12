@@ -95,18 +95,16 @@ describe('one search owner', () => {
 describe('the member bottom bar is built from nav-config', () => {
   const account = NAV_GROUPS.find((g) => g.id === 'my-account')!;
 
-  it('keeps the seven real destinations in the config', () => {
+  it('keeps five legible destinations in the config', () => {
     expect(account.items.map((i) => i.href)).toEqual([
       '/member/dashboard',
       '/member/workout',
       '/member/diet',
       '/member/checkin',
-      '/member/book',
-      '/member/payments',
       '/member/more',
     ]);
     expect(account.items.map((i) => i.label)).toEqual([
-      'Home', 'Workout', 'Diet', 'Check-in', 'Book', 'Payments', 'Profile',
+      'Home', 'Workout', 'Diet', 'Check-in', 'Profile',
     ]);
   });
 
@@ -129,8 +127,8 @@ describe('the member bottom bar is built from nav-config', () => {
     expect(memberNav).toContain('isVisibleForFeature');
   });
 
-  it('keeps Payments lit on the checkout route', () => {
-    expect(memberNav).toContain("startsWith('/member/pay/')");
+  it('keeps Profile lit on the checkout route, now that Payments lives there', () => {
+    expect(memberNav).toContain("'/member/pay'");
   });
 
   it('is labelled for assistive technology', () => {

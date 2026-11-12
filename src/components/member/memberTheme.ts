@@ -30,12 +30,12 @@ export const spectrum = {
 
 /**
  * The hero's mesh: a diagonal indigo→violet→pink base with a cyan glow at the
- * top left and an orange one at the bottom right. White text sits on the
- * indigo/violet half, which is where every line of it is laid out; the pink
- * end stays at 600 so large text there still clears 3:1.
+ * top left and an orange one at the bottom right. Everything on it is white,
+ * including 11px stat labels, so the pink end is 700: 600 left 12px text at
+ * 4.2:1 under the top sheen, below AA.
  */
 export const heroMesh = {
-  base: `linear-gradient(135deg, ${spectrum.indigo[600]} 0%, ${spectrum.violet[600]} 48%, ${spectrum.pink[600]} 100%)`,
+  base: `linear-gradient(135deg, ${spectrum.indigo[600]} 0%, ${spectrum.violet[600]} 48%, ${spectrum.pink[700]} 100%)`,
   glowA: spectrum.cyan[400],
   glowB: spectrum.orange[400],
   shadow: spectrum.violet[600],

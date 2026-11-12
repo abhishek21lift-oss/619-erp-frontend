@@ -168,7 +168,7 @@ export default function WorkoutLauncher({ plans, sessions, onSaved }: {
 
       {otherDays.length > 0 && (
         <details className="group mb-4">
-          <summary className="flex cursor-pointer list-none items-center gap-1 px-1 text-[12px] font-[700]" style={{ color: MC.primary }}>
+          <summary className="flex cursor-pointer list-none items-center gap-1 px-1 text-[12px] font-[700]" style={{ color: MC.primaryText }}>
             Train a different day
             <ChevronRight size={14} aria-hidden className="transition-transform group-open:rotate-90" />
           </summary>

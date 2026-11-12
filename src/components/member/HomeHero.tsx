@@ -100,8 +100,8 @@ export default function HomeHero({ name, photoUrl, studio, streak, trainedThisWe
             style={{ background: rgba(spectrum.indigo[700], 0.55), color: '#fff' }} />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-[650] opacity-85">
-            {greeting()}{studio ? <span className="opacity-80"> · {studio}</span> : null}
+          <p className="truncate text-[12px] font-[650]">
+            {greeting()}{studio ? <span> · {studio}</span> : null}
           </p>
           <h1 className="truncate text-[23px] font-[850] leading-tight tracking-[-0.03em]">{first || name}</h1>
         </div>
@@ -116,12 +116,13 @@ export default function HomeHero({ name, photoUrl, studio, streak, trainedThisWe
         {heroLine({ streak, trainedThisWeek, daysLeft })}
       </p>
 
-      {/* Where they stand — one glass strip, three cells. */}
+      {/* Where they stand — one dark strip, three cells. A white tint let the
+          orange glow through and left the 11px labels at ~3:1. */}
       <dl className="relative mt-3 grid grid-cols-3 overflow-hidden rounded-[16px]"
-        style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
+        style={{ background: 'rgba(15,23,42,0.22)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}>
         <HeroStat icon={Flame} label="Week streak" value={streak} />
         <HeroStat icon={CalendarCheck} label="Visits this month" value={visitsThisMonth} divider />
-        <HeroStat icon={Dumbbell} label="Sessions" value={sessions} divider />
+        <HeroStat icon={Dumbbell} label="Total sessions" value={sessions} divider />
       </dl>
     </m.section>
   );
@@ -130,14 +131,14 @@ export default function HomeHero({ name, photoUrl, studio, streak, trainedThisWe
 /** Start workout / Check in — immediately below the hero, on the page surface. */
 export function HomeActions() {
   return (
-    <div className="mb-5 flex flex-wrap gap-2.5">
+    <div className="mb-5 grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2">
       <Link href="/member/workout"
-        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[14px] px-4 text-[14px] font-[800] text-white transition-transform active:scale-[0.98]"
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] px-4 text-[14px] font-[800] text-white transition-transform active:scale-[0.98]"
         style={{ background: `linear-gradient(135deg, ${spectrum.violet[600]}, ${spectrum.indigo[600]})`, boxShadow: `0 8px 20px -12px ${rgba(spectrum.violet[700], 0.9)}` }}>
         <Dumbbell size={17} aria-hidden /> Start workout
       </Link>
       <Link href="/member/checkin"
-        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[14px] px-4 text-[14px] font-[750] transition-transform active:scale-[0.98]"
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] px-4 text-[14px] font-[750] transition-transform active:scale-[0.98]"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', color: 'var(--text-primary)' }}>
         <ClipboardCheck size={16} aria-hidden /> Check in
       </Link>
@@ -148,10 +149,10 @@ export function HomeActions() {
 function HeroStat({ icon: Icon, label, value, divider }: { icon: LucideIcon; label: string; value: number | null; divider?: boolean }) {
   return (
     <div className="flex flex-col-reverse items-center px-2 py-2.5 text-center"
-      style={divider ? { borderLeft: '1px solid rgba(255,255,255,0.2)' } : undefined}>
+      style={divider ? { borderLeft: '1px solid rgba(255,255,255,0.18)' } : undefined}>
       {/* dt before dd in the markup, as the list requires; column-reverse puts
           the number on top for the eye. */}
-      <dt className="mt-0.5 text-[11px] font-[650] leading-tight opacity-85">{label}</dt>
+      <dt className="mt-0.5 text-[11px] font-[650] leading-tight">{label}</dt>
       <dd className="flex items-center gap-1.5 text-[19px] font-[850] leading-none tabular-nums tracking-[-0.02em]">
         <Icon size={14} aria-hidden className="opacity-90" />
         {value == null ? '—' : value.toLocaleString('en-IN')}

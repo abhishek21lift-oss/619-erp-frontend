@@ -222,7 +222,7 @@ function CheckInCode() {
           <div className="flex items-center justify-between gap-3">
             <p className="text-[12.5px]" style={{ color: MC.muted }}>We could not load your code.</p>
             <button type="button" onClick={() => void load()}
-              className="inline-flex items-center gap-1 text-[12px] font-[720]" style={{ color: MC.primary }}>
+              className="inline-flex items-center gap-1 text-[12px] font-[720]" style={{ color: MC.primaryText }}>
               <RefreshCw size={13} aria-hidden /> Try again
             </button>
           </div>

@@ -81,7 +81,7 @@ function RenewBody() {
           </Card>
         </Section>
       )}
-      <Link href="/member/payments" className="mt-1 flex items-center justify-center gap-1.5 py-3 text-[13px] font-[700]" style={{ color: MC.primary }}>
+      <Link href="/member/payments" className="mt-1 flex items-center justify-center gap-1.5 py-3 text-[13px] font-[700]" style={{ color: MC.primaryText }}>
         <Receipt size={14} aria-hidden /> Payments and receipts
       </Link>
     </>
@@ -233,7 +233,7 @@ function AskCard({ requestedAt, onSent }: { requestedAt: string | null; onSent: 
             </button>
           </>
         )}
-        <Link href="/member/messages" className="mt-3 flex items-center justify-center gap-1.5 text-[12.5px] font-[700]" style={{ color: MC.primary }}>
+        <Link href="/member/messages" className="mt-3 flex items-center justify-center gap-1.5 text-[12.5px] font-[700]" style={{ color: MC.primaryText }}>
           <MessageCircle size={13} aria-hidden /> Message your trainer
         </Link>
       </Card>

@@ -1,7 +1,42 @@
 /**
- * The member's package dates, as the dashboard and the membership card show
+ * The member's package facts, as the dashboard and the membership card show
  * them. One copy, so the two screens can never disagree about days left.
  */
+
+import type { MeMembership, MeProfile } from '@/lib/api';
+
+export type PlanFacts = {
+  title: string | null;
+  status: string | null;
+  /** Outstanding balance, or null when the package record did not carry one. */
+  balance: number | null;
+  start: string | null;
+  end: string | null;
+};
+
+/**
+ * What the plan card may say, and what it may not.
+ *
+ * `planLoaded` is whether the membership request answered at all. A failed or
+ * empty read is not a zero balance: `balance` stays null and the card shows a
+ * dash. The client row's copy is only a fallback — never an invented package
+ * or status.
+ */
+export function planFacts({ plan, planLoaded, profile }: {
+  plan: MeMembership | null;
+  planLoaded: boolean;
+  profile: Pick<MeProfile, 'package_type' | 'status' | 'pt_start_date' | 'pt_end_date'>;
+}): PlanFacts {
+  const raw = plan?.balance_amount;
+  const parsed = raw == null || raw === '' ? NaN : Number(raw);
+  return {
+    title: plan?.package_type || profile.package_type || null,
+    status: plan?.status || profile.status || null,
+    balance: Number.isFinite(parsed) ? parsed : null,
+    start: plan?.pt_start_date ?? profile.pt_start_date ?? null,
+    end: plan?.pt_end_date ?? profile.pt_end_date ?? null,
+  };
+}
 
 /** Whole days until the end of `end`'s day, never negative; null when unknown. */
 export function daysLeft(end: string | null | undefined): number | null {

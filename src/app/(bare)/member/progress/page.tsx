@@ -211,7 +211,7 @@ function AssessmentProgress() {
   return (
     <>
       <Section title="Fitness assessment"
-        aside={<Link href="/member/coach" className="text-[11.5px] font-[720]" style={{ color: MC.primary }}>Ask your trainer</Link>}>
+        aside={<Link href="/member/coach" className="text-[11.5px] font-[720]" style={{ color: MC.primaryText }}>Ask your trainer</Link>}>
         <Card className="overflow-hidden p-0">
           <div className="p-4" style={{ background: 'linear-gradient(135deg, rgba(163,55,87,0.09), rgba(16,185,129,0.07))' }}>
             <div className="flex items-start justify-between gap-3">
@@ -235,7 +235,7 @@ function AssessmentProgress() {
                 </p>
               </div>
               <span className="grid h-10 w-10 place-items-center rounded-[12px] bg-white/60"
-                style={{ color: MC.primary }}>
+                style={{ color: MC.primaryText }}>
                 <CalendarClock size={19} />
               </span>
             </div>

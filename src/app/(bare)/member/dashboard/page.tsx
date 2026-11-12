@@ -22,10 +22,10 @@
  *
  * ── The design ────────────────────────────────────────────────────────────
  *
- * One saturated surface: the plan. "How long have I got left, and do I owe
- * anything" is the question a member opens this screen with, so it is the
- * only thing wearing colour. Everything below is neutral, and the eye reads
- * downward from it.
+ * Three saturated surfaces: the hero, the plan and the recap tile. "How long
+ * have I got left, and do I owe anything" is the question a member opens this
+ * screen with, so the plan wears colour too. Everything below is neutral, and
+ * the eye reads downward from it.
  *
  * Sections with nothing to say are not rendered. A member three days into a
  * package has no measurements and no payment history, and four cards telling
@@ -34,10 +34,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import {
   CalendarDays, TrendingDown, TrendingUp, Minus,
-  Ruler, CheckCircle2, CreditCard,
+  Weight, CheckCircle2, CreditCard,
   ChevronRight, ShieldCheck, MessageCircle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -49,20 +49,23 @@ import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
 import RenewalBanner from '@/components/member/RenewalBanner';
 import HomeHero, { HomeActions } from '@/components/member/HomeHero';
-import { accentGradient, spectrum } from '@/components/member/memberTheme';
+import { accentGradient, heroGradient, spectrum } from '@/components/member/memberTheme';
 import type { Accent } from '@/components/member/memberTheme';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
+import { LoadError } from '@/components/member/MemberUI';
 import { api } from '@/lib/api';
 import type { MeAchievements, MeProfile, MeMembership, MeAttendance, MeMeasurement } from '@/lib/api';
 import { palette, rgba } from '@/lib/palette';
-import { daysLeft, elapsedPct } from '@/components/member/planDates';
+import { daysLeft, elapsedPct, planFacts } from '@/components/member/planDates';
 
 const C = {
+  // 500 is a fill. Words use the theme's text tones (see MemberUI).
   primary: palette.blue[500],
-  primaryDeep: palette.blue[700],
   success: palette.emerald[500],
-  warning: palette.amber[500],
   danger: palette.red[500],
+  primaryText: 'var(--action-text)',
+  successText: 'var(--success-text)',
+  warningText: 'var(--warning-text)',
   // Theme tokens, not fixed greys: gray-900 ink was invisible on the dark canvas.
   ink: 'var(--text-primary)',
   muted: 'var(--text-muted)',
@@ -104,6 +107,10 @@ function MemberDashboard() {
   const [achievements, setAchievements] = useState<MeAchievements | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  // Whether the package record answered. A failed read is not a zero balance.
+  const [planLoaded, setPlanLoaded] = useState(false);
+  const [measFailed, setMeasFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // The hero's streak. Loaded on its own so a slow or failed read costs one
   // number, never the page.
@@ -116,6 +123,10 @@ function MemberDashboard() {
   useEffect(() => {
     let alive = true;
     (async () => {
+      setLoading(true);
+      setFailed(false);
+      setPlanLoaded(false);
+      setMeasFailed(false);
       // Settled, not all: one endpoint being unavailable costs that section,
       // not the page. The old version wrapped every call in a single try and
       // fell back to a blank screen whenever any of them failed.
@@ -125,44 +136,46 @@ function MemberDashboard() {
       ]);
       if (!alive) return;
       if (p.status === 'fulfilled') setProfile(p.value.data); else setFailed(true);
-      if (mem.status === 'fulfilled') setPlan(mem.value.data);
+      if (mem.status === 'fulfilled') { setPlan(mem.value.data); setPlanLoaded(true); }
       if (att.status === 'fulfilled') setVisits(att.value.data ?? []);
       // A studio measurement can record body sizes with no weight; only rows
       // that carry one belong in the weight figures.
       if (meas.status === 'fulfilled') {
         setWeights((meas.value.data ?? []).filter((r) => r.weight_kg !== null && r.weight_kg !== ''));
+      } else {
+        setMeasFailed(true);
       }
       setLoading(false);
     })();
     return () => { alive = false; };
-  }, []);
+  }, [reloadKey]);
+
+  const retry = () => setReloadKey((k) => k + 1);
 
   if (loading) return <Skeleton />;
 
   if (failed || !profile) {
     return (
       <Shell>
-        <div className="rounded-[18px] p-6 text-center"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <p className="text-[14px] font-[700]" style={{ color: C.ink }}>We could not load your profile</p>
-          <p className="mt-1.5 text-[12.5px]" style={{ color: C.muted }}>
-            Refresh the page, and tell your trainer if it keeps happening.
-          </p>
-        </div>
+        <LoadError what="profile" onRetry={retry} />
       </Shell>
     );
   }
 
-  // The package record is the source of truth; the client row's copy is the fallback.
-  const endDate = plan?.pt_end_date ?? profile.pt_end_date;
-  const startDate = plan?.pt_start_date ?? profile.pt_start_date;
+  // The package record is the source of truth; the client row's copy is the
+  // fallback — and a failed read leaves the balance unknown, not paid up.
+  const facts = planFacts({ plan, planLoaded, profile });
+  const endDate = facts.end;
+  const startDate = facts.start;
   const left = daysLeft(endDate);
-  const balance = num(plan?.balance_amount);
+  const balance = facts.balance;
   const endsOn = longDate(endDate);
 
   const spanPct = elapsedPct(startDate, endDate);
 
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  // Local clock, not UTC: on the 1st before 05:30 IST, toISOString is last month.
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const visitsThisMonth = visits ? visits.filter((v) => (v.date ?? '').slice(0, 7) === thisMonth).length : null;
 
   // Measurements arrive newest-first, so the oldest reading is the last one.
@@ -211,36 +224,45 @@ function MemberDashboard() {
         <div className="relative flex items-center gap-4">
           <PlanRing left={left} remaining={spanPct == null ? null : 1 - spanPct / 100} />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-[750] uppercase tracking-[0.14em]" style={{ color: C.muted }}>Current plan</p>
+            <h2 className="text-[11px] font-[750] uppercase tracking-[0.14em]" style={{ color: C.muted }}>Current plan</h2>
             <p className="mt-0.5 truncate text-[18px] font-[820] leading-tight" style={{ color: C.ink }}>
-              {profile.package_type || 'Personal Training'}
+              {facts.title ?? '—'}
             </p>
-            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[750] capitalize"
-              style={{ background: 'var(--bg-subtle)', color: C.ink }}>
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full"
-                style={{ background: profile.status === 'active' || !profile.status ? C.success : C.danger }} />
-              {profile.status || 'active'}
-            </span>
+            {facts.status && (
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[750] capitalize"
+                style={{ background: 'var(--bg-subtle)', color: C.ink }}>
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: facts.status === 'active' ? C.success : C.danger }} />
+                {facts.status}
+              </span>
+            )}
           </div>
         </div>
 
+        {!planLoaded && (
+          <p className="relative mt-3 text-[12px] font-[600]" style={{ color: C.muted }}>
+            Plan details could not load — the figures below may be incomplete.
+          </p>
+        )}
+
         {/* A real number, or an honest absence. */}
-        {left === null && (
+        {left === null && planLoaded && (
           <p className="relative mt-4 text-[13px] font-[600]" style={{ color: C.muted }}>No end date set — ask your trainer.</p>
         )}
 
         <div className="relative mt-4 grid grid-cols-2 overflow-hidden rounded-[16px]"
           style={{ background: 'var(--bg-subtle)' }}>
-          <PlanCell label="Ends on" value={endsOn ?? 'Not set'} />
-          <PlanCell label="Balance" value={balance > 0 ? inr(balance) : 'Paid up'} divider
-            tone={balance > 0 ? palette.amber[600] : C.success} />
+          <PlanCell label="Ends on" value={endsOn ?? (planLoaded ? 'Not set' : '—')} />
+          <PlanCell label="Balance"
+            value={balance == null ? '—' : balance > 0 ? inr(balance) : 'Paid up'} divider
+            tone={balance == null ? undefined : balance > 0 ? C.warningText : C.successText} />
         </div>
 
-        {balance > 0 && (
+        {balance != null && balance > 0 && (
           <PayBalanceButton
             className="relative mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-[14px] text-[14px] font-[800] text-white"
-            style={{ background: accentGradient('plan'), boxShadow: `0 10px 24px -12px ${rgba(spectrum.pink[500], 0.7)}` }}>
-            <CreditCard size={15} /> Pay {inr(balance)}
+            style={{ background: heroGradient('plan'), boxShadow: `0 10px 24px -12px ${rgba(spectrum.pink[700], 0.7)}` }}>
+            <CreditCard size={15} aria-hidden /> Pay {inr(balance)}
           </PayBalanceButton>
         )}
       </m.section>
@@ -250,19 +272,23 @@ function MemberDashboard() {
 
       {/* ── Progress. Only what was actually measured. ───────────────────── */}
       <Section title="Your progress" action={{ href: '/member/progress', label: 'See trend' }}>
-        <div className="grid grid-cols-2 gap-2.5">
-          <Metric icon={<Ruler size={15} />} label="Weight" accent="progress"
-            value={latestWeight != null ? `${latestWeight} kg` : '—'}
-            sub={latestWeight != null ? 'latest' : 'not recorded'} />
-          <Metric
-            icon={weightDelta == null ? <Minus size={15} />
-              : weightDelta < 0 ? <TrendingDown size={15} /> : <TrendingUp size={15} />}
-            label="Change" accent="records"
-            value={weightDelta == null ? '—' : `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg`}
-            sub={weightDelta == null ? 'needs 2 readings' : 'since first'}
-            tone={weightDelta == null ? undefined : weightDelta < 0 ? C.success : C.warning}
-          />
-        </div>
+        {measFailed ? (
+          <LoadError what="progress" onRetry={retry} />
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5">
+            <Metric icon={<Weight size={15} aria-hidden />} label="Weight" accent="progress"
+              value={latestWeight != null ? `${latestWeight} kg` : '—'}
+              sub={latestWeight != null ? 'latest' : 'not recorded'} />
+            <Metric
+              icon={weightDelta == null ? <Minus size={15} />
+                : weightDelta < 0 ? <TrendingDown size={15} /> : <TrendingUp size={15} />}
+              label="Change" accent="records"
+              value={weightDelta == null ? '—' : `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)} kg`}
+              sub={weightDelta == null ? 'needs 2 readings' : 'since first'}
+              tone={weightDelta == null ? undefined : weightDelta < 0 ? C.successText : C.warningText}
+            />
+          </div>
+        )}
       </Section>
 
       {/* ── Trainer, when one is assigned ────────────────────────────────── */}
@@ -277,14 +303,14 @@ function MemberDashboard() {
               style={{ background: rgba(C.primary, 0.12), color: C.primary }}
             />
             {/* The name opens the coach's full profile. */}
-            <Link href="/member/coach" className="min-w-0 flex-1">
+            <Link href="/member/coach" className="flex min-h-[44px] min-w-0 flex-1 flex-col justify-center">
               <p className="truncate text-[14px] font-[750]" style={{ color: C.ink }}>{profile.trainer_name}</p>
               <p className="truncate text-[11.5px] font-[550]" style={{ color: C.muted }}>
                 {profile.trainer_specialization || 'Personal trainer'} · View profile
               </p>
             </Link>
             <Link href="/member/messages"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[750] text-white transition-transform active:scale-95"
+              className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12.5px] font-[750] text-white transition-transform active:scale-95"
               style={{ background: C.primary }}>
               <MessageCircle size={14} aria-hidden /> Message
             </Link>
@@ -338,8 +364,8 @@ function Section({ title, action, children }: {
       <div className="mb-2 flex items-center justify-between px-1">
         <h2 className="text-[11px] font-[780] uppercase tracking-[0.12em]" style={{ color: C.muted }}>{title}</h2>
         {action && (
-          <Link href={action.href} className="-my-2 flex min-h-[44px] items-center gap-0.5 text-[12px] font-[750]" style={{ color: C.primary }}>
-            {action.label} <ChevronRight size={12} />
+          <Link href={action.href} className="-my-2 flex min-h-[44px] items-center gap-0.5 text-[12px] font-[750]" style={{ color: C.primaryText }}>
+            {action.label} <ChevronRight size={12} aria-hidden />
           </Link>
         )}
       </div>
@@ -359,6 +385,7 @@ function PlanCell({ label, value, tone, divider = false }: { label: string; valu
 
 /** Days left, as a ring that empties across the plan — the member app's gradient, amber once it has ended. */
 function PlanRing({ left, remaining }: { left: number | null; remaining: number | null }) {
+  const reduce = useReducedMotion();
   const R = 34;
   const CIRC = 2 * Math.PI * R;
   const ended = left === 0;
@@ -375,8 +402,9 @@ function PlanRing({ left, remaining }: { left: number | null; remaining: number 
         {remaining != null && (
           <m.circle cx="42" cy="42" r={R} fill="none" stroke={ended ? palette.amber[500] : 'url(#plan-ring)'}
             strokeWidth="7" strokeLinecap="round" strokeDasharray={CIRC}
-            initial={{ strokeDashoffset: CIRC }} animate={{ strokeDashoffset: CIRC * (1 - remaining) }}
-            transition={{ duration: 1, ease: EASE, delay: 0.15 }} />
+            initial={reduce ? false : { strokeDashoffset: CIRC }}
+            animate={{ strokeDashoffset: CIRC * (1 - remaining) }}
+            transition={{ duration: reduce ? 0 : 1, ease: EASE, delay: reduce ? 0 : 0.15 }} />
         )}
       </svg>
       {left != null ? (
@@ -396,7 +424,7 @@ function Metric({ icon, label, value, sub, tone, accent }: {
 }) {
   return (
     <div className="rounded-[20px] p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-[11px] text-white"
+      <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded-[11px] text-white"
         style={{ background: accentGradient(accent) }}>
         {icon}
       </span>

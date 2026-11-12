@@ -92,7 +92,7 @@ function CheckinForm({ existing, onSaved }: { existing: MeCheckin | null; onSave
   return (
     <Section title={existing ? 'This week — sent' : 'This week'}
       aside={existing ? (
-        <span className="inline-flex items-center gap-1 text-[11px] font-[700]" style={{ color: MC.success }}>
+        <span className="inline-flex items-center gap-1 text-[11px] font-[700]" style={{ color: MC.successText }}>
           <CheckCircle2 size={12} /> Sent {longDate(existing.updated_at)}
         </span>
       ) : null}>

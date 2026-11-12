@@ -125,7 +125,7 @@ function PlanBlock({ plan, titled }: { plan: MeWorkoutPlan; titled: boolean }) {
         <div className="mb-2.5 flex flex-wrap gap-1.5">
           {facts.map((f) => (
             <span key={f} className="rounded-full px-2.5 py-1 text-[11px] font-[650]"
-              style={{ background: rgba(MC.primary, 0.08), color: MC.primaryDeep }}>{f}</span>
+              style={{ background: rgba(MC.primary, 0.08), color: MC.primaryText }}>{f}</span>
           ))}
         </div>
       )}
@@ -212,7 +212,7 @@ function ExerciseRow({ x, n }: { x: MeWorkoutExercise; n: number }) {
       <div className="min-w-0 flex-1">
         <p className="text-[13.5px] font-[700]" style={{ color: MC.ink }}>{x.name}</p>
         {prescription.length > 0 && (
-          <p className="mt-0.5 flex flex-wrap gap-x-1.5 text-[12.5px] font-[650] tabular-nums" style={{ color: MC.primaryDeep }}>
+          <p className="mt-0.5 flex flex-wrap gap-x-1.5 text-[12.5px] font-[650] tabular-nums" style={{ color: MC.primaryText }}>
             {prescription.map((part, i) => (
               <span key={part} className="whitespace-nowrap">{i > 0 && '· '}{part}</span>
             ))}
@@ -238,7 +238,7 @@ function ExerciseRow({ x, n }: { x: MeWorkoutExercise; n: number }) {
         )}
         {x.video_url && (
           <a href={x.video_url} target="_blank" rel="noopener noreferrer"
-            className="mt-1 inline-block text-[11.5px] font-[700]" style={{ color: MC.primary }}>
+            className="mt-1 inline-block text-[11.5px] font-[700]" style={{ color: MC.primaryText }}>
             Watch how →
           </a>
         )}
@@ -326,7 +326,7 @@ function SessionHistory({ sessions }: { sessions: MeSession[] }) {
                             <span key={j} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11.5px] font-[650] tabular-nums"
                               style={{
                                 background: x.is_pr ? rgba(MC.success, 0.14) : 'var(--bg-subtle)',
-                                color: x.is_pr ? MC.success : MC.ink,
+                                color: x.is_pr ? MC.successText : MC.ink,
                               }}>
                               {x.is_pr && <Trophy size={10} aria-label="Personal best" />}
                               {setLabel(x)}
