@@ -157,7 +157,7 @@ describe('FitnessDashboard', () => {
     expect(data.every((d) => typeof d.score === 'number')).toBe(true);
   });
 
-  it('seven steps present but a reduced measured max stays partial: no overall tier', () => {
+  it('all seven steps scored but a reduced battery says so, without contradicting itself', () => {
     // Every step has points, but a one-test strength battery measures only 7.5
     // of the step's 15, so the denominator is 92.5. Tier would read incomplete.
     render(
@@ -169,12 +169,35 @@ describe('FitnessDashboard', () => {
         }}
       />,
     );
-    expect(screen.getByText('Partial · 7 of 7 steps scored')).toBeTruthy();
-    expect(screen.getByText('Partial assessment — 7 of 7 steps scored.')).toBeTruthy();
+    expect(screen.getByText('All steps scored · measured on 92.5/100')).toBeTruthy();
+    expect(screen.getByText('All 7 steps scored — this battery measured 92.5 of 100 points.')).toBeTruthy();
+    expect(screen.queryByText('Partial · 7 of 7 steps scored')).toBeNull();
     expect(screen.getByText('7 of 7 steps · 73.5/92.5 pts')).toBeTruthy();
     expect(screen.getByText('7.5 / 15')).toBeTruthy();
     expect(screen.queryByText('Optimal')).toBeNull();
     expect(screen.getByText('79')).toBeTruthy();
+  });
+
+  it('divides a step by what it measured, so a perfect reduced battery is 100%', () => {
+    render(
+      <FitnessDashboard
+        scores={{
+          bpPoints: 10, anthropometricPoints: 10, bodyCompositionScore: 15, cardioScore: 20,
+          strengthScore: 15, enduranceScore: 15, mobilityScore: 13,
+          overallScore: 100, overallPoints: 98, overallMax: 98,
+          stepMax: { bp: 10, anthropometric: 10, bodyComposition: 15, cardio: 20, strength: 15, endurance: 15, flexibility: 13 },
+        }}
+      />,
+    );
+    // 13 of 13 measured flexibility points, not 13 of the framework's 15.
+    expect(screen.getByText('13 / 13')).toBeTruthy();
+    expect(screen.queryByText('13 / 15')).toBeNull();
+    expect(screen.getAllByText('Optimal').length).toBeGreaterThan(0);
+  });
+
+  it('names an unmeasured step instead of leaving a bare dash', () => {
+    render(<FitnessDashboard scores={PARTIAL} />);
+    expect(screen.getAllByText('Not measured').length).toBe(3);
   });
 
   it('partial assessment: points over fixed max, coverage shown, no overall tier, radar nulls not zeros', () => {

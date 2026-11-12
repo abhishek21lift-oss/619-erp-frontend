@@ -228,4 +228,49 @@ describe('FitnessDashboard — vitals display', () => {
     render(<FitnessDashboard scores={SCORES} />);
     expect(screen.queryByText('Resting Heart Rate')).toBeNull();
   });
+
+  it('surfaces the safety reason for an out-of-range reading, not just the label', () => {
+    render(
+      <FitnessDashboard
+        scores={SCORES}
+        vitals={{
+          bpSystolic: 135, bpDiastolic: 85, bpCategory: 'Hypertension Stage 1',
+          restingHeartRate: 72, rhrCategory: 'Normal',
+          restingSpo2: 92, spo2Category: 'Mild Hypoxia',
+        }}
+      />,
+    );
+    expect(screen.getByText('Recheck before testing')).toBeTruthy();
+    expect(screen.getByText(/rest 5–10 minutes/i)).toBeTruthy();
+  });
+
+  it('escalates the notice when a reading requires medical review', () => {
+    render(
+      <FitnessDashboard
+        scores={SCORES}
+        vitals={{
+          bpSystolic: 160, bpDiastolic: 100, bpCategory: 'Hypertension Stage 2',
+          restingHeartRate: 72, rhrCategory: 'Normal',
+          restingSpo2: 98, spo2Category: 'Normal',
+        }}
+      />,
+    );
+    expect(screen.getByText('Medical review required before testing')).toBeTruthy();
+    expect(screen.getByText(/physician clearance/i)).toBeTruthy();
+  });
+
+  it('keeps a normal reading quiet — no notice', () => {
+    render(
+      <FitnessDashboard
+        scores={SCORES}
+        vitals={{
+          bpSystolic: 118, bpDiastolic: 76, bpCategory: 'Normal',
+          restingHeartRate: 72, rhrCategory: 'Normal',
+          restingSpo2: 98, spo2Category: 'Normal',
+        }}
+      />,
+    );
+    expect(screen.queryByText('Recheck before testing')).toBeNull();
+    expect(screen.queryByText('Medical review required before testing')).toBeNull();
+  });
 });

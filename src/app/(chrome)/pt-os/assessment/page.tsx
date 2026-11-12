@@ -363,6 +363,18 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       overallScore: total.score,
       overallPoints: total.points,
       overallMax: total.max,
+      // What each step actually measured. A one-slot strength battery or three
+      // ROM tests measure less than the step's fixed max, so the tiles must
+      // divide by the measured denominator, never the framework one.
+      stepMax: {
+        bp: steps.bp.max,
+        anthropometric: steps.anthropometric.max,
+        bodyComposition: steps.bodyComposition.max,
+        cardio: steps.cardio.max,
+        strength: steps.strength.max,
+        endurance: steps.endurance.max,
+        flexibility: steps.flexibility.max,
+      },
     };
   }, [form, age, gender]);
 
@@ -723,7 +735,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             </div>
 
             <ScreeningWarningsNotice warnings={saveWarnings} clientId={clientId} />
-            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} vitals={savedVitals} anthropometric={savedAnthropometric} />
+            <FitnessDashboard scores={scoresFromAssessmentRow(lastSaved)} vitals={savedVitals} anthropometric={savedAnthropometric} athlete={experienceLevel === 'athlete'} />
             <AiRecommendationsPanel assessmentId={String(lastSaved.id)} />
 
             <div className="flex flex-wrap gap-3">
@@ -766,7 +778,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            <FitnessDashboard scores={liveScores} vitals={liveVitals} anthropometric={liveAnthropometric} />
+            <FitnessDashboard scores={liveScores} vitals={liveVitals} anthropometric={liveAnthropometric} athlete={experienceLevel === 'athlete'} />
           </m.div>
         )}
 
