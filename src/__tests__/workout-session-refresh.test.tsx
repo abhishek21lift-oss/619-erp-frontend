@@ -207,6 +207,50 @@ describe('adding a set after one was deleted', () => {
   });
 });
 
+describe('finishing an exercise', () => {
+  it('folds it away and opens the next one', async () => {
+    // The trainer should not have to scroll past a finished block to find the
+    // one they are on. Both start expanded; the second is collapsed first so
+    // its re-opening is observable rather than assumed.
+    const twoExercises = {
+      ...session,
+      exercises: [
+        { ...session.exercises[0], id: 'e1', exercise_name: 'Bench Press' },
+        {
+          ...session.exercises[0], id: 'e2', exercise_name: 'Treadmill',
+          exercise_type: 'Cardio', prescription_mode_primary: 'TIME',
+          sets: [{ ...session.exercises[0].sets[0], id: 'st2' }],
+        },
+      ],
+    };
+    const firstDone = {
+      ...twoExercises,
+      exercises: [
+        { ...twoExercises.exercises[0], sets: [{ ...twoExercises.exercises[0].sets[0], completed: true }] },
+        twoExercises.exercises[1],
+      ],
+    };
+
+    getSession.mockResolvedValueOnce({ data: twoExercises });
+    open();
+    await waitFor(() => expect(screen.getByText('Bench Press')).toBeTruthy());
+
+    const bench = screen.getByRole('button', { name: /Bench Press/ });
+    const treadmill = screen.getByRole('button', { name: /Treadmill/ });
+    expect(bench).toHaveAttribute('aria-expanded', 'true');
+    expect(treadmill).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(treadmill);
+    expect(treadmill).toHaveAttribute('aria-expanded', 'false');
+
+    getSession.mockResolvedValueOnce({ data: firstDone });
+    fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+
+    await waitFor(() => expect(bench).toHaveAttribute('aria-expanded', 'false'));
+    expect(treadmill).toHaveAttribute('aria-expanded', 'true');
+  });
+});
+
 describe('finishing a workout', () => {
   const completed = {
     ...session,
