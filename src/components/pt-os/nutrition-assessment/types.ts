@@ -16,11 +16,22 @@ export interface CoachNotes {
   special_instructions: string;
 }
 
+/** The four-value pattern the diet engine can act on. Not the same list as
+ *  `dietPreferences`: 'Jain' and 'Keto' are real preferences with no canonical
+ *  pattern, and guessing one would decide a safety question. */
+export type DietaryPattern = 'vegetarian' | 'eggetarian' | 'non_vegetarian' | 'vegan';
+export type FoodCulture = 'indian' | 'western' | 'mixed';
+export type MealTimingPreference = 'early' | 'standard' | 'late' | 'no_preference';
+
 export interface NutritionFormData {
   assessmentDate: string;
 
   // Step 1 — Diet Preference
   dietPreferences: string[];
+  /** Single-select and clearable; '' means nobody recorded it. */
+  dietaryPattern: DietaryPattern | '';
+  foodCulture: FoodCulture | '';
+  regionalCuisines: string[];
 
   // Step 2 — Food Restrictions
   foodAllergies: string[];
@@ -42,6 +53,7 @@ export interface NutritionFormData {
 
   // Step 6 — Meal Pattern & Eating Behaviour
   mealsPerDay: string;
+  mealTimingPreference: MealTimingPreference | '';
   breakfastRegularity: MealRegularity | '';
   lunchRegularity: MealRegularity | '';
   dinnerRegularity: MealRegularity | '';
@@ -98,12 +110,14 @@ export function initNutritionForm(): NutritionFormData {
     // saved yesterday and an evening in New York saved tomorrow.
     assessmentDate: todayISO(),
     dietPreferences: [],
+    dietaryPattern: '', foodCulture: '', regionalCuisines: [],
     foodAllergies: [], foodAllergyOther: '',
     foodsToAvoid: [], foodsToAvoidOther: '', foodsToAvoidReason: '',
     favouriteFoods: [], favouriteFoodOther: '',
     takesSupplements: null, supplements: [],
     digestiveIssues: null,
-    mealsPerDay: '', breakfastRegularity: '', lunchRegularity: '', dinnerRegularity: '',
+    mealsPerDay: '', mealTimingPreference: '',
+    breakfastRegularity: '', lunchRegularity: '', dinnerRegularity: '',
     snacksPerDay: '', lateNightEating: null, eatingOutFrequency: '',
     weekendEatingHabits: '', eatingBehaviours: [],
     waterIntakeLiters: '', teaCupsPerDay: '', coffeeCupsPerDay: '', softDrinksPerDay: '', juicesPerDay: '',

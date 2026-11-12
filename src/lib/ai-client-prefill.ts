@@ -51,6 +51,13 @@ export type AiDietFacts = {
   meal_frequency: string;
   dietary_preferences: string;
   allergies: string;
+  target_weight_kg: string;
+  workout_time: string;
+  workout_duration_minutes: string;
+  food_culture: string;
+  regional_cuisines: string;
+  dietary_pattern: string;
+  meal_timing_preference: string;
 };
 
 export interface AiClientFacts {
@@ -145,6 +152,36 @@ export function mapDietGoal(v: unknown): string { return DIET_GOAL[token(v)] ?? 
 export function mapActivityLevel(v: unknown): string { return ACTIVITY[token(v)] ?? ''; }
 export function mapBudget(v: unknown): string { return BUDGET[token(v)] ?? ''; }
 
+const FOOD_CULTURE: Record<string, string> = { indian: 'indian', western: 'western', mixed: 'mixed' };
+const DIETARY_PATTERN: Record<string, string> = {
+  vegetarian: 'vegetarian', eggetarian: 'eggetarian', eggitarian: 'eggetarian',
+  non_vegetarian: 'non_vegetarian', nonvegetarian: 'non_vegetarian', vegan: 'vegan',
+};
+const MEAL_TIMING: Record<string, string> = {
+  early: 'early', standard: 'standard', late: 'late', no_preference: 'no_preference',
+};
+
+export function mapFoodCulture(v: unknown): string { return FOOD_CULTURE[token(v)] ?? ''; }
+export function mapDietaryPattern(v: unknown): string { return DIETARY_PATTERN[token(v)] ?? ''; }
+export function mapMealTiming(v: unknown): string { return MEAL_TIMING[token(v)] ?? ''; }
+
+/** HH:MM, "7:05 pm", or a named part of day; '' when it cannot be a time. */
+export function mapWorkoutTime(v: unknown): string {
+  const s = String(v ?? '').trim().toLowerCase();
+  const words: Record<string, string> = {
+    morning: '07:00', afternoon: '14:00', evening: '18:00', night: '21:00',
+  };
+  if (words[s]) return words[s];
+  const m = /^(\d{1,2}):(\d{2})\s*(am|pm)?$/.exec(s);
+  if (!m) return '';
+  let h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return '';
+  if (m[3] === 'pm' && h < 12) h += 12;
+  if (m[3] === 'am' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
 /**
  * Training days, from the client's `frequency` text first ("3", "3x/week")
  * and the interview's structured answer second. The form's chips are 2–6.
@@ -209,6 +246,11 @@ interface NutritionRow extends Row {
   foods_to_avoid?: unknown;
   meals_per_day?: unknown;
   nutrition_budget?: unknown;
+  food_culture?: unknown;
+  regional_cuisines?: unknown;
+  dietary_pattern?: unknown;
+  meal_timing_preference?: unknown;
+  created_at?: unknown;
 }
 
 interface GoalRow extends Row {
@@ -216,6 +258,7 @@ interface GoalRow extends Row {
   is_active?: unknown;
   status?: unknown;
   created_at?: unknown;
+  target_weight?: unknown;
 }
 
 function settled(r: PromiseSettledResult<unknown>): Row[] {
@@ -224,9 +267,11 @@ function settled(r: PromiseSettledResult<unknown>): Row[] {
   return Array.isArray(data) ? (data as Row[]) : [];
 }
 
-function newest(rows: Row[], dateKey: string): Row | null {
+/** Newest by assessment date, then created_at; a row with neither sorts last. */
+export function newest(rows: Row[], dateKey: string): Row | null {
   if (rows.length === 0) return null;
-  return [...rows].sort((a, b) => String(b[dateKey] ?? '').localeCompare(String(a[dateKey] ?? '')))[0] ?? null;
+  const key = (r: Row) => `${String(r[dateKey] ?? '')}|${String(r.created_at ?? '')}`;
+  return [...rows].sort((a, b) => key(b).localeCompare(key(a)))[0] ?? null;
 }
 
 /** The client's own interview: a completed one beats the newest draft. */
@@ -294,6 +339,13 @@ export async function loadAiClientFacts(clientId: string): Promise<AiClientFacts
       meal_frequency: mapMealFrequency(firstText(nutrition?.meals_per_day, lifestyle?.meal_frequency)),
       dietary_preferences: joinList(nutrition?.diet_preferences) || joinList(lifestyle?.food_preferences),
       allergies: joinList(nutrition?.food_allergies) || joinList(nutrition?.foods_to_avoid),
+      target_weight_kg: within(activeGoal?.target_weight, STATED_RANGE.target_weight_kg),
+      workout_time: mapWorkoutTime(c.preferred_workout_time),
+      workout_duration_minutes: within(c.session_minutes, STATED_RANGE.workout_duration_minutes),
+      food_culture: mapFoodCulture(nutrition?.food_culture),
+      regional_cuisines: joinList(nutrition?.regional_cuisines, 300),
+      dietary_pattern: mapDietaryPattern(nutrition?.dietary_pattern),
+      meal_timing_preference: mapMealTiming(nutrition?.meal_timing_preference),
     },
   };
 }

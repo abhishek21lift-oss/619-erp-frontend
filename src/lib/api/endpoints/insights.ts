@@ -8,7 +8,7 @@ import { http, httpSSE } from '../../http';
 import { buildQs } from '../qs';
 import type {
   ActivityFeed, AiActionPlan, AiActionResult, AiActionSummary,
-  AiBusinessInsights, AiBusinessRawData, AiConversation, AiDietParams, AiDietPlan,
+  AiBusinessInsights, AiBusinessRawData, AiConversation, AiDietGenerationResult, AiDietParams,
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiKnowledgeGrounding, AiMessage, AiModelStat,
   AiPostureInsights, AiProgressAnalysis, AiProgressDataCounts, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   AiWorkoutGenerationResult, AiWorkoutContext, AiWeightPoint,
@@ -199,7 +199,7 @@ export const ai = {
     }),
 
   generateDiet: (params: AiDietParams) =>
-    httpSSE<{ data: AiDietPlan; model: string; tier: string; used_fallback: boolean; grounding?: AiKnowledgeGrounding }>('/api/ai/diet/generate', {
+    httpSSE<AiDietGenerationResult>('/api/ai/diet/generate', {
       method: 'POST',
       body: JSON.stringify(params),
     }),

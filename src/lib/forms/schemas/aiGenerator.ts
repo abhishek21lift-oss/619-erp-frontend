@@ -45,6 +45,8 @@ export const STATED_RANGE = {
   height_cm: [90, 260],
   training_days: [1, 7],
   meal_frequency: [1, 12],
+  target_weight_kg: [30, 400],
+  workout_duration_minutes: [20, 180],
 } as const;
 
 const ageField = integerField({
@@ -88,6 +90,12 @@ export const aiDietInputSchema = z.object({
   }),
   dietary_preferences: textField({ label: 'Dietary preferences', maxLength: 300 }),
   allergies: textField({ label: 'Allergies', maxLength: 300 }),
+  target_weight_kg: decimalField({
+    label: 'Target weight', min: STATED_RANGE.target_weight_kg[0], max: STATED_RANGE.target_weight_kg[1], unit: 'kg',
+  }),
+  workout_duration_minutes: integerField({
+    label: 'Workout duration', min: STATED_RANGE.workout_duration_minutes[0], max: STATED_RANGE.workout_duration_minutes[1], unit: 'minutes',
+  }),
 });
 
 export type AiWorkoutInput = z.output<typeof aiWorkoutInputSchema>;

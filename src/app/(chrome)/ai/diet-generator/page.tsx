@@ -6,7 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Droplets, ShoppingCart, Pill, Utensils } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
-import type { AiDietPlan, AiDietMeal } from '@/lib/api';
+import type {
+  AiDietCalculation, AiDietMeal, AiDietParams, AiDietPlan, AiDietScheduleSlot, AiDietValidation,
+} from '@/lib/api';
 import type { AiKnowledgeGrounding } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { PageContainer, PageHero } from '@/components/ui';
@@ -16,6 +18,7 @@ import {
 } from '@/components/ui/form';
 import { aiDietInputSchema, stated } from '@/lib/forms/schemas/aiGenerator';
 import { AiClientPicker, type AiClientOption } from '@/components/ai/AiClientPicker';
+import DietPlanSummary from '@/components/ai/DietPlanSummary';
 import { GroundingLine } from '@/components/pt-os/GenerationEvidence';
 import { applyFacts, hasAnyFact, useAiClientPrefill } from '@/lib/ai-client-prefill';
 
@@ -29,6 +32,8 @@ const INITIAL_FORM = {
   age: '', gender: 'male', weight_kg: '', height_cm: '',
   activity_level: 'moderately_active', goal: 'maintenance',
   dietary_preferences: '', allergies: '', budget: 'moderate', meal_frequency: '4',
+  target_weight_kg: '', workout_time: '', workout_duration_minutes: '',
+  food_culture: '', dietary_pattern: '', meal_timing_preference: '', regional_cuisines: '',
 };
 
 const ACTIVITY_LEVELS = ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'];
@@ -75,7 +80,11 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
           </span>
           <div className="min-w-0">
             <span className="block truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>{meal.name}</span>
-            {meal.time && <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{meal.time}</span>}
+            {(meal.slot || meal.time || meal.day_offset === 1) && (
+              <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>
+                {meal.slot ? `${meal.slot} · ` : ''}{meal.time}{meal.day_offset === 1 ? ' (next day)' : ''}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2.5">
@@ -101,8 +110,15 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
               <div key={i} className="flex items-center justify-between gap-3 py-2.5"
                 style={{ borderBottom: i < (meal.foods?.length ?? 0) - 1 ? '1px solid var(--border)' : 'none' }}>
                 <div className="min-w-0">
-                  <div className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{food.name}</div>
-                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>{food.quantity}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{food.name}</span>
+                    {food.nutrition_source === 'model' && (
+                      <span className="flex-shrink-0 text-[10px] font-[600]" style={{ color: 'var(--text-disabled)' }}>unverified</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+                    {food.quantity}{typeof food.quantity === 'number' && food.unit ? ` ${food.unit}` : ''}
+                  </div>
                 </div>
                 <div className="flex-shrink-0 text-right">
                   <div className="text-[13px] font-[650]" style={{ color: 'var(--text-secondary)' }}>{food.calories} kcal</div>
@@ -133,8 +149,12 @@ export default function DietGeneratorPage() {
   const [loadStep, setLoadStep] = useState(0);
   const [plan, setPlan] = useState<AiDietPlan | null>(null);
   const [meta, setMeta] = useState<{
+    generationId: string | null;
     model?: string; tier?: string; used_fallback?: boolean;
     grounding?: AiKnowledgeGrounding;
+    calculation: AiDietCalculation;
+    schedule: AiDietScheduleSlot[];
+    validation: AiDietValidation;
   } | null>(null);
   const [error, setError] = useState('');
   /** Per-field messages from the schema. Populated only by a generate ATTEMPT. */
@@ -195,6 +215,13 @@ export default function DietGeneratorPage() {
   const mealsField = useStandaloneField('meal_frequency', form.meal_frequency, (v: string) => set('meal_frequency', v), { error: fieldErrors.meal_frequency });
   const preferencesField = useStandaloneField('dietary_preferences', form.dietary_preferences, (v: string) => set('dietary_preferences', v), { error: fieldErrors.dietary_preferences });
   const allergiesField = useStandaloneField('allergies', form.allergies, (v: string) => set('allergies', v), { error: fieldErrors.allergies });
+  const targetWeightField = useStandaloneField('target_weight_kg', form.target_weight_kg, (v: string) => set('target_weight_kg', v), { error: fieldErrors.target_weight_kg });
+  const workoutTimeField = useStandaloneField('workout_time', form.workout_time, (v: string) => set('workout_time', v), { error: fieldErrors.workout_time });
+  const durationField = useStandaloneField('workout_duration_minutes', form.workout_duration_minutes, (v: string) => set('workout_duration_minutes', v));
+  const cultureField = useStandaloneField('food_culture', form.food_culture, (v: string) => set('food_culture', v));
+  const patternField = useStandaloneField('dietary_pattern', form.dietary_pattern, (v: string) => set('dietary_pattern', v));
+  const timingField = useStandaloneField('meal_timing_preference', form.meal_timing_preference, (v: string) => set('meal_timing_preference', v));
+  const cuisinesField = useStandaloneField('regional_cuisines', form.regional_cuisines, (v: string) => set('regional_cuisines', v));
 
   useEffect(() => {
     if (!loading) { setLoadStep(0); return; }
@@ -229,6 +256,8 @@ export default function DietGeneratorPage() {
       meal_frequency: form.meal_frequency,
       dietary_preferences: form.dietary_preferences,
       allergies: form.allergies,
+      target_weight_kg: form.target_weight_kg,
+      workout_duration_minutes: form.workout_duration_minutes,
     });
     if (!parsed.success) {
       const next: Record<string, string> = {};
@@ -255,9 +284,22 @@ export default function DietGeneratorPage() {
         dietary_preferences: v.dietary_preferences ?? undefined,
         allergies: v.allergies ?? undefined,
         budget: form.budget, meal_frequency: stated(v.meal_frequency),
+        target_weight_kg: stated(v.target_weight_kg),
+        workout_time: form.workout_time || undefined,
+        workout_duration_minutes: stated(v.workout_duration_minutes),
+        food_culture: (form.food_culture || undefined) as AiDietParams['food_culture'],
+        regional_cuisines: form.regional_cuisines
+          ? form.regional_cuisines.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 5)
+          : undefined,
+        dietary_pattern: (form.dietary_pattern || undefined) as AiDietParams['dietary_pattern'],
+        meal_timing_preference: (form.meal_timing_preference || undefined) as AiDietParams['meal_timing_preference'],
       });
       setPlan(res.data);
-      setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding });
+      setMeta({
+        generationId: res.generation_id ?? null,
+        model: res.model, tier: res.tier, used_fallback: res.used_fallback, grounding: res.grounding,
+        calculation: res.calculation, schedule: res.schedule, validation: res.validation,
+      });
     } catch (e: unknown) {
       setError(generationErrorMessage(e, 'Failed to generate diet plan.'));
     } finally {
@@ -277,7 +319,10 @@ export default function DietGeneratorPage() {
     setSaveError('');
     setSaved(false);
     try {
-      await api.diet.saveFromAi({ client_id: clientId, plan });
+      const generationId = meta?.generationId;
+      await api.diet.saveFromAi(generationId
+        ? { client_id: clientId, generation_id: generationId }
+        : { client_id: clientId, plan });
       setSaved(true);
     } catch (e: unknown) {
       setSaveError(errorMessage(e, 'Could not save this plan.'));
@@ -287,8 +332,9 @@ export default function DietGeneratorPage() {
   };
 
   // The grounding gate already ran normalisePlan, so structure_ok:false means
-  // the save route would refuse this exact plan. Say so before the click.
-  const planSaveable = meta?.grounding?.structure_ok !== false;
+  // the save route would refuse this exact plan. Say so before the click. A
+  // failed delivery check is the same answer for the same reason.
+  const planSaveable = meta?.validation?.ok !== false && meta?.grounding?.structure_ok !== false;
 
   return (
     <Guard>
@@ -381,6 +427,31 @@ export default function DietGeneratorPage() {
             />
           </div>
 
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <TextField field={workoutTimeField} label="Workout time (HH:MM)" density="compact" maxLength={5} />
+            <SelectField field={durationField} label="Session length" density="compact"
+              options={[{ value: '', label: 'Record/default (60 min)' }, { value: '30', label: '30 min' },
+                { value: '45', label: '45 min' }, { value: '60', label: '60 min' },
+                { value: '75', label: '75 min' }, { value: '90', label: '90 min' }]} />
+            {/* Selects, not chips, so "not recorded" is a real choice. A chip group
+                cannot express "nobody knows", and defaulting it would turn a guess into
+                a stored fact. */}
+            <SelectField field={cultureField} label="Food culture" density="compact"
+              options={[{ value: '', label: 'Not recorded (default: Mixed)' }, { value: 'indian', label: 'Indian' },
+                { value: 'western', label: 'Western' }, { value: 'mixed', label: 'Mixed' }]} />
+            <SelectField field={patternField} label="Dietary pattern" density="compact"
+              options={[{ value: '', label: 'Not recorded' }, { value: 'vegetarian', label: 'Vegetarian' },
+                { value: 'eggetarian', label: 'Eggetarian' }, { value: 'non_vegetarian', label: 'Non-vegetarian' },
+                { value: 'vegan', label: 'Vegan' }]} />
+            <SelectField field={timingField} label="Meal timing" density="compact"
+              options={[{ value: '', label: 'Not recorded (default: Standard)' }, { value: 'early', label: 'Early' },
+                { value: 'standard', label: 'Standard' }, { value: 'late', label: 'Late' },
+                { value: 'no_preference', label: 'No preference' }]} />
+            <NumberField field={targetWeightField} label="Target weight" density="compact" mode="decimal" suffix="kg" />
+            <TextField field={cuisinesField} label="Regional cuisines (comma separated)" density="compact"
+              className="sm:col-span-2" maxLength={300} />
+          </div>
+
           {error && (
             <div className="mt-4 rounded-[12px] px-4 py-2.5 text-[13px] font-[600]"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
@@ -445,6 +516,15 @@ export default function DietGeneratorPage() {
               </m.div>
             )}
             {meta?.grounding && <GroundingLine grounding={meta.grounding} />}
+
+            {/* What the engine calculated, printed rather than recomputed. */}
+            {meta?.calculation && (
+              <DietPlanSummary
+                calculation={meta.calculation}
+                schedule={meta.schedule}
+                validation={meta.validation}
+              />
+            )}
 
             {/* Save & assign — the step the page never had */}
             <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
