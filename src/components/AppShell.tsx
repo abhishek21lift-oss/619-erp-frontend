@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Bell,
-  Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon,
+  Menu, CheckCheck, ExternalLink, ChevronRight, Sun, Moon, UserPlus,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -361,6 +361,22 @@ function AppShellContent({ children }: AppShellProps) {
                   now: on a phone the search is a 36px button, so nothing else
                   in the row grows to fill the space. */}
               <div className="flex-1" />
+
+              {/* ── New client ──
+                  Enrolment is the one action a trainer starts from any screen,
+                  so it sits in the bar instead of two taps down in the sidebar.
+                  Icon-only below sm, where the row has no width to spare. */}
+              {user?.role === 'trainer' && (
+                <Link
+                  href="/pt-os/new-client"
+                  aria-label="Add new client"
+                  className="topbar-hit flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-[12px] font-[750] text-white transition-transform active:scale-95 sm:px-3"
+                  style={{ background: 'var(--brand)' }}
+                >
+                  <UserPlus size={15} strokeWidth={2.2} />
+                  <span className="hidden sm:inline">New Client</span>
+                </Link>
+              )}
 
               {/* ── Control capsule ──
                   Theme and notifications ride in one glass capsule, the way
