@@ -4477,6 +4477,64 @@ export type SavedFromGeneration = {
  * a missing height, this one answers with the field list and the trainer fills
  * it in.
  */
+export type AiDietScheduleSlot = {
+  slot: string;
+  label: string;
+  time: string;
+  day_offset: 0 | 1;
+  calorie_share: number;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g: number;
+};
+
+export type AiDietCalculation = {
+  version: string;
+  bmr_kcal: number | null;
+  tdee_kcal: number | null;
+  calorie_target: number | null;
+  activity_multiplier: number | null;
+  calorie_adjustment_pct: number | null;
+  macros: { protein_g: number; carbs_g: number; fat_g: number };
+  fiber_g: number | null;
+  water_ml: number | null;
+  target?: {
+    weight_kg: number | null;
+    body_fat_pct: number | null;
+    delta_kg: number | null;
+    direction: 'loss' | 'gain' | null;
+    weekly_rate_kg: number | null;
+    timeline_weeks: number | null;
+    target_date: string | null;
+    aggressive: boolean;
+  } | null;
+  reconciled?: boolean;
+  warnings: { code: string; message: string }[];
+  missing?: string[];
+};
+
+export type AiDietValidation = {
+  ok: boolean;
+  blockers: string[];
+  warnings: string[];
+  checks: { id: string; status: string; detail?: string }[];
+};
+
+export type AiDietGenerationResult = {
+  data: AiDietPlan;
+  model: string;
+  tier: string;
+  used_fallback: boolean;
+  grounding?: AiKnowledgeGrounding;
+  generation_id: string | null;
+  calculation: AiDietCalculation;
+  schedule: AiDietScheduleSlot[];
+  validation: AiDietValidation;
+  prompt_version: string;
+};
+
 export type AiDietParams = {
   client_id: string;
   age?: number;
@@ -4489,24 +4547,40 @@ export type AiDietParams = {
   allergies?: string;
   budget?: string;
   meal_frequency?: number;
+  target_weight_kg?: number;
+  workout_time?: string;
+  workout_duration_minutes?: number;
+  food_culture?: 'indian' | 'western' | 'mixed';
+  regional_cuisines?: string[];
+  dietary_pattern?: 'vegetarian' | 'eggetarian' | 'non_vegetarian' | 'vegan';
+  meal_timing_preference?: 'early' | 'standard' | 'late' | 'no_preference';
 };
 
 export type AiDietFood = {
   name: string;
-  quantity: string;
+  /** Number once the engine runs; older previews and legacy saves carry '60 g'. */
+  quantity: number | string;
+  unit?: string;
+  grams?: number | null;
   calories: number;
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  fiber_g?: number | null;
+  food_id?: string | null;
+  nutrition_source?: 'reference' | 'model';
 };
 
 export type AiDietMeal = {
   name: string;
   time: string;
+  slot?: string;
+  day_offset?: 0 | 1;
   calories: number;
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  fiber_g?: number | null;
   foods: AiDietFood[];
 };
 
@@ -4516,6 +4590,7 @@ export type AiDietPlan = {
   goal: string;
   total_calories: number;
   macros: { protein_g: number; carbs_g: number; fat_g: number };
+  fiber_g?: number | null;
   meal_frequency: number;
   meals: AiDietMeal[];
   grocery_list: { category: string; items: string[] }[];

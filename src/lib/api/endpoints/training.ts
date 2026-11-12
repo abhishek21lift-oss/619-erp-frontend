@@ -301,11 +301,14 @@ export const diet = {
    * Save a reviewed AI diet as the studio's own template, its meals and an
    * active assignment to the client — one transaction on the server.
    */
-  saveFromAi: (data: { client_id: string; plan: AiDietPlan }) =>
-    http<{ message: string; template_id: string; name: string; meals: number; assignment: DietAssignment }>(
-      '/api/diet/plans/from-ai',
-      { method: 'POST', body: JSON.stringify(data) },
-    ),
+  saveFromAi: (data: { client_id: string; generation_id?: string; plan?: AiDietPlan }) =>
+    http<{
+      message: string; template_id: string; name: string; meals: number; foods?: number;
+      generation_id?: string; targets_stale?: boolean; assignment: DietAssignment;
+    }>('/api/diet/plans/from-ai', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   tracker: {
     get: (params: { client_id: string; date?: string }) =>
       http<{ today: NutritionLog | null; history: NutritionLog[] }>(`/api/diet/tracker${buildQs(params)}`),
