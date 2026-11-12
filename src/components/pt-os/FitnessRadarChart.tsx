@@ -33,30 +33,33 @@ export function FitnessRadarChart({
   const labelFill = onCard ? 'currentColor' : 'rgba(255,255,255,0.65)';
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <RadarChart data={data} outerRadius={onCard ? '66%' : '75%'}>
-        <PolarGrid stroke={onCard ? 'currentColor' : 'rgba(255,255,255,0.12)'} opacity={onCard ? 0.14 : 1} />
-        <PolarAngleAxis dataKey="category" tick={{ fill: labelFill, fontSize: 11, fontWeight: 600 }} />
-        <PolarRadiusAxis
-          angle={90} domain={[0, 100]} axisLine={false}
-          tick={onCard
-            ? { fill: 'currentColor', opacity: 0.45, fontSize: 9 }
-            : { fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
-        />
-        <Radar
-          name="Score" dataKey="score"
-          stroke={accent} fill={accent} fillOpacity={0.35}
-          strokeWidth={2} isAnimationActive={false} connectNulls={false}
-        />
-        <Tooltip
-          contentStyle={onCard
-            ? { background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12, color: 'var(--text-primary)' }
-            : { background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12 }}
-          labelStyle={onCard ? { color: 'var(--text-primary)', fontWeight: 700 } : { color: '#fff', fontWeight: 700 }}
-          itemStyle={{ color: accent }}
-        />
-      </RadarChart>
-    </ResponsiveContainer>
+    <div
+      role="img"
+      aria-label="Radar chart of the seven fitness steps, each plotted as a percentage of the points it measured."
+    >
+      <ResponsiveContainer width="100%" height={height}>
+        <RadarChart data={data} outerRadius={onCard ? '62%' : '75%'}>
+          <PolarGrid stroke={onCard ? 'currentColor' : 'rgba(255,255,255,0.12)'} opacity={onCard ? 0.14 : 1} />
+          <PolarAngleAxis dataKey="category" tick={{ fill: labelFill, fontSize: 11, fontWeight: 600 }} />
+          {/* No radius ticks: 100/75/50/25 sat on top of the polygon and said
+              nothing the step cards do not. */}
+          <PolarRadiusAxis angle={90} domain={[0, 100]} axisLine={false} tick={false} />
+          <Radar
+            name="Score" dataKey="score"
+            stroke={accent} fill={accent} fillOpacity={0.35}
+            strokeWidth={2} isAnimationActive={false} connectNulls={false}
+          />
+          <Tooltip
+            formatter={(value) => `${value}%`}
+            contentStyle={onCard
+              ? { background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12, color: 'var(--text-primary)' }
+              : { background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12 }}
+            labelStyle={onCard ? { color: 'var(--text-primary)', fontWeight: 700 } : { color: '#fff', fontWeight: 700 }}
+            itemStyle={{ color: accent }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 

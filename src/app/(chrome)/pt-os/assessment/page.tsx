@@ -22,7 +22,7 @@ import {
   calc1RM, classifyStrengthDetail, classifyEndurance,
   scoreBpPoints, scoreAnthropometricPoints, scoreBodyCompositionPoints, scoreCardioPoints,
   scoreStrengthBattery, scoreEnduranceBatteryPoints, scoreFlexibilityPoints, computeTotalScore,
-  scoreNum, scoresFromAssessmentRow,
+  scoreNum, scoreCoverage, scoresFromAssessmentRow,
 } from '@/lib/fitness-calculations';
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
 import { STEPS, initAssessmentForm, formFromAssessmentRow, n } from '@/components/pt-os/fitness-testing/types';
@@ -44,7 +44,7 @@ import FitnessDashboard, { type FitnessScores, type FitnessVitals, type FitnessA
 import { ScreeningWarningsNotice } from '@/components/pt-os/fitness-testing/ScreeningWarningsNotice';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
 import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
-import { bandBg, bandInk, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
+import { bandBg, bandInk, bandLabel, gradient, tones } from '@/components/pt-os/fitness-testing/fitnessTheme';
 import { emerald } from '@/lib/palette';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
@@ -716,7 +716,12 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
   return (
     <PageContainer>
-      <PageHero icon={<ClipboardCheck size={18} />} title="Fitness Testing">
+      <PageHero
+        compact
+        icon={<ClipboardCheck size={18} />}
+        title="Fitness Testing"
+        subtitle="Seven-step fitness assessment"
+      >
         {!reviewMode && !lastSaved && <StepperTimeline steps={STEPS} current={step} onStep={goToStep} />}
       </PageHero>
 
@@ -800,6 +805,10 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                   // Only a v2 row stores a denominator; a v1 component average
                   // cannot be placed on the 100-point band scale.
                   const overall = scoreNum(a.overall_max) == null ? null : scoreNum(a.overall_fitness_score);
+                  // A tier word is only honest when the battery measured all
+                  // 100 points; a 1-of-7 score of 100 is still partial.
+                  const rowScores = scoresFromAssessmentRow(a);
+                  const complete = scoreCoverage(rowScores).isComplete && rowScores.overallMax === 100;
                   return (
                   <div key={String(a.id)} className="flex items-center justify-between gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--bg-subtle)' }}>
                     <div>
@@ -809,7 +818,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
                     <div className="flex items-center gap-2">
                       {overall != null && (
                         <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: bandBg(overall), color: bandInk(overall) }}>
-                          Score {String(a.overall_fitness_score)}
+                          {complete ? `${bandLabel(overall)} · ${String(a.overall_fitness_score)}` : `Partial · ${String(a.overall_fitness_score)}`}
                         </span>
                       )}
                       <button
