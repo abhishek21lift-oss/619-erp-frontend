@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * The six assessed domains on one body, so a member can see where the numbers
+ * The five assessed domains on one body, so a member can see where the numbers
  * come from before reading any of them.
  *
  * This is a read-only illustration, not a medical diagram: each marker is a
@@ -20,7 +20,6 @@ const MARKERS: Record<DomainKey, { x: number; y: number; hint: string }> = {
   strength: { x: 49, y: 120, hint: 'Arm' },
   endurance: { x: 79, y: 251, hint: 'Thigh' },
   flexibility: { x: 119, y: 177, hint: 'Hip' },
-  mobility: { x: 151, y: 90, hint: 'Shoulder' },
 };
 
 function tierColor(tier: DomainScore['tier']): string {

@@ -3494,13 +3494,27 @@ export type MeFitnessAssessment = {
   endurance_score_computed: number | string | null;
   /** The stored column name predates the rename; this is the flexibility step. */
   mobility_score_computed: number | string | null;
+  bp_systolic: number | string | null;
+  bp_diastolic: number | string | null;
+  bp_category: string | null;
+  resting_heart_rate: number | string | null;
+  rhr_category: string | null;
+  resting_spo2: number | string | null;
+  spo2_category: string | null;
   weight: number | string | null;
+  height_cm: number | string | null;
   bmi: number | string | null;
+  bmi_category: string | null;
   body_fat_pct: number | string | null;
   muscle_mass_pct: number | string | null;
   lean_body_mass_kg: number | string | null;
   fat_mass_kg: number | string | null;
   waist_cm: number | string | null;
+  waist_iliac_cm: number | string | null;
+  hips_cm: number | string | null;
+  waist_hip_ratio: number | string | null;
+  waist_risk: string | null;
+  whr_risk: string | null;
   visceral_fat: number | string | null;
   body_water_pct: number | string | null;
   body_comp_method: string | null;

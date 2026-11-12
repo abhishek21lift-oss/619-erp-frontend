@@ -7,16 +7,17 @@
  * framework's denominator and asks `tierForScore` for a label, but it never
  * re-scores a test and has no control that writes anything.
  *
- * The six domains are the ones a member asked to see — body composition,
- * cardio, strength, endurance, flexibility, and the separate mobility
- * screening when one exists. History is the same list the trainer recorded;
- * two of those rows can be compared line by line from this page.
+ * The five domains are the ones a member asked to see — body composition,
+ * cardio, strength, endurance and flexibility — with the blood-pressure and
+ * anthropometric readings that sit behind them. History is the same list the
+ * trainer recorded; two of those rows can be compared line by line from this
+ * page.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
-  Activity, ClipboardCheck, Dumbbell, HeartPulse, Move, Repeat, TrendingUp,
+  Activity, ClipboardCheck, Dumbbell, HeartPulse, Move, Repeat,
 } from 'lucide-react';
 import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -31,8 +32,11 @@ import { assessmentLabel, domainsFrom, type DomainKey, type DomainScore } from '
 import { ProgressComparison } from '@/components/pt-os/fitness-testing/ProgressComparison';
 import { FormField, SelectInput } from '@/components/ui/form';
 import { api } from '@/lib/api';
-import type { MeFitnessAssessment, MeFitnessHistory, MeMobilityAssessment } from '@/lib/api';
-import { classifyBodyFat, scoreNum, type FitnessTier, type Gender } from '@/lib/fitness-calculations';
+import type { MeFitnessAssessment, MeFitnessHistory } from '@/lib/api';
+import {
+  classifyBmi, classifyBodyFat, classifyBp, classifyRhr, classifySpo2,
+  classifyWaistRisk, classifyWhrRisk, scoreNum, type FitnessTier, type Gender,
+} from '@/lib/fitness-calculations';
 
 const DOMAIN_ICONS: Record<DomainKey, LucideIcon> = {
   body: Activity,
@@ -40,7 +44,6 @@ const DOMAIN_ICONS: Record<DomainKey, LucideIcon> = {
   strength: Dumbbell,
   endurance: Repeat,
   flexibility: Move,
-  mobility: TrendingUp,
 };
 
 const TIER_STYLE: Record<FitnessTier, { background: string; color: string }> = {
@@ -63,6 +66,17 @@ function TierPill({ tier, fallback }: { tier: FitnessTier | null; fallback?: str
     <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-[740]" style={TIER_STYLE[tier]}>
       {tier}
     </span>
+  );
+}
+
+/** A stored reading and its norm label, in the same tile language as the domains. */
+function MeasureTile({ label, value, note }: { label: string; value: string; note: string | null }) {
+  return (
+    <div className="rounded-[16px] px-3.5 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <p className="text-[9px] font-[720] uppercase tracking-[0.1em]" style={{ color: MC.muted }}>{label}</p>
+      <p className="mt-1 text-[16px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: MC.ink }}>{value}</p>
+      {note && <p className="mt-1.5 text-[11px] font-[650]" style={{ color: MC.muted }}>{note}</p>}
+    </div>
   );
 }
 
@@ -101,7 +115,7 @@ function TrendChart({ points, unit }: { points: { date: string; label: string; v
 }
 
 /** Two or three measured values from the stored row; nothing is inferred. */
-function detailLines(key: DomainKey, a: MeFitnessAssessment, gender: string | null, mobility: MeMobilityAssessment | null): string[] {
+function detailLines(key: DomainKey, a: MeFitnessAssessment, gender: string | null): string[] {
   const n = scoreNum;
   switch (key) {
     case 'body': {
@@ -135,11 +149,6 @@ function detailLines(key: DomainKey, a: MeFitnessAssessment, gender: string | nu
         a.flexibility_category_2,
         a.has_asymmetry ? 'Asymmetry noted' : null,
       ].filter((v): v is string => Boolean(v));
-    case 'mobility':
-      return mobility
-        ? [mobility.mobility_category, longDate(mobility.assessment_date)]
-            .filter((v): v is string => Boolean(v))
-        : [];
     default:
       return [];
   }
@@ -213,14 +222,24 @@ function FitnessBody() {
 
   const assessments = useMemo(() => data?.assessments ?? [], [data]);
   const selected = assessments.find((a) => a.id === selectedId) ?? assessments[0];
-  const mobility = data?.latest_mobility ?? null;
-  const domains = useMemo(
-    () => (selected ? domainsFrom(selected, mobility) : []),
-    [selected, mobility],
-  );
+  const gender = (data?.client?.gender ?? null) as Gender | null;
+  const domains = useMemo(() => (selected ? domainsFrom(selected) : []), [selected]);
 
   const overall = selected ? scoreNum(selected.overall_fitness_score) : null;
   const overallMax = selected ? scoreNum(selected.overall_max) : null;
+
+  // The readings behind steps 1 and 2. Stored categories win; old rows carry
+  // none, so their raw values are classified with the shared helpers.
+  const cat = (v: string | null) => (v && v.trim() ? v : null);
+  const bpSystolic = selected ? scoreNum(selected.bp_systolic) : null;
+  const bpDiastolic = selected ? scoreNum(selected.bp_diastolic) : null;
+  const restingHeartRate = selected ? scoreNum(selected.resting_heart_rate) : null;
+  const restingSpo2 = selected ? scoreNum(selected.resting_spo2) : null;
+  const bmi = selected ? scoreNum(selected.bmi) : null;
+  const waistIliac = selected ? scoreNum(selected.waist_iliac_cm) : null;
+  const waistHipRatio = selected ? scoreNum(selected.waist_hip_ratio) : null;
+  const hasVitals = bpSystolic != null || bpDiastolic != null || restingHeartRate != null || restingSpo2 != null;
+  const hasAnthropometric = bmi != null || waistIliac != null || waistHipRatio != null;
 
   // Chronological, one reading per test. A partial battery still plots: the
   // stored overall score is a percentage, and the history row says "Partial".
@@ -302,10 +321,54 @@ function FitnessBody() {
             </Card>
           </Section>
 
-          <Section title="Your six domains">
+          {hasVitals && (
+            <Section title="Blood pressure & resting vitals">
+              <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3">
+                <MeasureTile
+                  label="Blood pressure"
+                  value={bpSystolic != null || bpDiastolic != null ? `${bpSystolic ?? '—'}/${bpDiastolic ?? '—'} mmHg` : '—'}
+                  note={cat(selected.bp_category) ?? classifyBp(bpSystolic, bpDiastolic)}
+                />
+                <MeasureTile
+                  label="Resting heart rate"
+                  value={restingHeartRate == null ? '—' : `${restingHeartRate} bpm`}
+                  note={cat(selected.rhr_category) ?? classifyRhr(restingHeartRate)}
+                />
+                <MeasureTile
+                  label="Resting SpO₂"
+                  value={restingSpo2 == null ? '—' : `${restingSpo2}%`}
+                  note={cat(selected.spo2_category) ?? classifySpo2(restingSpo2)}
+                />
+              </div>
+            </Section>
+          )}
+
+          {hasAnthropometric && (
+            <Section title="Anthropometrics">
+              <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3">
+                <MeasureTile
+                  label="BMI"
+                  value={bmi == null ? '—' : String(bmi)}
+                  note={cat(selected.bmi_category) ?? classifyBmi(bmi)}
+                />
+                <MeasureTile
+                  label="Waist (iliac)"
+                  value={waistIliac == null ? '—' : `${waistIliac} cm`}
+                  note={classifyWaistRisk(waistIliac, gender)}
+                />
+                <MeasureTile
+                  label="Waist-hip ratio"
+                  value={waistHipRatio == null ? '—' : String(waistHipRatio)}
+                  note={cat(selected.whr_risk) ?? classifyWhrRisk(waistHipRatio, gender)}
+                />
+              </div>
+            </Section>
+          )}
+
+          <Section title="Your five domains">
             <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3">
               {domains.map((d) => (
-                <DomainCard key={d.key} domain={d} lines={detailLines(d.key, selected, data?.client?.gender ?? null, mobility)} />
+                <DomainCard key={d.key} domain={d} lines={detailLines(d.key, selected, data?.client?.gender ?? null)} />
               ))}
             </div>
           </Section>
