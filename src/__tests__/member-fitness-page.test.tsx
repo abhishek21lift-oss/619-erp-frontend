@@ -27,6 +27,8 @@ const assessment = (over: Record<string, unknown> = {}) => ({
   overall_max: '100.0',
   scoring_formula_version: 2,
   tier: 'Fit',
+  bp_points: '8.0',
+  anthropometric_points: '7.0',
   body_composition_score: 12,
   cardio_score_computed: '16.5',
   strength_score_computed: '11.0',
@@ -78,7 +80,8 @@ const history = [
   assessment(),
   assessment({
     id: 'a-first', assessment_number: 1, assessment_date: '2026-01-15', assessment_type: 'initial',
-    overall_fitness_score: 62, overall_points: '62.0', tier: 'Moderate',
+    overall_fitness_score: 62, overall_points: '62.0', overall_max: '100.0', tier: 'Moderate',
+    bp_points: '10.0', anthropometric_points: '8.0',
     body_composition_score: 9, cardio_score_computed: '12.0', strength_score_computed: '9.0',
     endurance_score_computed: '9.0', mobility_score_computed: '10.5',
     body_fat_pct: '25.0', weight: '76.0',
@@ -91,7 +94,7 @@ beforeEach(() => {
 });
 
 describe('the member fitness page', () => {
-  it('renders the stored score, tier, five domains, readings and history', async () => {
+  it('renders the stored score, tier, seven category cards, readings and history', async () => {
     apiMocks.fitnessTests.mockResolvedValue({
       data: {
         // The API still carries the separate mobility screening; the page no
@@ -108,24 +111,51 @@ describe('the member fitness page', () => {
     expect(screen.getByText('78')).toBeInTheDocument();
     expect(screen.getAllByText('Fit').length).toBeGreaterThan(0);
 
-    for (const label of ['Body composition', 'Cardio', 'Strength', 'Endurance', 'Flexibility']) {
+    for (const label of [
+      'Blood Pressure', 'Anthropometric Data', 'Body Composition',
+      'Cardiorespiratory Endurance', 'Muscular Strength', 'Muscular Endurance', 'Flexibility',
+    ]) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
     expect(screen.queryByText('Mobility')).toBeNull();
 
-    expect(screen.getByText('Blood pressure & resting vitals')).toBeInTheDocument();
-    expect(screen.getByText('128/82 mmHg')).toBeInTheDocument();
-    expect(screen.getByText('68 bpm')).toBeInTheDocument();
-    expect(screen.getByText('98%')).toBeInTheDocument();
-    expect(screen.getByText('Anthropometrics')).toBeInTheDocument();
-    expect(screen.getByText('24.1')).toBeInTheDocument();
-    expect(screen.getByText('88 cm')).toBeInTheDocument();
-    expect(screen.getByText('0.92')).toBeInTheDocument();
+    // The stored step points are the trainer's numbers, not a member-side score.
+    expect(screen.getByText('8 / 10')).toBeInTheDocument();
+    expect(screen.getByText('7 / 10')).toBeInTheDocument();
+    expect(screen.getAllByText('12 / 15').length).toBeGreaterThan(0);
+    expect(screen.getByText('16.5 / 20')).toBeInTheDocument();
+
+    // The readings behind steps 1 and 2 sit in their category cards.
+    expect(screen.getByText('128/82 mmHg · Hypertension Stage 1')).toBeInTheDocument();
+    expect(screen.getByText('68 bpm resting · Normal')).toBeInTheDocument();
+    expect(screen.getByText('98% SpO₂ · Normal')).toBeInTheDocument();
+    expect(screen.getByText('BMI 24.1 · Overweight')).toBeInTheDocument();
+    expect(screen.getByText('88 cm waist · Above low-risk threshold')).toBeInTheDocument();
+    expect(screen.getByText('0.92 waist-hip · Above low-risk threshold')).toBeInTheDocument();
+
+    // Every card carries the date of the test it was read from.
+    expect(screen.getAllByText('Assessed 12 Mar 2026')).toHaveLength(7);
 
     expect(screen.getByText('Body fat over time')).toBeInTheDocument();
     expect(screen.getByText('Assessment history')).toBeInTheDocument();
     expect(screen.getAllByText('62/100').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Good').length).toBeGreaterThan(0);
+  });
+
+  it('says Not Assessed for a category the test did not measure', async () => {
+    apiMocks.fitnessTests.mockResolvedValue({
+      data: {
+        client: { name: 'Asha', gender: 'female' },
+        assessments: [assessment({ anthropometric_points: null })],
+        latest_mobility: null,
+      },
+    });
+
+    render(<MemberFitnessPage />);
+    await screen.findByText('Fitness testing');
+
+    expect(screen.getByText('Not Assessed')).toBeInTheDocument();
+    expect(screen.queryByText('0 / 10')).toBeNull();
   });
 
   it('switches the shown result when an older assessment is selected', async () => {
@@ -145,8 +175,9 @@ describe('the member fitness page', () => {
     expect(older).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getAllByText('62').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Moderate').length).toBeGreaterThan(0);
-    // The readings above the domains follow the selected test, not "latest".
-    expect(screen.getByText('118/76 mmHg')).toBeInTheDocument();
+    // The cards follow the selected test, not "latest".
+    expect(screen.getByText('118/76 mmHg · Normal')).toBeInTheDocument();
+    expect(screen.getAllByText('Assessed 15 Jan 2026')).toHaveLength(7);
   });
 
   it('offers no write control', async () => {

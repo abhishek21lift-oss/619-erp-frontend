@@ -7,9 +7,9 @@
  * framework's denominator and asks `tierForScore` for a label, but it never
  * re-scores a test and has no control that writes anything.
  *
- * The five domains are the ones a member asked to see — body composition,
- * cardio, strength, endurance and flexibility — with the blood-pressure and
- * anthropometric readings that sit behind them. History is the same list the
+ * The seven categories are the framework's seven steps, in the trainer's
+ * order, each showing the points that step stored, its tier and the test date.
+ * The readings behind each score sit under it. History is the same list the
  * trainer recorded; two of those rows can be compared line by line from this
  * page.
  */
@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
-  Activity, ClipboardCheck, Dumbbell, HeartPulse, Move, Repeat,
+  Activity, ClipboardCheck, Dumbbell, HeartPulse, Move, Repeat, Ruler, Stethoscope,
 } from 'lucide-react';
 import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -39,6 +39,8 @@ import {
 } from '@/lib/fitness-calculations';
 
 const DOMAIN_ICONS: Record<DomainKey, LucideIcon> = {
+  bp: Stethoscope,
+  anthropometric: Ruler,
   body: Activity,
   cardio: HeartPulse,
   strength: Dumbbell,
@@ -58,7 +60,7 @@ function TierPill({ tier, fallback }: { tier: FitnessTier | null; fallback?: str
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-[740]"
         style={{ background: 'var(--bg-subtle)', color: MC.muted }}>
-        {fallback ?? 'Not measured'}
+        {fallback ?? 'Not Assessed'}
       </span>
     );
   }
@@ -66,17 +68,6 @@ function TierPill({ tier, fallback }: { tier: FitnessTier | null; fallback?: str
     <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-[740]" style={TIER_STYLE[tier]}>
       {tier}
     </span>
-  );
-}
-
-/** A stored reading and its norm label, in the same tile language as the domains. */
-function MeasureTile({ label, value, note }: { label: string; value: string; note: string | null }) {
-  return (
-    <div className="rounded-[16px] px-3.5 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-      <p className="text-[9px] font-[720] uppercase tracking-[0.1em]" style={{ color: MC.muted }}>{label}</p>
-      <p className="mt-1 text-[16px] font-[820] leading-none tabular-nums tracking-[-0.02em]" style={{ color: MC.ink }}>{value}</p>
-      {note && <p className="mt-1.5 text-[11px] font-[650]" style={{ color: MC.muted }}>{note}</p>}
-    </div>
   );
 }
 
@@ -114,10 +105,46 @@ function TrendChart({ points, unit }: { points: { date: string; label: string; v
   );
 }
 
-/** Two or three measured values from the stored row; nothing is inferred. */
+/** A stored category label, or null when the row predates the category. */
+function stored(value: string | null): string | null {
+  return value && value.trim() ? value : null;
+}
+
+/** The readings behind each category, from the stored row; nothing is inferred. */
 function detailLines(key: DomainKey, a: MeFitnessAssessment, gender: string | null): string[] {
   const n = scoreNum;
+  const withLabel = (value: string, label: string | null) => (label ? `${value} · ${label}` : value);
   switch (key) {
+    case 'bp': {
+      const systolic = n(a.bp_systolic);
+      const diastolic = n(a.bp_diastolic);
+      const rhr = n(a.resting_heart_rate);
+      const spo2 = n(a.resting_spo2);
+      return [
+        systolic == null && diastolic == null
+          ? null
+          : withLabel(
+            `${systolic ?? '—'}/${diastolic ?? '—'} mmHg`,
+            stored(a.bp_category) ?? classifyBp(systolic, diastolic),
+          ),
+        rhr == null ? null : withLabel(`${rhr} bpm resting`, stored(a.rhr_category) ?? classifyRhr(rhr)),
+        spo2 == null ? null : withLabel(`${spo2}% SpO₂`, stored(a.spo2_category) ?? classifySpo2(spo2)),
+      ].filter((v): v is string => Boolean(v));
+    }
+    case 'anthropometric': {
+      const bmi = n(a.bmi);
+      const waist = n(a.waist_iliac_cm);
+      const whr = n(a.waist_hip_ratio);
+      return [
+        bmi == null ? null : withLabel(`BMI ${bmi}`, stored(a.bmi_category) ?? classifyBmi(bmi)),
+        waist == null
+          ? null
+          : withLabel(`${waist} cm waist`, stored(a.waist_risk) ?? classifyWaistRisk(waist, gender as Gender | null)),
+        whr == null
+          ? null
+          : withLabel(`${whr} waist-hip`, stored(a.whr_risk) ?? classifyWhrRisk(whr, gender as Gender | null)),
+      ].filter((v): v is string => Boolean(v));
+    }
     case 'body': {
       const fat = n(a.body_fat_pct);
       const fatBand = classifyBodyFat(fat, gender as Gender | null);
@@ -154,10 +181,10 @@ function detailLines(key: DomainKey, a: MeFitnessAssessment, gender: string | nu
   }
 }
 
-function DomainCard({ domain, lines }: { domain: DomainScore; lines: string[] }) {
+function DomainCard({ domain, lines, date }: { domain: DomainScore; lines: string[]; date: string | null }) {
   const Icon = DOMAIN_ICONS[domain.key];
   return (
-    <Card className="p-3.5">
+    <Card className="p-3.5 min-[400px]:last:col-span-2 sm:last:col-span-1">
       <div className="flex items-center gap-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[9px]"
           style={{ background: 'var(--brand-soft)', color: MC.primary }}>
@@ -189,6 +216,10 @@ function DomainCard({ domain, lines }: { domain: DomainScore; lines: string[] })
           ))}
         </ul>
       )}
+
+      <p className="mt-2.5 text-[10.5px] font-[650]" style={{ color: MC.muted }}>
+        {date ? `Assessed ${date}` : 'Assessment date not recorded'}
+      </p>
     </Card>
   );
 }
@@ -227,19 +258,6 @@ function FitnessBody() {
 
   const overall = selected ? scoreNum(selected.overall_fitness_score) : null;
   const overallMax = selected ? scoreNum(selected.overall_max) : null;
-
-  // The readings behind steps 1 and 2. Stored categories win; old rows carry
-  // none, so their raw values are classified with the shared helpers.
-  const cat = (v: string | null) => (v && v.trim() ? v : null);
-  const bpSystolic = selected ? scoreNum(selected.bp_systolic) : null;
-  const bpDiastolic = selected ? scoreNum(selected.bp_diastolic) : null;
-  const restingHeartRate = selected ? scoreNum(selected.resting_heart_rate) : null;
-  const restingSpo2 = selected ? scoreNum(selected.resting_spo2) : null;
-  const bmi = selected ? scoreNum(selected.bmi) : null;
-  const waistIliac = selected ? scoreNum(selected.waist_iliac_cm) : null;
-  const waistHipRatio = selected ? scoreNum(selected.waist_hip_ratio) : null;
-  const hasVitals = bpSystolic != null || bpDiastolic != null || restingHeartRate != null || restingSpo2 != null;
-  const hasAnthropometric = bmi != null || waistIliac != null || waistHipRatio != null;
 
   // Chronological, one reading per test. A partial battery still plots: the
   // stored overall score is a percentage, and the history row says "Partial".
@@ -321,54 +339,15 @@ function FitnessBody() {
             </Card>
           </Section>
 
-          {hasVitals && (
-            <Section title="Blood pressure & resting vitals">
-              <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3">
-                <MeasureTile
-                  label="Blood pressure"
-                  value={bpSystolic != null || bpDiastolic != null ? `${bpSystolic ?? '—'}/${bpDiastolic ?? '—'} mmHg` : '—'}
-                  note={cat(selected.bp_category) ?? classifyBp(bpSystolic, bpDiastolic)}
-                />
-                <MeasureTile
-                  label="Resting heart rate"
-                  value={restingHeartRate == null ? '—' : `${restingHeartRate} bpm`}
-                  note={cat(selected.rhr_category) ?? classifyRhr(restingHeartRate)}
-                />
-                <MeasureTile
-                  label="Resting SpO₂"
-                  value={restingSpo2 == null ? '—' : `${restingSpo2}%`}
-                  note={cat(selected.spo2_category) ?? classifySpo2(restingSpo2)}
-                />
-              </div>
-            </Section>
-          )}
-
-          {hasAnthropometric && (
-            <Section title="Anthropometrics">
-              <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3">
-                <MeasureTile
-                  label="BMI"
-                  value={bmi == null ? '—' : String(bmi)}
-                  note={cat(selected.bmi_category) ?? classifyBmi(bmi)}
-                />
-                <MeasureTile
-                  label="Waist (iliac)"
-                  value={waistIliac == null ? '—' : `${waistIliac} cm`}
-                  note={classifyWaistRisk(waistIliac, gender)}
-                />
-                <MeasureTile
-                  label="Waist-hip ratio"
-                  value={waistHipRatio == null ? '—' : String(waistHipRatio)}
-                  note={cat(selected.whr_risk) ?? classifyWhrRisk(waistHipRatio, gender)}
-                />
-              </div>
-            </Section>
-          )}
-
-          <Section title="Your five domains">
+          <Section title="Your seven categories">
             <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3">
               {domains.map((d) => (
-                <DomainCard key={d.key} domain={d} lines={detailLines(d.key, selected, data?.client?.gender ?? null)} />
+                <DomainCard
+                  key={d.key}
+                  domain={d}
+                  lines={detailLines(d.key, selected, data?.client?.gender ?? null)}
+                  date={longDate(selected.assessment_date)}
+                />
               ))}
             </div>
           </Section>

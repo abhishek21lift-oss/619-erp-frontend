@@ -3488,6 +3488,9 @@ export type MeFitnessAssessment = {
    * the number is still a percentage, but not a headline category.
    */
   tier: 'Optimal' | 'Fit' | 'Moderate' | 'Needs Attention' | null;
+  /** Step points, stored by the same scoring engine as the overall total. */
+  bp_points: number | string | null;
+  anthropometric_points: number | string | null;
   body_composition_score: number | string | null;
   cardio_score_computed: number | string | null;
   strength_score_computed: number | string | null;
