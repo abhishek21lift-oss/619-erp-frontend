@@ -114,7 +114,8 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
   ];
 
   const scores = [
-    typeof latestAssessment?.overall_fitness_score === 'number' ? latestAssessment.overall_fitness_score : null,
+    latestAssessment?.overall_max != null
+      && typeof latestAssessment.overall_fitness_score === 'number' ? latestAssessment.overall_fitness_score : null,
     typeof latestMobility?.mobility_score === 'number' ? latestMobility.mobility_score : null,
     typeof latestPosture?.posture_risk_score === 'number' ? latestPosture.posture_risk_score : null,
   ].filter((s): s is number => s != null);

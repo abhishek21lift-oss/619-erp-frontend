@@ -110,11 +110,19 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
   const measured = measuredCount(scores);
   const number = scoreNum(row.assessment_number);
   const rawDate = typeof row.assessment_date === 'string' ? row.assessment_date : '';
-  const meta = [number != null ? `Assessment #${number}` : null, rawDate ? fmtDate(rawDate) : null]
-    .filter(Boolean).join(' · ');
+  // A first test has nothing behind it. The card says so instead of leaving a
+  // bare 42/100 to be read as a verdict on the client.
+  const firstTest = number === 1;
+  const meta = [
+    number != null ? `Assessment #${number}` : null,
+    rawDate ? fmtDate(rawDate) : null,
+    firstTest ? 'first test, no baseline yet' : null,
+  ].filter(Boolean).join(' · ');
   const clientId = typeof row.client_id === 'string' ? row.client_id : '';
   const href = clientId ? `/pt-os/assessment?client_id=${encodeURIComponent(clientId)}` : '/pt-os/assessment';
   const radar = radarDataFromScores(scores);
+  // A v1 score with no denominator is a different formula, not a broken v2 row.
+  const legacy = scoreNum(row.overall_max) == null && scoreNum(row.overall_fitness_score) != null;
 
   return (
     <div className="mt-3">
@@ -155,7 +163,9 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
           style={{ background: rgba(palette.blue[500], 0.06), color: 'var(--text-muted)' }}>
           {measured > 0
             ? `Only ${measured} of the 7 steps were measured on this test, so there is no radar to draw — the assessment itself has the detail.`
-            : 'No step scores on this test, so there is no radar to draw — the assessment itself has the detail.'}
+            : legacy
+              ? 'This test was scored on the old formula, so it has no 100-point radar or overall score.'
+              : 'No step scores on this test, so there is no radar to draw — the assessment itself has the detail.'}
         </p>
       )}
 

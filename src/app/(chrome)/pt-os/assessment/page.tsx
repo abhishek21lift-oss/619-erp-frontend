@@ -802,7 +802,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
               </div>
               <div className="space-y-2 sm:max-h-[400px] sm:overflow-y-auto">
                 {sortedHistory.map((a) => {
-                  const overall = scoreNum(a.overall_fitness_score);
+                  // Only a v2 row stores a denominator; a v1 component average
+                  // cannot be placed on the 100-point band scale.
+                  const overall = scoreNum(a.overall_max) == null ? null : scoreNum(a.overall_fitness_score);
                   // A tier word is only honest when the battery measured all
                   // 100 points; a 1-of-7 score of 100 is still partial.
                   const rowScores = scoresFromAssessmentRow(a);

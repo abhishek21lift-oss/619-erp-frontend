@@ -56,6 +56,24 @@ describe('scoresFromAssessmentRow', () => {
     expect(s.overallPoints).toBeNull();
     expect(s.overallMax).toBeNull();
   });
+
+  it('does not read a v1 row as points on the 100-point framework', () => {
+    // v1 stored 0-100 component averages (`38`) with no denominator. They are
+    // not points out of each step's max, so none of them can be plotted or
+    // totalled as one.
+    const s = scoresFromAssessmentRow({
+      cardio_score_computed: '20',
+      strength_score_computed: '55',
+      endurance_score_computed: '20',
+      overall_fitness_score: '38',
+      overall_points: null,
+      overall_max: null,
+    });
+    expect(s.cardioScore).toBeNull();
+    expect(s.strengthScore).toBeNull();
+    expect(s.overallScore).toBeNull();
+    expect(s.overallMax).toBeNull();
+  });
 });
 
 describe('radarDataFromScores', () => {

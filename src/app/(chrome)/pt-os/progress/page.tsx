@@ -655,8 +655,8 @@ function OverviewSection({ data, days, setDays }: {
 
         <div className="grid grid-cols-2 gap-2.5">
           <KpiCard label="Assessments" value={String(overview.assessment_count)} hint="Seven-step tests" />
-          <KpiCard label="Latest score" value={latest ? `${fmt(latest.overall_fitness_score, 0)}/100` : '—'}
-            hint={latest ? date(latest.assessment_date) : 'No test yet'} accent={latest ? 'emerald' : 'graphite'} />
+          <KpiCard label="Latest score" value={latest && latest.overall_max != null ? `${fmt(latest.overall_fitness_score, 0)}/100` : '—'}
+            hint={latest ? date(latest.assessment_date) : 'No test yet'} accent={latest && latest.overall_max != null ? 'emerald' : 'graphite'} />
           <KpiCard label="Workout adherence" value={dashboard.workouts.adherence_percent == null ? '—' : `${dashboard.workouts.adherence_percent}%`}
             hint={dashboard.workouts.planned == null ? 'No weekly frequency set' : `${dashboard.workouts.completed}/${dashboard.workouts.planned} sessions`} />
           <KpiCard label="Journal logged" value={`${dashboard.habits.data_quality.logged_days}/${dashboard.habits.data_quality.expected_days}`}
@@ -692,7 +692,7 @@ function OverviewSection({ data, days, setDays }: {
                 {overview.assessment_count >= 2
                   ? 'Comparison unavailable.'
                   : base
-                    ? `Baseline ${date(base.assessment_date)}${base.overall_fitness_score == null ? '' : ` · ${fmt(base.overall_fitness_score, 0)}/100`}.`
+                    ? `Baseline ${date(base.assessment_date)}${base.overall_max == null || base.overall_fitness_score == null ? '' : ` · ${fmt(base.overall_fitness_score, 0)}/100`}.`
                     : 'No baseline yet — the seven-step test records the starting point.'}
               </p>
               {overview.assessment_count < 2 && (
@@ -794,7 +794,7 @@ function HistorySection({ data }: { data: HubData }) {
                 <td className="px-2 py-2.5 tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(r.weight)} kg</td>
                 <td className="px-2 py-2.5 tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(r.waist_cm)} cm</td>
                 <td className="px-2 py-2.5 tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(r.body_fat_pct)}%</td>
-                <td className="px-2 py-2.5 font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmt(r.overall_fitness_score, 0)}/100</td>
+                <td className="px-2 py-2.5 font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{r.overall_max == null ? '—' : `${fmt(r.overall_fitness_score, 0)}/100`}</td>
                 <td className="max-w-[180px] px-2 py-2.5" style={{ color: 'var(--text-muted)' }}>{text(r.testing_conditions)}</td>
                 <td className="max-w-[200px] truncate px-2 py-2.5" style={{ color: 'var(--text-muted)' }}>{text(r.trainer_notes)}</td>
               </tr>

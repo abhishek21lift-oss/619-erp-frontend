@@ -36,17 +36,23 @@ export function scoreNum(v: unknown): number | null {
  *  0-100 total the UI renders. `overallMax` is stored because the denominator
  *  cannot be re-derived from the points. */
 export function scoresFromAssessmentRow(row: Record<string, unknown>): FitnessScores {
+  const overallMax = scoreNum(row.overall_max);
+  // v1 rows stored 0-100 component averages and no denominator, so none of
+  // their numbers are points out of a step max; reading them as v2 would
+  // fabricate the step fractions and the overall total.
+  const v2 = overallMax != null;
+  const n = (v: unknown) => (v2 ? scoreNum(v) : null);
   return {
-    bpPoints: scoreNum(row.bp_points),
-    anthropometricPoints: scoreNum(row.anthropometric_points),
-    bodyCompositionScore: scoreNum(row.body_composition_score),
-    cardioScore: scoreNum(row.cardio_score_computed),
-    strengthScore: scoreNum(row.strength_score_computed),
-    enduranceScore: scoreNum(row.endurance_score_computed),
-    mobilityScore: scoreNum(row.mobility_score_computed),
-    overallScore: scoreNum(row.overall_fitness_score),
-    overallPoints: scoreNum(row.overall_points),
-    overallMax: scoreNum(row.overall_max),
+    bpPoints: n(row.bp_points),
+    anthropometricPoints: n(row.anthropometric_points),
+    bodyCompositionScore: n(row.body_composition_score),
+    cardioScore: n(row.cardio_score_computed),
+    strengthScore: n(row.strength_score_computed),
+    enduranceScore: n(row.endurance_score_computed),
+    mobilityScore: n(row.mobility_score_computed),
+    overallScore: n(row.overall_fitness_score),
+    overallPoints: n(row.overall_points),
+    overallMax,
   };
 }
 
