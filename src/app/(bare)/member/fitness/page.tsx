@@ -29,6 +29,7 @@ import {
 import BodyScoreMap from '@/components/member/fitness/BodyScoreMap';
 import { assessmentLabel, domainsFrom, type DomainKey, type DomainScore } from '@/components/member/fitness/domains';
 import { ProgressComparison } from '@/components/pt-os/fitness-testing/ProgressComparison';
+import { SelectInput } from '@/components/ui/form';
 import { api } from '@/lib/api';
 import type { MeFitnessAssessment, MeFitnessHistory, MeMobilityAssessment } from '@/lib/api';
 import { classifyBodyFat, scoreNum, type FitnessTier, type Gender } from '@/lib/fitness-calculations';
@@ -333,35 +334,33 @@ function FitnessBody() {
                     <span className="mb-1 block text-[10px] font-[740] uppercase tracking-[0.08em]" style={{ color: MC.muted }}>
                       First test
                     </span>
-                    <select
+                    <SelectInput
                       value={compareA ?? ''}
                       onChange={(e) => setCompareA(e.target.value)}
-                      className="min-h-[44px] w-full rounded-[12px] px-2 text-[12px] font-[650]"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: MC.ink }}
+                      className="min-h-[44px] text-[12px] font-[650]"
                     >
                       {assessments.map((a) => (
                         <option key={a.id} value={a.id}>
                           {longDate(a.assessment_date) ?? '—'} · {assessmentLabel(a.assessment_type)}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </label>
                   <label className="min-w-0">
                     <span className="mb-1 block text-[10px] font-[740] uppercase tracking-[0.08em]" style={{ color: MC.muted }}>
                       Second test
                     </span>
-                    <select
+                    <SelectInput
                       value={compareB ?? ''}
                       onChange={(e) => setCompareB(e.target.value)}
-                      className="min-h-[44px] w-full rounded-[12px] px-2 text-[12px] font-[650]"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: MC.ink }}
+                      className="min-h-[44px] text-[12px] font-[650]"
                     >
                       {assessments.map((a) => (
                         <option key={a.id} value={a.id}>
                           {longDate(a.assessment_date) ?? '—'} · {assessmentLabel(a.assessment_type)}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </label>
                 </div>
                 {!canCompare && (

@@ -108,6 +108,7 @@ export default function TopbarProfileMenu({
         {open && (
           <m.div
             id="topbar-profile-menu"
+            data-no-pull-refresh
             initial={{ opacity: 0, y: -4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.96 }}
@@ -146,7 +147,7 @@ export default function TopbarProfileMenu({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex min-h-[44px] w-full items-center gap-2.5 px-4 text-left text-[13px] font-[600] text-[color:var(--danger)] transition-colors hover:bg-[var(--bg-hover)]"
+                className="flex min-h-[44px] w-full items-center gap-2.5 px-4 text-left text-[13px] font-[600] text-[color:var(--danger-text)] transition-colors hover:bg-[var(--bg-hover)]"
               >
                 <LogOut size={15} strokeWidth={1.8} />
                 Log out
