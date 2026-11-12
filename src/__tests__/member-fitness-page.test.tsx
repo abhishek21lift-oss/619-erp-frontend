@@ -32,13 +32,27 @@ const assessment = (over: Record<string, unknown> = {}) => ({
   strength_score_computed: '11.0',
   endurance_score_computed: '12.0',
   mobility_score_computed: '13.5',
+  bp_systolic: '128',
+  bp_diastolic: '82',
+  bp_category: 'Hypertension Stage 1',
+  resting_heart_rate: '68',
+  rhr_category: 'Normal',
+  resting_spo2: '98',
+  spo2_category: 'Normal',
   weight: '72.5',
+  height_cm: '165.0',
   bmi: '24.1',
+  bmi_category: 'Overweight',
   body_fat_pct: '21.5',
   muscle_mass_pct: '38.0',
   lean_body_mass_kg: '56.9',
   fat_mass_kg: '15.6',
   waist_cm: '82.0',
+  waist_iliac_cm: '88.0',
+  hips_cm: '96.0',
+  waist_hip_ratio: '0.92',
+  waist_risk: 'Above low-risk threshold',
+  whr_risk: 'Above low-risk threshold',
   visceral_fat: '6.0',
   body_water_pct: '55.0',
   body_comp_method: 'InBody',
@@ -68,6 +82,7 @@ const history = [
     body_composition_score: 9, cardio_score_computed: '12.0', strength_score_computed: '9.0',
     endurance_score_computed: '9.0', mobility_score_computed: '10.5',
     body_fat_pct: '25.0', weight: '76.0',
+    bp_systolic: '118', bp_diastolic: '76', bp_category: 'Normal',
   }),
 ];
 
@@ -76,9 +91,11 @@ beforeEach(() => {
 });
 
 describe('the member fitness page', () => {
-  it('renders the stored score, tier, six domains and the history', async () => {
+  it('renders the stored score, tier, five domains, readings and history', async () => {
     apiMocks.fitnessTests.mockResolvedValue({
       data: {
+        // The API still carries the separate mobility screening; the page no
+        // longer shows it as a domain.
         client: { name: 'Asha', gender: 'female' },
         assessments: history,
         latest_mobility: { id: 'm1', assessment_date: '2026-03-02', mobility_score: 82, mobility_category: 'Good' },
@@ -91,15 +108,24 @@ describe('the member fitness page', () => {
     expect(screen.getByText('78')).toBeInTheDocument();
     expect(screen.getAllByText('Fit').length).toBeGreaterThan(0);
 
-    for (const label of ['Body composition', 'Cardio', 'Strength', 'Endurance', 'Flexibility', 'Mobility']) {
+    for (const label of ['Body composition', 'Cardio', 'Strength', 'Endurance', 'Flexibility']) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
+    expect(screen.queryByText('Mobility')).toBeNull();
+
+    expect(screen.getByText('Blood pressure & resting vitals')).toBeInTheDocument();
+    expect(screen.getByText('128/82 mmHg')).toBeInTheDocument();
+    expect(screen.getByText('68 bpm')).toBeInTheDocument();
+    expect(screen.getByText('98%')).toBeInTheDocument();
+    expect(screen.getByText('Anthropometrics')).toBeInTheDocument();
+    expect(screen.getByText('24.1')).toBeInTheDocument();
+    expect(screen.getByText('88 cm')).toBeInTheDocument();
+    expect(screen.getByText('0.92')).toBeInTheDocument();
 
     expect(screen.getByText('Body fat over time')).toBeInTheDocument();
     expect(screen.getByText('Assessment history')).toBeInTheDocument();
     expect(screen.getAllByText('62/100').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Good').length).toBeGreaterThan(0);
-    expect(screen.getByText('82 / 100')).toBeInTheDocument();
   });
 
   it('switches the shown result when an older assessment is selected', async () => {
@@ -119,6 +145,8 @@ describe('the member fitness page', () => {
     expect(older).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getAllByText('62').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Moderate').length).toBeGreaterThan(0);
+    // The readings above the domains follow the selected test, not "latest".
+    expect(screen.getByText('118/76 mmHg')).toBeInTheDocument();
   });
 
   it('offers no write control', async () => {
