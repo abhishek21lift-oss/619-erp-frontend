@@ -114,6 +114,8 @@ describe('parity with the server', () => {
       height_cm: [90, 260],
       training_days: [1, 7],
       meal_frequency: [1, 12],
+      target_weight_kg: [30, 400],
+      workout_duration_minutes: [20, 180],
     });
   });
 });
