@@ -151,10 +151,10 @@ describe('<MemberMorePage /> sessions and payments', () => {
     expect(within(card).queryByText(/sessions left/)).toBeNull();
   });
 
-  it('links to Payments from the membership group', async () => {
+  it('links to Payments and Book from the membership group', async () => {
     renderPage();
-    const link = await screen.findByRole('link', { name: /Payments/ });
-    expect(link.getAttribute('href')).toBe('/member/payments');
+    expect((await screen.findByRole('link', { name: /Payments/ })).getAttribute('href')).toBe('/member/payments');
+    expect((await screen.findByRole('link', { name: /Book a session/ })).getAttribute('href')).toBe('/member/book');
   });
 });
 

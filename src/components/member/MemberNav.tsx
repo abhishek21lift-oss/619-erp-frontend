@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Apple, CalendarPlus, ClipboardCheck, Dumbbell, Home, Receipt, UserRound, Wallet } from 'lucide-react';
+import { Apple, ClipboardCheck, Dumbbell, Home, UserRound } from 'lucide-react';
 import { loadMemberNotifications } from './memberNotifications';
 import { palette } from '@/lib/palette';
 import { NAV_GROUPS, isVisibleForFeature } from '@/lib/nav-config';
@@ -60,14 +60,11 @@ const MEMBER_ICONS: Record<string, typeof Home> = {
   Dumbbell,
   Apple,
   ClipboardCheck,
-  CalendarPlus,
-  Receipt,
-  Wallet,
   UserRound,
 };
 
 /** Pages reached from More: the More tab lights up on each of them. */
-const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/fitness', '/member/habits', '/member/photos', '/member/form-check', '/member/feedback', '/member/notifications', '/member/forms', '/member/account', '/member/coach'];
+const MORE_ROUTES = ['/member/more', '/member/messages', '/member/card', '/member/records', '/member/goals', '/member/recap', '/member/renew', '/member/progress', '/member/fitness', '/member/habits', '/member/photos', '/member/form-check', '/member/feedback', '/member/notifications', '/member/forms', '/member/account', '/member/coach', '/member/book', '/member/payments', '/member/pay'];
 
 /** Reserve this much above the bar so the last card clears it. */
 export const MEMBER_NAV_CLEARANCE = 'calc(84px + env(safe-area-inset-bottom, 0px))';
@@ -120,9 +117,7 @@ export default function MemberNav() {
         {tabs.map(({ href, label, icon }) => {
           const Icon = MEMBER_ICONS[icon] ?? Home;
           const isProfile = href === '/member/more';
-          const active = isProfile
-            ? moreActive
-            : pathname === href || (href === '/member/payments' && pathname?.startsWith('/member/pay/'));
+          const active = isProfile ? moreActive : pathname === href;
           return (
             <Link
               key={href}
@@ -130,16 +125,16 @@ export default function MemberNav() {
               aria-current={active ? 'page' : undefined}
               aria-label={isProfile && unread > 0 ? `Profile, ${unread} unread notification${unread === 1 ? '' : 's'}` : undefined}
               className="flex flex-1 flex-col items-center gap-1 py-2.5"
-              style={{ color: active ? palette.blue[500] : palette.gray[500] }}
+              style={{ color: active ? 'var(--action-text)' : 'var(--text-muted)' }}
             >
               <span className="relative">
-                <Icon size={18} strokeWidth={active ? 2.4 : 1.9} />
+                <Icon size={18} strokeWidth={active ? 2.4 : 1.9} aria-hidden />
                 {isProfile && unread > 0 && (
                   <span aria-hidden className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
                     style={{ background: palette.red[500], boxShadow: '0 0 0 2px var(--bg-card)' }} />
                 )}
               </span>
-              <span className="text-[10px] font-[700]">{label}</span>
+              <span className="text-[11px] font-[700]">{label}</span>
             </Link>
           );
         })}

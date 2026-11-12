@@ -105,7 +105,7 @@ function GoalsBody() {
 
       <Section title="Your goals" aside={active.length > 0 && active.length < 5 ? (
         <button type="button" onClick={() => setAdding('lift')}
-          className="inline-flex items-center gap-1 text-[12px] font-[750]" style={{ color: MC.primary }}>
+          className="inline-flex items-center gap-1 text-[12px] font-[750]" style={{ color: MC.primaryText }}>
           <Plus size={13} aria-hidden /> New goal
         </button>
       ) : null}>

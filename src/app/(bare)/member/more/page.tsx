@@ -20,7 +20,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m } from 'framer-motion';
 import {
-  Bell, CalendarRange, Camera, ChevronRight, ClipboardCheck, Clock, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, MapPin, Medal,
+  Bell, CalendarPlus, CalendarRange, Camera, ChevronRight, ClipboardCheck, Clock, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, MapPin, Medal,
   MessageCircle, Phone, RefreshCw, Receipt, Star, Target, Trophy, UserRound, Dumbbell, Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -79,6 +79,7 @@ const GROUPS: Group[] = [
     accent: 'plan',
     rows: [
       { href: '/member/renew', label: 'Renew', sub: 'Your plan dates and renewal', icon: RefreshCw },
+      { href: '/member/book', label: 'Book a session', sub: 'Pick a time with your trainer', icon: CalendarPlus },
       { href: '/member/payments', label: 'Payments', sub: 'Receipts and payment history', icon: Receipt },
       { href: '/member/card', label: 'Membership card', sub: 'Check-in code and days left', icon: IdCard },
     ],
@@ -189,7 +190,7 @@ function ProfileBody() {
 
       <button type="button" onClick={() => logout()}
         className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750] transition-colors active:scale-[0.99]"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.danger }}>
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.dangerText }}>
         <LogOut size={16} aria-hidden /> Sign out
       </button>
       <p className="mt-4 text-center text-[11px] font-[600]" style={{ color: MC.muted }}>
@@ -367,7 +368,7 @@ function StudioCard({ profile, delay }: { profile: MeProfile; delay: number }) {
           {rows.map(([Icon, value], i) => (
             <li key={i} className="flex items-start gap-2.5 text-[13px]" style={{ color: MC.ink }}>
               <Icon size={15} className="mt-0.5 shrink-0" style={{ color: MC.muted }} aria-hidden />
-              {Icon === Phone ? <a href={`tel:${value}`} style={{ color: MC.primary }}>{value}</a> : <span>{value}</span>}
+              {Icon === Phone ? <a href={`tel:${value}`} style={{ color: MC.primaryText }}>{value}</a> : <span>{value}</span>}
             </li>
           ))}
         </ul>

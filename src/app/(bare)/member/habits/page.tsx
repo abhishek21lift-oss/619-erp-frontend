@@ -161,10 +161,10 @@ function HabitJournal() {
       {summary && (
         <>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Stat label="Logging streak" value={`${streak} day${streak === 1 ? '' : 's'}`} tone={MC.success} />
+            <Stat label="Logging streak" value={`${streak} day${streak === 1 ? '' : 's'}`} tone={MC.successText} />
             <Stat label="Sleep · 7 days"
               value={last7?.sleep_average == null ? '—' : `${Number(last7.sleep_average).toFixed(1)} h`}
-              tone={MC.primary} />
+              tone={MC.primaryText} />
             <Stat label="Steps · 7 days"
               value={last7?.steps_average == null ? '—' : Math.round(Number(last7.steps_average)).toLocaleString()}
               tone="#10b981" />
@@ -216,7 +216,7 @@ function HabitJournal() {
             />
           )}
 
-          <Section title="Which day?" aside={<Link href="/member/progress" className="text-[11.5px] font-[720]" style={{ color: MC.primary }}>Assessment progress →</Link>}>
+          <Section title="Which day?" aside={<Link href="/member/progress" className="text-[11.5px] font-[720]" style={{ color: MC.primaryText }}>Assessment progress →</Link>}>
             <Card className="p-4">
               <div className="grid gap-3 sm:grid-cols-[220px_1fr] sm:items-end">
                 <DateFieldControl field={dateField} label="Journal date" max={today} />
@@ -378,7 +378,7 @@ function HabitForm({ date, existing, onSaved }: {
     <Section
       title={existing ? `Edit ${longDate(date) ?? date}` : `Log ${longDate(date) ?? date}`}
       aside={existing ? (
-        <span className="inline-flex items-center gap-1 text-[11px] font-[700]" style={{ color: MC.success }}>
+        <span className="inline-flex items-center gap-1 text-[11px] font-[700]" style={{ color: MC.successText }}>
           <CheckCircle2 size={12} /> Saved
         </span>
       ) : null}

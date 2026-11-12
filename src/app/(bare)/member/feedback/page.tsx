@@ -300,7 +300,7 @@ function FeedbackBody() {
                       )}
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-[13px] font-[850]" style={{ color: low ? MC.danger : MC.ink }}>
+                      <p className="text-[13px] font-[850]" style={{ color: low ? MC.dangerText : MC.ink }}>
                         {scoreText(row)}<span className="text-[10px] font-[650]" style={{ color: MC.muted }}>/5</span>
                       </p>
                       <p className="mt-0.5 text-[10.5px]" style={{ color: MC.muted }}>

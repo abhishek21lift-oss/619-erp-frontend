@@ -179,7 +179,7 @@ function RecordsBody() {
         </ul>
         {shown.length < list.length || showAll ? (
           <button type="button" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}
-            className="mt-2 w-full rounded-[12px] py-2 text-[12px] font-[720]" style={{ color: MC.primary }}>
+            className="mt-2 w-full rounded-[12px] py-2 text-[12px] font-[720]" style={{ color: MC.primaryText }}>
             {showAll ? 'Show fewer' : `Show all ${list.length} milestones`}
           </button>
         ) : null}

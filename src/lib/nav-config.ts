@@ -180,12 +180,12 @@ export const NAV_GROUPS: NavGroup[] = [
     roles: ['member'],
     feature: 'member_portal',
     items: [
+      // Five tabs, not seven: at 320px the seventh gave each slot 45px, and
+      // "Payments" alone needed 46. Book and Payments live under Profile.
       { href: '/member/dashboard', label: 'Home',      icon: 'LayoutDashboard', roles: ['member'] },
       { href: '/member/workout',   label: 'Workout',   icon: 'Dumbbell',        roles: ['member'] },
       { href: '/member/diet',      label: 'Diet',      icon: 'Apple',           roles: ['member'] },
       { href: '/member/checkin',   label: 'Check-in',  icon: 'ClipboardCheck',  roles: ['member'] },
-      { href: '/member/book',      label: 'Book',      icon: 'CalendarPlus',    roles: ['member'] },
-      { href: '/member/payments',  label: 'Payments',  icon: 'Receipt',         roles: ['member'] },
       { href: '/member/more',      label: 'Profile',   icon: 'UserRound',       roles: ['member'] },
     ],
   },

@@ -61,7 +61,7 @@ function checkinRow(c: { this_week: string; sent: boolean }): Row {
     ? { key: 'checkin', href: '/member/checkin', icon: CheckCircle2, tone: MC.success,
         title: 'Check-in sent', sub: 'Your trainer has this week\'s update.' }
     : { key: 'checkin', href: '/member/checkin', icon: ClipboardCheck, tone: MC.primary,
-        title: 'Weekly check-in', sub: 'Two minutes: weight, sleep, energy and how the week went.' };
+        title: 'Weekly check-in', sub: 'Weight, sleep, energy, how the week went.' };
 }
 
 export default function TodayCard() {
@@ -118,7 +118,7 @@ export default function TodayCard() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[14px] font-[760]" style={{ color: MC.ink }}>{title}</span>
-                <span className="block truncate text-[12px]" style={{ color: MC.muted }}>{sub}</span>
+                <span className="block text-[12px] leading-snug" style={{ color: MC.muted }}>{sub}</span>
               </span>
               <ChevronRight size={16} aria-hidden style={{ color: MC.muted }} />
             </Link>

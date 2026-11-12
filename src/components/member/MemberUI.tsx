@@ -16,11 +16,17 @@ import { heroAccents, heroGradient } from './memberTheme';
 import type { Accent } from './memberTheme';
 
 export const MC = {
+  // 500/700 are fills and icons. Words use the theme's text tones: the same
+  // emerald-500 that tints a dot is 2.3:1 as a 15px label.
   primary: palette.blue[500],
   primaryDeep: palette.blue[700],
   success: palette.emerald[500],
   warning: palette.amber[500],
   danger: palette.red[500],
+  primaryText: 'var(--action-text)',
+  successText: 'var(--success-text)',
+  warningText: 'var(--warning-text)',
+  dangerText: 'var(--danger-text)',
   // Theme tokens, not fixed greys: gray-900 ink was invisible on the dark canvas.
   ink: 'var(--text-primary)',
   muted: 'var(--text-muted)',

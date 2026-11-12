@@ -267,7 +267,7 @@ function CoachBody() {
 function Back() {
   return (
     <Link href="/member/more" className="-ml-1 mb-3 inline-flex min-h-[44px] items-center gap-0.5 pr-3 text-[14px] font-[700]"
-      style={{ color: MC.primary }}>
+      style={{ color: MC.primaryText }}>
       <ChevronLeft size={18} aria-hidden /> Profile
     </Link>
   );

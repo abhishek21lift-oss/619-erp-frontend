@@ -187,7 +187,7 @@ export default function GuidedWorkout({
 
                 {error && (
                   <p role="alert" className="mt-4 rounded-[12px] px-4 py-3 text-[12.5px] font-[650] leading-relaxed"
-                    style={{ background: rgba(MC.danger, 0.1), color: MC.danger }}>
+                    style={{ background: rgba(MC.danger, 0.1), color: MC.dangerText }}>
                     {error}
                   </p>
                 )}
@@ -353,7 +353,7 @@ function ExerciseCard({ ex }: { ex: DraftExercise }) {
         {ex.notes && <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: MC.muted }}>{ex.notes}</p>}
         {ex.video_url && (
           <a href={ex.video_url} target="_blank" rel="noopener noreferrer"
-            className="mt-2 inline-block text-[12.5px] font-[750]" style={{ color: MC.primary }}>
+            className="mt-2 inline-block text-[12.5px] font-[750]" style={{ color: MC.primaryText }}>
             Watch how →
           </a>
         )}
@@ -594,7 +594,7 @@ function CloseSheet({ onKeep, onDiscard, onCancel }: { onKeep: () => void; onDis
             Keep for later
           </button>
           <button type="button" onClick={onDiscard}
-            className="h-12 w-full rounded-[13px] text-[14px] font-[750]" style={{ background: rgba(MC.danger, 0.1), color: MC.danger }}>
+            className="h-12 w-full rounded-[13px] text-[14px] font-[750]" style={{ background: rgba(MC.danger, 0.1), color: MC.dangerText }}>
             Discard workout
           </button>
           <button type="button" onClick={onCancel}

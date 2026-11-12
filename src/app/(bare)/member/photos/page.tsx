@@ -193,7 +193,7 @@ function AddPhoto({ onCancel, onAdded }: { onCancel: () => void; onAdded: (p: Me
         ) : (
           <button type="button" onClick={() => input.current?.click()} disabled={busy === 'reading'}
             className="mt-3 flex h-36 w-full flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed text-[13px] font-[700]"
-            style={{ borderColor: rgba(MC.primary, 0.35), color: MC.primary, background: rgba(MC.primary, 0.04) }}>
+            style={{ borderColor: rgba(MC.primary, 0.35), color: MC.primaryText, background: rgba(MC.primary, 0.04) }}>
             {busy === 'reading'
               ? <><Loader2 size={20} className="animate-spin" aria-hidden /> Preparing…</>
               : <><Camera size={22} aria-hidden /> Take or choose a photo</>}
