@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * The five assessed domains on one body, so a member can see where the numbers
- * come from before reading any of them.
+ * The five body-mapped domains on one body, so a member can see where those
+ * numbers come from before reading any of them. Blood pressure and
+ * anthropometrics are scored categories too, but they are not a body region,
+ * so they stay off the map.
  *
  * This is a read-only illustration, not a medical diagram: each marker is a
  * domain and its colour is the same tier the cards below use. The figcaption
@@ -13,8 +15,8 @@
 import { palette } from '@/lib/palette';
 import type { DomainKey, DomainScore } from './domains';
 
-/** Marker position on the 200×340 canvas, one per domain. */
-const MARKERS: Record<DomainKey, { x: number; y: number; hint: string }> = {
+/** Marker position on the 200×340 canvas, one per body-mapped domain. */
+const MARKERS: Partial<Record<DomainKey, { x: number; y: number; hint: string }>> = {
   cardio: { x: 86, y: 101, hint: 'Chest' },
   body: { x: 104, y: 153, hint: 'Abdomen' },
   strength: { x: 49, y: 120, hint: 'Arm' },
@@ -31,7 +33,8 @@ function tierColor(tier: DomainScore['tier']): string {
 }
 
 export default function BodyScoreMap({ domains }: { domains: DomainScore[] }) {
-  const summary = domains
+  const mapped = domains.filter((d) => d.key in MARKERS);
+  const summary = mapped
     .map((d) => `${d.label}: ${d.pct == null ? 'not measured' : `${d.pct}%`}`)
     .join('. ');
 
@@ -51,8 +54,9 @@ export default function BodyScoreMap({ domains }: { domains: DomainScore[] }) {
           <path d="M122 196 L126 252 L130 316 Q131 326 122 326 Q115 326 114 316 L110 258 L108 210 Z" />
         </g>
 
-        {domains.map((d, i) => {
+        {mapped.map((d, i) => {
           const at = MARKERS[d.key];
+          if (!at) return null;
           return (
             <g key={d.key}>
               <circle cx={at.x} cy={at.y} r="14" fill="var(--bg-card)" opacity="0.92" />
@@ -71,7 +75,7 @@ export default function BodyScoreMap({ domains }: { domains: DomainScore[] }) {
 
       <figcaption className="w-full">
         <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-          {domains.map((d, i) => (
+          {mapped.map((d, i) => (
             <li key={d.key} className="flex min-w-0 items-center gap-1.5">
               <span
                 aria-hidden
