@@ -4,7 +4,7 @@ import { Clock3 } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
-import type { NutritionFormData } from './types';
+import type { NutritionFormData, MealTimingPreference } from './types';
 import type { MealRegularity } from '@/lib/nutrition-calculations';
 
 const REGULARITY_OPTIONS: { value: MealRegularity; label: string }[] = [
@@ -24,6 +24,13 @@ const WEEKEND_HABITS_OPTIONS = [
 
 const EATING_BEHAVIOUR_OPTIONS = [
   'Emotional Eating', 'Stress Eating', 'Night Eating', 'Binge Eating', 'Skipped Meals', 'Mindful Eater', 'Slow Eater', 'Fast Eater',
+];
+
+const MEAL_TIMING_OPTIONS: { value: MealTimingPreference; label: string }[] = [
+  { value: 'early', label: 'Early' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'late', label: 'Late' },
+  { value: 'no_preference', label: 'No preference' },
 ];
 
 interface RegularityRowProps {
@@ -85,6 +92,30 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
           <RegularityRow label="Breakfast" value={form.breakfastRegularity} onChange={(v) => set('breakfastRegularity', v)} />
           <RegularityRow label="Lunch" value={form.lunchRegularity} onChange={(v) => set('lunchRegularity', v)} />
           <RegularityRow label="Dinner" value={form.dinnerRegularity} onChange={(v) => set('dinnerRegularity', v)} />
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Meal Timing Preference</p>
+          <div className="flex flex-wrap gap-2">
+            {MEAL_TIMING_OPTIONS.map((o) => {
+              const selected = form.mealTimingPreference === o.value;
+              return (
+                <button
+                  key={o.value} type="button" aria-pressed={selected}
+                  aria-label={`Meal timing: ${o.label}`}
+                  onClick={() => set('mealTimingPreference', selected ? '' : o.value)}
+                  className="rounded-[11px] px-4 py-2 text-[12.5px] font-[700] transition-all"
+                  style={{
+                    background: selected ? 'var(--text-primary)' : 'var(--bg-subtle)',
+                    color: selected ? 'var(--bg-card)' : 'var(--text-muted)',
+                    border: selected ? '1.5px solid var(--text-primary)' : '1.5px solid var(--border)',
+                  }}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div>

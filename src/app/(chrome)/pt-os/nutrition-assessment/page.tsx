@@ -81,6 +81,12 @@ function formFromRow(row: Record<string, unknown>): NutritionFormData {
     ...fresh,
     assessmentDate: row.assessment_date ? String(row.assessment_date).slice(0, 10) : fresh.assessmentDate,
     dietPreferences: Array.isArray(row.diet_preferences) ? (row.diet_preferences as string[]) : [],
+    // One cast each, not a validator: the API only ever stores the enum values
+    // the schema accepts, and a stale row cannot carry anything else.
+    dietaryPattern: (row.dietary_pattern as NutritionFormData['dietaryPattern']) || '',
+    foodCulture: (row.food_culture as NutritionFormData['foodCulture']) || '',
+    regionalCuisines: Array.isArray(row.regional_cuisines) ? (row.regional_cuisines as string[]) : [],
+    mealTimingPreference: (row.meal_timing_preference as NutritionFormData['mealTimingPreference']) || '',
     foodAllergies: allergies.known, foodAllergyOther: allergies.other,
     foodsToAvoid: avoid.known, foodsToAvoidOther: avoid.other,
     foodsToAvoidReason: (row.foods_to_avoid_reason as NutritionFormData['foodsToAvoidReason']) || '',
@@ -340,6 +346,10 @@ function NutritionWizard({ clientId, clientName, editing, parq, toast, onDone }:
         client_id: clientId,
         assessment_date: form.assessmentDate,
         diet_preferences: form.dietPreferences,
+        dietary_pattern: form.dietaryPattern || null,
+        food_culture: form.foodCulture || null,
+        regional_cuisines: form.regionalCuisines,
+        meal_timing_preference: form.mealTimingPreference || null,
         food_allergies: foodAllergies,
         foods_to_avoid: foodsToAvoid,
         foods_to_avoid_reason: form.foodsToAvoidReason || null,
