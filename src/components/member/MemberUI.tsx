@@ -8,9 +8,10 @@
  * section with nothing to show says so plainly instead of rendering zeros.
  */
 
-import type { ReactNode } from 'react';
-import { m } from 'framer-motion';
+import { useEffect, useState, type ReactNode } from 'react';
+import { animate, m, useReducedMotion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { palette, rgba } from '@/lib/palette';
 import { heroAccents, heroGradient } from './memberTheme';
 import type { Accent } from './memberTheme';
@@ -149,14 +150,14 @@ export function PageSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading">
       <div className="mb-4 flex items-center gap-3">
-        <div className="h-11 w-11 animate-pulse rounded-[14px]" style={{ background: 'var(--bg-subtle)' }} />
+        <Skeleton className="rounded-[14px]" width={44} height={44} />
         <div className="flex-1">
-          <div className="h-4 w-2/5 animate-pulse rounded" style={{ background: 'var(--bg-subtle)' }} />
-          <div className="mt-2 h-3 w-1/3 animate-pulse rounded" style={{ background: 'var(--bg-subtle)' }} />
+          <Skeleton width="40%" height={16} />
+          <Skeleton className="mt-2" width="33.333%" height={12} />
         </div>
       </div>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="mb-3 h-[110px] animate-pulse rounded-[16px]" style={{ background: 'var(--bg-subtle)' }} />
+        <Skeleton key={i} className="mb-3 rounded-[16px]" height={110} />
       ))}
     </div>
   );
@@ -175,11 +176,23 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
+/** A figure that counts up once on mount; final value immediately under reduced motion. */
+export function CountUp({ to, decimals = 0 }: { to: number; decimals?: number }) {
+  const [v, setV] = useState(0);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    if (reduce) { setV(to); return; }
+    const c = animate(0, to, { duration: 1.1, ease: EASE, onUpdate: setV });
+    return () => c.stop();
+  }, [to, reduce]);
+  return <>{v.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
+}
+
 /** The one full-width primary action at the foot of a member form. */
 export function SubmitButton({ busy, busyLabel, children }: { busy: boolean; busyLabel: string; children: ReactNode }) {
   return (
     <button type="submit" disabled={busy}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[750] text-white transition-opacity disabled:opacity-60"
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-[750] text-white transition-[opacity,transform] active:scale-[0.98] disabled:opacity-60"
       style={{ background: MC.primary }}>
       {busy ? <><Loader2 size={16} className="animate-spin" aria-hidden /> {busyLabel}</> : children}
     </button>

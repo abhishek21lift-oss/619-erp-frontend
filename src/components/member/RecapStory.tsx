@@ -11,7 +11,8 @@
  */
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { AnimatePresence, animate, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { CountUp } from './MemberUI';
 import { Calendar, Dumbbell, Flame, Loader2, Scale, Share2, Trophy, X } from 'lucide-react';
 import type { MeRecap } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
@@ -150,17 +151,6 @@ function Big({ to, suffix = '', decimals = 0 }: { to: number; suffix?: string; d
       <CountUp to={to} decimals={decimals} />{suffix && <span className="ml-2 text-[40px] font-[800] tracking-[-0.02em]">{suffix}</span>}
     </p>
   );
-}
-
-function CountUp({ to, decimals = 0 }: { to: number; decimals?: number }) {
-  const [v, setV] = useState(0);
-  const reduce = useReducedMotion();
-  useEffect(() => {
-    if (reduce) { setV(to); return; }
-    const c = animate(0, to, { duration: 1.1, ease: [0.16, 1, 0.3, 1], onUpdate: setV });
-    return () => c.stop();
-  }, [to, reduce]);
-  return <>{v.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
 }
 
 function Sub({ children }: { children: ReactNode }) {

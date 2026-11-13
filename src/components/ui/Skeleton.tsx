@@ -24,7 +24,9 @@ export function Skeleton({
         variant === 'circle' && 'rounded-full',
         variant === 'pill' && 'rounded-full',
         'after:absolute after:inset-0',
-        'after:bg-gradient-to-r after:from-transparent after:via-[var(--bg-hover)] after:to-transparent',
+        // --bg-hover equals --bg-subtle in both themes, so it painted an
+        // invisible band; a white wash keeps the sweep visible on both.
+        'after:bg-gradient-to-r after:from-transparent after:via-white/60 after:to-transparent dark:after:via-white/10',
         'after:animate-[shimmer-slide_1.6s_ease-in-out_infinite]',
         className,
       )}

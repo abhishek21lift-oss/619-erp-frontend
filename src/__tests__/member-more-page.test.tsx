@@ -10,13 +10,30 @@ const apiMocks = vi.hoisted(() => ({
   membership: vi.fn(),
   sessionBalance: vi.fn(),
   setPhoto: vi.fn(),
+  achievements: vi.fn(),
 }));
+
+// The page renders the reduced-motion variant: stats land on their final
+// values immediately and the header title is visible without scroll.
+vi.mock('framer-motion', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('framer-motion')>()),
+  useReducedMotion: () => true,
+}));
+
+const hapticMock = vi.hoisted(() => ({ triggerHaptic: vi.fn() }));
+vi.mock('@/components/common/PullToRefresh/utils', () => ({ triggerHaptic: hapticMock.triggerHaptic }));
 
 vi.mock('@/components/Guard', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
+const shellMock = vi.hoisted(() => ({ headerPaysTopInset: undefined as boolean | undefined }));
 vi.mock('@/components/member/MemberShell', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  default: ({ children, headerPaysTopInset }: {
+    children: React.ReactNode; headerPaysTopInset?: boolean;
+  }) => {
+    shellMock.headerPaysTopInset = headerPaysTopInset;
+    return <>{children}</>;
+  },
 }));
 vi.mock('@/components/member/CoachCard', () => ({ default: () => null }));
 vi.mock('@/components/member/InstallAppCard', () => ({ default: () => null }));
@@ -37,7 +54,7 @@ vi.mock('@/lib/api', () => ({
       profile: (...a: unknown[]) => apiMocks.profile(...a),
       membership: (...a: unknown[]) => apiMocks.membership(...a),
       sessionBalance: (...a: unknown[]) => apiMocks.sessionBalance(...a),
-      achievements: async () => ({ data: { totals: { sessions: 12, prs: 3 }, training: { current: 2 } } }),
+      achievements: (...a: unknown[]) => apiMocks.achievements(...a),
       coach: async () => ({ data: null }),
       messagesUnread: async () => ({ data: { unread: 0 } }),
       setPhoto: (...a: unknown[]) => apiMocks.setPhoto(...a),
@@ -73,6 +90,9 @@ beforeEach(() => {
   apiMocks.membership.mockReset().mockResolvedValue({ data: membership });
   apiMocks.sessionBalance.mockReset().mockResolvedValue({ data: [] });
   apiMocks.setPhoto.mockReset().mockResolvedValue({ data: { photo_url: '/uploads/new.png' } });
+  apiMocks.achievements.mockReset().mockResolvedValue({
+    data: { totals: { sessions: 12, prs: 3 }, training: { current: 2 } },
+  });
 });
 
 describe('<MemberMorePage /> membership card', () => {
@@ -117,6 +137,7 @@ describe('<MemberMorePage /> profile states', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add profile photo' }));
     fireEvent.click(await screen.findByRole('button', { name: 'crop confirm' }));
     expect(await screen.findByText('Photo updated')).toBeTruthy();
+    expect(hapticMock.triggerHaptic).toHaveBeenCalledWith(8);
     expect(apiMocks.setPhoto).toHaveBeenCalledWith('data:image/png;base64,AAAA');
     expect(await screen.findByAltText('Asha Rao')).toHaveAttribute('src', '/uploads/new.png');
   });
@@ -155,6 +176,31 @@ describe('<MemberMorePage /> sessions and payments', () => {
     renderPage();
     expect((await screen.findByRole('link', { name: /Payments/ })).getAttribute('href')).toBe('/member/payments');
     expect((await screen.findByRole('link', { name: /Book a session/ })).getAttribute('href')).toBe('/member/book');
+  });
+});
+
+describe('<MemberMorePage /> heading and stats', () => {
+  it('keeps the Profile heading in a sticky header when the profile read fails', async () => {
+    apiMocks.profile.mockRejectedValueOnce(new Error('offline'));
+    renderPage();
+    const heading = screen.getByRole('heading', { level: 1, name: 'Profile' });
+    expect(heading.closest('header')?.className).toContain('sticky');
+    expect(shellMock.headerPaysTopInset).toBe(true);
+    expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('shows final stat values under reduced motion', async () => {
+    renderPage();
+    const hero = await screen.findByRole('region', { name: 'Your profile' });
+    expect(await within(hero).findByText('12')).toBeTruthy();
+    expect(within(hero).getByText('3')).toBeTruthy();
+  });
+
+  it('shows a dash, never zero, when achievements fail to load', async () => {
+    apiMocks.achievements.mockResolvedValue({ data: { totals: {}, training: {} } });
+    renderPage();
+    const hero = await screen.findByRole('region', { name: 'Your profile' });
+    expect(within(hero).getAllByText('—')).toHaveLength(3);
   });
 });
 
