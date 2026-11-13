@@ -24,10 +24,10 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { Button, cardSurfaceGlow, FormField, TextArea } from '@/components/ui';
-import { PremiumAreaChart } from '@/components/visualizations';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import ClientAiPanel from '@/components/pt-os/ClientAiPanel';
-import ClientSnapshot, { normaliseSnapshot, type SnapshotState } from '@/components/pt-os/ClientSnapshot';
+import { normaliseSnapshot, type SnapshotState } from '@/components/pt-os/ClientSnapshot';
+import Client360Dashboard, { type Client360State } from '@/components/pt-os/client/Client360Dashboard';
 import ClientLoginCard from '@/components/pt-os/ClientLoginCard';
 import ScreeningLinkCard from '@/components/pt-os/ScreeningLinkCard';
 import ClientAiGenerateCard from '@/components/pt-os/ClientAiGenerateCard';
@@ -41,7 +41,7 @@ import type { MeGoal, MeGoals } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 import { escapeHtml, escapeImageDataUrl } from '@/lib/escapeHtml';
 import { errorMessage } from '@/lib/forms/errors';
-import { fmtDateMedium, fmtDayMonth, fmtMoney } from '@/lib/format';
+import { fmtDateMedium, fmtMoney } from '@/lib/format';
 import { whatsAppHref } from '@/lib/phone';
 import { amber, indigo, emerald, gray, red, rgba } from '@/lib/palette';
 import { tones, gradient, auroraHero, type Tone } from '@/components/profile/profileTheme';
@@ -542,6 +542,7 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
   const [error, setError] = useState('');
   /** The whole summary, so Check-ins can tell loading/failure from "none". */
   const [snapshotState, setSnapshotState] = useState<SnapshotState>({ status: 'loading' });
+  const [client360State, setClient360State] = useState<Client360State>({ status: 'loading' });
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
   const [offerOpen, setOfferOpen] = useState(false);
@@ -569,7 +570,6 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
   /** Ask AI — the read-only assistant scoped to this client. */
   const [aiOpen, setAiOpen] = useState(false);
 
-  const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
   /** Targets the member set in the member app. null until loaded or on failure. */
   const [memberGoals, setMemberGoals] = useState<MeGoals | null>(null);
@@ -590,25 +590,12 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
       // Three requests. Check-in and payment lists are not fetched here: none
       // of these endpoints returns a total, so a count built from a limited
       // page would be a wrong number on screen rather than a missing one.
-      const [assessmentsRes, goalsRes, renewalsRes, memberGoalsRes] = await Promise.allSettled([
-        api.progress.assessments.list({ client_id: id, limit: 10 }),
+      const [goalsRes, renewalsRes, memberGoalsRes] = await Promise.allSettled([
         api.progress.goals.list({ client_id: id }),
         api.pt.subscriptions(id),
         api.pt.memberGoals(id),
       ]);
       setMemberGoals(memberGoalsRes.status === 'fulfilled' ? memberGoalsRes.value.data : null);
-
-      const assessments = assessmentsRes.status === 'fulfilled' && Array.isArray((assessmentsRes.value as any)?.data) ? (assessmentsRes.value as any).data : [];
-      // The endpoint answers newest first; the chart draws left to right. Plot
-      // oldest → newest here, or a client losing weight shows a rising line.
-      const weights = assessments
-        .filter((a: any) => a.weight)
-        .sort((a: any, b: any) =>
-          new Date(b.assessment_date ?? b.created_at ?? 0).getTime()
-          - new Date(a.assessment_date ?? a.created_at ?? 0).getTime())
-        .slice(0, 6)
-        .reverse();
-      setRecentWeights(weights);
 
       const goals = goalsRes.status === 'fulfilled' && Array.isArray((goalsRes.value as any)?.data) ? (goalsRes.value as any).data : [];
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
@@ -653,6 +640,24 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
   // Fetched here, not inside the snapshot, so Check-ins can still tell
   // "loading" and "failed" from "no check-ins" when it is opened directly.
   useEffect(() => { void loadSnapshot(); }, [loadSnapshot]);
+
+  // The Overview dashboard. One read, so the cards cannot disagree with each
+  // other about the same client on the same screen.
+  const load360 = useCallback(async () => {
+    setClient360State({ status: 'loading' });
+    try {
+      const { data } = await api.pt.client360(id);
+      if (!data || typeof data !== 'object') throw new Error('The dashboard came back empty.');
+      setClient360State({ status: 'ready', data });
+    } catch (err) {
+      setClient360State({
+        status: 'error',
+        message: errorMessage(err, 'The dashboard could not be loaded.'),
+      });
+    }
+  }, [id]);
+
+  useEffect(() => { void load360(); }, [load360]);
 
   const [activePlanName, setActivePlanName] = useState<string | null>(null);
   useEffect(() => {
@@ -717,12 +722,6 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
 
   // Readiness belongs to the summary; only hand it over once that answered.
   const recovery = snapshotState.status === 'ready' ? snapshotState.snapshot.recovery : undefined;
-  const weightPoints = recentWeights.map((a: any) => ({
-    date: fmtDayMonth(a.assessment_date || a.created_at),
-    weight: Number(a.weight),
-  }));
-  const firstWeight = weightPoints[0];
-  const lastWeight = weightPoints[weightPoints.length - 1];
 
   // Null when the number cannot be normalised — no button then, rather than
   // a WhatsApp link to nobody.
@@ -930,36 +929,29 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
               <ClientTabs active={tab} onChange={selectTab} clientId={client.id} />
 
               <TabPanel id="overview" active={tab}>
-                {/* The summary is part of Overview, not a separate block above
-                    the workspace: it was the last thing pushing the tabs below
-                    a phone's first screen. */}
-                <div className="mb-4">
-                  <ClientSnapshot clientId={client.id} state={snapshotState} onRetry={loadSnapshot} />
-                </div>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
-                  {/* Where the client is in intake, and the one next thing to do. */}
+                <Client360Dashboard clientId={client.id} state={client360State} onRetry={load360} />
+
+                {/* Where the client is in intake, and the one next thing to do.
+                    Stays outside the disclosure: it is the first thing a trainer
+                    opens a brand-new client for. */}
+                <div className="mt-4">
                   <SectionCard title="Client journey" icon={<Route size={15} />} tint={tones.indigo}>
                     <ClientJourneyCard clientId={client.id} />
                   </SectionCard>
-                  {weightPoints.length >= 2 && firstWeight && lastWeight && (
-                    <SectionCard title="Weight trend" icon={<TrendingUp size={15} />} tint={tones.lime}>
-                      <PremiumAreaChart
-                        data={weightPoints as Record<string, unknown>[]}
-                        xKey="date"
-                        areas={[{ key: 'weight', label: 'Weight (kg)', color: emerald[500] }]}
-                        height={110}
-                        formatValue={(v) => `${v} kg`}
-                        yMin="auto"
-                        bordered={false}
-                      />
-                      {/* The chart's own accessible name says "six points";
-                          these are the readings a screen reader cannot hover. */}
-                      <p className="sr-only">
-                        Weight trend: {firstWeight.weight} kg on {firstWeight.date} to {lastWeight.weight} kg on {lastWeight.date}.
-                      </p>
-                    </SectionCard>
-                  )}
+                </div>
 
+                {/* Setup and messaging, not the daily read. Folded away so the
+                    dashboard is what a trainer sees first; every module below
+                    is unchanged and still one tap from here. */}
+                <details className="group mt-4 overflow-hidden rounded-[24px]" style={cardSurfaceGlow(NEUTRAL.glow)}>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+                    <span className="flex items-center gap-3">
+                      <Squircle tint={NEUTRAL}><ShieldCheck size={15} /></Squircle>
+                      <span className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>Client admin</span>
+                    </span>
+                    <ChevronDown size={18} className="transition-transform group-open:rotate-180" style={{ color: 'var(--text-muted)' }} aria-hidden />
+                  </summary>
+                  <div className="grid grid-cols-1 gap-4 px-5 pb-5 lg:grid-cols-2 items-start">
                   {memberGoals && memberGoals.goals.length > 0 && (
                     <SectionCard title="Their own goals" icon={<Flag size={15} />} tint={tones.violet}>
                       {/* Set by the member in the member app. Nothing on this
@@ -1030,14 +1022,15 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
                     They used to sit above the tab strip, pushing the workspace
                     about two phone screens down. They are admin tools, not the
                     daily workspace, so they belong at the bottom of Overview. */}
-                <div className="mt-4 space-y-4">
-                  <ClientLoginCard clientId={client.id} />
-                  <ScreeningLinkCard
-                    clientId={client.id}
-                    clientName={client.name}
-                    phone={client.whatsapp || client.mobile}
-                  />
-                </div>
+                  <div className="space-y-4 px-5 pb-5">
+                    <ClientLoginCard clientId={client.id} />
+                    <ScreeningLinkCard
+                      clientId={client.id}
+                      clientName={client.name}
+                      phone={client.whatsapp || client.mobile}
+                    />
+                  </div>
+                </details>
               </TabPanel>
 
               <TabPanel id="payments" active={tab}>
