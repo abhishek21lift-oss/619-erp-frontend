@@ -94,7 +94,7 @@ const KNOWN = [
   // The client-profile assignment read used to swallow with `.catch(() => {})`
   // and render "no programme assigned"; it now sets an error state, so its
   // entry is gone.
-  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:170',
+  'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:173',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
   'app/(chrome)/pt-os/exercise-library/new/page.tsx:56',
   // The goal wizard reads the Client Interview and the Module 5 re-test

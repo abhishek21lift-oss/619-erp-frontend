@@ -171,7 +171,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.workoutLog.sessions.list({ client_id: clientId, limit: 100 }),
         api.workouts.assignments.list({ client_id: clientId, status: 'active' }).catch(() => []),
-        api.progress.workoutLog.pendingReview({ client_id: clientId }).catch(() => ({ data: [] })),
+        api.progress.workoutLog.pendingReview({ client_id: clientId }),
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }

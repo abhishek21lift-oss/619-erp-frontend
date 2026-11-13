@@ -523,7 +523,6 @@ function SetRow({ n, s, best, canRemove, columns, onField, onStep, onToggle, onR
             Note
             <input value={s.notes ?? ''} maxLength={200} aria-label={`Set ${n} note`}
               onChange={(e) => onMeta({ notes: e.target.value })}
-              placeholder="How did it feel?"
               className="mt-1 h-9 w-full rounded-[10px] px-2 text-[12.5px] font-[600] outline-none"
               style={{ background: 'var(--bg-subtle)', color: MC.ink }} />
           </label>

@@ -4,11 +4,12 @@
 // were shown, what they actually logged, and what was missed. Approving or
 // asking for changes writes the decision the member sees in their history.
 
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { Check, MessageSquareWarning } from 'lucide-react';
 import { api as defaultApi } from '@/lib/api';
 import type { WorkoutReviewDecision, WorkoutSessionDetail, WorkoutSet } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
+import { TextAreaField } from '@/components/ui/form';
 
 type ReviewApi = {
   reviewSession: (id: string, body: { decision: WorkoutReviewDecision; feedback: string }) => Promise<unknown>;
@@ -34,7 +35,6 @@ export default function ReviewPanel({ detail, onReviewed, api = defaultApi.progr
   /** Injected in tests; the real client talks to `api.progress.workoutLog`. */
   api?: ReviewApi;
 }) {
-  const id = useId();
   const [feedback, setFeedback] = useState('');
   const [saving, setSaving] = useState<WorkoutReviewDecision | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,12 +135,19 @@ export default function ReviewPanel({ detail, onReviewed, api = defaultApi.progr
         </div>
       </div>
 
-      <label htmlFor={id} className="mt-4 block text-[10.5px] font-[800] uppercase tracking-[0.1em]"
-        style={{ color: 'var(--text-muted)' }}>Feedback</label>
-      <textarea id={id} value={feedback} onChange={(e) => setFeedback(e.target.value)} rows={3} maxLength={2000}
-        placeholder="What went well, what to change next time…"
-        className="mt-1.5 w-full rounded-[12px] px-3 py-2.5 text-[13px] outline-none"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+      <TextAreaField
+        className="mt-4"
+        label="Feedback"
+        rows={3}
+        maxLength={2000}
+        density="compact"
+        field={{
+          name: 'feedback',
+          state: { value: feedback, meta: { errors: [], isTouched: false } },
+          handleChange: setFeedback,
+          handleBlur: () => {},
+        }}
+      />
 
       {error && <p role="alert" className="mt-2 text-[12px] font-[650]" style={{ color: 'var(--danger-text)' }}>{error}</p>}
 

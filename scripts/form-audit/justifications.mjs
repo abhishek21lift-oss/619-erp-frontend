@@ -259,7 +259,7 @@ export const JUSTIFIED = {
   },
 
   'src/components/member/GuidedWorkout.tsx': {
-    allow: 1,
+    allow: 4,
     reason:
       'One inline STEPPER — minus, centred input, plus — not a labelled text ' +
       'field. The input carries its own aria-label (the exercise metric) and ' +
@@ -267,7 +267,12 @@ export const JUSTIFIED = {
       'so a FormField label would add a second name and break the 44px row ' +
       'the three pieces share. The value is written by the logger through ' +
       'its existing onField path, not by a form submit, so a schema-bound ' +
-      'field would attach to nothing.',
+      'field would attach to nothing. The other three are the same shape: the ' +
+      'per-set RPE, RIR and note inputs inside that row, each wrapped in its ' +
+      'own <label> naming the metric and with its own aria-label, and each ' +
+      'written through the logger\'s onMeta path rather than a submit. Three ' +
+      'separately captioned FormFields would triple the height of every set ' +
+      'row on a phone screen.',
   },
 
   'src/components/pt-os/TrainerStatedFields.tsx': {
