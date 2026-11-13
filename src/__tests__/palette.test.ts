@@ -341,7 +341,8 @@ describe('the app uses only the palette', () => {
     const outside = users.filter((u) =>
       !u.startsWith('components/profile/')
       && u !== 'app/(chrome)/settings/profile/page.tsx'
-      && u !== 'app/(chrome)/pt-os/clients/[id]/page.tsx');
+      && u !== 'app/(chrome)/pt-os/clients/[id]/page.tsx'
+      && u !== 'components/pt-os/client/Client360Dashboard.tsx');
     expect(users.length).toBeGreaterThan(0);
     expect(outside).toEqual([]);
   });

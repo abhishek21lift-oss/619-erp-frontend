@@ -931,6 +931,15 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
               <TabPanel id="overview" active={tab}>
                 <Client360Dashboard clientId={client.id} state={client360State} onRetry={load360} />
 
+                {/* Where the client is in intake, and the one next thing to do.
+                    Stays outside the disclosure: it is the first thing a trainer
+                    opens a brand-new client for. */}
+                <div className="mt-4">
+                  <SectionCard title="Client journey" icon={<Route size={15} />} tint={tones.indigo}>
+                    <ClientJourneyCard clientId={client.id} />
+                  </SectionCard>
+                </div>
+
                 {/* Setup and messaging, not the daily read. Folded away so the
                     dashboard is what a trainer sees first; every module below
                     is unchanged and still one tap from here. */}
@@ -943,11 +952,6 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
                     <ChevronDown size={18} className="transition-transform group-open:rotate-180" style={{ color: 'var(--text-muted)' }} aria-hidden />
                   </summary>
                   <div className="grid grid-cols-1 gap-4 px-5 pb-5 lg:grid-cols-2 items-start">
-                  {/* Where the client is in intake, and the one next thing to do. */}
-                  <SectionCard title="Client journey" icon={<Route size={15} />} tint={tones.indigo}>
-                    <ClientJourneyCard clientId={client.id} />
-                  </SectionCard>
-
                   {memberGoals && memberGoals.goals.length > 0 && (
                     <SectionCard title="Their own goals" icon={<Flag size={15} />} tint={tones.violet}>
                       {/* Set by the member in the member app. Nothing on this
