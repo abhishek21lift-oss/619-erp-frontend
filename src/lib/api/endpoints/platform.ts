@@ -1032,10 +1032,10 @@ export const me = {
       method: 'PATCH', body: JSON.stringify({ draft }),
     }),
   /** Finalise the workout and queue it for the trainer's review. */
-  submitWorkout: (id: string, draft?: unknown) =>
+  submitWorkout: (id: string, input: MeWorkoutLogInput) =>
     http<{ data: { created: boolean; session_id: string; summary: MeWorkoutSummary } }>(
       `/api/me/workout/sessions/${encodeURIComponent(id)}/submit`,
-      { method: 'POST', body: JSON.stringify(draft === undefined ? {} : { draft }) },
+      { method: 'POST', body: JSON.stringify({ draft: input }) },
     ),
   /** Discard an open workout. The row stays as 'abandoned'; nothing is deleted. */
   discardWorkout: (id: string) =>

@@ -180,7 +180,7 @@ export default function GuidedWorkout({
         onSaved?.(res.data);
         return;
       }
-      const res = await api.me.submitWorkout(session.id, draft);
+      const res = await api.me.submitWorkout(session.id, toLogInput(draft));
       clearDraft();
       setSummary(res.data.summary);
       setPhase('done');
