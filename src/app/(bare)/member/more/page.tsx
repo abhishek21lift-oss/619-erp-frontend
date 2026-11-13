@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { m } from 'framer-motion';
+import { m, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   Bell, CalendarPlus, CalendarRange, Camera, ChevronRight, ClipboardCheck, Clock, CreditCard, FileSignature, Flame, IdCard, LineChart, LogOut, MapPin, Medal,
   MessageCircle, Phone, RefreshCw, Receipt, Star, Target, Trophy, UserRound, Dumbbell, Video,
@@ -26,7 +26,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
-import { EASE, LoadError, MC, longDate } from '@/components/member/MemberUI';
+import { triggerHaptic } from '@/components/common/PullToRefresh/utils';
+import { CountUp, EASE, LoadError, MC, longDate } from '@/components/member/MemberUI';
 import { loadMemberNotifications } from '@/components/member/memberNotifications';
 import InstallAppCard from '@/components/member/InstallAppCard';
 import CoachCard from '@/components/member/CoachCard';
@@ -47,7 +48,7 @@ import type { Accent } from '@/components/member/memberTheme';
 export default function MemberMorePage() {
   return (
     <Guard role="member">
-      <MemberShell>
+      <MemberShell headerPaysTopInset>
         <ProfileBody />
       </MemberShell>
     </Guard>
@@ -137,11 +138,21 @@ function ProfileBody() {
     return () => { live = false; };
   }, [reloadKey]);
 
+  // Hooks before the render branches: the loading and error states draw the
+  // same sticky header, so they need the same values.
+  const { scrollY } = useScroll();
+  const reduce = useReducedMotion() ?? false;
+  const reveal = useTransform(scrollY, [0, 72], [0, 1]);
+  const titleY = useTransform(scrollY, [0, 72], [6, 0]);
+  const heroScale = useTransform(scrollY, [0, 160], [1, 0.97]);
+  const heroY = useTransform(scrollY, [0, 160], [0, 6]);
+
   async function savePhoto(dataUrl: string) {
     setPhotoBusy(true);
     try {
       const r = await api.me.setPhoto(dataUrl);
       setProfile((p) => (p ? { ...p, photo_url: r.data.photo_url } : p));
+      triggerHaptic(8);
       toast.success('Photo updated');
       setPhotoOpen(false);
     } catch (e) {
@@ -153,14 +164,23 @@ function ProfileBody() {
 
   return (
     <>
-      <h1 className="sr-only">Profile</h1>
+      <header className="sticky top-0 z-30 -mx-4 px-4" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <m.span aria-hidden className="pointer-events-none absolute inset-0 backdrop-blur-md"
+          style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border)', opacity: reduce ? 1 : reveal }} />
+        <div className="relative flex h-11 items-center">
+          <m.h1 className="text-[17px] font-[800]"
+            style={{ color: MC.ink, opacity: reduce ? 1 : reveal, y: reduce ? 0 : titleY }}>Profile</m.h1>
+        </div>
+      </header>
       {profileFailed && !profile ? (
         <div className="mb-4">
           <LoadError what="profile" onRetry={() => setReloadKey((k) => k + 1)} />
         </div>
       ) : (
-        <ProfileHero profile={profile} plan={plan} stats={stats}
-          onEditPhoto={() => setPhotoOpen(true)} photoBusy={photoBusy} />
+        <m.div className="origin-top" style={reduce ? undefined : { scale: heroScale, y: heroY }}>
+          <ProfileHero profile={profile} plan={plan} stats={stats}
+            onEditPhoto={() => setPhotoOpen(true)} photoBusy={photoBusy} />
+        </m.div>
       )}
       {profile && (plan || profile.package_type || profile.pt_end_date) && (
         <MembershipCard plan={plan} profile={profile} sessions={sessions} />
@@ -189,7 +209,7 @@ function ProfileBody() {
       <InstallAppCard persistent />
 
       <button type="button" onClick={() => logout()}
-        className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750] transition-colors active:scale-[0.99]"
+        className="mt-1 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750] transition-[color,transform] active:scale-[0.98]"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.dangerText }}>
         <LogOut size={16} aria-hidden /> Sign out
       </button>
@@ -329,7 +349,7 @@ function HeroStat({ icon: Icon, label, value, divider = false }: {
       <dt className="mt-1.5 text-[11px] font-[650] opacity-85">{label}</dt>
       <dd className="flex items-center justify-center gap-1.5 text-[22px] font-[820] leading-none tabular-nums tracking-[-0.02em]">
         <Icon size={15} aria-hidden className="opacity-80" />
-        {value == null ? '—' : value.toLocaleString('en-IN')}
+        {value == null ? '—' : <CountUp to={value} />}
       </dd>
     </div>
   );

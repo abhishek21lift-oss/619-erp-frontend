@@ -19,7 +19,9 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import Guard from '@/components/Guard';
 import MemberShell from '@/components/member/MemberShell';
+import { triggerHaptic } from '@/components/common/PullToRefresh/utils';
 import MemberPrivacy from '@/components/member/MemberPrivacy';
+import AppearanceCard from '@/components/member/AppearanceCard';
 import AccountDeviceCard from '@/components/auth/AccountDeviceCard';
 import MemberNativeDevices from '@/components/member/MemberNativeDevices';
 import {
@@ -104,6 +106,7 @@ function AccountBody() {
       </Section>
 
       <ContactForm profile={profile} onSaved={(c) => setProfile({ ...profile, ...c })} />
+      <AppearanceCard />
       <Section title="Sign-in & security">
         <AccountDeviceCard />
         <MemberNativeDevices />
@@ -112,8 +115,8 @@ function AccountBody() {
       <MemberPrivacy />
 
       <button type="button" onClick={() => logout()}
-        className="mb-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750]"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.danger }}>
+        className="mb-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[16px] text-[14px] font-[750] transition-[color,transform] active:scale-[0.98]"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.dangerText }}>
         <LogOut size={16} aria-hidden /> Sign out
       </button>
     </>
@@ -136,6 +139,7 @@ function PhotoRow({ profile, onSaved }: { profile: MeProfile; onSaved: (url: str
     try {
       const r = await api.me.setPhoto(dataUrl);
       onSaved(r.data.photo_url);
+      triggerHaptic(8);
       toast.success('Photo updated');
       setOpen(false);
     } catch (e) {
@@ -171,13 +175,13 @@ function PhotoRow({ profile, onSaved }: { profile: MeProfile; onSaved: (url: str
         <div className="flex shrink-0 gap-2">
           {profile.photo_url && (
             <button type="button" onClick={() => void remove()} disabled={busy}
-              className="min-h-[40px] rounded-[12px] px-3 text-[13px] font-[700] disabled:opacity-50"
-              style={{ background: 'var(--bg-subtle)', color: MC.danger }}>
+              className="min-h-[40px] rounded-[12px] px-3 text-[13px] font-[700] transition-transform active:scale-[0.98] disabled:opacity-50"
+              style={{ background: 'var(--bg-subtle)', color: MC.dangerText }}>
               Remove
             </button>
           )}
           <button type="button" onClick={() => setOpen(true)} disabled={busy}
-            className="flex min-h-[40px] items-center gap-1.5 rounded-[12px] px-3 text-[13px] font-[750] text-white disabled:opacity-50"
+            className="flex min-h-[40px] items-center gap-1.5 rounded-[12px] px-3 text-[13px] font-[750] text-white transition-transform active:scale-[0.98] disabled:opacity-50"
             style={{ background: MC.primary }}>
             <Camera size={15} aria-hidden /> {profile.photo_url ? 'Change' : 'Add'}
           </button>
@@ -192,7 +196,7 @@ function PhotoRow({ profile, onSaved }: { profile: MeProfile; onSaved: (url: str
 function BackToProfile() {
   return (
     <Link href="/member/more" className="-ml-1 mb-3 inline-flex min-h-[44px] items-center gap-0.5 pr-3 text-[14px] font-[700]"
-      style={{ color: MC.primary }}>
+      style={{ color: MC.primaryText }}>
       <ChevronLeft size={18} aria-hidden /> Profile
     </Link>
   );
@@ -258,7 +262,7 @@ function PasswordForm() {
     onSubmit: async (values) => {
       await api.auth.changePassword(values.current ?? '', values.password);
     },
-    onSuccess: () => { toast.success('Password changed'); close(); },
+    onSuccess: () => { triggerHaptic(8); toast.success('Password changed'); close(); },
   });
   const { form, isSubmitting } = f;
   const type = reveal ? 'text' : 'password';
