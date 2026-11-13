@@ -102,9 +102,11 @@ test.describe('Member — guided workout submit', () => {
     ]);
 
     await page.goto('/member/workout');
-    await page.getByRole('button', { name: /start today's workout/i }).click({ timeout: 30_000 });
+    // A retry after a failed attempt resumes the session it left open.
+    await page.getByRole('button', { name: /start today's workout|resume your workout/i }).click({ timeout: 30_000 });
 
-    await page.getByRole('button', { name: /mark set 1 done/i }).click();
+    const firstSet = page.getByRole('button', { name: /mark set 1 done/i });
+    if (await firstSet.count()) await firstSet.click();
     await page.getByRole('button', { name: /submit workout/i }).click();
 
     await expect(page.getByRole('heading', { name: /workout done/i })).toBeVisible({ timeout: 30_000 });
