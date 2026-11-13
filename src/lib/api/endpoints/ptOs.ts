@@ -9,7 +9,7 @@ import { buildQs } from '../qs';
 import type {
   MeGoals,
   AvailabilityWindow, BookingSettings, TimeOff, TrainerAvailability,
-  ActivityLogEntry, CheckinInsight, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
+  ActivityLogEntry, CheckinInsight, Client360, ClientBirthday, ClientSnapshot, CoachGeneration, PtLead, PtSession, RosterSignalSweep, TrainingBrief,
   TransformationRow,
   ChurnInsight, ChurnRiskResult, ChurnRiskRow,
   FormCheckComment, TrainerFormCheck,
@@ -92,6 +92,13 @@ export const pt = {
    */
   trainingBrief: (id: string) =>
     http<{ data: TrainingBrief }>(`/api/pt-os/clients/${id}/training-brief`),
+  /**
+   * The whole trainer dashboard in one read: membership, KPIs, assessment,
+   * training, nutrition, attendance, progress, goals, finance, timeline and
+   * insights. Each section comes from the service that already owns it.
+   */
+  client360: (id: string) =>
+    http<{ data: Client360 }>(`/api/pt-os/clients/${id}/360`),
   /**
    * What a trainer would otherwise have to remember about this client:
    * a lapsing term, a month with no measurements, a missed session, how far

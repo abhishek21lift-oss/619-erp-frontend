@@ -19,15 +19,60 @@ const deep = (): any => new Proxy(function () {}, {
   apply: () => Promise.resolve({ data: [] }),
 });
 /** Newest first, the order the API returns. */
-let assessmentRows: Array<{ assessment_date: string; weight: number }> = [];
+let weightSeries: Array<{ on: string; kg: number; source: string }> = [];
+
+/** The dashboard read. Sections this file does not assert stay empty. */
+function client360() {
+  return {
+    generated_at: '2026-11-13T06:00:00.000Z',
+    client: {
+      id: 'c1', name: client.name, unique_id: 'PT-001', gender: 'male', age: 34,
+      mobile: client.mobile, email: client.email, trainer_name: 'Ajeet',
+      goal: null, injuries: null, notes: client.notes, status: 'active',
+      joined_on: '2026-08-01', term_end: '2026-11-01', days_left: 5,
+    },
+    membership: {
+      active: true, plan_name: null, start_date: '2026-08-01', end_date: '2026-11-01',
+      days_left: 5, due_status: 'OVERDUE', current_term_fee: 30000,
+      current_term_paid: 20000, current_term_balance: 10000,
+    },
+    kpis: {
+      weight_kg: null, weight_change_kg: null, weight_change_since: null, body_fat_pct: null,
+      bmi: null, sessions_remaining: null, attendance_30d: 0, workout_adherence_pct: null,
+      nutrition_adherence_pct: null, outstanding_balance: 10000,
+    },
+    assessment: {
+      present: false, as_of: null, readiness: { present: false }, body: { present: false },
+      capacity: { present: false }, overall_max: null, limitations: { present: false },
+    },
+    training: {
+      present: false, plan_name: null, started_on: null, progress_pct: null,
+      sessions_28d: 0, completed_28d: 0, adherence_pct: null, last_session: null,
+    },
+    nutrition: {
+      present: false, plan_name: null, start_date: null, targets: null,
+      logged_days_7d: 0, avg_calories_7d: null, adherence_pct: null,
+    },
+    attendance: { last_30d: 0, last_90d: 0, recent: [], packages: [], sessions_remaining: null },
+    progress: {
+      weight_series: weightSeries,
+      measurements: { weight_kg: null, body_fat_pct: null, lean_mass_kg: null, waist_cm: null, as_of: null },
+    },
+    goals: { primary: { present: false }, detail: { present: false } },
+    notes: { client: client.notes },
+    finance: { recent_payments: [], outstanding: 10000, due_status: 'OVERDUE' },
+    timeline: [], insights: [], alerts: [], recovery: { present: false, weeks: [] },
+    completeness: { pct: 0, missing: [], stale: [] },
+  };
+}
+
 vi.mock('@/lib/api', () => ({
   api: new Proxy({}, {
     get: (_t, k) => {
       if (k === 'progress') return {
-        assessments: { list: () => Promise.resolve({ data: assessmentRows }) },
         goals: { list: () => Promise.resolve({ data: [] }) },
       };
-      if (k === 'pt') return { client: () => Promise.resolve({ data: client }), subscriptions: () => Promise.resolve({ data: [] }), memberGoals: () => Promise.resolve({ data: { studio: null, goals: [] } }), journey: () => Promise.resolve({ data: { steps: [{ key: 'welcome_tour', state: 'done' }, { key: 'consent', state: 'todo' }], next: 'consent', screening: null } }) };
+      if (k === 'pt') return { client: () => Promise.resolve({ data: client }), client360: () => Promise.resolve({ data: client360() }), subscriptions: () => Promise.resolve({ data: [] }), memberGoals: () => Promise.resolve({ data: { studio: null, goals: [] } }), journey: () => Promise.resolve({ data: { steps: [{ key: 'welcome_tour', state: 'done' }, { key: 'consent', state: 'todo' }], next: 'consent', screening: null } }) };
       if (k === 'workouts') return { assignments: { list: () => Promise.resolve([{ plan_name: 'Hypertrophy A' }]) } };
       return deep();
     },
@@ -102,10 +147,10 @@ describe('client profile', () => {
   });
 
   it('draws the weight trend oldest to newest even though the API answers newest first', { timeout: 15000 }, async () => {
-    assessmentRows = [
-      { assessment_date: '2026-05-01', weight: 70 },
-      { assessment_date: '2026-04-01', weight: 75 },
-      { assessment_date: '2026-03-01', weight: 80 },
+    weightSeries = [
+      { on: '2026-05-01', kg: 70, source: 'assessment' },
+      { on: '2026-04-01', kg: 75, source: 'assessment' },
+      { on: '2026-03-01', kg: 80, source: 'assessment' },
     ];
     try {
       window.history.replaceState({}, '', '/pt-os/clients/c1');
@@ -113,9 +158,9 @@ describe('client profile', () => {
       await act(async () => { render(<Suspense fallback="loading"><Page params={params} /></Suspense>); await params; });
       await waitFor(() => expect(screen.getByText(/Weight trend:/)).toBeTruthy());
       // The first point is the oldest, so the summary and the line agree.
-      expect(screen.getByText(/Weight trend:/)).toHaveTextContent('80 kg on 01 Mar to 70 kg on 01 May.');
+      expect(screen.getByText(/Weight trend:/)).toHaveTextContent('80 kg on 01 Mar 2026 to 70 kg on 01 May 2026.');
     } finally {
-      assessmentRows = [];
+      weightSeries = [];
     }
   });
 

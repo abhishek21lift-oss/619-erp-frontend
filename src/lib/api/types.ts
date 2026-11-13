@@ -4882,6 +4882,132 @@ export interface TrainingBrief {
   completeness_pct: number;
 }
 
+/* ── Client 360 ───────────────────────────────────────────────────────────
+   One read for the trainer dashboard. It reuses the brief and snapshot shapes
+   rather than restating them, so a change to what a section means reaches both
+   surfaces. Every derived number is nullable: absent is not zero. */
+
+export interface Client360Event {
+  id: string;
+  kind: 'attendance' | 'workout' | 'payment' | 'checkin' | 'assessment' | 'nutrition';
+  at: string | null;
+  title: string;
+  detail: string | null;
+}
+
+export interface Client360Payment {
+  id: string;
+  amount: string | number;
+  method: string | null;
+  date: string;
+  receipt_no: string | null;
+  notes: string | null;
+}
+
+export interface Client360Package {
+  id: string;
+  name: string | null;
+  total_sessions: number | null;
+  used_sessions: number | null;
+  remaining_sessions: number | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+export interface Client360 {
+  generated_at: string;
+  client: {
+    id: string; name: string; unique_id: string | null;
+    gender: string | null; age: number | null;
+    mobile: string | null; email: string | null; trainer_name: string | null;
+    goal: string | null; injuries: string | null; notes: string | null;
+    status: string | null; joined_on: string | null; term_end: string | null;
+    days_left: number | null;
+  };
+  membership: {
+    active: boolean;
+    plan_name: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    days_left: number | null;
+    due_status: string | null;
+    current_term_fee: number | null;
+    current_term_paid: number | null;
+    current_term_balance: number | null;
+  };
+  kpis: {
+    weight_kg: number | null;
+    weight_change_kg: number | null;
+    weight_change_since: string | null;
+    body_fat_pct: number | null;
+    bmi: number | null;
+    sessions_remaining: number | null;
+    attendance_30d: number;
+    workout_adherence_pct: number | null;
+    nutrition_adherence_pct: number | null;
+    outstanding_balance: number | null;
+  };
+  assessment: {
+    present: boolean;
+    as_of: string | null;
+    readiness: BriefReadiness;
+    body: BriefBody;
+    capacity: BriefCapacity;
+    /** The framework's own denominator; null on older assessments. */
+    overall_max: number | null;
+    limitations: BriefLimitations;
+  };
+  training: {
+    present: boolean;
+    plan_name: string | null;
+    started_on: string | null;
+    progress_pct: number | null;
+    sessions_28d: number;
+    completed_28d: number;
+    adherence_pct: number | null;
+    last_session: { date: string | null; status: string } | null;
+  };
+  nutrition: {
+    present: boolean;
+    plan_name: string | null;
+    start_date: string | null;
+    targets: { calories: number | null; protein_g: number | null; carbs_g: number | null; fats_g: number | null } | null;
+    logged_days_7d: number;
+    avg_calories_7d: number | null;
+    adherence_pct: number | null;
+  };
+  attendance: {
+    last_30d: number;
+    last_90d: number;
+    recent: { id: string; date: string | null; status: string; method: string | null; check_in_time: string | null }[];
+    packages: Client360Package[];
+    sessions_remaining: number | null;
+  };
+  progress: {
+    weight_series: { on: string; kg: number; source: string }[];
+    measurements: {
+      weight_kg: number | null; body_fat_pct: number | null; lean_mass_kg: number | null;
+      waist_cm: number | null; as_of: string | null;
+    };
+  };
+  goals: { primary: ClientGoalProgress; detail: BriefGoal };
+  notes: { client: string | null };
+  finance: {
+    recent_payments: Client360Payment[];
+    outstanding: number | null;
+    due_status: string | null;
+  };
+  timeline: Client360Event[];
+  insights: CoachInsight[];
+  alerts: ClientAlert[];
+  recovery: ClientRecovery;
+  completeness: {
+    pct: number;
+    missing: string[];
+    stale: { section: string; as_of: string; age_days: number; stale_after_days: number }[];
+  };
+}
+
 /* ── Client snapshot ──────────────────────────────────────────────────────
    What the profile tells a trainer instead of making them remember it.
    Every field is derived from a reading that exists; an absent measurement
