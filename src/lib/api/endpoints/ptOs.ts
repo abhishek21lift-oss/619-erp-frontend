@@ -153,6 +153,16 @@ export const pt = {
     http<{ data: unknown[] }>('/api/pt-os/revenue'),
   updateClient: (id: string, data: Record<string, unknown>) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  /**
+   * The trainer's permission for this client to train without them.
+   * Its own route so the change has its own audit entry; revoking never
+   * cancels a workout the client already started.
+   */
+  setSelfWorkout: (id: string, allow: boolean) =>
+    http<{ data: { id: string; allow_self_workout: boolean } }>(
+      `/api/pt-os/clients/${id}/self-workout`,
+      { method: 'PATCH', body: JSON.stringify({ allow_self_workout: allow }) },
+    ),
   deleteClient: (id: string) =>
     http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
   subscriptions: (id: string) =>

@@ -51,6 +51,7 @@ import { termEnded } from '@/lib/term-dates';
 import MessagePreferences from '@/components/pt-os/client/MessagePreferences';
 import ClientJourneyCard from '@/components/pt-os/client/ClientJourneyCard';
 import InterviewSnapshotCard from '@/components/pt-os/client/InterviewSnapshotCard';
+import SelfWorkoutPermissionCard from '@/components/pt-os/SelfWorkoutPermissionCard';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -69,6 +70,8 @@ interface PtClientDetail {
   whatsapp_opt_out?: boolean;
   email_opt_out?: boolean;
   comm_prefs_updated_at?: string | null;
+  /** Migration 283: may this client start a workout without the trainer? */
+  allow_self_workout?: boolean;
   base_amount: number; discount: number; final_amount: number;
   /** LIFETIME paid and its derived balance — NOT this term's. See current_term_* below. */
   paid_amount: number; balance_amount: number;
@@ -1088,6 +1091,9 @@ function ClientProfileInner({ params }: { params: Promise<{ id: string }> }) {
                     { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Lifts and personal records', icon: <Zap size={15} />, color: TAB_COLOR.danger },
                   ]}
                 />
+                <div className="mt-4">
+                  <SelfWorkoutPermissionCard clientId={client.id} initial={client.allow_self_workout === true} />
+                </div>
               </TabPanel>
 
               <TabPanel id="checkins" active={tab}>

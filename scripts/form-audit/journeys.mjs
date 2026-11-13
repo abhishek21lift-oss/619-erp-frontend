@@ -100,6 +100,9 @@ export const JOURNEYS = {
     'src/app/(chrome)/pt-os/workout-generator/page.tsx',
     'src/app/(chrome)/pt-os/macrocycle/page.tsx',
   ],
+  'e2e/self-workout.ui.spec.ts': [
+    'src/components/member/GuidedWorkout.tsx',
+  ],
   'e2e/flexibility-protocol.ui.spec.ts': [
     'src/app/(chrome)/pt-os/assessment/page.tsx',
   ],

@@ -909,6 +909,9 @@ export interface TodayRoster {
  */
 export type WorkoutSessionStatus = 'in_progress' | 'completed' | 'abandoned';
 
+/** The trainer's decision on a member's submitted workout. */
+export type WorkoutReviewStatus = 'pending' | 'approved' | 'changes_requested';
+
 export interface WorkoutSession {
   id: string;
   client_id: string;
@@ -920,6 +923,16 @@ export interface WorkoutSession {
   notes?: string | null;
   duration_minutes?: number | null;
   status: WorkoutSessionStatus;
+  /** 'member' for a workout the client did on their own (migration 283). */
+  source?: 'studio' | 'member';
+  started_at?: string | null;
+  submitted_at?: string | null;
+  /** The member submitted this and the trainer has not decided yet. */
+  review_status?: WorkoutReviewStatus;
+  review_feedback?: string | null;
+  reviewed_at?: string | null;
+  /** The plan day the member was shown when they started, kept as a snapshot. */
+  prescribed?: unknown | null;
   created_at: string;
   updated_at: string;
   exercise_count?: number;
@@ -934,6 +947,23 @@ export interface WorkoutSessionDetail extends WorkoutSession {
   summary: WorkoutSessionSummary;
   planned: WorkoutPlanned | null;
 }
+
+/** One submitted member workout waiting for the trainer's review. */
+export interface WorkoutPendingReview {
+  id: string;
+  client_id: string;
+  client_name: string;
+  session_date: string;
+  submitted_at: string | null;
+  program_name: string | null;
+  workout_day: string | null;
+  duration_minutes: number | null;
+  exercise_count: number;
+  set_count: number;
+  volume: number;
+}
+
+export type WorkoutReviewDecision = 'approved' | 'changes_requested';
 
 export interface WorkoutProgressPoint {
   session_date: string;
@@ -1029,14 +1059,15 @@ export interface WorkoutPreviousExercise {
 }
 
 export interface WorkoutPlannedExercise {
-  /** The plan row this prescription came from; the anchor week's row when derived. */
-  row_id: string;
+  /** The plan row this prescription came from; absent on a member session's
+   *  prescription snapshot, which has no row of its own. */
+  row_id?: string;
   exercise_id: string | null;
   name: string;
   sets: number;
   reps: number;
   rest_seconds: number | null;
-  sort_order: number;
+  sort_order?: number;
   notes?: string | null;
 
   // The prescription for the week the client is actually in, already resolved
@@ -1058,7 +1089,8 @@ export interface WorkoutPlannedExercise {
 }
 
 export interface WorkoutPlanned {
-  plan_id: string;
+  /** Absent on a member session's prescription snapshot. */
+  plan_id?: string;
   /** The plan weekday this prescription belongs to, 1 = Monday. */
   day_of_week: number;
   plan_name: string;
@@ -1069,10 +1101,11 @@ export interface WorkoutPlanned {
   progression_type?: ProgressionType;
   /**
    * 'derived' = week 1 plus the rule; 'override' = the trainer wrote this week
-   * by hand. Worth surfacing: a derived number is a suggestion the rule
-   * produced, a written one is an instruction.
+   * by hand; 'snapshot' = what the member was shown when they started.
+   * Worth surfacing: a derived number is a suggestion the rule produced, a
+   * written one is an instruction.
    */
-  source?: 'derived' | 'override';
+  source?: 'derived' | 'override' | 'snapshot';
 }
 
 // ── Diet Plans ──────────────────────────────────────────────────────
@@ -3598,6 +3631,8 @@ export type MeWorkoutLogInput = {
     name: string;
     /** What the member was told to do, kept on the session as a snapshot. */
     notes?: string | null;
+    /** Position in the prescription snapshot, when the app knows it. */
+    prescribed_index?: number | null;
     sets: {
       weight_kg?: number | null;
       reps?: number | null;
@@ -3814,8 +3849,14 @@ export type MeSessionSet = {
   distance_unit: string | null;
 };
 
+/** The trainer's verdict on a submitted workout, shown in the member's history. */
+export type MeWorkoutReview = {
+  review_status: WorkoutReviewStatus | null;
+  review_feedback: string | null;
+};
+
 /** A session the trainer logged for the member. Trainer notes are never included. */
-export type MeSession = {
+export type MeSession = MeWorkoutReview & {
   id: string;
   session_date: string;
   program_name: string | null;
@@ -3873,6 +3914,34 @@ export type MeWorkoutPlan = {
   end_date: string | null;
   current_week: number | null;
   days: { day_of_week: number; phase?: BlockPhase | null; exercises: MeWorkoutExercise[] }[];
+};
+
+/**
+ * A member's self workout that is still open on the server.
+ *
+ * `draft` is whatever the app last autosaved (its own draft shape), opaque to
+ * the API; `prescribed` is the plan day snapshotted when they started.
+ */
+export type MeWorkoutSession = {
+  id: string;
+  started_at: string;
+  prescribed: {
+    plan_name?: string | null;
+    current_week?: number | null;
+    day_of_week?: number | null;
+    exercises?: MeWorkoutExercise[];
+  } | null;
+  draft: unknown | null;
+  workout_assignment_id: string | null;
+  program_name: string | null;
+  workout_day: string | null;
+};
+
+/** GET /api/me/workout — the programme plus the trainer's permission. */
+export type MeWorkoutState = {
+  data: MeWorkoutPlan[];
+  allow_self_workout: boolean;
+  open_session: MeWorkoutSession | null;
 };
 
 export type MeDietMeal = {

@@ -9,6 +9,12 @@
  *   3. no programme day today, but a past session — "Repeat <date>'s session"
  * and, when the programme has other days, a quiet "train another day" list.
  *
+ * The trainer decides whether the member may start a workout alone: when
+ * `allowSelfWorkout` is false only Resume is offered, because a session the
+ * member already started must still be finishable. Every start goes through
+ * the server, which owns the permission, the prescription snapshot and the
+ * single open session.
+ *
  * Opening the guided screen pushes a history entry, so the phone's Back
  * button closes it (keeping the workout for later) instead of leaving the app.
  */
@@ -18,7 +24,8 @@ import dynamic from 'next/dynamic';
 import { m } from 'framer-motion';
 import { ChevronRight, Loader2, Play, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { MeSession, MeWorkoutPlan } from '@/lib/api';
+import type { MeLastPerformance, MeSession, MeWorkoutPlan, MeWorkoutSession } from '@/lib/api';
+import { ApiError } from '@/lib/http';
 import { rgba } from '@/lib/palette';
 import { EASE, MC, longDate } from './MemberUI';
 import { loadDraft, loggedSetCount, newDraft, type WorkoutDraft } from './workoutDraft';
@@ -69,15 +76,60 @@ function fromSession(s: MeSession): Source {
   };
 }
 
-export default function WorkoutLauncher({ plans, sessions, onSaved }: {
+/** A local draft that predates server sessions still needs one to submit. */
+function sourceFromDraft(d: WorkoutDraft): Source {
+  return {
+    title: d.title,
+    assignment_id: d.assignment_id,
+    program_name: d.program_name,
+    workout_day: d.workout_day,
+    exercises: d.exercises.map((x) => ({
+      name: x.name, sets: x.sets.length, reps: null, target_weight: null,
+    })),
+  };
+}
+
+/** The draft the server autosaved, when it is one this app can open. */
+function storedDraft(s: MeWorkoutSession): WorkoutDraft | null {
+  const d = s.draft as WorkoutDraft | null;
+  return d && d.version === 1 && Array.isArray(d.exercises) && d.exercises.length > 0 ? d : null;
+}
+
+/** Build the draft for a session that has none yet: what they tapped, plus their history. */
+function draftFromSession(s: MeWorkoutSession, source: Source | null, last: MeLastPerformance): WorkoutDraft {
+  const stored = storedDraft(s);
+  if (stored) return { ...stored, session_id: s.id };
+  const title = source?.title
+    ?? ([s.workout_day, s.program_name].filter(Boolean).join(' · ') || 'Workout');
+  return {
+    ...newDraft({
+      title,
+      assignment_id: source?.assignment_id ?? s.workout_assignment_id,
+      program_name: source?.program_name ?? s.program_name,
+      workout_day: source?.workout_day ?? s.workout_day,
+      exercises: source?.exercises ?? s.prescribed?.exercises ?? [],
+      last,
+      now: new Date(s.started_at),
+    }),
+    session_id: s.id,
+  };
+}
+
+export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, openSession, onSaved }: {
   plans: MeWorkoutPlan[];
   sessions: MeSession[];
+  /** The trainer's permission to start a workout without them. */
+  allowSelfWorkout: boolean;
+  /** A session the member left open on the server; resume is always allowed. */
+  openSession: MeWorkoutSession | null;
   /** A workout was saved — the page refreshes its session history. */
   onSaved: () => void;
 }) {
   const [open, setOpen] = useState<WorkoutDraft | null>(null);
+  const [active, setActive] = useState<MeWorkoutSession | null>(null);
   const [saved, setSaved] = useState<WorkoutDraft | null>(null);
   const [starting, setStarting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const pushed = useRef(false);
 
   useEffect(() => { setSaved(loadDraft()); }, []);
@@ -96,31 +148,70 @@ export default function WorkoutLauncher({ plans, sessions, onSaved }: {
     return () => window.removeEventListener('popstate', onPop);
   }, [open]);
 
-  const show = (draft: WorkoutDraft) => {
+  const show = (draft: WorkoutDraft, session: MeWorkoutSession | null) => {
     window.history.pushState({ guidedWorkout: true }, '');
     pushed.current = true;
+    setActive(session);
     setOpen(draft);
   };
 
-  const start = async (key: string, source: Source) => {
+  const start = async (key: string, source: Source, dayOfWeek: number | null, keep?: WorkoutDraft) => {
     if (source.exercises.length === 0) return;
     setStarting(key);
-    let last = {};
+    setError(null);
     try {
-      last = (await api.me.lastPerformance(source.exercises.map((x) => x.name))).data ?? {};
-    } catch {
-      // Without history the sets start from the plan's targets — still a workout.
-      last = {};
+      const { data } = await api.me.startWorkout({
+        assignment_id: source.assignment_id,
+        day_of_week: dayOfWeek,
+      });
+      if (keep) { show({ ...keep, session_id: data.session.id }, data.session); return; }
+      let last: MeLastPerformance = {};
+      try {
+        last = (await api.me.lastPerformance(source.exercises.map((x) => x.name))).data ?? {};
+      } catch {
+        // Without history the sets start from the plan's targets — still a workout.
+      }
+      show(draftFromSession(data.session, source, last), data.session);
+    } catch (err) {
+      setError(err instanceof ApiError && err.code === 'SELF_WORKOUT_NOT_ALLOWED'
+        ? 'Your trainer has not enabled self workouts.'
+        : 'Could not start the workout. Try again.');
+    } finally {
+      setStarting(null);
     }
-    setStarting(null);
-    show(newDraft({ ...source, last }));
+  };
+
+  const resumeOpen = async () => {
+    if (!openSession) return;
+    const stored = storedDraft(openSession);
+    if (stored) { show(stored, openSession); return; }
+    const exercises = openSession.prescribed?.exercises ?? [];
+    if (exercises.length === 0) return;
+    setStarting('resume');
+    try {
+      let last: MeLastPerformance = {};
+      try {
+        last = (await api.me.lastPerformance(exercises.map((x) => x.name))).data ?? {};
+      } catch {
+        // The prescription is enough to start.
+      }
+      show(draftFromSession(openSession, null, last), openSession);
+    } finally {
+      setStarting(null);
+    }
   };
 
   const today = todayIso();
   const plan = plans.find((p) => p.days.some((d) => d.day_of_week === today || d.day_of_week === 0)) ?? null;
   const todayDay = plan?.days.find((d) => d.day_of_week === today) ?? plan?.days.find((d) => d.day_of_week === 0) ?? null;
   const lastSession = sessions.find((s) => s.exercises.some((e) => e.sets.length > 0)) ?? null;
-  const otherDays = plans.flatMap((p) => p.days.filter((d) => d !== todayDay && d.exercises.length > 0).map((d) => ({ p, d })));
+  const otherDays = allowSelfWorkout
+    ? plans.flatMap((p) => p.days.filter((d) => d !== todayDay && d.exercises.length > 0).map((d) => ({ p, d })))
+    : [];
+  const repeatDay = lastSession
+    ? plans.flatMap((p) => p.days.map((d) => ({ p, d })))
+      .find(({ d }) => DAY_NAMES[d.day_of_week] === lastSession.workout_day) ?? null
+    : null;
 
   let hero: { key: string; label: string; sub: string; icon: ReactNode; run: () => void } | null = null;
   if (saved) {
@@ -128,19 +219,36 @@ export default function WorkoutLauncher({ plans, sessions, onSaved }: {
     hero = {
       key: 'resume', label: 'Resume your workout',
       sub: `${saved.title} · ${n} set${n === 1 ? '' : 's'} logged`,
-      icon: <Play size={18} fill="currentColor" aria-hidden />, run: () => show(saved),
+      icon: <Play size={18} fill="currentColor" aria-hidden />,
+      run: () => {
+        if (openSession) show(saved, openSession);
+        else void start('resume', sourceFromDraft(saved), null, saved);
+      },
     };
-  } else if (plan && todayDay && todayDay.exercises.length > 0) {
+  } else if (openSession) {
+    const openDraft = storedDraft(openSession);
+    const n = openDraft ? loggedSetCount(openDraft) : 0;
+    hero = {
+      key: 'resume', label: 'Resume your workout',
+      sub: `${openSession.workout_day || openSession.program_name || 'Workout'}${n > 0 ? ` · ${n} set${n === 1 ? '' : 's'} logged` : ''}`,
+      icon: <Play size={18} fill="currentColor" aria-hidden />,
+      run: () => void resumeOpen(),
+    };
+  } else if (allowSelfWorkout && plan && todayDay && todayDay.exercises.length > 0) {
     hero = {
       key: 'today', label: 'Start today\'s workout',
       sub: `${todayDay.exercises.length} exercise${todayDay.exercises.length === 1 ? '' : 's'} · ${plan.name}`,
-      icon: <Play size={18} fill="currentColor" aria-hidden />, run: () => void start('today', fromPlanDay(plan, todayDay)),
+      icon: <Play size={18} fill="currentColor" aria-hidden />,
+      run: () => void start('today', fromPlanDay(plan, todayDay), todayDay.day_of_week),
     };
-  } else if (lastSession) {
+  } else if (allowSelfWorkout && lastSession) {
+    const source = fromSession(lastSession);
+    if (repeatDay) source.assignment_id = repeatDay.p.assignment_id;
     hero = {
       key: 'repeat', label: 'Repeat your last session',
       sub: `${longDate(lastSession.session_date) ?? ''} · ${lastSession.exercises.length} exercise${lastSession.exercises.length === 1 ? '' : 's'}`,
-      icon: <RotateCcw size={18} aria-hidden />, run: () => void start('repeat', fromSession(lastSession)),
+      icon: <RotateCcw size={18} aria-hidden />,
+      run: () => void start('repeat', source, repeatDay?.d.day_of_week ?? null),
     };
   }
 
@@ -166,6 +274,12 @@ export default function WorkoutLauncher({ plans, sessions, onSaved }: {
         </m.button>
       )}
 
+      {error && (
+        <p role="alert" className="mb-3 px-1 text-[12px] font-[650]" style={{ color: MC.dangerText }}>
+          {error}
+        </p>
+      )}
+
       {otherDays.length > 0 && (
         <details className="group mb-4">
           <summary className="flex cursor-pointer list-none items-center gap-1 px-1 text-[12px] font-[700]" style={{ color: MC.primaryText }}>
@@ -177,7 +291,7 @@ export default function WorkoutLauncher({ plans, sessions, onSaved }: {
               const key = `${p.assignment_id}-${d.day_of_week}`;
               return (
                 <button key={key} type="button" disabled={starting !== null}
-                  onClick={() => void start(key, fromPlanDay(p, d))}
+                  onClick={() => void start(key, fromPlanDay(p, d), d.day_of_week)}
                   className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[12px] font-[700]"
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: MC.ink }}>
                   {starting === key ? <Loader2 size={12} className="animate-spin" aria-hidden /> : <Play size={11} aria-hidden />}
@@ -191,7 +305,7 @@ export default function WorkoutLauncher({ plans, sessions, onSaved }: {
       )}
 
       {open && (
-        <GuidedWorkout initial={open} onClose={close} onSaved={() => { setSaved(null); onSaved(); }} />
+        <GuidedWorkout initial={open} session={active} onClose={close} onSaved={() => { setSaved(null); onSaved(); }} />
       )}
     </>
   );
