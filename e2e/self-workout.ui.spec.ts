@@ -105,9 +105,17 @@ test.describe('Member — guided workout submit', () => {
     // A retry after a failed attempt resumes the session it left open.
     await page.getByRole('button', { name: /start today's workout|resume your workout/i }).click({ timeout: 30_000 });
 
+    // The screen mounts after the start call; wait for it rather than a
+    // non-waiting count(), which races the render. A resumed draft may already
+    // have this set ticked, in which case there is nothing to click.
     const firstSet = page.getByRole('button', { name: /mark set 1 done/i });
+    const firstSetDone = page.getByRole('button', { name: /set 1 done — tap to undo/i });
+    await expect(firstSet.or(firstSetDone)).toBeVisible({ timeout: 30_000 });
     if (await firstSet.count()) await firstSet.click();
-    await page.getByRole('button', { name: /submit workout/i }).click();
+
+    const submit = page.getByRole('button', { name: /submit workout/i });
+    await expect(submit).toBeEnabled();
+    await submit.click();
 
     await expect(page.getByRole('heading', { name: /workout done/i })).toBeVisible({ timeout: 30_000 });
 
