@@ -144,7 +144,7 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
                   : 'Refresh this screen'
               }
               className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-3 py-2 text-[12px] font-[650] disabled:opacity-60"
-              style={{ background: 'var(--bg-subtle)', color: failed ? 'var(--danger)' : 'var(--text-muted)', border: '1px solid var(--border)' }}
+              style={{ background: 'var(--bg-subtle)', color: failed ? 'var(--danger-text)' : 'var(--text-muted)', border: '1px solid var(--border)' }}
             >
               <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">{refreshing ? 'Refreshing' : 'Refresh'}</span>

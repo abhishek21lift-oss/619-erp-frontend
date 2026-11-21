@@ -123,10 +123,10 @@ const KNOWN = [
   'app/(chrome)/settings/profile/page.tsx:1013',
   'app/(platform)/platform/_shared/CommandBar.tsx:103',
   'app/(platform)/platform/_shared/CommandBar.tsx:104',
-  'app/(platform)/platform/_tabs/ActivityTab.tsx:47',
-  'app/(platform)/platform/_tabs/CouponsTab.tsx:64',
-  'app/(platform)/platform/_tabs/FinanceTab.tsx:596',
-  'app/(platform)/platform/_tabs/StudiosTab.tsx:375',
+  'app/(platform)/platform/_tabs/ActivityTab.tsx:48',
+  'app/(platform)/platform/_tabs/CouponsTab.tsx:66',
+  'app/(platform)/platform/_tabs/FinanceTab.tsx:602',
+  'app/(platform)/platform/_tabs/StudiosTab.tsx:381',
   'components/LandingPage.tsx:63',
   'components/LandingPage.tsx:70',
   'components/TrialBanner.tsx:19',
@@ -140,8 +140,13 @@ const KNOWN = [
   // says it fell back to "the API revision this console was built against".
   // A general outage still surfaces — `hostingerStatus()`/`hostingerVps()` in
   // the same Promise.all rejects into the screen's error state and retry.
-  'components/platform/hosting-centre.tsx:696',
+  'components/platform/hosting-centre.tsx:697',
   'components/platform/hosting-vps.tsx:75',
+  // Best-effort end of an impersonation session on unload or expiry. Nothing
+  // is rendered from the result; if the request is lost the session row still
+  // expires at its TTL and auth.js refuses the token. The fire-and-forget
+  // shape is the point — an unload handler must not block or surface an error.
+  'lib/http.ts:374',
   'components/pt-os/builder/NewProgrammeForm.tsx:135',
   'components/pt-os/builder/NewProgrammeForm.tsx:138',
   'components/pt-os/analytics/LandmarkEditor.tsx:82',

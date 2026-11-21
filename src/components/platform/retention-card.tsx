@@ -42,7 +42,7 @@ export default function RetentionCard() {
   const trial = data?.trial_conversion;
   const founders = data?.founders;
   const churnTone = churn?.rate_30d_pct == null ? 'var(--text-muted)'
-    : churn.rate_30d_pct >= 10 ? 'var(--danger)'
+    : churn.rate_30d_pct >= 10 ? 'var(--danger-text)'
     : churn.rate_30d_pct >= 5 ? 'var(--warning-text, #b45309)'
     : 'var(--success-text, #047857)';
 
@@ -59,10 +59,10 @@ export default function RetentionCard() {
         </div>
       ) : error ? (
         <div className="flex items-start gap-2 rounded-[12px] p-3" style={{ background: 'var(--danger-bg, rgba(220,38,38,0.08))' }}>
-          <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--danger)' }} />
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--danger-text)' }} />
           <div className="min-w-0 flex-1">
-            <p className="text-[12px]" style={{ color: 'var(--danger)' }}>{error}</p>
-            <button onClick={load} className="mt-1 text-[11.5px] font-[750] underline" style={{ color: 'var(--danger)' }}>Retry</button>
+            <p className="text-[12px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
+            <button onClick={load} className="mt-1 text-[11.5px] font-[750] underline" style={{ color: 'var(--danger-text)' }}>Retry</button>
           </div>
         </div>
       ) : !data ? null : (

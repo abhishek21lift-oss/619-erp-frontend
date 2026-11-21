@@ -109,7 +109,7 @@ export default function ImpersonationSessions() {
       <div className="rounded-[14px] p-3" style={cardStyle}>
         <div className="flex flex-wrap items-start gap-3">
           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-            style={{ background: full ? 'rgba(220,38,38,0.12)' : 'rgba(163,55,87,0.10)', color: full ? '#dc2626' : '#A33757' }}>
+            style={{ background: full ? 'rgba(220,38,38,0.12)' : 'rgba(163,55,87,0.10)', color: full ? 'var(--danger-text)' : '#A33757' }}>
             {full ? <LogIn size={15} /> : <Eye size={15} />}
           </span>
           <div className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ export default function ImpersonationSessions() {
               <span className="inline-flex items-center gap-1"><Clock size={10} /> {fmtWhen(s.started_at)}</span>
               <span>{full ? 'Full access' : 'Read-only'}</span>
               {s.active ? (
-                <span className="font-[700]" style={{ color: full ? '#dc2626' : '#b45309' }}>{remaining(s.expires_at)}</span>
+                <span className="font-[700]" style={{ color: full ? 'var(--danger-text)' : 'var(--warning-text)' }}>{remaining(s.expires_at)}</span>
               ) : (
                 <span>{END_LABEL[s.end_reason ?? ''] ?? 'Ended'} · {fmtWhen(s.ended_at)}</span>
               )}
@@ -145,7 +145,7 @@ export default function ImpersonationSessions() {
             {s.active && (
               <button onClick={() => revoke(s)} disabled={busy === s.id}
                 className="flex h-8 items-center gap-1 rounded-[8px] px-2 text-[11px] font-[700] disabled:opacity-50"
-                style={{ background: 'rgba(220,38,38,0.10)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}>
+                style={{ background: 'rgba(220,38,38,0.10)', color: 'var(--danger-text)', border: '1px solid rgba(220,38,38,0.25)' }}>
                 {busy === s.id ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={12} />} Revoke
               </button>
             )}
@@ -155,13 +155,13 @@ export default function ImpersonationSessions() {
         {open === s.id && (
           <div className="mt-2 rounded-[10px] p-2" style={{ background: 'var(--bg-subtle)' }}>
             {a === 'loading' && <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}><Loader2 size={12} className="animate-spin" /> Loading actions…</div>}
-            {a === 'error' && <p className="text-[11px]" style={{ color: 'var(--danger)' }}>Could not load the action trail.</p>}
+            {a === 'error' && <p className="text-[11px]" style={{ color: 'var(--danger-text)' }}>Could not load the action trail.</p>}
             {Array.isArray(a) && a.length === 0 && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>No writes recorded.</p>}
             {Array.isArray(a) && a.length > 0 && (
               <ul className="space-y-1">
                 {a.map((x) => (
                   <li key={x.id} className="flex flex-wrap items-baseline gap-2 text-[10.5px]" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="font-mono font-[750]" style={{ color: x.method === 'DELETE' ? '#dc2626' : 'var(--text-primary)' }}>{x.method}</span>
+                    <span className="font-mono font-[750]" style={{ color: x.method === 'DELETE' ? 'var(--danger-text)' : 'var(--text-primary)' }}>{x.method}</span>
                     <span className="min-w-0 flex-1 truncate font-mono">{x.path}</span>
                     <span style={{ color: 'var(--text-muted)' }}>{x.status_code ?? '—'} · {fmtWhen(x.at)}</span>
                   </li>

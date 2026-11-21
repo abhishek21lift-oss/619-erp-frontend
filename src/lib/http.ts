@@ -525,9 +525,18 @@ export async function http<T = unknown>(
   const portal = currentPortal();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...(options.asPlatform ? { 'X-Portal': 'platform' } : tenantAuthHeaders()),
+    ...tenantAuthHeaders(),
     ...(options.headers as Record<string, string> | undefined),
   };
+
+  // A platform-plane call (ending or revoking an impersonation session) must
+  // be authorised by the operator's platform cookie, not by the tenant-
+  // audience impersonation Bearer. Keep the shared portal rule, then drop the
+  // Bearer so the platform guard sees the operator rather than the studio.
+  if (options.asPlatform) {
+    headers['X-Portal'] = 'platform';
+    delete headers.Authorization;
+  }
 
   // The impersonated identity scopes results, so it must be part of the GET
   // cache key — otherwise entering or exiting impersonation would serve the

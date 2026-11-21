@@ -76,10 +76,10 @@ export default function RevenueForecastCard() {
         </div>
       ) : error ? (
         <div className="flex items-start gap-2 rounded-[12px] p-3" style={{ background: 'var(--danger-bg, rgba(220,38,38,0.08))' }}>
-          <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--danger)' }} />
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--danger-text)' }} />
           <div className="min-w-0 flex-1">
-            <p className="text-[12px]" style={{ color: 'var(--danger)' }}>{error}</p>
-            <button onClick={load} className="mt-1 text-[11.5px] font-[750] underline" style={{ color: 'var(--danger)' }}>Retry</button>
+            <p className="text-[12px]" style={{ color: 'var(--danger-text)' }}>{error}</p>
+            <button onClick={load} className="mt-1 text-[11.5px] font-[750] underline" style={{ color: 'var(--danger-text)' }}>Retry</button>
           </div>
         </div>
       ) : !data ? null : (

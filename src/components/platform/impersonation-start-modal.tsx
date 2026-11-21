@@ -91,7 +91,6 @@ export default function ImpersonationStartModal({
             value={reason}
             onChange={(e) => setReason(e.target.value.slice(0, MAX))}
             rows={3}
-            placeholder={full ? 'e.g. Fixing a client’s broken subscription after ticket #482' : 'e.g. Reproducing the revenue report bug from ticket #482'}
           />
         </FormField>
 
