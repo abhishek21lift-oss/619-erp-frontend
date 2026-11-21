@@ -18,6 +18,7 @@ import {
   Receipt, Loader2, AlertTriangle, Settings2, Check, Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import { useAppForm } from '@/lib/forms/useAppForm';
 import {
   platformBillingSchema, billingToFormValues, toBillingPayload,
@@ -398,6 +399,7 @@ export default function InvoicesPanel() {
   }, [query]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   const applyRange = (f: string, t: string) => { setFrom(f); setTo(t); setOffset(0); };
   const reset = () => { applyRange(thisFy.from, thisFy.to); setStatus(''); setQ(''); setDebouncedQ(''); };

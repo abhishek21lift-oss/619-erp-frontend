@@ -14,6 +14,7 @@ import {
 import StudioMark from '@/components/StudioMark';
 import { Button, Badge, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   Organization, OrganizationDetail, OrgUser, StudioOverview, SubStudio, OrgBillingProfile,
   ResolvedFeature,
@@ -29,6 +30,7 @@ import { fmtDate, fmtINR, fmtWhen } from '../_shared/format';
 import type { StudioFilter, StudioRow, StudioSort } from '../_shared/types';
 import { Center, ErrorState, IconBtn, MiniStat } from '../_shared/ui';
 import { errorMessage } from '@/lib/forms/errors';
+import ImpersonationStartModal from '@/components/platform/impersonation-start-modal';
 import { checkFile, acceptAttribute, LOGO_RULES } from '@/lib/forms/files';
 import { clampNumericText } from '@/components/ui/FloatInput';
 import { FormField, SearchField, SelectInput, TextArea, TextInput } from '@/components/ui/form';
@@ -87,6 +89,7 @@ export function StudiosTab() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   const rows = useMemo<StudioRow[]>(() => {
     const subById = new Map(subStudios.map((s) => [s.id, s]));
@@ -345,6 +348,9 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
   const [detail, setDetail] = useState<OrganizationDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [impLoading, setImpLoading] = useState('');
+  // { mode, userId? } — the dialog collects the required reason before the
+  // mint call. Full access keeps its own confirmation inside the dialog.
+  const [impPrompt, setImpPrompt] = useState<{ mode: 'read_only' | 'full'; userId?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -423,19 +429,17 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
     } catch (e) { toast.error(errorMessage(e, 'Delete failed')); }
   };
 
-  const impersonate = async (mode: 'read_only' | 'full', userId?: string) => {
-    if (mode === 'full' && !window.confirm(
-      `Enter ${org.name} with FULL ACCESS?\n\nYou will be able to make changes to this studio's live data as its trainer. Every change is recorded against you in the activity log.`
-    )) return;
+  const impersonate = async (mode: 'read_only' | 'full', reason: string, userId?: string) => {
     const key = `${mode}:${userId || 'primary'}`;
     setImpLoading(key);
     try {
-      const r = await api.superAdmin.impersonate(org.id, { userId, mode });
+      const r = await api.superAdmin.impersonate(org.id, { userId, mode, reason });
       const d = r.data;
       const imp: StoredImpersonation = {
         token: d.token, readonly: d.readonly,
         accountId: d.account.id, accountName: d.account.name,
         orgId: d.organization.id, orgName: d.organization.name, orgLogo: d.organization.logo_url,
+        sessionId: d.session.id, reason: d.session.reason, expiresAt: d.session.expires_at,
         // Where the banner's Exit button goes. The console knows its own
         // address; the studio app must not have to.
         returnTo: `${window.location.origin}/platform`,
@@ -541,7 +545,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
             style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             Open <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
-          <button onClick={() => impersonate('read_only')} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
+          <button onClick={() => setImpPrompt({ mode: 'read_only' })} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
             className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
             style={{ background: 'rgba(163,55,87,0.10)', color: '#A33757', border: '1px solid rgba(163,55,87,0.25)' }}>
             {impLoading === 'read_only:primary' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} View as
@@ -549,7 +553,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
           <MoreMenu
             suspended={suspended}
             onToggleStatus={onToggleStatus}
-            onSupportAccess={() => impersonate('full')}
+            onSupportAccess={() => setImpPrompt({ mode: 'full' })}
             supportBusy={impLoading === 'full:primary'}
           />
         </div>
@@ -570,10 +574,10 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
               {!u.is_active && <Badge tone="danger">disabled</Badge>}
               {u.is_active && (
                 <>
-                  <IconBtn title="View as (read-only)" onClick={() => impersonate('read_only', u.id)} busy={impLoading === `read_only:${u.id}`}>
+                  <IconBtn title="View as (read-only)" onClick={() => setImpPrompt({ mode: 'read_only', userId: u.id })} busy={impLoading === `read_only:${u.id}`}>
                     <Eye size={12} /> View
                   </IconBtn>
-                  <IconBtn title="Act as (full access — changes are live, recorded against you)" onClick={() => impersonate('full', u.id)} busy={impLoading === `full:${u.id}`} tone="danger">
+                  <IconBtn title="Act as (full access — changes are live, recorded against you)" onClick={() => setImpPrompt({ mode: 'full', userId: u.id })} busy={impLoading === `full:${u.id}`} tone="danger">
                     <LogIn size={12} /> Act as
                   </IconBtn>
                 </>
@@ -595,6 +599,19 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
               their logins from the client record inside it. */}
           {detail && <StudioOperatorPanel org={org} onChanged={onChanged} />}
         </div>
+      )}
+
+      {impPrompt && (
+        <ImpersonationStartModal
+          orgName={org.name}
+          mode={impPrompt.mode}
+          accountName={detail?.users.find((u) => u.id === impPrompt.userId)?.name}
+          onClose={() => setImpPrompt(null)}
+          onConfirm={async (reason) => {
+            await impersonate(impPrompt.mode, reason, impPrompt.userId);
+            setImpPrompt(null);
+          }}
+        />
       )}
     </div>
   );

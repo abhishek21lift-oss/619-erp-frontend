@@ -23,6 +23,7 @@ import type { RevenueView } from './_shared/RevenueNav';
 import { ActivityTab } from './_tabs/ActivityTab';
 import { FinanceTab } from './_tabs/FinanceTab';
 import CommandCenterOverview from '@/components/platform/CommandCenterOverview';
+import ImpersonationSessions from '@/components/platform/impersonation-sessions';
 import { StudiosTab } from './_tabs/StudiosTab';
 import { UsersTab } from './_tabs/UsersTab';
 import RegistrationsTab from './_tabs/RegistrationsTab';
@@ -180,6 +181,7 @@ function PlatformContent() {
         {tab === 'security' && (
           <div className="space-y-4">
             <MyMfaCard />
+            <ImpersonationSessions />
             <SecurityCentre />
           </div>
         )}

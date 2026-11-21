@@ -23,6 +23,7 @@ import {
   ShieldAlert, Info, Save, Settings2, RotateCcw, Route,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   AiOverview, AiStudioUsage, AiModelUsage, AiTrendPoint, AiSettings, AiRouting,
 } from '@/lib/api';
@@ -483,6 +484,7 @@ export default function AiControlCentre() {
   }, [days]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   const setRate = async (m: AiModelUsage) => {
     if (!m.model) return;

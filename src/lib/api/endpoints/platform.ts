@@ -11,7 +11,7 @@ import type {
   ActiveSession, ActivityEntry, AiModelRate, AiModelUsage, AiOverview, AiRouting,
   AiSettings, AiStudioUsage, AiTrendPoint, Announcement, AnnouncementInput,
   AnnouncementPreview, AuditEntry, AuditFilters, AuditPaging, AuditQuery, Coupon, FeatureCatalogue,
-  FeatureOverrideRow, ImpersonationSession, Invitation, InvitationDetail,
+  FeatureOverrideRow, ImpersonationSession, ImpersonationSessionRecord, ImpersonationAction, Invitation, InvitationDetail, RevenueForecast,
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeCoach, MeMembership, MeSessionBalance, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutState, MeWorkoutSession, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
@@ -618,13 +618,35 @@ export const superAdmin = {
   storageTrend: (days = 30) => http<{ data: StorageTrendPoint[] }>(`/api/platform/storage/trend?days=${days}`),
   storageLargest: (limit = 25) => http<{ data: StorageObject[] }>(`/api/platform/storage/largest?limit=${limit}`),
 
-  impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
+  impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full'; reason: string }) =>
     http<{ data: ImpersonationSession }>(`/api/platform/organizations/${orgId}/impersonate`, {
       method: 'POST',
       body: JSON.stringify({
+        reason: opts.reason,
         ...(opts.userId ? { user_id: opts.userId } : {}),
         ...(opts.mode ? { mode: opts.mode } : {}),
       }),
+    }),
+  // ── Impersonation sessions (migration 285) ──────────────────────────────
+  // `asPlatform` is load-bearing: these calls must run as the operator's
+  // platform session, not as the studio identity currently being impersonated.
+  impersonationSessions: (params: { status?: 'all' | 'active' | 'ended'; organizationId?: string; limit?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.status) q.set('status', params.status);
+    if (params.organizationId) q.set('organization_id', params.organizationId);
+    if (params.limit) q.set('limit', String(params.limit));
+    const qs = q.toString();
+    return http<{ data: ImpersonationSessionRecord[] }>(`/api/platform/impersonation/sessions${qs ? `?${qs}` : ''}`, { asPlatform: true });
+  },
+  impersonationSessionActions: (id: string) =>
+    http<{ data: ImpersonationAction[] }>(`/api/platform/impersonation/sessions/${id}/actions`, { asPlatform: true }),
+  endImpersonationSession: (id: string) =>
+    http<{ data: { id: string; ended_at: string; end_reason: string } }>(`/api/platform/impersonation/sessions/${id}/end`, {
+      method: 'POST', asPlatform: true,
+    }),
+  revokeImpersonationSession: (id: string, reason?: string) =>
+    http<{ data: { id: string; ended_at: string; end_reason: string; revoked_at: string } }>(`/api/platform/impersonation/sessions/${id}/revoke`, {
+      method: 'POST', asPlatform: true, body: JSON.stringify({ reason }),
     }),
   // ── Subscription / billing management ──
   subscriptions: () =>
@@ -636,6 +658,9 @@ export const superAdmin = {
     http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/platform/plans'),
   subscriptionMetrics: () =>
     http<{ data: SubscriptionMetrics }>('/api/platform/subscription-metrics'),
+  /** Cash-trend and MRR run-rate projections, two separate models. */
+  revenueForecast: (months = 6) =>
+    http<{ data: RevenueForecast }>(`/api/platform/revenue-forecast?months=${months}`),
 
   // ── Coupons ──────────────────────────────────────────────────────────────
   listCoupons: () => http<{ data: Coupon[] }>('/api/platform/coupons'),

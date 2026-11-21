@@ -51,7 +51,7 @@ export function CcHero({ tone, eyebrow, title, subtitle, icon, children, compact
   const t = T(tone);
   return (
     <section
-      className="relative mb-5 overflow-hidden rounded-[26px] p-5 text-white sm:rounded-[30px] sm:p-7"
+      className={`relative mb-5 overflow-hidden rounded-[26px] p-5 text-white sm:rounded-[30px] sm:p-7 ${compactOnMobile && !children ? 'hidden sm:block' : ''}`}
       style={{ background: ccMesh(t), boxShadow: `0 24px 60px -24px rgba(${t.rgb},0.65)` }}
     >
       <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full blur-3xl" style={{ background: t.to, opacity: 0.45 }} />

@@ -18,6 +18,7 @@ import {
   CheckCircle2, ChevronLeft, Building2, Timer,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   SupportTicket, SupportOverview, TicketStatus, TicketPriority,
 } from '@/lib/api';
@@ -266,6 +267,7 @@ export default function SupportCentre() {
   }, [status, unassignedOnly]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   if (loading) {
     return (

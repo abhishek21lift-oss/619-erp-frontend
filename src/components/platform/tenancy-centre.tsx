@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, FlaskConical, Layers, Loader2, Play, ShieldCheck, ShieldX, TableProperties, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { TenancyAttemptRow, TenancyHealth, TenancyIsolationRunResult, TenancyKnownGap, TenancySectionStatus } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
@@ -54,6 +55,7 @@ export default function TenancyCentre() {
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   const runTests = async () => {
     setRunning(true); setRunError('');

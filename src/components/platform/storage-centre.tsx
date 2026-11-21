@@ -29,6 +29,7 @@ import {
   TrendingUp, Info, Layers,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   StorageOverview, StorageStudio, StorageTrendPoint, StorageObject,
 } from '@/lib/api';
@@ -269,6 +270,7 @@ export default function StorageCentre() {
   }, [days]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   // The share of live bytes that could not be attributed to any studio. Worth
   // naming as a percentage because it is the accuracy of every per-studio

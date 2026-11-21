@@ -15,6 +15,7 @@ import {
   RotateCcw, ScrollText, Loader2, AlertTriangle, Monitor, Globe,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { AuditEntry, AuditQuery } from '@/lib/api';
 import { errorMessage } from '@/lib/forms/errors';
 import {
@@ -222,6 +223,7 @@ export default function AuditCentre() {
   }, [query]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   const reset = () => {
     setRange('7d'); setFrom(''); setTo(''); setAction(''); setEntityType('');

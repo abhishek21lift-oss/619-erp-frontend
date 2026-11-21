@@ -40,6 +40,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Guard from '@/components/Guard';
 import PlatformShell from '@/components/platform/PlatformShell';
+import { CommandCenterRefreshProvider } from '@/contexts/command-center-refresh';
 
 // ── The console is its own installable app ──────────────────────────────────
 //
@@ -95,7 +96,9 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   return (
     <Guard role="super_admin">
       <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--bg-canvas)' }} />}>
-        <PlatformShell>{children}</PlatformShell>
+        <CommandCenterRefreshProvider>
+          <PlatformShell>{children}</PlatformShell>
+        </CommandCenterRefreshProvider>
       </Suspense>
     </Guard>
   );

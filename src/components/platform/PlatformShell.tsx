@@ -18,11 +18,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Activity, Bot, Building2, HeartPulse, IndianRupee, LayoutDashboard, Menu, Search, ShieldAlert, ToggleRight, Users2, X } from 'lucide-react';
+import { Activity, Bot, Building2, HeartPulse, IndianRupee, LayoutDashboard, Menu, RefreshCw, Search, ShieldAlert, ToggleRight, Users2, X } from 'lucide-react';
 import { MODULES, TAB_LABELS, moduleForTab, normalizeTab } from '@/app/(platform)/platform/_shared/types';
 import type { ModuleId, Tab } from '@/app/(platform)/platform/_shared/types';
 import { OPEN_COMMAND_BAR } from '@/app/(platform)/platform/_shared/CommandBar';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { useCommandCenterRefreshRegistry } from '@/contexts/command-center-refresh';
+import PullToRefresh from '@/components/common/PullToRefresh';
 import { ccGradient, ccModuleTone, ccTones, ccWash } from './ccTheme';
 import type { CcToneName } from './ccTheme';
 
@@ -89,6 +91,8 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
   // A shadow only once the page has moved under it: at rest the bar is part of
   // the page; scrolled, it has to read as chrome above the content.
   const [scrolled, setScrolled] = useState(false);
+  const { refreshAll, refreshing, lastRefreshedAt, failed } = useCommandCenterRefreshRegistry();
+  const refresh = () => { void refreshAll(); };
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
@@ -117,7 +121,7 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
       </div>
     </aside>
     <div style={{ paddingLeft: 'var(--cc-sidebar-offset, 0px)' }} className="cc-content">
-      <header className="sticky top-0 z-20" style={{ background: 'color-mix(in srgb, var(--bg-elevated) 82%, transparent)', borderBottom: '1px solid var(--border)', paddingTop: 'env(safe-area-inset-top, 0px)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)', boxShadow: scrolled ? '0 10px 24px -20px rgba(15,23,42,0.55)' : 'none', transition: 'box-shadow 160ms ease' }}>
+      <header data-no-pull-refresh className="sticky top-0 z-20" style={{ background: 'color-mix(in srgb, var(--bg-elevated) 82%, transparent)', borderBottom: '1px solid var(--border)', paddingTop: 'env(safe-area-inset-top, 0px)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)', boxShadow: scrolled ? '0 10px 24px -20px rgba(15,23,42,0.55)' : 'none', transition: 'box-shadow 160ms ease' }}>
         <div className={CONTAINER}><div className="relative flex items-center justify-between gap-3" style={{ minHeight: 60 }}>
           <div className="relative flex min-w-0 items-center gap-3">
             <Squircle id={active} size={36} />
@@ -128,13 +132,37 @@ export default function PlatformShell({ children }: { children: React.ReactNode 
           </div>
           <div className="relative flex shrink-0 items-center gap-2">
             <span className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-[800] uppercase tracking-[0.08em] sm:inline-flex" style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}><Activity size={11} />Platform</span>
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={refreshing}
+              aria-label={refreshing ? 'Refreshing this screen' : 'Refresh this screen'}
+              title={
+                refreshing ? 'Refreshing…'
+                  : failed ? `Last refresh: ${failed} source${failed === 1 ? '' : 's'} could not be read`
+                  : lastRefreshedAt ? `Last refreshed ${new Date(lastRefreshedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Refresh this screen'
+              }
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-3 py-2 text-[12px] font-[650] disabled:opacity-60"
+              style={{ background: 'var(--bg-subtle)', color: failed ? 'var(--danger)' : 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">{refreshing ? 'Refreshing' : 'Refresh'}</span>
+            </button>
             <button type="button" onClick={openSearch} aria-label="Search the platform" className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full px-3 py-2 text-[12px] font-[650] lg:hidden" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
               <Search size={14} /><span className="hidden sm:inline">Search</span>
             </button>
           </div>
         </div></div>
+        <span className="sr-only" role="status" aria-live="polite">
+          {refreshing ? 'Refreshing this screen'
+            : failed ? `Refresh finished; ${failed} source${failed === 1 ? '' : 's'} failed`
+            : lastRefreshedAt ? 'Refresh complete' : ''}
+        </span>
       </header>
-      <main id="main-content" className={`${CONTAINER} pt-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pt-6 lg:pb-12`}>{children}</main>
+      <PullToRefresh onRefresh={refreshAll}>
+        <main id="main-content" className={`${CONTAINER} pt-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pt-6 lg:pb-12`}>{children}</main>
+      </PullToRefresh>
     </div>
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden" aria-label="Command Center sections" data-no-pull-refresh style={{ background: 'color-mix(in srgb, var(--bg-elevated) 88%, transparent)', borderTop: '1px solid var(--border)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', backdropFilter: 'blur(20px) saturate(170%)', WebkitBackdropFilter: 'blur(20px) saturate(170%)' }}><div className="flex items-stretch">{MOBILE_PRIMARY.map((id) => { const mod = MODULES.find((m) => m.id === id)!; const on = id === active; const mt = toneOf(id); return <Link key={id} href={hrefFor(mod.tabs[0])} aria-current={on ? 'page' : undefined} className="flex flex-1 flex-col items-center justify-center gap-1 py-2" style={{ minHeight: 56, color: on ? mt.ink : 'var(--text-muted)' }}>{on ? <Squircle id={id} size={26} /> : MODULE_ICON[id](19)}<span className="text-[10px] font-[750]">{mod.label}</span></Link>; })}<button onClick={() => setMoreOpen(true)} aria-expanded={moreOpen} aria-haspopup="dialog" className="flex flex-1 flex-col items-center justify-center gap-1 py-2" style={{ minHeight: 56, color: overflow.some((m) => m.id === active) ? t.ink : 'var(--text-muted)' }}><Menu size={19} /><span className="text-[10px] font-[750]">More</span></button></div></nav>
     {moreOpen && <div ref={moreRef} className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="More sections" data-no-pull-refresh><button aria-label="Close" onClick={() => setMoreOpen(false)} className="absolute inset-0 h-full w-full" style={{ background: 'rgba(15,23,42,0.45)' }} /><div className="absolute inset-x-0 bottom-0 rounded-t-[22px] p-4" style={{ background: 'var(--bg-elevated)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}><div className="mb-3 flex items-center justify-between"><span className="text-[14px] font-[800]" style={{ color: 'var(--text-primary)' }}>More sections</span><button onClick={() => setMoreOpen(false)} aria-label="Close" className="flex items-center justify-center rounded-full" style={{ width: 44, height: 44, background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}><X size={15} /></button></div><div className="grid grid-cols-2 gap-2">{overflow.map((m) => <Link key={m.id} href={hrefFor(m.tabs[0])} className="flex items-center gap-2.5 rounded-[14px] px-3 py-3 text-[13px] font-[700]" style={{ background: m.id === active ? ccWash(toneOf(m.id), 0.12) : 'var(--bg-subtle)', color: 'var(--text-primary)', minHeight: 52 }}><Squircle id={m.id} size={28} /><span>{m.label}</span></Link>)}</div></div></div>}

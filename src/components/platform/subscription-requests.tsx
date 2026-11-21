@@ -27,6 +27,7 @@ import {
   RefreshCw, Wallet, Settings2, Building2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   SubCheckoutQueueRow, SubCheckoutStats, UpiRejectReason,
   PlatformPaymentSettings,
@@ -94,6 +95,7 @@ export default function SubscriptionRequestsTab() {
   }, [status, search]);
 
   useEffect(() => { void load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   return (
     <div>

@@ -32,6 +32,7 @@ import {
   Loader2, Lock, RefreshCw, Server, ShieldCheck, Trash2, Undo2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   HostingerApprovalSummary, HostingerCatalogue, HostingerDashboard, HostingerHistoryRow,
   HostingerPendingApproval, HostingerSlot, HostingerStatus,
@@ -717,6 +718,7 @@ export function HostingCentre({ onOpenMachine }: { onOpenMachine: (virtualMachin
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useCommandCenterRefresh(() => load(true));
 
   const refresh = useCallback(async () => { setRefreshing(true); await load(true); }, [load]);
 

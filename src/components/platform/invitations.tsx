@@ -20,6 +20,7 @@ import {
   Clock, ShieldCheck, AlertTriangle, Search, ChevronDown, Copy, Check, History,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { Invitation, InvitationStatus, InvitationDetail } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
 import { EmptyState } from '@/components/ui';
@@ -278,6 +279,7 @@ export default function InvitationsPanel() {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
   }, [load, q]);
+  useCommandCenterRefresh(load);
 
   if (loading && rows.length === 0) {
     return (

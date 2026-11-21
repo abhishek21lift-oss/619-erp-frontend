@@ -18,6 +18,7 @@ import {
   Loader2, AlertTriangle, Globe, Monitor, KeyRound, Users, Fingerprint, Eye,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import { roleLabel } from '@/lib/roles';
 import type {
   SecurityOverview, SecurityThreats, LoginEvent, LoginEventQuery, ActiveSession,
@@ -126,6 +127,7 @@ export default function SecurityCentre() {
 
   useEffect(() => { loadTop(); }, [loadTop]);
   useEffect(() => { loadEvents(); }, [loadEvents]);
+  useCommandCenterRefresh(() => Promise.allSettled([loadTop(), loadEvents()]));
 
   const page = Math.floor(offset / PAGE_SIZE) + 1;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));

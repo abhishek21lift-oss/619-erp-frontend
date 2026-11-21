@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { EmptyState, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { PlatformUser, PlatformUserQuery, PlatformUserSummary } from '@/lib/api';
 import { roleLabel } from '@/lib/roles';
 import { fmtWhen } from '../_shared/format';
@@ -142,6 +143,7 @@ export function UsersTab() {
   }, [query]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   // The summary is unfiltered by design — it describes the platform, not the
   // current query — so it loads once rather than on every keystroke.

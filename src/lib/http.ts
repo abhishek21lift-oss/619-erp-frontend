@@ -130,6 +130,14 @@ export interface FetchOptions extends Omit<RequestInit, 'body'> {
   retries?:     number;
   signal?:      AbortSignal;
   skipAuth?:    boolean;
+  /**
+   * Send this request as the operator's platform session, even while an
+   * impersonation token is in sessionStorage. Used only by the session-end /
+   * revoke calls: an impersonation token is TENANT-audience and the control
+   * plane refuses it, so exiting a session must deliberately step out of the
+   * impersonated identity rather than carrying it.
+   */
+  asPlatform?:  boolean;
 }
 
 /**
@@ -198,6 +206,12 @@ export type StoredImpersonation = {
   orgId: string;
   orgName: string;
   orgLogo?: string | null;
+  /** The server-side session row this token belongs to (migration 285). */
+  sessionId?: string;
+  /** Why the operator entered. Shown in the banner and stored on the session. */
+  reason?: string;
+  /** The row's expiry, so the banner can count down without decoding the JWT. */
+  expiresAt?: string;
   /**
    * Where "exit impersonation" goes back to — the Command Center the operator
    * started from.
@@ -334,6 +348,31 @@ export function setImpersonation(s: StoredImpersonation): void {
 export function clearImpersonation(): void {
   try { sessionStorage.removeItem(IMPERSONATION_KEY); } catch { /* noop */ }
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('impersonation-changed'));
+}
+
+/**
+ * End the server-side session before the tab navigates away.
+ *
+ * Deliberately a raw fetch with `keepalive: true`: the banner navigates to the
+ * console immediately after this, and a normal request would be cancelled by
+ * that navigation, leaving the row open until its TTL. It runs as the
+ * operator's PLATFORM session (the impersonation token is TENANT-audience and
+ * the control plane refuses it), which is why it sends X-Portal and no
+ * Authorization header. Failures are swallowed — exiting locally is more
+ * important than a network round trip, and the TTL still closes the row.
+ */
+export function endImpersonationOnServer(sessionId: string): void {
+  if (typeof window === 'undefined' || !sessionId) return;
+  const BASE = (() => { try { return apiBase(); } catch { return ''; } })();
+  try {
+    void fetch(`${BASE}/api/platform/impersonation/sessions/${encodeURIComponent(sessionId)}/end`, {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+      headers: { 'X-Portal': 'platform', 'Content-Type': 'application/json' },
+      body: '{}',
+    }).catch(() => {});
+  } catch { /* noop */ }
 }
 
 function isFormDataBody(body: unknown): body is FormData {
@@ -486,7 +525,7 @@ export async function http<T = unknown>(
   const portal = currentPortal();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...tenantAuthHeaders(),
+    ...(options.asPlatform ? { 'X-Portal': 'platform' } : tenantAuthHeaders()),
     ...(options.headers as Record<string, string> | undefined),
   };
 
@@ -578,7 +617,11 @@ export async function http<T = unknown>(
       // (that would refresh the super-admin, not the studio trainer). A 401 here
       // means the read-only session expired — exit impersonation cleanly and
       // let the UI drop back to the platform.
-      if (getImpersonation()) {
+      //
+      // `asPlatform` is the deliberate exception: ending a session must use the
+      // operator's platform cookie, so a 401 on that call is a real platform
+      // auth failure and must not clear the studio-side state first.
+      if (getImpersonation() && !options.asPlatform) {
         clearImpersonation();
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('impersonation-expired'));
         throw err;

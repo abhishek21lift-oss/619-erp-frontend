@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Loader2, RefreshCw, Activity } from 'lucide-react';
 import { EmptyState, FormField, SelectInput } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { Organization, ActivityEntry } from '@/lib/api';
 import { fmtWhen } from '../_shared/format';
 import { Center, ErrorState } from '../_shared/ui';
@@ -54,6 +55,7 @@ export function ActivityTab() {
       .finally(() => setLoading(false));
   }, [orgFilter]);
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   return (
     <div>

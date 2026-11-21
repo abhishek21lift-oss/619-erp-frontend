@@ -20,6 +20,7 @@ import {
   CheckCircle2, Ban, Users, Pencil, Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   Announcement, AnnouncementInput, AnnouncementPreview,
   AnnouncementSeverity, AnnouncementAudience, SubPlan,
@@ -446,6 +447,7 @@ export default function NotificationCentre() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
   useEffect(() => {
     // The plan catalogue is the same one studios see; there is no super-admin
     // variant of it, and the rest of the Control Centre reads it from here too.

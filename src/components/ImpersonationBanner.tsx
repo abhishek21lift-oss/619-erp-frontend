@@ -1,23 +1,43 @@
 'use client';
 
-// Persistent banner shown while a super_admin is viewing a studio as its admin
-// (read-only impersonation). Sits fixed at the bottom-centre so it's always
-// visible without disturbing page layout. Exiting clears the impersonation
-// token and returns to the platform command centre. Also reacts to the token
-// expiring mid-session (the http layer emits 'impersonation-expired').
+// Persistent banner shown while a super_admin is viewing a studio as its admin.
+// Sits fixed at the bottom-centre so it's always visible without disturbing page
+// layout. Exiting ends the server-side session (migration 285) and returns to
+// the platform command centre; the local token is cleared even if that call
+// fails, and the row's TTL is the backstop.
+//
+// It also reacts to the token expiring mid-session (the http layer emits
+// 'impersonation-expired') and shows a live countdown, because "read-only" and
+// "full access" are not the only facts that matter — an operator needs to know
+// how long they have before the studio locks.
 
 import { useEffect, useState } from 'react';
 import { Eye, LogOut, LogIn } from 'lucide-react';
-import { getImpersonation, clearImpersonation, safeImpersonationReturnTo, type StoredImpersonation } from '@/lib/http';
+import {
+  getImpersonation, clearImpersonation, safeImpersonationReturnTo, endImpersonationOnServer,
+  type StoredImpersonation,
+} from '@/lib/http';
+
+function minutesLeft(expiresAt?: string): number | null {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (!Number.isFinite(ms)) return null;
+  return Math.max(0, Math.ceil(ms / 60_000));
+}
 
 export default function ImpersonationBanner() {
   const [imp, setImp] = useState<StoredImpersonation | null>(null);
+  const [, tick] = useState(0);
 
   useEffect(() => {
     setImp(getImpersonation());
     const sync = () => setImp(getImpersonation());
     const onExpired = () => {
-      const returnTo = getImpersonation()?.returnTo;
+      const current = getImpersonation();
+      const returnTo = current?.returnTo;
+      // The server already refused the token; close the row so the console's
+      // "active sessions" view does not keep showing a session that cannot act.
+      if (current?.sessionId) endImpersonationOnServer(current.sessionId);
       setImp(null);
       if (typeof window !== 'undefined') window.location.href = safeImpersonationReturnTo(returnTo);
     };
@@ -29,25 +49,24 @@ export default function ImpersonationBanner() {
     };
   }, []);
 
+  // One re-render a minute is enough for a countdown; no timer per second.
+  useEffect(() => {
+    if (!imp?.expiresAt) return;
+    const id = window.setInterval(() => tick((n) => n + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, [imp?.expiresAt]);
+
   if (!imp) return null;
 
   const exit = () => {
-    // Back to the Command Center the operator came from.
-    //
-    // `returnTo` is stamped on at hand-off by the console, which is the only
-    // side that knows its own address. A bare '/platform' is correct only on a
-    // single-origin deployment; once the console has its own hostname, that
-    // path 404s on the studio's domain and the operator is stranded in a
-    // studio with no way back. Falls back to it anyway, because that IS the
-    // right answer when the two share an origin.
-    // Validated at use as well as at hand-off: only an http(s) /platform
-    // address is followed, never `javascript:` (Command Center audit CC-1).
     const returnTo = safeImpersonationReturnTo(imp.returnTo);
+    if (imp.sessionId) endImpersonationOnServer(imp.sessionId);
     clearImpersonation();
     window.location.href = returnTo;
   };
 
   const full = !imp.readonly;
+  const left = minutesLeft(imp.expiresAt);
   const theme = full
     ? { bg: 'linear-gradient(135deg,#991b1b,#dc2626)', glow: '0 12px 40px rgba(220,38,38,0.45)', icon: '#fecaca', sub: '#fecaca', subText: 'Full access · changes are live' }
     : { bg: 'linear-gradient(135deg,#7f1d1d,#b45309)', glow: '0 12px 40px rgba(180,83,9,0.45)', icon: '#fde68a', sub: '#fef3c7', subText: 'Read-only · changes are disabled' };
@@ -68,8 +87,10 @@ export default function ImpersonationBanner() {
         <p className="truncate text-[12.5px] font-[750] text-white">
           {full ? 'Acting as' : 'Viewing'} {imp.orgName} · {imp.accountName}
         </p>
-        <p className="text-[10.5px] font-[600]" style={{ color: theme.sub }}>
+        <p className="truncate text-[10.5px] font-[600]" style={{ color: theme.sub }} title={imp.reason}>
           {theme.subText}
+          {left != null ? ` · ${left}m left` : ''}
+          {imp.reason ? ` · ${imp.reason}` : ''}
         </p>
       </div>
       <button

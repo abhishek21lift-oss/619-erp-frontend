@@ -13,6 +13,7 @@ import {
   AlertTriangle, BookOpen, CheckCircle2, FileText, Loader2, RefreshCw, Trash2, Upload, X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { PlatformKnowledgeDocument } from '@/lib/api/endpoints/platform';
 import { useToast } from '@/lib/toast';
 import { FormField, TextInput } from '@/components/ui';
@@ -75,6 +76,7 @@ export default function KnowledgeTab() {
   }, [toast]);
 
   useEffect(() => { void load(); }, [load]);
+  useCommandCenterRefresh(() => load(true));
 
   // Ingestion runs in the background. Refresh while anything is processing so
   // the Approve button appears without the operator reloading the page.
