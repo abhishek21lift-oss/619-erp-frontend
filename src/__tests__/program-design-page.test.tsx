@@ -8,6 +8,7 @@ const mockAssessments = vi.fn();
 const mockInterviews = vi.fn();
 const mockGoals = vi.fn();
 const mockAssignments = vi.fn();
+const mockPlanDetail = vi.fn();
 const mockJourney = vi.fn();
 
 vi.mock('next/navigation', () => ({
@@ -28,7 +29,10 @@ vi.mock('@/lib/api', () => ({
       assessments: { list: (...a: unknown[]) => mockAssessments(...a) },
       goals: { list: (...a: unknown[]) => mockGoals(...a) },
     },
-    workouts: { assignments: { list: (...a: unknown[]) => mockAssignments(...a) } },
+    workouts: {
+      assignments: { list: (...a: unknown[]) => mockAssignments(...a) },
+      plans: { detail: (...a: unknown[]) => mockPlanDetail(...a) },
+    },
   },
 }));
 
@@ -57,8 +61,10 @@ beforeEach(() => {
   mockInterviews.mockReset();
   mockGoals.mockReset();
   mockAssignments.mockReset();
+  mockPlanDetail.mockReset();
   mockJourney.mockReset();
   mockJourney.mockResolvedValue(journey);
+  mockPlanDetail.mockResolvedValue(null);
   mockAssignments.mockResolvedValue([{ id: 'a1', status: 'active', plan_name: 'Lean & Strong' }]);
 });
 
@@ -134,6 +140,44 @@ describe('Program Design hub', () => {
     render(<ProgramDesignPage />);
 
     expect(await screen.findByText(/4 days\/week/)).toBeTruthy();
+  });
+
+  it('shows the live programme, so an edit made from a session is visible here', async () => {
+    // The card used to name the plan and stop there, which made this page look
+    // unchanged after a trainer edited the programme from a client's session.
+    mockClient.mockResolvedValue({
+      data: {
+        id: 'c1', name: 'Mina Rao', gender: 'female', dob: '1996-01-01',
+        weight: 60, height: 165, goal: 'fat_loss', sessions_per_week: 4,
+      },
+    });
+    mockAssessments.mockResolvedValue({ data: [] });
+    mockInterviews.mockResolvedValue({ data: [] });
+    mockGoals.mockResolvedValue({ data: [] });
+    mockAssignments.mockResolvedValue([{
+      id: 'a1', status: 'active', workout_plan_id: 'p1',
+      start_date: '2026-11-01', duration_weeks: 8, current_week: 3, plan_name: 'Lean & Strong',
+    }]);
+    mockPlanDetail.mockResolvedValue({
+      id: 'p1', name: 'Lean & Strong', duration_weeks: 8, week: 3, week_source: 'derived',
+      exercises: [
+        { id: 'we-1', name: 'Bench Press', day_of_week: 1, sets: 3, reps: 8, target_weight: 60 },
+        { id: 'we-2', name: 'Barbell Row', day_of_week: 1, sets: 3, reps: 10, target_weight: 40 },
+      ],
+    });
+
+    render(<ProgramDesignPage />);
+
+    expect(await screen.findByText(/Bench Press/)).toBeTruthy();
+    expect(screen.getByText(/Barbell Row/)).toBeTruthy();
+    expect(screen.getByText(/Week 3 of 8/)).toBeTruthy();
+    expect(screen.getByText(/3 × 8/)).toBeTruthy();
+    // The week is resolved server-side, so the page and the member's log show
+    // the same prescription rather than two guesses at "what week is it".
+    expect(mockPlanDetail).toHaveBeenCalledWith('p1', { week: 3 });
+    expect(screen.getByRole('link', { name: 'Edit' })).toHaveAttribute(
+      'href', '/pt-os/workout-plans/p1/builder',
+    );
   });
 
   it('renders with a bare profile, showing — and a link to complete the assessment', async () => {

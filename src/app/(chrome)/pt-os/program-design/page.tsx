@@ -21,6 +21,7 @@ import { Card, PageContainer, PageHero } from '@/components/ui';
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import JourneyNextButton from '@/components/pt-os/client/JourneyNextButton';
 import { api } from '@/lib/api';
+import type { WorkoutPlan } from '@/lib/api';
 import { ageFrom } from '@/lib/enrollment';
 import { errorMessage } from '@/lib/forms/errors';
 import {
@@ -33,6 +34,8 @@ const GOAL_LABEL: Record<string, string> = {
   fat_loss: 'Fat loss', weight_loss: 'Weight loss', muscle_gain: 'Muscle gain',
   strength: 'Strength', endurance: 'Endurance', general_fitness: 'General fitness',
 };
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const num = (v: unknown): number | null => {
   const n = typeof v === 'string' ? Number(v) : (v as number);
@@ -69,6 +72,7 @@ function ProgramDesign({ clientId }: { clientId: string }) {
   const [interview, setInterview] = useState<Row | null>(null);
   const [goal, setGoal] = useState<Row | null>(null);
   const [activePlan, setActivePlan] = useState<Row | null>(null);
+  const [programme, setProgramme] = useState<WorkoutPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -98,7 +102,26 @@ function ProgramDesign({ clientId }: { clientId: string }) {
       setInterview(interviews.find((r) => num(r.lifestyle_training_days) != null) ?? interviews[0] ?? null);
 
       setGoal((goalRes?.data ?? []).find((g) => g.is_active === true) ?? null);
-      setActivePlan((assignRes as Row[]).find((a) => a.status === 'active') ?? null);
+      const active = (assignRes as Row[]).find((a) => a.status === 'active') ?? null;
+      setActivePlan(active);
+
+      // The completion card names the plan; this is the programme itself, so
+      // an edit made from a session screen is visible here without opening
+      // the builder. The week comes from the assignment, resolved server-side
+      // by the same function the session engine uses.
+      const week = num(active?.current_week);
+      if (active?.workout_plan_id) {
+        try {
+          setProgramme(await api.workouts.plans.detail(
+            String(active.workout_plan_id),
+            week != null ? { week } : undefined,
+          ));
+        } catch {
+          setProgramme(null);
+        }
+      } else {
+        setProgramme(null);
+      }
     } catch (err: unknown) {
       setLoadError(errorMessage(err, 'Could not load this client.'));
     } finally {
@@ -240,6 +263,49 @@ function ProgramDesign({ clientId }: { clientId: string }) {
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
               Add the client&apos;s training days in the Client Interview to get a split.
             </p>
+          )}
+          {programme && (
+            <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+                  {programme.name}
+                  {` · Week ${programme.week ?? 1}`}
+                  {programme.duration_weeks ? ` of ${programme.duration_weeks}` : ''}
+                </p>
+                <Link className="shrink-0 text-[11.5px] font-[700]" style={{ color: semantic.primary }}
+                  href={`/pt-os/workout-plans/${programme.id}/builder`}>
+                  Edit
+                </Link>
+              </div>
+              {programme.exercises.length === 0 ? (
+                <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+                  No exercises prescribed for this week.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {WEEKDAYS.map((day, i) => {
+                    const exercises = programme.exercises.filter((ex) => ex.day_of_week === i + 1);
+                    if (!exercises.length) return null;
+                    return (
+                      <div key={day}>
+                        <p className="text-[10.5px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{day}</p>
+                        <ul className="mt-0.5 space-y-0.5">
+                          {exercises.map((ex) => (
+                            <li key={ex.id} className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+                              {ex.name}
+                              <span style={{ color: 'var(--text-muted)' }}>
+                                {' · '}{ex.sets} × {ex.reps}
+                                {ex.target_weight != null ? ` · ${ex.target_weight} kg` : ''}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
           <p className="mt-2 rounded-[10px] px-3 py-2 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
             Beginners: 15–20 RM, stop short of muscular failure.
