@@ -12,6 +12,7 @@ import {
   Building2, Check, Clock, Loader2, Mail, MessageCircle, Phone, RefreshCw, User, X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import { useToast } from '@/lib/toast';
 import type { StudioRegistration } from '@/lib/api/endpoints/platform';
 import { errorMessage } from '@/lib/forms/errors';
@@ -60,6 +61,7 @@ export default function RegistrationsTab() {
   }, [toast]);
 
   useEffect(() => { void load(filter); }, [filter, load]);
+  useCommandCenterRefresh(() => load(filter));
 
   const approve = useCallback(async (r: StudioRegistration) => {
     if (!window.confirm(`Approve ${r.business_name} and start their 3-day trial now?`)) return;

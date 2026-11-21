@@ -19,6 +19,7 @@ import {
   Search, Users, ShieldCheck, Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { FeatureCatalogue, PlatformFeature, FeatureOverrideRow } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { errorMessage } from '@/lib/forms/errors';
@@ -276,6 +277,7 @@ export default function FeatureManager() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   const grouped = useMemo(() => {
     if (!cat) return [];

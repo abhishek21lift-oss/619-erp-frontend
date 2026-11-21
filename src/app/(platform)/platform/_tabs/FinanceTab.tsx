@@ -32,6 +32,8 @@ import { clientLabel, daysOverdue, filterStudios, needsAction, planPrice } from 
 import type { BillingFilter, BillingSort } from '../_shared/billing';
 import { FormField, SearchField, SelectInput, TextInput } from '@/components/ui/form';
 import { CouponsTab } from './CouponsTab';
+import RevenueForecastCard from '@/components/platform/revenue-forecast-card';
+import RetentionCard from '@/components/platform/retention-card';
 import { errorMessage } from '@/lib/forms/errors';
 import { clampNumericText } from '@/components/ui/FloatInput';
 
@@ -223,6 +225,10 @@ export function BillingTab() {
 
   return (
     <div className="space-y-5">
+      <div className="grid items-start gap-4 xl:grid-cols-[1.65fr_1fr]">
+        <RevenueForecastCard />
+        <RetentionCard />
+      </div>
       {kpis && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <MiniStat icon={<IndianRupee size={13} />} value={fmtINR(kpis.revenue_this_month)} label="This month" color="#A33757" />

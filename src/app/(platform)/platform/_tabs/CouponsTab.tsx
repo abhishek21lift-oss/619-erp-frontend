@@ -14,6 +14,7 @@ import {
   FormErrorBanner, SubmitStatus,
 } from '@/components/ui/form';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type { SubPlan, Coupon } from '@/lib/api';
 import { StatTile } from '@/components/platform/console';
 import { useToast } from '@/lib/toast';
@@ -61,6 +62,7 @@ export function CouponsTab() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
   useEffect(() => { api.superAdmin.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
 
   const toggleActive = async (c: Coupon) => {

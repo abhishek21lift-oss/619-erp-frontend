@@ -24,6 +24,7 @@ import {
   CalendarDays, ScanFace, Building2, RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   PlatformAnalytics, AnalyticsTrendPoint, AnalyticsCohort,
 } from '@/lib/api';
@@ -169,6 +170,7 @@ export default function AnalyticsPanel() {
   }, []);
 
   useEffect(() => { load(months); }, [load, months]);
+  useCommandCenterRefresh(() => load(months));
 
   const totals = useMemo(() => {
     const t = data?.trend ?? [];

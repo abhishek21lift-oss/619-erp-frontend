@@ -41,6 +41,7 @@ import {
 import { ccSeries, ccState } from './ccTheme';
 import { MODULES } from '@/app/(platform)/platform/_shared/types';
 import type { ModuleId } from '@/app/(platform)/platform/_shared/types';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 
 type Sources = {
   kpis?: PlatformKpis;
@@ -110,6 +111,10 @@ export default function CommandCenterOverview() {
     setD(next); setFailed(bad); setLoading(false); setRefreshing(false);
   }, []);
   useEffect(() => { void load(); }, [load]);
+  // Pull-to-refresh / the shell's refresh button. `true` bypasses the
+  // collectors' caches, which is what makes the gesture mean "read it again"
+  // rather than "show me the same snapshot".
+  useCommandCenterRefresh(() => load(true));
 
   const { kpis, money, snapshot, alerts, guardian, ai, aiTrend, analytics, security, support } = d;
 
@@ -165,7 +170,13 @@ export default function CommandCenterOverview() {
         title={headline}
         icon={<LayoutDashboard size={22} />}
         subtitle={snapshot
-          ? <>{health.healthy} of {health.total} signals healthy{health.critical ? ` · ${health.critical} critical` : ''}{health.unmeasured ? ` · ${health.unmeasured} not measured` : ''} · checked {new Date(snapshot.collected_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</>
+          ? <>
+              {snapshot.health?.score != null && (
+                <><b>{snapshot.health.score}/100</b> · {health.healthy} of {health.total} signals healthy</>
+              )}
+              {snapshot.health?.score == null && <>{health.healthy} of {health.total} signals healthy</>}
+              {health.critical ? ` · ${health.critical} critical` : ''}{health.unmeasured ? ` · ${health.unmeasured} not measured` : ''} · checked {new Date(snapshot.collected_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
+            </>
           : 'The health collector did not answer. Studio and revenue figures below are still live.'}
       >
         <CcHeroStat label="Studios" value={b ? nfIN(b.active_studios) : '—'} sub={b ? `active of ${nfIN(b.total_studios)} · ${nfIN(b.trial_studios)} on trial` : 'unavailable'} />

@@ -2527,6 +2527,19 @@ export interface CommandCenterObservability {
   coverage: number;
 }
 
+/** Graded companion to `status`; same evidence, finer resolution. */
+export interface CommandCenterHealth {
+  /** 0–100, or null when no card could be measured. Never 0 for "no data". */
+  score: number | null;
+  grade: 'A' | 'B' | 'C' | 'D' | 'F' | 'unknown';
+  worst: CommandCenterStatus;
+  measured: number;
+  not_configured: number;
+  /** True when process-scope cards were counted at half weight. */
+  process_weighted: boolean;
+  components: Record<'healthy' | 'warning' | 'degraded' | 'timeout' | 'critical' | 'unavailable', number>;
+}
+
 /** Why the rollup is not green, before anyone opens a card. */
 export interface CommandCenterDegradedReason {
   card: string;
@@ -2543,6 +2556,8 @@ export interface CommandCenterSnapshot {
     env: string; node: string; contract: number; instance: string;
   };
   observability: CommandCenterObservability;
+  /** Present from migration-era servers too; optional for old payloads. */
+  health?: CommandCenterHealth;
   degraded_reasons: CommandCenterDegradedReason[];
   collected_at: string;
   duration_ms: number;
@@ -3297,11 +3312,68 @@ export type SupportOverview = {
   median_resolution_hours: number | null;
 };
 
+export type RevenueForecast = {
+  generated_at: string;
+  horizon_months: number;
+  currency: string;
+  current: {
+    mrr_inr: number;
+    arr_inr: number;
+    paying_studios: number;
+    active_studios: number;
+    trailing_3m_cash_inr: number;
+    last_complete_month: { month: string; revenue_inr: number } | null;
+  };
+  history: { month: string; label: string; revenue_inr: number; payments: number }[];
+  cash_forecast: { month: string; label: string; revenue_inr: number; low_inr: number; high_inr: number }[];
+  cash_model: {
+    method: string; months_fitted: number;
+    partial_month_excluded?: string | null;
+    slope_inr_per_month?: number; r2?: number; residual_std_inr?: number;
+    reason?: string;
+  };
+  mrr_forecast: { month: string; label: string; mrr_inr: number }[];
+  mrr_model: {
+    method: string; months_observed?: number; activations?: number; losses?: number;
+    monthly_growth_pct?: number; clamped?: boolean; clamp_pct?: number;
+    reason?: string;
+  };
+};
+
 export type ImpersonationSession = {
   token: string; readonly: boolean;
   /** The account being acted as — the studio's trainer unless another was named. */
   account: { id: string; name: string; email: string; role: string };
   organization: { id: string; name: string; slug: string; logo_url?: string | null };
+  /** The revocable server-side record behind the token (migration 285). */
+  session: { id: string; reason: string; mode: 'read_only' | 'full'; started_at: string; expires_at: string };
+};
+
+export type ImpersonationSessionRecord = {
+  id: string;
+  mode: 'read_only' | 'full';
+  readonly: boolean;
+  reason: string;
+  started_at: string;
+  expires_at: string;
+  ended_at: string | null;
+  end_reason: 'operator_exit' | 'revoked' | 'expired' | 'target_revoked' | null;
+  revoked_at: string | null;
+  active: boolean;
+  operator: { id: string; name: string | null; email: string | null };
+  account: { id: string; name: string | null; email: string | null };
+  organization: { id: string; name: string | null; slug: string | null };
+  ip: string | null;
+  user_agent: string | null;
+  action_count: number;
+};
+
+export type ImpersonationAction = {
+  id: number;
+  method: string;
+  path: string;
+  status_code: number | null;
+  at: string;
 };
 
 // ── Subscription / billing types ──────────────────────────────────────────────

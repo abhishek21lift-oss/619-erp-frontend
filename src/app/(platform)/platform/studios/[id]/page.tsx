@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import type {
   StudioHealth, StudioMemberships, StudioMembership, StudioPtRevenue,
   TenancySectionStatus, OrganizationDetail,
@@ -143,6 +144,7 @@ function HealthSection({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   if (loading) return <Center><Loader2 size={22} className="animate-spin" style={{ color: 'var(--brand)' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
@@ -251,6 +253,7 @@ function MembershipsSection({ id }: { id: string }) {
   }, [id, page]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   if (loading) return <Center><Loader2 size={22} className="animate-spin" style={{ color: 'var(--brand)' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
@@ -310,6 +313,7 @@ function RevenueSection({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+  useCommandCenterRefresh(load);
 
   if (loading) return <Center><Loader2 size={22} className="animate-spin" style={{ color: 'var(--brand)' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;

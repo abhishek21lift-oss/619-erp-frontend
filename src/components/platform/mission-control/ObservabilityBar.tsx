@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { Radio, Wifi, WifiOff, Clock, EyeOff, ShieldAlert, GitBranch } from 'lucide-react';
+import { Activity, Radio, Wifi, WifiOff, Clock, EyeOff, ShieldAlert, GitBranch } from 'lucide-react';
 import type { CommandCenterSnapshot } from '@/lib/api';
 import { toneFor } from './tokens';
 
@@ -52,6 +52,15 @@ export const ObservabilityBar: React.FC<{
           ? 'Streaming over the authenticated WebSocket.'
           : 'The socket is unavailable; falling back to a 5-second poll. Same data, slower.'}
       />
+      {snap.health?.score != null && (
+        <Chip
+          Icon={Activity} label="health" value={`${snap.health.score} · ${snap.health.grade}`}
+          color={snap.health.score >= 90 ? toneFor('healthy').color
+            : snap.health.score >= 60 ? toneFor('warning').color
+            : toneFor('critical').color}
+          title="Weighted score over measured cards. Process-local cards count half; unconfigured capabilities are excluded."
+        />
+      )}
       <Chip
         Icon={Radio} label="coverage" value={`${Math.round(coverage * 100)}%`}
         color={coverage < 1 ? toneFor('degraded').color : undefined}

@@ -30,6 +30,7 @@ import React, { useCallback, useState } from 'react';
 import { m } from 'framer-motion';
 import { Loader2, RefreshCw, Activity, ShieldCheck, Radio, Terminal, Bot } from 'lucide-react';
 import { useCommandCenterSnapshot } from '@/components/platform/useCommandCenterSnapshot';
+import { useCommandCenterRefresh } from '@/contexts/command-center-refresh';
 import { Center, ErrorState } from '@/app/(platform)/platform/_shared/ui';
 import AlertCenter from '@/components/platform/alert-center';
 import Guardian from '@/components/platform/guardian';
@@ -61,6 +62,7 @@ export const MissionControl: React.FC = () => {
   const [deck, setDeck] = useState<Deck>('operations');
 
   const handleRefresh = useCallback(() => { refresh(); }, [refresh]);
+  useCommandCenterRefresh(handleRefresh);
 
   if (loading) {
     return (
