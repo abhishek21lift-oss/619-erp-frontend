@@ -942,10 +942,34 @@ export interface WorkoutSession {
   volume?: number;
 }
 
+/**
+ * The LIVE programme day behind a session.
+ *
+ * `planned` is what the member was prescribed (a snapshot on a member
+ * session); this is what the plan says now, with the row ids the plan API
+ * needs to edit it. It never contains the member's session exercises or sets.
+ */
+export interface WorkoutSessionProgramme {
+  plan_id: string;
+  plan_name: string;
+  assignment_id: string;
+  /** 1 = Monday … 7 = Sunday. */
+  day_of_week: number;
+  week: number;
+  duration_weeks?: number | null;
+  progression_type?: ProgressionType;
+  source?: 'derived' | 'override';
+  /** False for a shared platform template, which every studio can read and none can edit. */
+  editable: boolean;
+  exercises: WorkoutPlannedExercise[];
+}
+
 export interface WorkoutSessionDetail extends WorkoutSession {
   exercises: WorkoutSessionExercise[];
   summary: WorkoutSessionSummary;
   planned: WorkoutPlanned | null;
+  /** Absent on an older server or a freestyle session with no assignment. */
+  programme?: WorkoutSessionProgramme | null;
 }
 
 /** One submitted member workout waiting for the trainer's review. */
@@ -1614,6 +1638,16 @@ export interface WorkoutAssignment {
   plan_goal: string;
   duration_weeks: number;
   sessions_per_week: number;
+  /**
+   * Which week of the programme this client is on today.
+   *
+   * Computed by the server with the same function the session engine uses, so
+   * a screen that asks the plan for `?week=` passes this number rather than
+   * working it out again from `start_date` — two implementations of "what week
+   * is this client on" eventually disagree, and the trainer then edits a
+   * different week than the member is training.
+   */
+  current_week?: number | null;
 }
 
 export interface WorkoutAssignmentDetail extends WorkoutAssignment {

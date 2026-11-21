@@ -15,7 +15,7 @@ import ExercisePicker from '@/components/pt-os/workout-log/ExercisePicker';
 import SessionSummary from '@/components/pt-os/workout-log/SessionSummary';
 import SessionClock from '@/components/pt-os/workout-log/SessionClock';
 import { api } from '@/lib/api';
-import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit, WorkoutPlannedExercise } from '@/lib/api';
+import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise, WorkoutDistanceUnit, WorkoutSpeedUnit, WorkoutPlannedExercise, WorkoutSessionProgramme } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 import { errorMessage } from '@/lib/forms/errors';
@@ -95,9 +95,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const { toast } = useToast();
 
   const [session, setSession] = useState<WorkoutSessionDetail | null>(null);
+  const [programme, setProgramme] = useState<WorkoutSessionProgramme | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [programmePickerOpen, setProgrammePickerOpen] = useState(false);
   const [previousByExercise, setPreviousByExercise] = useState<Record<string, WorkoutPreviousExercise | null>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   // Exercise id → were ALL of its sets done at the last refresh? A block that
@@ -110,10 +112,16 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [summaryOpen, setSummaryOpen] = useState(false);
 
   // A member's workout is theirs: the trainer reads and reviews it, never
-  // edits it — whether it is still in progress in the member app or already
-  // submitted. The server refuses the writes too (409); this keeps the page
-  // from offering controls that cannot work.
+  // edits its exercises or sets — whether it is still in progress in the
+  // member app or already submitted. The server refuses those writes too
+  // (409); this keeps the page from offering controls that cannot work.
+  //
+  // The PROGRAMME is not the member's log. `programme` is the live plan day
+  // behind the session, and the trainer can edit it from here even when the
+  // session itself is locked. The two write paths never meet.
   const locked = session?.source === 'member';
+  const snapshotOnly = session?.planned?.source === 'snapshot';
+  const canEditProgramme = Boolean(programme?.editable && programme.plan_id);
 
   // Only the FIRST load may blank the page.
   //
@@ -147,6 +155,10 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         if (!prev) setHeaderOpen(!data.program_name && !data.workout_day);
         return data;
       });
+      // The live programme day, when this session is linked to one. This is
+      // what the programme editor below writes to; it is never the member's
+      // session exercises.
+      setProgramme(data.programme ?? null);
       const doneNow: Record<string, boolean> = {};
       data.exercises.forEach((ex) => {
         doneNow[ex.id] = ex.sets.length > 0 && ex.sets.every((st) => st.completed);
@@ -338,6 +350,52 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       toast.success('Removed from the plan.');
     } catch (err: unknown) {
       toast.error(errorMessage(err, 'Could not update the plan.'));
+    }
+  };
+
+  /**
+   * Add to the LIVE programme, not to the member's session.
+   *
+   * This is the member-session path: `workout_session_exercises` is their log
+   * and stays untouched. The plan API resolves the week, materialises it when
+   * needed, and enforces that the plan belongs to this studio.
+   */
+  const handleAddProgrammeExercise = async (picked: { id: string; name: string }) => {
+    if (!programme?.plan_id || !programme.editable) {
+      toast.error('This programme cannot be edited.');
+      return;
+    }
+    if (!picked.id) {
+      toast.error('Custom exercises can be logged in a session, but a programme needs a library exercise.');
+      return;
+    }
+    try {
+      await api.workouts.plans.exercises.add(programme.plan_id, {
+        exercise_id: picked.id,
+        day_of_week: programme.day_of_week,
+        week_number: programme.week,
+        sets: 3, reps: 12, rest_seconds: 60,
+      });
+      await loadSession();
+      toast.success('Added to the programme.');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not update the programme.'));
+    }
+  };
+
+  const handleRemoveProgrammeExercise = async (ex: WorkoutPlannedExercise) => {
+    if (!programme?.plan_id || !programme.editable) return;
+    if (!ex.row_id) return;
+    const scope = programme.week > 1 ? `from Week ${programme.week} onwards` : 'in every week';
+    if (!window.confirm(
+      `Remove ${ex.name} from the programme? This changes the plan for every client assigned to it, ${scope}. Logged sets stay exactly as they are.`,
+    )) return;
+    try {
+      await api.workouts.plans.exercises.remove(programme.plan_id, ex.row_id, programme.week);
+      await loadSession();
+      toast.success('Removed from the programme.');
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not update the programme.'));
     }
   };
 
@@ -565,7 +623,9 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
               <div className="min-w-0 flex items-center gap-2">
                 <ClipboardList size={15} className="shrink-0" style={{ color: '#852E4E' }} />
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-[760]" style={{ color: '#852E4E' }}>Planned for Today — {session.planned.plan_name}</p>
+                  <p className="truncate text-[13px] font-[760]" style={{ color: '#852E4E' }}>
+                    {snapshotOnly ? 'Prescribed at start' : 'Planned for Today'} — {session.planned.plan_name}
+                  </p>
                   {/* Which week these numbers are for. A programme progresses,
                       so "3 × 8 at 65 kg" is only meaningful alongside the week
                       it belongs to — and if the trainer wrote this week by hand
@@ -579,10 +639,15 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                   )}
                 </div>
               </div>
-              <button onClick={handleLoadAllPlanned} disabled={loadingPlanned}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: '#A33757', color: '#fff' }}>
-                <Layers size={12} /> Load All
-              </button>
+              {/* A member session's card is a record of what they were shown.
+                  Loading it into their log is the write the member-session
+                  lock refuses, so the control is not offered. */}
+              {!snapshotOnly && (
+                <button onClick={handleLoadAllPlanned} disabled={loadingPlanned}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: '#A33757', color: '#fff' }}>
+                  <Layers size={12} /> Load All
+                </button>
+              )}
             </div>
             <div className="space-y-2">
               {session.planned.exercises.map((ex, i) => {
@@ -596,33 +661,95 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                           card showed only sets × reps, so the one number that
                           changes from week to week was invisible on the only
                           screen used at the rack. */}
-                      <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                        {describePrescription({
-                          kind: effectiveKind(ex),
-                          sets: ex.sets, reps: ex.reps, target_weight: ex.target_weight,
-                          ...timedTargets(ex.config),
-                        }) || 'No target'}
-                        {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''}
-                        {ex.rir != null ? ` · RIR ${ex.rir}` : ''}
-                        {ex.warmup_sets ? ` · ${ex.warmup_sets} warm-up ${ex.warmup_sets === 1 ? 'set' : 'sets'}` : ''}
-                        {ex.superset_group ? ` · Superset ${ex.superset_group}` : ''} target
-                      </p>
+                      <PrescriptionLine ex={ex} />
                     </div>
-                    <div className="flex flex-shrink-0 items-center gap-1">
-                      <button onClick={() => handleRemovePlanned(ex)} aria-label={`Remove ${ex.name} from plan`}
-                        className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-red-50">
-                        <Trash2 size={14} style={{ color: '#ef4444' }} />
-                      </button>
-                      <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
-                        className="flex h-[44px] flex-shrink-0 items-center rounded-[8px] px-3 text-[11px] font-[700]"
-                        style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(163,55,87,0.1)', color: alreadyAdded ? '#94a3b8' : '#852E4E' }}>
-                        {alreadyAdded ? 'Added' : '+ Add'}
-                      </button>
-                    </div>
+                    {!snapshotOnly && (
+                      <div className="flex flex-shrink-0 items-center gap-1">
+                        <button onClick={() => handleRemovePlanned(ex)} aria-label={`Remove ${ex.name} from plan`}
+                          className="flex h-11 w-11 items-center justify-center rounded-[10px] transition hover:bg-red-50">
+                          <Trash2 size={14} style={{ color: '#ef4444' }} />
+                        </button>
+                        <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
+                          className="flex h-[44px] flex-shrink-0 items-center rounded-[8px] px-3 text-[11px] font-[700]"
+                          style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(163,55,87,0.1)', color: alreadyAdded ? '#94a3b8' : '#852E4E' }}>
+                          {alreadyAdded ? 'Added' : '+ Add'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+            {snapshotOnly && (
+              <p className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                This is the prescription the member started with. Edit the live programme below —
+                their logged sets stay as they are.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* The live programme behind a member session.
+            `planned` above is the snapshot the member was shown; this is what
+            the plan says now, and the only thing the edit controls write to.
+            A studio session's planned card is already live, so this would be
+            a duplicate there. */}
+        {programme && (!session.planned || snapshotOnly) && (
+          <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <div className="mb-3 flex items-start gap-2">
+              <Dumbbell size={15} className="mt-0.5 shrink-0" style={{ color: '#852E4E' }} />
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-[760]" style={{ color: '#852E4E' }}>
+                  Programme — {programme.plan_name}
+                </p>
+                <p className="text-[11px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+                  Week {programme.week}
+                  {programme.duration_weeks ? ` of ${programme.duration_weeks}` : ''}
+                  {programme.source === 'override' ? ' · written for this week' : ''}
+                  {' · '}changes the shared plan
+                </p>
+              </div>
+            </div>
+
+            {programme.exercises.length === 0 ? (
+              <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                No exercises on this programme day yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {programme.exercises.map((ex, i) => (
+                  <div key={ex.row_id || `${ex.exercise_id || ex.name}-${i}`}
+                    className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                    <div className="min-w-0">
+                      <p className="truncate text-[12.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{ex.name}</p>
+                      <PrescriptionLine ex={ex} />
+                    </div>
+                    {canEditProgramme && ex.row_id && (
+                      <button onClick={() => handleRemoveProgrammeExercise(ex)} aria-label={`Remove ${ex.name} from programme`}
+                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] transition hover:bg-red-50">
+                        <Trash2 size={14} style={{ color: '#ef4444' }} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {canEditProgramme ? (
+              <Button variant="outline" iconLeft={<Plus size={14} />}
+                onClick={() => setProgrammePickerOpen(true)} className="mt-3 h-[44px] w-full">
+                Add to programme
+              </Button>
+            ) : (
+              <p className="mt-3 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                This is a shared platform template. It can be assigned, but only the studio that owns it can change its exercises.
+              </p>
+            )}
+            <p className="mt-2 text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              Changes apply to the live programme for every client on this plan. Logged sets are
+              not changed; a workout already in progress keeps the prescription it started with.
+            </p>
           </div>
         )}
 
@@ -663,6 +790,12 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       />
 
       <ExercisePicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handleAddExercise} allowCustom />
+      <ExercisePicker
+        open={programmePickerOpen}
+        onClose={() => setProgrammePickerOpen(false)}
+        onSelect={handleAddProgrammeExercise}
+        existingIds={programme?.exercises.map((ex) => ex.exercise_id).filter((id): id is string => Boolean(id)) ?? []}
+      />
 
       {/* Sticky summary + save bar */}
       <div className="page-action-bar" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
@@ -693,6 +826,23 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         </div>
       </div>
     </div>
+  );
+}
+
+/** The prescription line shared by the planned card and the live programme card. */
+function PrescriptionLine({ ex }: { ex: WorkoutPlannedExercise }) {
+  return (
+    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+      {describePrescription({
+        kind: effectiveKind(ex),
+        sets: ex.sets, reps: ex.reps, target_weight: ex.target_weight,
+        ...timedTargets(ex.config),
+      }) || 'No target'}
+      {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''}
+      {ex.rir != null ? ` · RIR ${ex.rir}` : ''}
+      {ex.warmup_sets ? ` · ${ex.warmup_sets} warm-up ${ex.warmup_sets === 1 ? 'set' : 'sets'}` : ''}
+      {ex.superset_group ? ` · Superset ${ex.superset_group}` : ''} target
+    </p>
   );
 }
 

@@ -112,6 +112,109 @@ describe('planned exercise removal', () => {
   });
 });
 
+const memberSession = {
+  ...session,
+  source: 'member',
+  status: 'completed',
+  prescribed: {
+    plan_name: 'PPL', current_week: 2, day_of_week: 1,
+    exercises: [{
+      exercise_id: 'ex-1', name: 'Bench Press', sets: 3, reps: 8,
+      rest_seconds: 90, target_weight: 55,
+    }],
+  },
+  planned: {
+    plan_name: 'PPL', day_of_week: 1, week: 2, source: 'snapshot',
+    exercises: [{
+      exercise_id: 'ex-1', name: 'Bench Press', sets: 3, reps: 8,
+      rest_seconds: 90, target_weight: 55,
+    }],
+  },
+  programme: {
+    plan_id: 'plan-1', plan_name: 'PPL', assignment_id: 'wa-1',
+    day_of_week: 1, week: 2, duration_weeks: 4, source: 'derived', editable: true,
+    exercises: [
+      {
+        row_id: 'we-1', exercise_id: 'ex-1', name: 'Bench Press', sets: 3,
+        reps: 8, rest_seconds: 90, target_weight: 65,
+      },
+      {
+        row_id: 'we-2', exercise_id: 'ex-2', name: 'Squat', sets: 4,
+        reps: 6, rest_seconds: 120, target_weight: 100,
+      },
+    ],
+  },
+};
+
+describe('member session programme editing', () => {
+  it('does not duplicate the card on a studio session, whose planned card is already live', async () => {
+    // The server sends `programme` for a studio session too. That card is the
+    // same day the planned card above already renders, so showing both would
+    // put the same prescription on the screen twice.
+    getSession.mockResolvedValue({
+      data: {
+        ...session,
+        programme: {
+          ...memberSession.programme,
+          plan_id: 'plan-1', plan_name: 'PPL', week: 2, editable: true,
+        },
+      },
+    });
+    open();
+
+    await screen.findByText(/Planned for Today/);
+    expect(screen.queryByText(/Programme — PPL/)).toBeNull();
+    // And the studio path keeps the add-to-plan control the member path hides.
+    expect(screen.getByText('Load All')).toBeTruthy();
+    expect(screen.getByLabelText('Remove Bench Press from plan')).toBeTruthy();
+  });
+
+  it('keeps the member log read-only but edits the live programme', async () => {
+    getSession.mockResolvedValue({ data: memberSession });
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    open();
+
+    await screen.findByText(/Prescribed at start/);
+    // The snapshot is what they were shown; it is not the edit surface.
+    expect(screen.queryByText('Load All')).toBeNull();
+    expect(screen.queryByLabelText('Remove Bench Press from plan')).toBeNull();
+    // The member's own log stays locked: no way to add a session exercise.
+    expect(screen.queryByText('Add Exercise')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Remove Squat from programme'));
+
+    await waitFor(() => expect(removePlan).toHaveBeenCalledWith('plan-1', 'we-2', 2));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Logged sets stay'));
+    confirm.mockRestore();
+  });
+
+  it('adds to the programme only, never to the member session', async () => {
+    getSession.mockResolvedValue({ data: memberSession });
+    open();
+
+    await screen.findByText('Add to programme');
+    fireEvent.click(screen.getByText('Add to programme'));
+    fireEvent.click(screen.getByText('pick-exercise'));
+
+    await waitFor(() => expect(addPlan).toHaveBeenCalledWith('plan-1', {
+      exercise_id: 'ex-9', day_of_week: 1, week_number: 2,
+      sets: 3, reps: 12, rest_seconds: 60,
+    }));
+    expect(addSession).not.toHaveBeenCalled();
+  });
+
+  it('offers no edit controls for a shared platform template', async () => {
+    getSession.mockResolvedValue({
+      data: { ...memberSession, programme: { ...memberSession.programme, editable: false } },
+    });
+    open();
+
+    await screen.findByText(/shared platform template/);
+    expect(screen.queryByText('Add to programme')).toBeNull();
+    expect(screen.queryByLabelText(/from programme/)).toBeNull();
+  });
+});
+
 describe('adding an exercise', () => {
   it('adds a library exercise to the session and the plan', async () => {
     open();
