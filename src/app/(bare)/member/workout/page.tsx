@@ -2,9 +2,11 @@
 /**
  * Member — My programme.
  *
- * The programme the trainer assigned, for the week the client has reached,
- * one card per training day with today's day opened first. The trainer writes
- * the plan; the member can train through a day of it (or repeat a past
+ * The programmes the trainer assigned, current first, for the week the client
+ * has reached, one card per training day with today's day opened first. A
+ * trainer can deliberately keep a second block active (`keep_existing`), so
+ * every live programme is shown and the first is marked current. The trainer
+ * writes the plan; the member can train through a day of it (or repeat a past
  * session) in the guided workout, which logs the sets as they go — see
  * WorkoutLauncher / GuidedWorkout.
  *
@@ -124,14 +126,21 @@ function WorkoutBody() {
       {note}
       <WorkoutLauncher plans={plans} sessions={sessions} allowSelfWorkout={allowSelfWorkout}
         openSession={openSession} onSaved={() => { void loadWorkout(); void loadSessions(); }} />
-      {plans.map((p) => <PlanBlock key={p.assignment_id} plan={p} titled={plans.length > 1} />)}
+      {plans.map((p, i) => (
+        <PlanBlock
+          key={p.assignment_id}
+          plan={p}
+          titled={plans.length > 1}
+          current={plans.length > 1 && i === 0}
+        />
+      ))}
       <SessionHistory sessions={sessions} />
     </>
   );
 }
 
 /** `titled`: name the section after the plan only when there is more than one — otherwise the page title already says it. */
-function PlanBlock({ plan, titled }: { plan: MeWorkoutPlan; titled: boolean }) {
+function PlanBlock({ plan, titled, current = false }: { plan: MeWorkoutPlan; titled: boolean; current?: boolean }) {
   const today = todayIso();
   const firstOpen = useMemo(() => {
     const days = plan.days.map((d) => d.day_of_week);
@@ -140,6 +149,7 @@ function PlanBlock({ plan, titled }: { plan: MeWorkoutPlan; titled: boolean }) {
   const [open, setOpen] = useState<number | undefined>(firstOpen);
 
   const facts = [
+    current ? 'Current programme' : null,
     plan.current_week && plan.duration_weeks ? `Week ${plan.current_week} of ${plan.duration_weeks}`
       : plan.current_week ? `Week ${plan.current_week}` : null,
     plan.sessions_per_week ? `${plan.sessions_per_week}× a week` : null,

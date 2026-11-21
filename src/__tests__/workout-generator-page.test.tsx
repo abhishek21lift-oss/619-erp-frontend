@@ -183,7 +183,10 @@ beforeEach(() => {
       suggestion: { suggested_kg: 200, applied: false, reason: 'Within one increment. No change.' },
     }],
   });
-  mockCreatePlan.mockResolvedValue({ message: 'ok', plan: { id: 'plan-9' } });
+  mockCreatePlan.mockResolvedValue({
+    message: 'ok',
+    plan: { id: 'plan-9', name: 'Asha — strength (generated)' },
+  });
   mockAssign.mockResolvedValue({ message: 'ok' });
 });
 
@@ -213,7 +216,7 @@ describe('saving a rules-generated week', () => {
 
     expect(mockAssign).toHaveBeenCalledWith({ workout_plan_id: 'plan-9', client_id: 'c1' });
     expect(mockPush).toHaveBeenCalledWith('/pt-os/clients/c1/training/assigned');
-    expect(mockToastSuccess.mock.calls[0][0]).toMatch(/saved and assigned/i);
+    expect(mockToastSuccess.mock.calls[0][0]).toMatch(/Assigned "Asha — strength \(generated\)" to Asha\./);
   });
 
   it('drafts the week the trainer asks for and shows every day', async () => {
@@ -239,7 +242,9 @@ describe('saving a rules-generated week', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Save plan & assign/ }));
 
     await waitFor(() => expect(mockAssign).toHaveBeenCalledTimes(1));
-    expect(mockToastError.mock.calls[0][0]).toMatch(/Plan saved, but assigning it failed/);
+    // The shared assign helper reports the real reason instead of a generic
+    // "could not save" that would invite a duplicate plan.
+    expect(mockToastError.mock.calls[0][0]).toMatch(/screening blocked/);
     expect(mockPush).toHaveBeenCalledWith('/pt-os/workout-plans?client_id=c1');
   });
 });
