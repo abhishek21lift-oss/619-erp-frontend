@@ -173,8 +173,15 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
       }
       show(draftFromSession(data.session, source, last), data.session);
     } catch (err) {
-      setError(err instanceof ApiError && err.code === 'SELF_WORKOUT_NOT_ALLOWED'
-        ? 'Your trainer has not enabled self workouts.'
+      // The server knows why it refused — a revoked permission or the daily
+      // cap — and its message is the one the member needs. Other failures
+      // stay generic rather than showing a raw server message.
+      setError(err instanceof ApiError
+        ? (err.code === 'SELF_WORKOUT_NOT_ALLOWED'
+          ? 'Your trainer has not enabled self workouts.'
+          : err.status === 429
+            ? err.message || 'You have reached today’s workout limit.'
+            : 'Could not start the workout. Try again.')
         : 'Could not start the workout. Try again.');
     } finally {
       setStarting(null);

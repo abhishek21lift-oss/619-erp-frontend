@@ -144,7 +144,12 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const [chartExercise, setChartExercise] = useState('Bench Press');
+  // Empty means "nothing chosen yet". It used to be hardcoded to 'Bench
+  // Press', so a client who has never benched saw an empty chart under a
+  // confident-looking heading. Once the analytics load, the most recent PR
+  // names the exercise actually worth charting; the trainer can override.
+  const [chartExercise, setChartExercise] = useState('');
+  const [chartTouched, setChartTouched] = useState(false);
   const [chartSearch, setChartSearch] = useState('');
   const [progressData, setProgressData] = useState<WorkoutProgressPoint[]>([]);
 
@@ -241,6 +246,13 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   }, [clientId, chartExercise]);
 
   useEffect(() => { loadProgress(); }, [loadProgress]);
+
+  // Default the chart to the exercise this client last set a record on.
+  useEffect(() => {
+    if (chartTouched || chartExercise) return;
+    const recent = trainingStats?.prs?.[0]?.exercise_name;
+    if (recent) setChartExercise(recent);
+  }, [trainingStats, chartTouched, chartExercise]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadData(), loadRange(), loadProgress()]);
@@ -615,7 +627,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             {QUICK_EXERCISES.map((ex) => {
               const active = chartExercise === ex;
               return (
-                <button key={ex} onClick={() => { setChartExercise(ex); setChartSearch(''); }}
+                <button key={ex} onClick={() => { setChartExercise(ex); setChartTouched(true); setChartSearch(''); }}
                   className="rounded-full px-3 py-1.5 text-[11.5px] font-[700] transition"
                   style={active
                     ? { background: 'linear-gradient(135deg,#A33757,#852E4E)', color: '#fff', boxShadow: '0 4px 12px -4px rgba(163,55,87,0.6)' }
@@ -627,13 +639,17 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             <input aria-label="Or search exercise"
               type="text" value={chartSearch}
               onChange={(e) => setChartSearch(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && chartSearch.trim()) setChartExercise(chartSearch.trim()); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && chartSearch.trim()) { setChartExercise(chartSearch.trim()); setChartTouched(true); } }}
               className="rounded-full px-3 py-1.5 text-[11.5px] outline-none"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', width: 160 }}
             />
           </div>
           {chartProgress.length === 0 ? (
-            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>No logged sets for {chartExercise} in this range.</p>
+            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>
+              {chartExercise
+                ? `No logged sets for ${chartExercise} in this range.`
+                : 'Choose an exercise above to chart progress.'}
+            </p>
           ) : (
             <PremiumAreaChart
               data={chartProgress.map((p) => ({ date: fmtDate(p.session_date), 'Est. 1RM': p.est_1rm ?? 0, 'Best Weight': p.best_weight }))}

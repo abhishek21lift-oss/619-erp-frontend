@@ -109,10 +109,11 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [loadingPlanned, setLoadingPlanned] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
-  // A member's submitted workout is theirs: the trainer reads and reviews it,
-  // never edits it. The server refuses the writes too (409); this keeps the
-  // page from offering controls that cannot work.
-  const locked = session?.source === 'member' && (session.submitted_at != null || session.review_status != null);
+  // A member's workout is theirs: the trainer reads and reviews it, never
+  // edits it — whether it is still in progress in the member app or already
+  // submitted. The server refuses the writes too (409); this keeps the page
+  // from offering controls that cannot work.
+  const locked = session?.source === 'member';
 
   // Only the FIRST load may blank the page.
   //

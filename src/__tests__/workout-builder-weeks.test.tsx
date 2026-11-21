@@ -66,6 +66,7 @@ vi.mock('framer-motion', async () => {
 });
 
 const detail = vi.fn();
+const update = vi.fn(async () => ({}));
 const patch = vi.fn(async () => ({ exercise: {} }));
 const add = vi.fn(async () => ({ exercise: { id: 'new', day_of_week: 1 } }));
 const remove = vi.fn(async () => ({}));
@@ -76,7 +77,7 @@ vi.mock('@/lib/api', () => ({
     workouts: {
       plans: {
         detail: (...a: unknown[]) => detail(...(a as [])),
-        update: vi.fn(async () => ({})),
+        update: (...a: unknown[]) => update(...(a as [])),
         resetWeek: (...a: unknown[]) => resetWeek(...(a as [])),
         exercises: {
           patch: (...a: unknown[]) => patch(...(a as [])),
@@ -155,7 +156,7 @@ beforeEach(() => {
   push.mockReset(); replace.mockReset();
   successToast.mockReset();
   patch.mockClear(); add.mockClear(); remove.mockClear();
-  reorder.mockClear(); resetWeek.mockClear();
+  reorder.mockClear(); resetWeek.mockClear(); update.mockClear();
   detail.mockReset();
   detail.mockImplementation(async (_id: string, q?: { week?: number }) => planFor(q?.week ?? 1));
   params = new URLSearchParams('plan=p1&day=1');
@@ -280,6 +281,26 @@ describe('every write carries its week', () => {
     expect(push).toHaveBeenCalledWith(
       '/pt-os/workout-plans/p1/builder/add-exercises?day=1&week=6',
     );
+  });
+});
+
+describe('changing the progression rule', () => {
+  it('flushes a pending exercise edit before saving the rule', async () => {
+    await renderBuilder();
+    const field = await screen.findByDisplayValue('60', {}, FIND);
+    fireEvent.change(field, { target: { value: '65' } });
+    fireEvent.blur(field);   // queues the 600ms autosave
+
+    fireEvent.click(screen.getByRole('button', { name: /progression/i }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Add reps' }));
+
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    expect(patch).toHaveBeenCalled();
+    // The queued edit must land first; otherwise the rule's refetch paints
+    // the server's old row over the trainer's new value.
+    expect(patch.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[0]);
+    // The rule is plan-level, and week 1 is the authored week.
+    expect(detail.mock.calls.at(-1)?.[1]).toBeUndefined();
   });
 });
 

@@ -206,12 +206,14 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
   }, [planId, week, toast, reloadToken, applyPlan]);
 
   /**
-   * Save the progression rule and re-read week 1.
+   * Save the progression rule and re-read the week on screen.
    *
    * Re-reading rather than merging the response: the plan carries
    * `progression_preview`, which the PUT does not return and which is stale
    * the moment the rule changes. Showing last rule's ramp under this rule's
-   * label would be worse than showing none.
+   * label would be worse than showing none. The week is kept because the
+   * trainer was working in it; resetting to week 1 made a plan-level change
+   * look like it had thrown their place away.
    */
   const saveRule = useCallback(async (patch: {
     progression_type: ProgressionType;
@@ -221,15 +223,35 @@ export default function WorkoutBuilder({ planId }: WorkoutBuilderProps) {
     const snapshot = plan;
     setPlan((p) => (p ? { ...p, ...patch } : p));   // paint the chip immediately
     try {
+      // The rule is plan-level, but a queued exercise edit must land first:
+      // re-reading the plan while a patch is still in flight would paint the
+      // server's old row over the trainer's new value.
+      const clean = await flushNow();
+      if (!clean) {
+        setPlan(snapshot);
+        toast.error('Could not save the current changes. Try again before changing the progression rule.');
+        return;
+      }
       await api.workouts.plans.update(planId, patch);
-      const fresh = await api.workouts.plans.detail(planId);
-      applyPlan(fresh, 1);
-      setWeek(1);
+      // Keep the week the trainer is working in. The ramp preview is on the
+      // plan, not the week, so re-reading the current week is enough.
+      const fresh = await api.workouts.plans.detail(planId, week > 1 ? { week } : undefined);
+      applyPlan(fresh, week);
     } catch {
-      setPlan(snapshot);
+      // Restore only the rule, not the whole snapshot: an autosave may have
+      // landed between the snapshot and here, and reverting it on screen would
+      // hide a change the server already has.
+      if (snapshot) {
+        setPlan((p) => (p ? {
+          ...p,
+          progression_type: snapshot.progression_type,
+          progression_amount: snapshot.progression_amount,
+          progression_every_weeks: snapshot.progression_every_weeks,
+        } : p));
+      }
       toast.error('Could not save the progression rule');
     }
-  }, [planId, plan, toast, applyPlan, setWeek]);
+  }, [planId, plan, week, flushNow, toast, applyPlan]);
 
   // Flush on unmount so navigating away mid-debounce still saves.
   useEffect(() => () => { void flushNow(); }, [flushNow]);

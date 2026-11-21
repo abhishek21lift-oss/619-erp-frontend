@@ -249,7 +249,7 @@ function ProgramDesign({ clientId }: { clientId: string }) {
               <Sparkles size={13} /> Generate with AI
             </Link>
             <Link className="inline-flex items-center gap-1.5" style={{ color: semantic.primary }} href={`/pt-os/workout-generator?client_id=${clientId}`}>
-              <Sparkles size={13} /> Workout Generator
+              <Calculator size={13} /> Rule-based generator
             </Link>
             <Link className="inline-flex items-center gap-1.5" style={{ color: semantic.primary }} href={`/pt-os/workout-plans?client_id=${clientId}`}>
               <Dumbbell size={13} /> Workout Plans

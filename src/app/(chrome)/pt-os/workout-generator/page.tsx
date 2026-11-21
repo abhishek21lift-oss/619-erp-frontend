@@ -20,6 +20,7 @@ import { PageContainer, PageHero, Button, FormField, TextInput, SelectInput } fr
 import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { FormSection } from '@/components/ui/form';
 import { api } from '@/lib/api';
+import { assignWorkoutPlan } from '@/lib/workoutAssign';
 import { useToast } from '@/lib/toast';
 import { Dumbbell, Loader2, RefreshCw, Save, AlertTriangle, Info } from 'lucide-react';
 import {
@@ -281,16 +282,20 @@ function GeneratorScreen({ clientId }: { clientId: string }) {
         exercises: planned.flatMap(({ week, session }) => planRows(session, week)),
       });
 
-      try {
-        await api.workouts.assign({ workout_plan_id: created.plan.id, client_id: clientId });
-      } catch (e) {
-        // The plan exists; saying "could not save" would be a lie and would
-        // invite the trainer to create a duplicate.
-        toast.error(`Plan saved, but assigning it failed: ${e instanceof Error ? e.message : 'unknown error'}`);
+      // The plan exists; a failed assignment must not swallow it or invite a
+      // duplicate. The shared helper reports the real reason (PAR-Q, consent,
+      // or a plain failure) with the same actionable toast as every other
+      // assign control.
+      const assigned = await assignWorkoutPlan(
+        created.plan,
+        { id: clientId, name: clientName || 'the client' },
+        toast,
+        (path) => router.push(path),
+      );
+      if (!assigned) {
         router.push(`/pt-os/workout-plans?client_id=${clientId}`);
         return;
       }
-      toast.success(`Plan saved and assigned to ${clientName || 'the client'}.`);
       router.push(`/pt-os/clients/${clientId}/training/assigned`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save the plan');
