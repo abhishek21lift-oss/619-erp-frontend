@@ -4,10 +4,12 @@
  * PtOsDashboard — Premium, mobile-first fitness-business command center.
  *
  * Mobile-first design principles:
- *   • Content priority: most important info first (welcome → KPIs → ops)
+ *   • Content priority: the day first (today's sessions → next action → client
+ *     signals), then the month (target, KPIs, renewals, money), then the
+ *     secondary board behind one disclosure.
  *   • Touch-friendly targets: min 44px tap areas throughout
  *   • Single-column stacking on mobile, expanding to multi-column on tablet/desktop
- *   • Mobile quick-actions strip (horizontal scroll) replaces desktop dock on small screens
+ *   • Mobile quick-actions strip lives in the secondary disclosure; desktop uses the dock
  *   • Bottom padding clears the MobileBottomNav (h-16 + safe area)
  *   • No horizontal overflow — all containers use min-w-0, truncate, flex-wrap
  *
@@ -19,6 +21,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { m, useReducedMotion } from 'framer-motion';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
 import { PullToRefresh } from '@/components/ui';
+import { Disclosure } from '@/components/ui/Disclosure';
 import { cn } from '@/components/ui/cn';
 import { heroBackground, heroCrest, heroShadow } from '@/components/ui/heroTheme';
 import { palette, identity, rgba } from '@/lib/palette';
@@ -287,6 +290,79 @@ function SectionLabel({ children, icon }: { children: React.ReactNode; icon?: Re
 
 function Skel({ w = 'w-full', h = 'h-4', r = 'rounded-xl' }: { w?: string; h?: string; r?: string }) {
   return <div className={`${w} ${h} ${r} animate-pulse`} style={{ background: 'rgba(163,55,87,0.08)' }} />;
+}
+
+/**
+ * First run, not a dashboard of zeros.
+ *
+ * `active_pt_clients` only counts clients whose PT term has started, and
+ * `expired_clients` only counts finished terms. A studio with neither has no
+ * money, renewal or session history to show yet, so the zero-value cards are
+ * withheld and the next three actions take their place. Pending clients are
+ * deliberately covered by the second line: "Open Clients" finishes an
+ * enrolment that has not become an active term yet.
+ */
+function NewStudioCard() {
+  const steps = [
+    { icon: UserPlus, title: 'Add the client', body: 'Name, contact and the basics.' },
+    { icon: ClipboardCheck, title: 'Complete the intake', body: 'Tour, consent, PAR-Q, goals.' },
+    { icon: Dumbbell, title: 'Build and assign a plan', body: 'Start from a template or the builder.' },
+  ];
+
+  return (
+    <Glass className="overflow-hidden p-5 sm:p-6">
+      <div className="flex items-start gap-3.5">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white"
+          style={{
+            background: `linear-gradient(135deg, ${palette.indigo[500]}, ${palette.indigo[600]})`,
+            boxShadow: `0 8px 18px ${rgba(palette.indigo[500], 0.28)}`,
+          }}>
+          <Sparkles size={18} />
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-[16px] font-[820] tracking-[-0.02em]" style={{ color: C.ink }}>
+            No active clients yet
+          </h3>
+          <p className="mt-1 text-[12.5px] leading-[1.55]" style={{ color: C.muted }}>
+            Add your first client and the dashboard fills in as you go. Already added someone?
+            Open Clients to finish their enrolment.
+          </p>
+        </div>
+      </div>
+
+      <ol className="mt-4 grid gap-2 sm:grid-cols-3">
+        {steps.map((s, i) => (
+          <li key={s.title} className="flex items-start gap-2.5 rounded-[14px] px-3 py-2.5"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
+              style={{ background: rgba(C.primary, 0.10), color: C.primary }}>
+              <s.icon size={14} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11.5px] font-[750]" style={{ color: C.ink }}>{i + 1}. {s.title}</p>
+              <p className="mt-0.5 text-[10.5px] leading-[1.45]" style={{ color: C.muted }}>{s.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Link href="/pt-os/new-client"
+          className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-5 text-[13px] font-[750] text-white transition-transform active:scale-[0.98]"
+          style={{
+            background: `linear-gradient(135deg, ${palette.indigo[500]}, ${palette.indigo[600]})`,
+            boxShadow: `0 8px 18px ${rgba(palette.indigo[500], 0.28)}`,
+          }}>
+          <UserPlus size={15} /> Add your first client
+        </Link>
+        <Link href="/pt-os/clients"
+          className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-[700]"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+          Open Clients <ChevronRight size={14} />
+        </Link>
+      </div>
+    </Glass>
+  );
 }
 
 // ─── Section 1 — Hero Welcome Header ───────────────────────────────────────────
@@ -2493,6 +2569,21 @@ export default function PtOsDashboard() {
   const activeSharePct = d && (d.active_pt_clients + d.expired_clients) > 0
     ? (d.active_pt_clients / (d.active_pt_clients + d.expired_clients)) * 100 : null;
 
+  // A studio with no active and no expired clients is on its first run, not
+  // having a bad month. It gets the setup card instead of money/renewal/session
+  // cards that can only say zero. A pending client has not become an active
+  // term yet, so it lands here too; the card's second line sends that trainer
+  // to Clients to finish the enrolment rather than telling them to add again.
+  const noClientsYet = d?.active_pt_clients === 0 && d?.expired_clients === 0;
+  // A pending client can still have a session booked before the PT term starts.
+  // Keep Today in that case; otherwise a first-run studio sees the setup card
+  // instead of an empty "Nobody is in today" directly under it. A cancelled
+  // booking is not work, and the roster excludes it too.
+  const hasTodayWork =
+    (o?.today_sessions?.some((s) => s.status !== 'cancelled') ?? false)
+    || (o?.today_unscheduled?.length ?? 0) > 0;
+  const firstRun = noClientsYet && !hasTodayWork;
+
   return (
     <>
       {/* Ambient color wash — fixed so it doesn't scroll */}
@@ -2531,6 +2622,13 @@ export default function PtOsDashboard() {
             {/* 1 — Hero header */}
             <HeroHeader d={d} coach={coach} studioName={studioName} founderNumber={founderNumber} loading={dash.loading} onRefresh={dash.refetch} />
 
+            {/* 1.5 — First run. A studio with no active or expired clients
+                is not a dashboard of zeros; it is a setup screen. This sits
+                above Today so the first thing a new trainer reads is the next
+                step, not an empty roster. `firstRun` still yields to a booked
+                session for a pending client: real work outranks onboarding. */}
+            {firstRun && <NewStudioCard />}
+
             {/* 2 — Today's sessions.
                 Directly under the hero, above revenue and retention: it is the
                 only section whose answer changes what happens in the next hour.
@@ -2548,13 +2646,15 @@ export default function PtOsDashboard() {
                 The remaining gap is inline rather than a margin class because
                 the parent's space-y utility targets `> * ~ *` and outranks a
                 plain mt-* on specificity; a class here would simply lose. */}
-            <div style={{ marginTop: 8 }}>
-              <TodaySchedule
-                pendingReviews={pendingReviews}
-                reviewsSettled={reviews.hasResolved}
-                reviewsFailed={!!reviews.error && !reviews.data}
-              />
-            </div>
+            {!firstRun && (
+              <div style={{ marginTop: 8 }}>
+                <TodaySchedule
+                  pendingReviews={pendingReviews}
+                  reviewsSettled={reviews.hasResolved}
+                  reviewsFailed={!!reviews.error && !reviews.data}
+                />
+              </div>
+            )}
 
             {/* 2.5 — Clients not cleared to train. Next to today's sessions
                 because that is when it matters: before someone is trained. */}
@@ -2574,110 +2674,109 @@ export default function PtOsDashboard() {
                 the next hour, and below those two it never got seen. The roster
                 sweep's own section, heading included: who stopped coming, who
                 is paying but absent. A failed check says so in place rather
-                than rendering an empty, reassuring list. */}
-            <RosterSignalsCard />
+                than rendering an empty, reassuring list.
 
-            {/* 4 — Mobile quick actions (desktop uses the dock) */}
-            <MobileQuickActions />
+                Withheld on a first run: the sweep can only answer "no clients
+                on the roster yet", which the setup card already said. */}
+            {!firstRun && <RosterSignalsCard />}
 
-            {/* 4.5 — The AI Coach board, directly under the card that promoted
-                the top of its list: excludeTop hands this board the remainder,
-                so one action never prints twice. */}
-            <AICoach d={d} ops={o}
-              birthdays={birthdayList}
-              studioName={studioName}
-              reviews={pendingReviews}
-              excludeTop />
+            {!noClientsYet && (
+              <>
+                {/* 4 — This Month, then Key Metrics. One block: the target
+                    frames the revenue figure, and the three tiles answer what
+                    the month has actually done. */}
+                <div>
+                  <SectionLabel icon={<Target size={10} />}>This Month</SectionLabel>
+                  <MonthlyTarget />
 
-            {/* 4.7 — Progress Radar. Where the seven measured categories
-                actually stand, for the studio's most recently measured client.
-                It reads its own endpoints and fails soft: a broken response
-                removes the card, not the screen. */}
-            <ProgressRadarCard />
+                  <div className="mt-3">
+                    <SectionLabel icon={<Gauge size={10} />}>Key Metrics</SectionLabel>
+                    {/* Two up on a phone for Revenue and Active Share, with
+                        Active Clients spanning the row above them; three across
+                        from lg. The old grid-cols-2 lg:grid-cols-3 left the
+                        third card orphaned on its own mobile row. */}
+                    <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+                      {/* No sparkline and no percentage. The only series this
+                          endpoint carries is revenue, and revenue is not a
+                          client count — putting it here is what made this card
+                          claim revenue's growth as its own. A number with
+                          nothing under it is the honest render. */}
+                      <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
+                        sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active"
+                        className="col-span-2 aspect-auto lg:col-span-1 lg:aspect-[6/5]" />
+                      <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
+                        sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
+                      {/* The Commission card (coach payouts) went with the
+                          multi-coach model; a studio is one trainer, so there
+                          is no one to pay. */}
+                      <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
+                        sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} delay={0.15} href="/insights/renewal" />
+                    </div>
+                  </div>
+                </div>
 
-            {/* 3 — KPI grid.
-                Three cards, not four. Outstanding went: it was the same figure
-                Today's Revenue already shows as Pending, further down the page —
-                with the people it is owed by, how many are overdue, and a link
-                into the dues list. A tile carrying a duplicate of a number that
-                is better answered further down the page is a tile spent saying
-                something twice.
+                {/* 5 — Renewals due.
+                    Was a two-column row with a "Today" card beside it. That
+                    card is now the full-width section under the hero, where it
+                    can show the programme and the clients who are due but
+                    unbooked — so keeping it here as well would have been the
+                    same list twice, one of them worse. Renewals is full width
+                    now that it is alone. */}
+                <div>
+                  <SectionLabel icon={<CalendarClock size={10} />}>Renewals</SectionLabel>
+                  <RenewalsDue ops={o} loading={ops.loading} />
+                </div>
 
-                Three in a two-column grid leaves one card alone on the second
-                row, which reads as a missing fourth rather than a layout. So
-                Active Clients spans the row on phones and tablets, and the
-                other two sit under it; from lg the three share one row. */}
-            {/* 3.5 — The month's revenue target.
-                Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
-                is a fact, and whether that is good depends entirely on what
-                the studio committed to. It lived only on /insights/revenue,
-                two taps into a screen nobody opens mid-shift.
+                {/* 6 — Today's Revenue.
+                    Was "Revenue Intelligence": this month, a linear-regression
+                    projection, average per client, six-month total. All true
+                    and none of it answerable — you could read it for a minute
+                    and still not know whether to pick up the phone. This asks
+                    the question the day actually has: what came in, what is
+                    still out, who do I call. */}
+                <div>
+                  <SectionLabel icon={<IndianRupee size={10} />}>Money</SectionLabel>
+                  <TodayRevenue d={d} loading={dash.loading} />
+                </div>
+              </>
+            )}
 
-                Read-only. Setting a target is irreversible for the month, so
-                the form stays where there is room to explain the lock; this
-                links there. */}
-            <div>
-              <SectionLabel icon={<Target size={10} />}>This Month</SectionLabel>
-              <MonthlyTarget />
-            </div>
+            {/* 7 — The secondary board. AI Coach, Progress Radar, session
+                history and the mobile quick-action strip are useful, but they
+                are not what the trainer needs in the next hour. One native
+                disclosure keeps the page opening on the day.
 
-            <div>
-              <SectionLabel icon={<Gauge size={10} />}>Key Metrics</SectionLabel>
-              {/* Two up on a phone for Revenue and Active Share, with Active
-                    Clients spanning the row above them; three across from lg.
-                    The old grid-cols-2 lg:grid-cols-3 left the third card
-                    orphaned on its own mobile row. */}
-              <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
-                {/* No sparkline and no percentage. The only series this
-                    endpoint carries is revenue, and revenue is not a client
-                    count — putting it here is what made this card claim
-                    revenue's growth as its own. A number with nothing under
-                    it is the honest render. */}
-                <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active"
-                  className="col-span-2 aspect-auto lg:col-span-1 lg:aspect-[6/5]" />
-                <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
-                  sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
-                {/* The Commission card (coach payouts) went with the multi-coach
-                    model; a studio is one trainer, so there is no one to pay. */}
-                <StatCard icon={<Gauge size={17} />} label="Active Share" value={activeSharePct !== null ? `${activeSharePct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients} of ${d.active_pt_clients + d.expired_clients} still active · true renewal on Insights`} delay={0.15} href="/insights/renewal" />
+                Screening is deliberately NOT in here. The Disclosure rule is
+                that a warning never hides, and a client who is not cleared to
+                train is exactly that. It renders nothing when everyone is
+                clear, so it costs no space in the normal case. */}
+            <Disclosure summary="More today" className="px-1 [&>summary]:min-h-[44px]">
+              <div className="space-y-4 text-[13px] leading-normal">
+                <MobileQuickActions />
+
+                {/* The AI Coach board keeps the remainder of the same ranking
+                    Next Best Action promoted the top of: excludeTop means one
+                    action never prints twice. */}
+                <AICoach d={d} ops={o}
+                  birthdays={birthdayList}
+                  studioName={studioName}
+                  reviews={pendingReviews}
+                  excludeTop />
+
+                {/* Progress Radar. Where the seven measured categories stand
+                    for the studio's most recently measured client. It reads
+                    its own endpoints and fails soft: a broken response removes
+                    the card, not the screen. */}
+                <ProgressRadarCard />
+
+                {!noClientsYet && (
+                  <div>
+                    <SectionLabel icon={<Dumbbell size={10} />}>Sessions</SectionLabel>
+                    <SessionActivity ops={o} loading={ops.loading} />
+                  </div>
+                )}
               </div>
-            </div>
-
-            {/* 5 — Renewals due.
-                Was a two-column row with a "Today" card beside it. That card
-                is now the full-width section under the hero, where it can show
-                the programme and the clients who are due but unbooked — so
-                keeping it here as well would have been the same list twice, one
-                of them worse. Renewals is full width now that it is alone. */}
-            <div>
-              <SectionLabel icon={<CalendarClock size={10} />}>Renewals</SectionLabel>
-              <RenewalsDue ops={o} loading={ops.loading} />
-            </div>
-
-            {/* 6 — Today's Revenue.
-                Was "Revenue Intelligence": this month, a linear-regression
-                projection, average per client, six-month total. All true and
-                none of it answerable — you could read it for a minute and
-                still not know whether to pick up the phone. This asks the
-                question the day actually has: what came in, what is still out,
-                who do I call. */}
-            <div>
-              <SectionLabel icon={<IndianRupee size={10} />}>Money</SectionLabel>
-              <TodayRevenue d={d} loading={dash.loading} />
-            </div>
-
-            {/* 7 — Session activity.
-                Was a two-column "Team Performance" row with a trainer
-                leaderboard beside it. Three of the four studios have exactly
-                one trainer, so the board ranked a list of one, and "team" was
-                the wrong word for a solo studio. Full width now that it is the
-                only card in the row. */}
-            <div>
-              <SectionLabel icon={<Dumbbell size={10} />}>Sessions</SectionLabel>
-              <SessionActivity ops={o} loading={ops.loading} />
-            </div>
+            </Disclosure>
           </>
         )}
       </div>

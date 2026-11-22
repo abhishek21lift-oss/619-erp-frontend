@@ -82,6 +82,10 @@ const FULL_TREND = [...dashData.revenueTrend];
 describe('PT-OS dashboard KPIs', () => {
   beforeEach(() => {
     requested.length = 0;
+    // The first-run test changes these; every other test expects a studio
+    // with clients.
+    dashData.active_pt_clients = 12;
+    dashData.expired_clients = 3;
     // One test trims the series to prove the floor; put it back.
     dashData.revenueTrend = [...FULL_TREND];
     // And the session-stats test below changes these.
@@ -89,6 +93,8 @@ describe('PT-OS dashboard KPIs', () => {
       this_month_total: 0, this_month_completed: 0,
       last_month_completed: 0, last_month_completed_to_date: 0,
     };
+    // The pending-client test books a session; put the day back.
+    opsData.today_sessions = [];
   });
 
   it('shows the three metrics that are on every screen size', async () => {
@@ -99,6 +105,39 @@ describe('PT-OS dashboard KPIs', () => {
       // the whole page per test. 5s keeps it deterministic under load.
       expect(await screen.findByText(label, undefined, { timeout: 5000 })).toBeTruthy();
     }
+  });
+
+  it('shows a first-run card instead of zero-value month cards', async () => {
+    dashData.active_pt_clients = 0;
+    dashData.expired_clients = 0;
+    render(<PtOsDashboard />);
+
+    expect(await screen.findByText('No active clients yet')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /add your first client/i }).getAttribute('href'))
+      .toBe('/pt-os/new-client');
+    expect(screen.queryByText('Key Metrics')).toBeNull();
+    expect(screen.queryByText('Active Clients')).toBeNull();
+    expect(screen.queryByText('Money')).toBeNull();
+  });
+
+  it('keeps today when a pending client has a booked session', async () => {
+    // `active_pt_clients` counts clients whose PT term has started, so a
+    // pending client is not in it. Their booked appointment is still real
+    // work: the setup card must not replace the day.
+    dashData.active_pt_clients = 0;
+    dashData.expired_clients = 0;
+    opsData.today_sessions = [{
+      id: 's1', title: 'PT Session', session_date: '2026-11-22',
+      start_time: '18:00', end_time: null, status: 'scheduled', notes: null,
+      client_name: 'Pending Client', client_photo: null, trainer_name: null,
+      plan_name: null, plan_id: null,
+    }] as typeof opsData.today_sessions;
+    render(<PtOsDashboard />);
+
+    expect(await screen.findByText(/Today.s Sessions/i)).toBeTruthy();
+    expect(screen.queryByText('No active clients yet')).toBeNull();
+    // The month still has nothing to report.
+    expect(screen.queryByText('Key Metrics')).toBeNull();
   });
 
   it('fills the mobile KPI grid instead of leaving an orphan', async () => {

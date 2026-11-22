@@ -1,10 +1,11 @@
 // The cockpit's section order, and what survives when the roster sweep fails.
 //
 // Order is the design: the day's schedule, then the one thing to do, then the
-// client signals, then the rest of the board, then money. A reorder here is a
-// product decision, so it is pinned in one place rather than inferred from source.
+// client signals, then the month (target, KPIs, renewals, money), then the
+// secondary board behind one disclosure. A reorder here is a product decision,
+// so it is pinned in one place rather than inferred from source.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 const { signalsMock } = vi.hoisted(() => ({ signalsMock: vi.fn() }));
 
@@ -61,18 +62,32 @@ describe('cockpit section order', () => {
     signalsMock.mockResolvedValue({ data: SWEEP });
   });
 
-  it('orders the day: schedule, next action, client signals, board, money', async () => {
+  it('orders the day first, then the month, then the secondary board', async () => {
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
     await assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
       'Client signals',
-      'AI Coach',
-      'Progress Radar',
       'This Month',
       'Key Metrics',
+      'Renewals',
+      'Money',
+      'More today',
+      'AI Coach',
+      'Progress Radar',
     ]);
+  }, 30_000);
+
+  it('keeps the secondary board behind one closed disclosure', async () => {
+    render(<PtOsDashboard />);
+    const summary = await screen.findByText('More today');
+    const details = summary.closest('details');
+    expect(details).toBeTruthy();
+    expect(details!.open).toBe(false);
+    expect(within(details!).getByText('AI Coach')).toBeTruthy();
+    expect(within(details!).getByText('Progress Radar')).toBeTruthy();
+    expect(within(details!).getByText('Session Activity')).toBeTruthy();
   }, 30_000);
 
   it('keeps the rest of the cockpit when the roster sweep fails', async () => {
