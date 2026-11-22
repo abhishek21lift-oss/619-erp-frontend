@@ -7,7 +7,7 @@
 // the client record, and no two trainer-facing rows read the same.
 
 import { describe, expect, it } from 'vitest';
-import { NAV_GROUPS, PINNED_ITEMS, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
+import { NAV_GROUPS, PINNED_ITEMS, findItemByPath, isGroupVisibleForRole, isVisibleForRole } from '@/lib/nav-config';
 
 const trainerItems = () =>
   [...PINNED_ITEMS, ...NAV_GROUPS.flatMap((g) => g.items)]
@@ -46,8 +46,8 @@ describe('per-client forms belong to the client record', () => {
   });
 
   it('keeps one progress hub, one report and one weekly check-in', () => {
-    const progress = NAV_GROUPS.find((g) => g.id === 'progress')!;
-    expect(progress.items.map((i) => i.href)).toEqual([
+    const insights = NAV_GROUPS.find((g) => g.id === 'insights')!;
+    expect(insights.items.slice(0, 3).map((i) => i.href)).toEqual([
       '/pt-os/progress',
       '/pt-os/progress-report',
       '/pt-os/weekly-checkin',
@@ -89,10 +89,18 @@ describe('groups describe their contents', () => {
 
   it('uses ids that match their labels', () => {
     expect(NAV_GROUPS.map((g) => g.id)).toEqual([
-      'clients', 'sessions', 'programs', 'progress', 'finance', 'insights',
+      'clients', 'sessions', 'programs', 'insights', 'finance',
       'communication', 'my-account', 'ai-coach',
     ]);
-    expect(NAV_GROUPS.find((g) => g.id === 'insights')?.label).toBe('Reports');
+    expect(NAV_GROUPS.find((g) => g.id === 'insights')?.label).toBe('Progress & Reports');
+  });
+
+  it('keeps the trainer to twelve first-level rows', () => {
+    // Four pinned links, seven trainer groups and Settings. This is the
+    // first screenful before any accordion opens; a new group has to remove
+    // or absorb one, not add a thirteenth row.
+    const trainerGroups = NAV_GROUPS.filter((g) => isGroupVisibleForRole(g, 'trainer'));
+    expect(PINNED_ITEMS.length + trainerGroups.length + 1).toBeLessThanOrEqual(12);
   });
 });
 
