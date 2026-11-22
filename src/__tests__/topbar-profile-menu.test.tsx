@@ -1,5 +1,6 @@
 // The top-bar account menu: My Profile and Account Settings open the profile
-// page, Logout is confirmed, and Escape puts focus back on the avatar.
+// page, Help & Support opens the FAQs, Logout is confirmed, and Escape puts
+// focus back on the avatar.
 
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -38,12 +39,13 @@ describe('the topbar profile menu', () => {
     expect(screen.queryByRole('link', { name: 'My Profile' })).not.toBeInTheDocument();
   });
 
-  it('shows the three account destinations when open', () => {
+  it('shows the account destinations when open', () => {
     renderMenu(true);
 
     expect(screen.getByRole('button', { name: 'Account menu' })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('link', { name: 'My Profile' })).toHaveAttribute('href', '/settings/profile');
     expect(screen.getByRole('link', { name: 'Account Settings' })).toHaveAttribute('href', '/settings/profile?tab=preferences');
+    expect(screen.getByRole('link', { name: 'Help & Support' })).toHaveAttribute('href', '/help');
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
     expect(screen.getByText('asha@example.com')).toBeInTheDocument();
   });

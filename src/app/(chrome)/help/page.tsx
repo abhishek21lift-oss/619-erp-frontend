@@ -7,13 +7,21 @@ import { HelpCircle, Mail, MessageCircle, Phone, Search, ChevronDown, ChevronRig
 import Guard from '@/components/Guard';
 import { PageHero } from '@/components/ui';
 
+// Answers name the navigation the app actually has.
+//
+// The first version still described the old information architecture: it sent
+// people to "Members → Add Member", told them to click "Assign PT" — a button
+// that does not exist — and put the password form under "Settings → Security"
+// when it lives in My Profile → Security. A help page that is wrong is worse
+// than no help page, because it sends someone looking for a screen that is not
+// there. When a nav label changes, this list changes with it.
 const FAQS = [
-  { q: 'How do I add a new member?', a: 'Go to Members → Add Member or click the quick action button from the dashboard.' },
-  { q: 'How do I record a payment?', a: 'Navigate to Finance → Record Payment, fill in the member details and amount.' },
-  { q: 'How do I assign a PT to a client?', a: 'Open the client profile and click "Assign PT" in the action buttons bar.' },
-  { q: 'How do I check attendance?', a: 'Use the Check-In page for QR/biometric check-in, or visit Attendance Records.' },
-  { q: 'How do I generate reports?', a: 'Go to Reports section — you can access revenue, member, and attendance reports.' },
-  { q: 'How do I change my password?', a: 'Go to Settings → Security. Members reset theirs from the member app sign-in page.' },
+  { q: 'How do I add a new client?', a: 'Open Clients → All Clients and choose New Client, or use the New client quick action on the dashboard.' },
+  { q: 'How do I record a payment?', a: 'Go to Finance → Record Payment, choose the client and enter the amount you received.' },
+  { q: 'How do I start a client on a programme?', a: 'Open the client and choose Enroll to set up their PT term, then use Workout programmes on their profile to assign a plan.' },
+  { q: 'How do I check attendance?', a: 'Open Check In in the sidebar to scan walk-ins, or Sessions → Attendance Records to review the register.' },
+  { q: 'How do I see my reports?', a: 'Open Reports for Revenue Report, Renewal Report and Attendance Report.' },
+  { q: 'How do I change my password?', a: 'Open My Profile → Security. Members reset theirs from the member sign-in page.' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
@@ -29,7 +37,8 @@ const fadeUp = {
 export default function HelpPage() {
   const [search, setSearch] = useState('');
   const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const filtered = FAQS.filter((f) => f.q.toLowerCase().includes(search.toLowerCase()));
+  const filtered = FAQS.filter((f) =>
+    `${f.q} ${f.a}`.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <Guard>

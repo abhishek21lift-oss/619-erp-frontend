@@ -2,17 +2,21 @@
 
 /**
  * The account menu in the top bar: the signed-in person's avatar, then the
- * three places that are about them rather than about the studio.
+ * places that are about them rather than about the studio.
  *
  * My Profile used to sit inside the sidebar's Settings group, two levels down
  * from where people look for their own account. It is here now, and the shell
  * owns `open` so the bell and the avatar can never stand open together.
+ *
+ * Help & Support is here for the same reason and because it had no entry point
+ * at all: /help existed, was indexed for search, and nothing linked to it.
+ * Support tickets live in the sidebar; the FAQs are one tap from the avatar.
  */
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, m } from 'framer-motion';
-import { LogOut, Settings, UserRound } from 'lucide-react';
+import { LifeBuoy, LogOut, Settings, UserRound } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import UserPhoto from '@/components/UserPhoto';
 
@@ -140,6 +144,14 @@ export default function TopbarProfileMenu({
               >
                 <Settings size={15} strokeWidth={1.8} className="text-[var(--text-muted)]" />
                 Account Settings
+              </Link>
+              <Link
+                href="/help"
+                onClick={close}
+                className="flex min-h-[44px] items-center gap-2.5 px-4 text-[13px] font-[600] text-[color:var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
+              >
+                <LifeBuoy size={15} strokeWidth={1.8} className="text-[var(--text-muted)]" />
+                Help &amp; Support
               </Link>
             </div>
 
