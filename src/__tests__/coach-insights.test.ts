@@ -257,4 +257,31 @@ describe('reaching people', () => {
     expect(out[0].detail).toContain('6:15 PM');
     expect(out[0].detail).toContain('1 with no time set');
   });
+
+  it('turns submitted member workouts into a review queue, not a message list', () => {
+    // A self-workout is already `completed` when the member sends it, so the
+    // roster has nothing left to show. The review is the work that remains,
+    // and it is a screen to open — not a client to WhatsApp.
+    const out = build({
+      reviews: [
+        { client_id: 'c1', client_name: 'Amit Shukla' },
+        { client_id: 'c1', client_name: 'Amit Shukla' },
+        { client_id: 'c2', client_name: 'Rashi Bhatia' },
+      ],
+    });
+    const reviews = out.find((i) => i.id === 'reviews')!;
+    expect(reviews.count).toBe(3);
+    expect(reviews.urgency).toBe('warning');
+    expect(reviews.href).toBe('/pt-os/clients/c1/workout-log');
+    expect(reviews.contacts).toEqual([]);
+    expect(reviews.openLabel).toBe('Review latest');
+    expect(reviews.detail).toContain('Amit Shukla');
+    expect(reviews.detail).toContain('1 other client');
+  });
+
+  it('says one workout, not one workouts', () => {
+    const out = build({ reviews: [{ client_id: 'c1', client_name: 'Amit Shukla' }] });
+    expect(out[0].title).toBe('1 self-workout to review');
+    expect(out[0].detail).toContain('Amit Shukla');
+  });
 });

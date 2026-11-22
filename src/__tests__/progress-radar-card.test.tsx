@@ -73,9 +73,12 @@ describe('progress radar card', () => {
     expect(await screen.findByText('Asha Nair')).toBeTruthy();
     expect(screen.getByText(/12-09-2026/)).toBeTruthy();
     expect(screen.getByText('Overall 66/100')).toBeTruthy();
-    // The radar is a shape; these are its readings as text.
-    expect(screen.getByText('Cardio: 65 out of 100')).toBeTruthy();
-    expect(screen.getByText('Endurance: not measured')).toBeTruthy();
+    // The chart is a shape; the scores are written out beside it, because a
+    // 250px radar with no values makes the reader hover to learn anything.
+    expect(screen.getByText('Cardio')).toBeTruthy();
+    expect(screen.getByText('65/100')).toBeTruthy();
+    expect(screen.getByText('Endurance')).toBeTruthy();
+    expect(screen.getByText('Not measured')).toBeTruthy();
   });
 
   it('never reads "no tests yet" over a test that is simply under-measured', async () => {

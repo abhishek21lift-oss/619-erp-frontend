@@ -46,9 +46,16 @@ const client = (over: Record<string, unknown>) => ({
 });
 
 let roster: ReturnType<typeof client>[] = [];
+let pending: Array<Record<string, unknown>> = [];
+let pendingFails = false;
 
 vi.mock('@/lib/http', () => ({
   default: (url: string) => {
+    if (url.startsWith('/api/pt-os/workout-log/pending-review')) {
+      return pendingFails
+        ? Promise.reject(new Error('review queue unavailable'))
+        : Promise.resolve({ data: pending });
+    }
     if (url.startsWith('/api/pt-os/workout-log/today')) {
       return Promise.resolve({ data: { date: '2026-08-22', day_of_week: 'Saturday', clients: roster } });
     }
@@ -71,7 +78,7 @@ const rowFor = async (name: string) => {
   return label.closest('button')!;
 };
 
-beforeEach(() => { push.mockReset(); roster = []; });
+beforeEach(() => { push.mockReset(); roster = []; pending = []; pendingFails = false; });
 
 describe('when somebody is mid-session', () => {
   beforeEach(() => {
@@ -157,5 +164,56 @@ describe('the sequence moves up as sessions finish', () => {
     expect(screen.queryByText('Finished Person')).toBeNull();
     expect((await rowFor('Stuti Yadav')).textContent).toMatch(/on the floor/i);
     expect((await rowFor('Vipul Bhatia')).textContent).toMatch(/next/i);
+  });
+});
+
+describe('when a submitted workout is waiting on review', () => {
+  const review = {
+    id: 'w1', client_id: 'done', client_name: 'Finished Person',
+    session_date: '2026-08-22', submitted_at: null, program_name: null,
+    workout_day: null, duration_minutes: null, exercise_count: 3, set_count: 9, volume: 1000,
+  };
+
+  it('does not call the day done while a review is waiting', async () => {
+    // The member workout is `completed` for the roster, so the card used to
+    // say "All done for today" while the trainer still had to review it.
+    roster = [client({ client_id: 'done', client_name: 'Finished Person', session_status: 'completed' })];
+    pending = [review];
+    render(<PtOsDashboard />);
+
+    await screen.findAllByText(/1 self-workout to review/i, {}, { timeout: 10000 });
+    expect(screen.queryByText(/all done for today/i)).toBeNull();
+  });
+
+  it('still calls it done when nothing is waiting', async () => {
+    roster = [client({ client_id: 'done', client_name: 'Finished Person', session_status: 'completed' })];
+    pending = [];
+    render(<PtOsDashboard />);
+
+    await screen.findByText(/all done for today/i, {}, { timeout: 10000 });
+  });
+
+  it('does not call it all done when the review queue could not be read', async () => {
+    // A failed read is not an empty queue. The card says what it knows —
+    // the sessions are done — and names the check it could not make.
+    roster = [client({ client_id: 'done', client_name: 'Finished Person', session_status: 'completed' })];
+    pendingFails = true;
+    render(<PtOsDashboard />);
+
+    await screen.findByText(/sessions done for today/i, {}, { timeout: 10000 });
+    expect(screen.queryByText(/all done for today/i)).toBeNull();
+    expect(screen.getByText(/review queue did not come back/i)).toBeTruthy();
+  });
+
+  it('names a failed review read even when nothing is on today', async () => {
+    // "Nothing on today" is true about the schedule, but it is not an
+    // all-clear for the review queue. The failure has to survive the
+    // compact-row rewrite.
+    roster = [];
+    pendingFails = true;
+    render(<PtOsDashboard />);
+
+    await screen.findByText(/nothing on today/i, {}, { timeout: 10000 });
+    expect(screen.getByText(/review queue did not come back/i)).toBeTruthy();
   });
 });

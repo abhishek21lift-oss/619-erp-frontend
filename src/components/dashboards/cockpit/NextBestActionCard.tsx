@@ -2,10 +2,12 @@
 // The cockpit's "do this now" card.
 //
 // It promotes the first insight out of the same prioritisation the AI Coach
-// board uses (lib/coach-insights), with the actions the board keeps one tap
-// deep: message the next contact, call them, or open the list. The board
-// below renders with `excludeTop`, so the same insight is never on screen
-// twice.
+// board uses (lib/coach-insights), with the action the board keeps one tap
+// deep — message the next contact — and one link into the list behind it. Two
+// controls, not three: a WhatsApp button, a call button and a list link all
+// competed for the same thumb, and the call was redundant for any client the
+// WhatsApp button could already reach. The board below renders with
+// `excludeTop`, so the same insight is never on screen twice.
 //
 // The insight list is derived from data the dashboard has already fetched —
 // no request of its own, and the ordering stays in the testable pure module
@@ -13,11 +15,11 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  AlertTriangle, ChevronRight, Clock, MessageCircle, Phone, Sparkles,
+  AlertTriangle, ChevronRight, Clock, MessageCircle, Sparkles,
 } from 'lucide-react';
 import {
-  buildCoachInsights, reachable, whatsappLink, telLink,
-  type CoachBirthday, type Urgency,
+  buildCoachInsights, reachable, whatsappLink,
+  type CoachBirthday, type CoachReview, type Urgency,
 } from '@/lib/coach-insights';
 import { palette, rgba } from '@/lib/palette';
 import type { DashData, OpsData } from '@/components/dashboards/PtOsDashboard';
@@ -28,11 +30,13 @@ const TONE: Record<Urgency, { fg: string; wash: string; label: string; Icon: typ
   info: { fg: palette.blue[500], wash: rgba(palette.blue[500], 0.06), label: 'Nice to do', Icon: Sparkles },
 };
 
-export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
+export default function NextBestActionCard({ d, ops, birthdays, studioName, reviews = [] }: {
   d: DashData;
   ops: OpsData | null;
   birthdays: CoachBirthday[];
   studioName: string;
+  /** Submitted member workouts the trainer still has to review. */
+  reviews?: CoachReview[];
 }) {
   const insights = useMemo(() => buildCoachInsights({
     dash: d,
@@ -50,8 +54,9 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
       start_time: u.start_time,
     })),
     birthdays,
+    reviews,
     studioName,
-  }), [d, ops, birthdays, studioName]);
+  }), [d, ops, birthdays, reviews, studioName]);
 
   const top = insights[0] ?? null;
   const targets = useMemo(() => (top ? reachable(top.contacts) : []), [top]);
@@ -79,7 +84,6 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
 
   const t = TONE[top.urgency];
   const whatsapp = next ? whatsappLink(next, top.message(next.name)) : null;
-  const tel = next ? telLink(next) : null;
   const advance = () => setSent((s) => (
     s.key === cohortKey
       ? { ...s, cursor: Math.min(s.cursor + 1, targets.length) }
@@ -89,7 +93,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
   const primary = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     height: 44, flex: 1, borderRadius: 12, fontSize: 12.5, fontWeight: 780,
-    color: '#FFFFFF', textDecoration: 'none',
+    color: palette.gray[0], textDecoration: 'none',
   } as const;
 
   return (
@@ -161,29 +165,21 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName }: {
                       <MessageCircle size={15} /> Send WhatsApp
                     </a>
                   )}
-                  {tel && remaining > 0 && (
-                    <a href={tel} onClick={() => setConfirmFor(cohortKey)}
-                      aria-label={`Call ${next.name}`}
-                      className="transition active:scale-[0.98]"
-                      style={{ ...primary, background: `linear-gradient(135deg, ${palette.blue[500]}, ${palette.blue[600]})`, boxShadow: `0 6px 16px ${rgba(palette.blue[500], 0.34)}` }}>
-                      <Phone size={15} /> Call
-                    </a>
-                  )}
                 </div>
               )}
             </>
           ) : (
             <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-              {top.contacts.length === 0
+              {top.openHint ?? (top.contacts.length === 0
                 ? 'No individual contacts for this one — open the list to see who is behind it.'
-                : 'No reachable mobile on file for these clients — open the list to see who they are.'}
+                : 'No reachable mobile on file for these clients — open the list to see who they are.')}
             </p>
           )}
 
           <Link href={top.href}
             className="mt-2.5 flex h-11 items-center justify-center gap-1.5 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
             style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
-            {top.id === 'unbooked' ? 'Book a session' : 'Open list'} <ChevronRight size={14} />
+            {top.openLabel ?? (top.id === 'unbooked' ? 'Book a session' : 'Open list')} <ChevronRight size={14} />
           </Link>
         </div>
       </div>

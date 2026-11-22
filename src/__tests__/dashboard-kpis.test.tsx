@@ -60,7 +60,11 @@ const dashData = {
   ],
 };
 
-const opsData = { today_sessions: [], today_unscheduled: [], renewals_due: [], overdue_payments: [] };
+const opsData = {
+  today_sessions: [], today_unscheduled: [], renewals_due: [], overdue_payments: [],
+  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0, last_month_completed_to_date: 0 },
+  trainer_sessions: [],
+};
 
 vi.mock('@/lib/http', () => ({
   default: (url: string) => {
@@ -80,6 +84,11 @@ describe('PT-OS dashboard KPIs', () => {
     requested.length = 0;
     // One test trims the series to prove the floor; put it back.
     dashData.revenueTrend = [...FULL_TREND];
+    // And the session-stats test below changes these.
+    opsData.session_stats = {
+      this_month_total: 0, this_month_completed: 0,
+      last_month_completed: 0, last_month_completed_to_date: 0,
+    };
   });
 
   it('shows the three metrics that are on every screen size', async () => {
@@ -90,6 +99,31 @@ describe('PT-OS dashboard KPIs', () => {
       // the whole page per test. 5s keeps it deterministic under load.
       expect(await screen.findByText(label, undefined, { timeout: 5000 })).toBeTruthy();
     }
+  });
+
+  it('fills the mobile KPI grid instead of leaving an orphan', async () => {
+    // Three cards in a two-column grid left the third alone on its own row,
+    // which reads as a missing fourth. Active Clients spans the row on
+    // phones and tablets; the aspect override keeps that wide tile from
+    // becoming a 6:5 slab.
+    render(<PtOsDashboard />);
+    const card = (await screen.findByText('Active Clients')).closest('.group');
+    expect(card!.className).toContain('col-span-2');
+    expect(card!.className).toContain('aspect-auto');
+    expect(card!.className).toContain('lg:aspect-[6/5]');
+  });
+
+  it('compares session activity with the same point last month, and says so', async () => {
+    // 40 sessions so far this month against 10 by the same day last month is
+    // +300%. Comparing 40 with last month's FULL 90 is the bug this replaced:
+    // a normal start to a month read as a verdict on the whole month.
+    opsData.session_stats = {
+      this_month_total: 60, this_month_completed: 40,
+      last_month_completed: 90, last_month_completed_to_date: 10,
+    };
+    render(<PtOsDashboard />);
+    expect(await screen.findByText('vs same point last mo.')).toBeTruthy();
+    expect(screen.getByText('300%')).toBeTruthy();
   });
 
   it('does not call the active/expired snapshot Retention', async () => {

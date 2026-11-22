@@ -555,6 +555,13 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-disabled); }
 
+/* A strip that scrolls by touch, not by scrollbar. `scrollbar-width` covers
+   Firefox; Chromium and Safari still paint the bar without the pseudo rule.
+   Used by the dashboard's Quick Actions strip, where an 11-tile row was
+   showing a native bar on desktop-width phones. */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 ::selection {
   background: var(--brand-soft);
   color: var(--brand-lo);
