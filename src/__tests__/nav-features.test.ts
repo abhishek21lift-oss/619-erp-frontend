@@ -110,12 +110,15 @@ describe('allNavItems inherits the group tag', () => {
 
 describe('progress and reports are not over-gated', () => {
   it('keeps the progress hub visible when screening is off', () => {
-    const progress = NAV_GROUPS.find((g) => g.id === 'progress')!;
-    expect(progress.feature).toBeUndefined();
-    expect(progress.items.every((i) => isVisibleForFeature(i, { screening: false }))).toBe(true);
+    const insights = NAV_GROUPS.find((g) => g.id === 'insights')!;
+    expect(insights.feature).toBeUndefined();
+    const progress = insights.items.filter((i) =>
+      ['/pt-os/progress', '/pt-os/progress-report', '/pt-os/weekly-checkin'].includes(i.href));
+    expect(progress).toHaveLength(3);
+    expect(progress.every((i) => isVisibleForFeature(i, { screening: false }))).toBe(true);
   });
 
-  it('gates the three report pages individually, not the whole Reports group', () => {
+  it('gates the three report pages individually, not the whole Progress & Reports group', () => {
     const reports = NAV_GROUPS.find((g) => g.id === 'insights')!;
     expect(reports.feature).toBeUndefined();
     for (const href of ['/insights/revenue', '/insights/renewal', '/insights/traffic']) {
@@ -123,6 +126,9 @@ describe('progress and reports are not over-gated', () => {
     }
     const visible = reports.items.filter((i) => isVisibleForFeature(i, { insights: false }));
     expect(visible.map((i) => i.href)).toEqual([
+      '/pt-os/progress',
+      '/pt-os/progress-report',
+      '/pt-os/weekly-checkin',
       '/pt-os/feedback',
       '/operations/leaderboard',
       '/pt-os/activity-log',

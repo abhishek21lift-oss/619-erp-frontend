@@ -60,6 +60,11 @@ export const PINNED_ITEMS: NavItem[] = [
 // groups them into four headings. Per-client forms (PAR-Q, consent, the
 // assessment suite) are deliberately absent: they live in the client record's
 // Documents tab, where the client is already chosen.
+//
+// Progress and Reports are one group because they answer the same question.
+// The trainer sees four pinned links and eight group rows — the first
+// screenful, not a module map. Adding a ninth group needs a reason stronger
+// than "a new page exists"; see nav-ia.test.ts.
 export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'clients',
@@ -105,13 +110,29 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'progress',
-    label: 'Progress',
-    icon: 'LineChart',
+    id: 'insights',
+    label: 'Progress & Reports',
+    icon: 'FileBarChart',
+    roles: ['trainer'],
     items: [
+      // Progress and Reports were two accordions that both answer "how is
+      // this going?". One group, ordered from the client outward: their own
+      // progress first, then the studio's numbers.
       { href: '/pt-os/progress',           label: 'Progress Hub',        icon: 'LineChart' },
       { href: '/pt-os/progress-report',    label: 'Progress Report',     icon: 'TrendingUp' },
       { href: '/pt-os/weekly-checkin',     label: 'Weekly Check-in',     icon: 'ClipboardCheck' },
+      // One revenue page: All Reports and PT Revenue Report were thinner
+      // copies of it. Session Utilisation's weekday chart is on the
+      // Attendance Report, which reads the same endpoint.
+      // The insights key sits on the report pages themselves: switching it
+      // off must not take Trainer Feedback, the Leaderboard or the Activity
+      // Log with it.
+      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'], feature: 'insights' },
+      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'], feature: 'insights' },
+      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'], feature: 'insights' },
+      { href: '/pt-os/feedback',           label: 'Trainer Feedback',    icon: 'Star',          roles: ['trainer'] },
+      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
+      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
     ],
   },
   {
@@ -135,26 +156,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/balance-sheet',       label: 'Balance Sheet',        icon: 'Wallet' },
       { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['trainer'] },
       // UPI Payment Settings lives in My Profile → UPI Payments now.
-    ],
-  },
-  {
-    id: 'insights',
-    label: 'Reports',
-    icon: 'FileBarChart',
-    roles: ['trainer'],
-    items: [
-      // One revenue page: All Reports and PT Revenue Report were thinner
-      // copies of it. Session Utilisation's weekday chart is on the
-      // Attendance Report, which reads the same endpoint.
-      // The insights key sits on the report pages themselves: switching it
-      // off must not take Trainer Feedback, the Leaderboard or the Activity
-      // Log with it.
-      { href: '/insights/revenue',         label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['trainer'], feature: 'insights' },
-      { href: '/insights/renewal',         label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['trainer'], feature: 'insights' },
-      { href: '/insights/traffic',         label: 'Attendance Report',   icon: 'Activity',      roles: ['trainer'], feature: 'insights' },
-      { href: '/pt-os/feedback',           label: 'Trainer Feedback',    icon: 'Star',          roles: ['trainer'] },
-      { href: '/operations/leaderboard',   label: 'Member Leaderboard',  icon: 'Trophy',        roles: ['trainer'] },
-      { href: '/pt-os/activity-log',       label: 'Activity Log',        icon: 'ScrollText',    roles: ['trainer'] },
     ],
   },
   {

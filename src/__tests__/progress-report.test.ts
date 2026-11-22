@@ -17,11 +17,10 @@ import {srcPath} from '@/__tests__/helpers/app-routes';
 const src = (...p: string[]) => readFileSync(srcPath(...p), 'utf8');
 
 describe('"Progress Report" opens a client\'s progress, not PT revenue', () => {
-  const screening = NAV_GROUPS.find((g) => g.id === 'progress')!;
   const insights = NAV_GROUPS.find((g) => g.id === 'insights')!;
 
-  it('Screening\'s Progress Report points at the client-picker landing page', () => {
-    const item = screening.items.find((i) => i.label === 'Progress Report');
+  it('the Progress Report points at the client-picker landing page', () => {
+    const item = insights.items.find((i) => i.label === 'Progress Report');
     expect(item?.href).toBe('/pt-os/progress-report');
   });
 
@@ -41,8 +40,8 @@ describe('"Progress Report" opens a client\'s progress, not PT revenue', () => {
     expect(src('app', 'pt-os', 'reports', 'page.tsx')).toContain("redirect('/insights/revenue')");
   });
 
-  it('nothing in Screening still points at the revenue page', () => {
-    const offenders = screening.items.filter((i) => i.href === '/pt-os/reports');
+  it('nothing in Progress & Reports still points at the revenue page', () => {
+    const offenders = insights.items.filter((i) => i.href === '/pt-os/reports');
     expect(offenders).toEqual([]);
   });
 });
