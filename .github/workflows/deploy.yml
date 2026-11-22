@@ -73,7 +73,31 @@ env:
     export APP_VERSION="$(node -p "require('./package.json').version")"
     echo "deploy: building $GIT_SHA"
     cd /opt/myptstudio
-    docker compose build --build-arg GIT_SHA="$GIT_SHA" --build-arg BUILD_TIME="$BUILD_TIME" --build-arg APP_VERSION="$APP_VERSION" frontend
+    # NEXT_PUBLIC_* are baked in at build time. The live compose may supply
+    # them, but the workflow must be able to build a clean tree too — and it
+    # must NOT override a compose value with an empty string. Pass each one
+    # only when the repository variable is set.
+    BUILD_ARGS=""
+    if [ -n "${{ vars.NEXT_PUBLIC_API_URL }}" ]; then
+      BUILD_ARGS="$BUILD_ARGS --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}"
+    fi
+    if [ -n "${{ vars.NEXT_PUBLIC_SENTRY_DSN }}" ]; then
+      BUILD_ARGS="$BUILD_ARGS --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}"
+    fi
+    # Fail before a multi-minute build if neither source can supply a NON-EMPTY
+    # API URL: next.config.js throws without it, and the error is a stack trace
+    # rather than an actionable deploy message. Checking the rendered value (not
+    # just the key) matters: a compose file that names the arg with an empty
+    # .env renders `NEXT_PUBLIC_API_URL: ""` and would pass a key-only grep.
+    COMPOSE_API_URL=$(docker compose config 2>/dev/null \
+      | sed -nE 's/^[[:space:]]*(-[[:space:]]+)?NEXT_PUBLIC_API_URL[:=][[:space:]]*//p' \
+      | sed 's/[[:space:]"]//g' \
+      | grep -v '^$' | head -n1)
+    if [ -z "${{ vars.NEXT_PUBLIC_API_URL }}" ] && [ -z "$COMPOSE_API_URL" ]; then
+      echo "NEXT_PUBLIC_API_URL is missing or empty in repository variables and docker-compose.yml."
+      exit 1
+    fi
+    docker compose build --build-arg GIT_SHA="$GIT_SHA" --build-arg BUILD_TIME="$BUILD_TIME" --build-arg APP_VERSION="$APP_VERSION" $BUILD_ARGS frontend
     echo "deploy: built; replacing container"
     docker compose up -d frontend
     echo "deploy: container started; verifying it serves $GIT_SHA"
