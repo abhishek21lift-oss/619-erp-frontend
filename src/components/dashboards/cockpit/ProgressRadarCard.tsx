@@ -147,16 +147,29 @@ function Radar({ row, name, photo }: { row: Row; name: string; photo: string | n
       {measured >= 3 ? (
         <>
           <FitnessRadarChart data={radar} height={250} variant="onCard" accent={palette.blue[450]} />
-          {/* The chart is a shape with no text of its own. Same seven readings,
-              written out, so a screen reader (or anyone who cannot separate
-              the axes) gets the scores rather than a picture. */}
-          <ul className="sr-only">
+          {/* The chart is a shape with no readable values of its own. The
+              same seven readings, written out, so the numbers are available
+              without hovering a 250px chart — and so a screen reader gets
+              them. The last row spans both columns, keeping the seven-item
+              list from ending on an orphan. */}
+          <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
             {radar.map((d) => (
-              <li key={d.category}>
-                {d.category}: {d.score == null ? 'not measured' : `${d.score} out of 100`}
-              </li>
+              <div
+                key={d.category}
+                className="flex items-baseline justify-between gap-2 border-b border-[var(--border)] pb-1 last:col-span-2"
+              >
+                <dt className="min-w-0 truncate text-[10.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+                  {d.category}
+                </dt>
+                <dd
+                  className="shrink-0 text-[11px] font-[750] tabular-nums"
+                  style={{ color: d.score == null ? 'var(--text-muted)' : 'var(--text-primary)' }}
+                >
+                  {d.score == null ? 'Not measured' : `${d.score}/100`}
+                </dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         </>
       ) : (
         <p className="mt-3 rounded-[12px] px-3 py-2.5 text-[11.5px] leading-snug"

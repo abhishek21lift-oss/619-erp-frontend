@@ -8,7 +8,7 @@
 // The interesting failure modes are not "does it render a list". They are:
 //
 //   · re-sorting the server's order, so this card and the endpoint disagree
-//     about who to call first;
+//     about who needs attention first;
 //   · flattening the severities, so the finished-term clients sit in the same
 //     list as the paying ones and the trainer learns to ignore both;
 //   · rendering an empty list after a failed request, which reads as "nobody
@@ -45,7 +45,7 @@ function client(over: Partial<RosterSignalClient> = {}): RosterSignalClient {
       id: 'gone_quiet',
       severity: 'critical',
       headline: 'Paying, and stopped coming',
-      evidence: 'last trained 2026-08-01, 43 days ago; term runs to 2026-12-31',
+      evidence: 'last trained 01-08-2026, 43 days ago; term runs to 31-12-2026',
       recommendation: 'Contact them this week.',
       days_quiet: 43,
     }],
@@ -59,6 +59,7 @@ function sweep(over: Partial<RosterSignalSweep> = {}): RosterSignalSweep {
   const detail = over.clients_detail ?? [client()];
   return {
     clients: 34,
+    active_clients: 26,
     clients_with_signals: detail.length,
     critical: detail.filter((r) => r.worst === 'critical').length,
     warning: detail.filter((r) => r.worst === 'warning').length,
@@ -79,10 +80,14 @@ describe('roster signals card', () => {
 
     expect(await screen.findByText('Paying, and stopped coming')).toBeInTheDocument();
     // Verbatim, dates included. A paraphrase here is a trainer quoting a date
-    // the client's record does not hold.
-    expect(screen.getByText('last trained 2026-08-01, 43 days ago; term runs to 2026-12-31'))
+    // the client's record does not hold. The server writes them DD-MM-YYYY,
+    // the same as every other date on the dashboard.
+    expect(screen.getByText('last trained 01-08-2026, 43 days ago; term runs to 31-12-2026'))
       .toBeInTheDocument();
     expect(screen.getByText('Contact them this week.')).toBeInTheDocument();
+    // The sweep reads finished terms too; the header states both totals so
+    // "34 reviewed" cannot read as 34 paying clients.
+    expect(screen.getByText(/34 reviewed · 26 active/)).toBeInTheDocument();
   });
 
   it('links the client to their profile, where the phone number is', async () => {
@@ -110,7 +115,7 @@ describe('roster signals card', () => {
             id: 'term_ended_inactive',
             severity: 'info',
             headline: 'Term finished, not training',
-            evidence: 'last trained 2025-11-18, 300 days ago; term ended 2025-11-30',
+            evidence: 'last trained 18-11-2025, 300 days ago; term ended 30-11-2025',
             recommendation: 'Win-back, not a chase.',
           }],
         }),
@@ -135,7 +140,7 @@ describe('roster signals card', () => {
             id: 'term_ended_inactive',
             severity: 'info',
             headline: 'Term finished, not training',
-            evidence: 'term ended 2025-11-30',
+            evidence: 'term ended 30-11-2025',
             recommendation: 'Win-back, not a chase.',
           }],
         }),
@@ -223,7 +228,7 @@ describe('roster signals card', () => {
 
   it('counts only what the card actually shows, not everything the endpoint flagged', async () => {
     // clients_with_signals includes the info rows behind the disclosure. Badging
-    // those as "to call" told the trainer to phone someone the card had hidden.
+    // those as "flagged" told the trainer to chase someone the card had hidden.
     resolve(sweep({
       clients: 34,
       clients_with_signals: 3,
@@ -239,8 +244,8 @@ describe('roster signals card', () => {
     }));
     render(<RosterSignalsCard />);
 
-    expect(await screen.findByLabelText('1 to call')).toBeInTheDocument();
-    expect(screen.queryByLabelText('3 to call')).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('1 flagged')).toBeInTheDocument();
+    expect(screen.queryByLabelText('3 flagged')).not.toBeInTheDocument();
   });
 
   it('hides the badge when nothing urgent is left after the cut', async () => {
@@ -256,7 +261,7 @@ describe('roster signals card', () => {
     render(<RosterSignalsCard />);
 
     await screen.findByText(/1 more with nothing urgent/i);
-    expect(screen.queryByText('to call')).not.toBeInTheDocument();
+    expect(screen.queryByText('flagged')).not.toBeInTheDocument();
   });
 
   it('reports the clients nothing could be computed for', async () => {
@@ -295,7 +300,7 @@ describe('roster signals card', () => {
   it('shows the term, because it is the fact that decides whether the silence matters', async () => {
     resolve(sweep());
     render(<RosterSignalsCard />);
-    expect(await screen.findByText('term to 2026-12-31')).toBeInTheDocument();
+    expect(await screen.findByText('term to 31-12-2026')).toBeInTheDocument();
   });
 
   it('says nothing about a term it has no dates for', async () => {

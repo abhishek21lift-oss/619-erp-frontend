@@ -25,13 +25,13 @@ const ops = {
     { id: 'r2', name: 'Rashi Bhatia', mobile: '9876543211', trainer_name: null, package_type: null, pt_end_date: '2026-07-30', days_left: -3, balance_amount: 0, monthly_pt_amount: 8000 },
   ],
   top_dues: [],
-  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0 },
+  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0, last_month_completed_to_date: 0 },
   trainer_sessions: [],
 } as never;
 
 const empty = {
   today_sessions: [], today_unscheduled: [], renewals_due: [], top_dues: [],
-  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0 },
+  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0, last_month_completed_to_date: 0 },
   trainer_sessions: [],
 } as never;
 

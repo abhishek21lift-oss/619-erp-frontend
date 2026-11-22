@@ -37,6 +37,13 @@ export interface CoachInsight {
   contacts: Contact[];
   /** Prefilled WhatsApp body, per contact. */
   message: (name: string) => string;
+  /**
+   * Label for the screen action when the insight is a queue to work through,
+   * not a person to message. Defaults to "Open list" at the call site.
+   */
+  openLabel?: string;
+  /** Replaces the "contacts not loaded" sentence when the cohort IS known. */
+  openHint?: string;
 }
 
 /* ── Inputs ────────────────────────────────────────────────────────────────
@@ -71,12 +78,19 @@ export interface CoachBirthday {
   id: string; name: string; mobile?: string | null; days_until_birthday: number;
 }
 
+/** A submitted member workout the trainer has not reviewed yet. */
+export interface CoachReview {
+  client_id: string;
+  client_name: string | null;
+}
+
 export interface CoachInput {
   dash?: CoachDash | null;
   renewals?: CoachRenewal[];
   dues?: CoachDue[];
   unscheduled?: CoachUnscheduled[];
   birthdays?: CoachBirthday[];
+  reviews?: CoachReview[];
   studioName?: string;
 }
 
@@ -112,7 +126,7 @@ function clockLabel(hhmm?: string | null): string | null {
  * buries the expiry under the confetti.
  */
 export function buildCoachInsights(input: CoachInput): CoachInsight[] {
-  const { dash, renewals = [], dues = [], unscheduled = [], birthdays = [], studioName = 'the studio' } = input;
+  const { dash, renewals = [], dues = [], unscheduled = [], birthdays = [], reviews = [], studioName = 'the studio' } = input;
   const out: CoachInsight[] = [];
 
   // ── Packages already expired ────────────────────────────────────────────
@@ -178,6 +192,35 @@ export function buildCoachInsights(input: CoachInput): CoachInsight[] {
       href: '/pt-os/balance-sheet',
       contacts: dueSoon.map((d) => ({ id: d.id, name: d.name, mobile: d.mobile })),
       message: (name) => `Hi ${name}, just a heads up that your next training payment is coming due shortly.`,
+    });
+  }
+
+  // ── Submitted member workouts waiting on review ─────────────────────────
+  //
+  // A member self-workout is `completed` the moment the member sends it, so
+  // it never appears in "due to train today" and Today's Sessions calls the
+  // day done. The trainer's review is the work that is actually left. Without
+  // this row the board said "Nothing else to review" while submissions sat in
+  // the queue — a claim about the one thing it had not read.
+  if (reviews.length > 0) {
+    const latest = reviews[0];
+    const name = latest?.client_name ?? 'A client';
+    const clientCount = new Set(reviews.map((r) => r.client_id)).size;
+    out.push({
+      id: 'reviews',
+      urgency: 'warning',
+      count: reviews.length,
+      title: `${reviews.length} self-${plural(reviews.length, 'workout')} to review`,
+      detail: reviews.length === 1
+        ? `${name} submitted a workout. Approve it or ask for changes.`
+        : clientCount === 1
+          ? `${name} — latest submission waiting on you.`
+          : `${name} and ${clientCount - 1} other ${plural(clientCount - 1, 'client')} — latest submission waiting on you.`,
+      href: `/pt-os/clients/${latest.client_id}/workout-log`,
+      contacts: [],
+      openLabel: 'Review latest',
+      openHint: 'Reviews live in the client workout log. Open it to approve the session or ask for changes.',
+      message: () => '',
     });
   }
 

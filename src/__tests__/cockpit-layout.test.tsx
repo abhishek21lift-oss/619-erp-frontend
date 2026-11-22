@@ -1,8 +1,8 @@
 // The cockpit's section order, and what survives when the roster sweep fails.
 //
-// Order is the design: the day's schedule, then the one thing to do, then who
-// to call, then the rest of the board, then money. A reorder here is a product
-// decision, so it is pinned in one place rather than inferred from source.
+// Order is the design: the day's schedule, then the one thing to do, then the
+// client signals, then the rest of the board, then money. A reorder here is a
+// product decision, so it is pinned in one place rather than inferred from source.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
@@ -24,7 +24,7 @@ const dashData = {
 };
 const opsData = {
   today_sessions: [], today_unscheduled: [], renewals_due: [], top_dues: [],
-  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0 },
+  session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0, last_month_completed_to_date: 0 },
   trainer_sessions: [],
 };
 
@@ -38,7 +38,7 @@ vi.mock('@/lib/http', () => ({
 
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 
-const SWEEP = { clients: 3, clients_with_signals: 0, critical: 0, not_assessable: 0, clients_detail: [] };
+const SWEEP = { clients: 3, active_clients: 3, clients_with_signals: 0, critical: 0, not_assessable: 0, clients_detail: [] };
 
 async function assertOrder(labels: (string | RegExp)[]) {
   // Each section has its own fetch. Waiting only for the first one made this
@@ -61,13 +61,13 @@ describe('cockpit section order', () => {
     signalsMock.mockResolvedValue({ data: SWEEP });
   });
 
-  it('orders the day: schedule, next action, who to call, board, money', async () => {
+  it('orders the day: schedule, next action, client signals, board, money', async () => {
     render(<PtOsDashboard />);
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
     await assertOrder([
       /Today.s Sessions/i,
       'Next Best Action',
-      'Who to call',
+      'Client signals',
       'AI Coach',
       'Progress Radar',
       'This Month',

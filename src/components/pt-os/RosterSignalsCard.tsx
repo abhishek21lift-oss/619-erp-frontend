@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Who to call — the roster's own signals, on the screen a trainer opens daily.
+ * Client signals — the roster's own sweep, on the screen a trainer opens daily.
  *
  * ── Why this card exists ───────────────────────────────────────────────────
  *
@@ -15,13 +15,19 @@
  * Today lists who is IN. This lists who is not — which is the half a trainer
  * cannot see by looking around the gym floor.
  *
+ * It is a signal list, not a call sheet. The old heading ("Who to call") and
+ * phone icon narrowed every finding to a phone call: a finished term needs a
+ * win-back conversation, a plateau needs a programme change, and a client who
+ * has gone quiet may just need a message. The rows keep the server's own
+ * recommendation; the card names the evidence, not the channel.
+ *
  * ── What this card is careful not to do ────────────────────────────────────
  *
  *  1. It does not re-sort. The server orders worst-first and, within a
  *     severity, longest-silence-first — including the client who has never
  *     trained, whose silence is the longest there is. Sorting again here is
- *     how this card and the endpoint would end up disagreeing about who to
- *     call first.
+ *     how this card and the endpoint would end up disagreeing about who needs
+ *     attention first.
  *
  *  2. It does not merge the severities. The sweep deliberately separates a
  *     client who is paying and absent (chase them today) from one whose term
@@ -31,7 +37,7 @@
  *
  *  3. It does not restate the evidence in its own words. `evidence` and
  *     `recommendation` are rendered as the server wrote them. A trainer who is
- *     about to phone a client needs the dates they will be asked about, not a
+ *     about to contact a client needs the dates they will be asked about, not a
  *     paraphrase of them.
  *
  *  4. It does not report silence as "all clear". A client whose plateau could
@@ -43,11 +49,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { m, useReducedMotion } from 'framer-motion';
 import {
-  AlertTriangle, Check, ChevronDown, ChevronRight, Info, OctagonAlert, PhoneCall,
+  AlertTriangle, Check, ChevronDown, ChevronRight, Info, OctagonAlert, Radar,
   RotateCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { RosterSignalClient, RosterSignalSeverity, RosterSignalSweep } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 import { palette, rgba } from '@/lib/palette';
 
 /**
@@ -177,7 +184,7 @@ export default function RosterSignalsCard() {
   // of them tells the trainer the sweep ran.
   if (!sweep.clients_detail.length) {
     return (
-      <Shell accent={palette.emerald[500]} swept={sweep.clients} flagged={0}>
+      <Shell accent={palette.emerald[500]} swept={sweep.clients} active={sweep.active_clients} flagged={0}>
         <div className="flex items-start gap-3 px-4 py-4 sm:px-5" style={DIVIDER}>
           <span
             aria-hidden
@@ -206,6 +213,7 @@ export default function RosterSignalsCard() {
   return (
     <Shell
       swept={sweep.clients}
+      active={sweep.active_clients}
       flagged={urgent.length}
       accent={accent}
     >
@@ -264,10 +272,11 @@ function NotAssessable({ n, lead = false }: { n: number; lead?: boolean }) {
 }
 
 function Shell({
-  children, swept, flagged, accent = palette.indigo[500],
+  children, swept, active, flagged, accent = palette.indigo[500],
 }: {
   children: React.ReactNode;
   swept?: number;
+  active?: number;
   flagged?: number;
   accent?: string;
 }) {
@@ -293,7 +302,7 @@ function Shell({
               boxShadow: `0 10px 20px -8px ${rgba(palette.indigo[600], 0.65)}`,
             }}
           >
-            <PhoneCall size={19} />
+            <Radar size={19} />
           </span>
           <div className="min-w-0 flex-1 pt-0.5">
             <h2
@@ -301,11 +310,15 @@ function Shell({
               className="text-[15px] font-[780] tracking-[-0.015em]"
               style={{ color: 'var(--text-primary)' }}
             >
-              Who to call
+              Client signals
             </h2>
             {swept !== undefined && (
               <p className="mt-0.5 text-[11.5px] font-[600]" style={{ color: 'var(--text-muted)' }}>
                 {swept} reviewed
+                {/* The sweep reads finished terms too, because a win-back is a
+                    real signal. Without the active count, "34 reviewed" reads
+                    as 34 paying clients and overstates the roster. */}
+                {active !== undefined && active < swept ? ` · ${active} active` : ''}
               </p>
             )}
           </div>
@@ -319,7 +332,7 @@ function Shell({
           {flagged !== undefined && flagged > 0 && (
             <div
               role="status"
-              aria-label={`${flagged} to call`}
+              aria-label={`${flagged} flagged`}
               className="flex shrink-0 flex-col items-center rounded-[16px] px-3.5 py-2"
               style={{ background: rgba(accent, 0.12), border: `1px solid ${rgba(accent, 0.18)}` }}
             >
@@ -327,7 +340,7 @@ function Shell({
                 {flagged}
               </span>
               <span className="mt-1 text-[10.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-secondary)' }}>
-                to call
+                flagged
               </span>
             </div>
           )}
@@ -393,8 +406,8 @@ function ClientSignals({ c, i }: { c: RosterSignalClient; i: number }) {
                 style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
               >
                 {c.term.state === 'current'
-                  ? `term to ${c.term.end}`
-                  : `term ended ${c.term.end}`}
+                  ? `term to ${fmtDate(c.term.end)}`
+                  : `term ended ${fmtDate(c.term.end)}`}
               </span>
             )}
           </div>

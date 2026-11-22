@@ -24,7 +24,7 @@ import { heroBackground, heroCrest, heroShadow } from '@/components/ui/heroTheme
 import { palette, identity, rgba } from '@/lib/palette';
 import {
   buildCoachInsights, reachable, whatsappLink, telLink,
-  type CoachBirthday, type Urgency,
+  type CoachBirthday, type CoachReview, type Urgency,
 } from '@/lib/coach-insights';
 import {
   Users, Wallet,
@@ -35,7 +35,7 @@ import {
   FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
   AlertTriangle, Clock, IndianRupee,
   Accessibility, Dumbbell, MessagesSquare,
-  PartyPopper, TrendingUp,
+  PartyPopper, TrendingUp, ClipboardCheck,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -49,8 +49,8 @@ import FounderBadge from '@/components/FounderBadge';
 import { useFounder } from '@/lib/use-founder';
 import http from '@/lib/http';
 import dynamic from 'next/dynamic';
-import { fmtTime12 } from '@/lib/format';
-import type { TodayClient, TodayRoster } from '@/lib/api';
+import { fmtDate, fmtTime12 } from '@/lib/format';
+import type { TodayClient, TodayRoster, WorkoutPendingReview } from '@/lib/api';
 import { programmeNote } from '@/lib/today-notes';
 import { gapChips, gapHref, sortGaps, type ScreeningGapsResponse } from '@/lib/screening-gaps';
 import { gradient, ringStops, ringTrack, rowTones, todayMark, type RowTone } from '@/components/dashboards/todayTheme';
@@ -137,6 +137,8 @@ export type OpsData = {
     this_month_total: number;
     this_month_completed: number;
     last_month_completed: number;
+    /** Last month up to today's day-of-month, for an equal-period badge. */
+    last_month_completed_to_date: number;
   };
   trainer_sessions: Array<{
     trainer_name: string; completed: number; scheduled: number; missed: number;
@@ -310,7 +312,7 @@ function HeroStat({ icon, label, value, accent, trend }: {
           {value}
           {trend != null && (
             <span className="inline-flex items-center gap-0.5 text-[9px] font-[760] tabular-nums"
-              style={{ color: trend >= 0 ? '#34d399' : '#f87171' }}>
+              style={{ color: trend >= 0 ? palette.emerald[400] : palette.red[400] }}>
               {trend >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}{Math.abs(trend).toFixed(0)}%
             </span>
           )}
@@ -326,7 +328,10 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
   loading: boolean; onRefresh: () => void;
 }) {
   const now = new Date();
-  const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // One date format on the screen: the weekday for orientation, then the
+  // app's DD-MM-YYYY. The long "Sunday, 22 November 2026" was the only date
+  // on the dashboard written a different way from every card below it.
+  const dateStr = `${now.toLocaleDateString('en-IN', { weekday: 'long' })} · ${fmtDate(now)}`;
 
   return (
     <m.div
@@ -334,8 +339,11 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="relative isolate overflow-hidden rounded-[24px] sm:rounded-[30px]"
       style={{
-        background: heroBackground(),
-        boxShadow: heroShadow(),
+        // Rosé, not the old amber spotlight: gold is a secondary highlight on
+        // this screen, and the hero is the primary surface. The gold crest
+        // below is the one warm object the composition keeps.
+        background: heroBackground(rgba(palette.indigo[500], 0.55)),
+        boxShadow: heroShadow(rgba(palette.indigo[500], 0.30)),
       }}
     >
       {/* Decorative layers. All non-interactive, all behind the content; the
@@ -379,31 +387,31 @@ function HeroHeader({ d, coach, studioName, founderNumber, loading: _loading, on
         {/* Crest */}
         <div className="hero-coin mb-1.5 flex h-8 w-8 items-center justify-center rounded-full"
           style={{ background: heroCrest }}>
-          <Crown size={15} style={{ color: '#78350F' }} />
+          <Crown size={15} style={{ color: palette.amber[900] }} />
         </div>
 
         {/* Greeting eyebrow */}
         <p className="mb-0.5 text-[9.5px] sm:text-[10.5px] font-[700] uppercase tracking-[0.28em]"
-          style={{ color: 'rgba(252,211,77,0.66)' }}>
+          style={{ color: rgba(palette.gray[0], 0.62) }}>
           {greeting()} · {coach}
         </p>
 
         <h1
           className="text-[32px] sm:text-[44px] font-[900] tracking-[0.14em] leading-[0.98] uppercase"
           style={{
-            background: 'linear-gradient(92deg, #ffffff 0%, #FCD34D 34%, #F59E0B 62%, #FDE68A 82%, #ffffff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.40)) drop-shadow(0 3px 20px rgba(245,158,11,0.48))',
+            // Solid ink. The gradient wordmark was the one gradient text on
+            // the screen, and DESIGN.md rules it out: the brand reads through
+            // the Rosé light behind it, not through a second colour ramp.
+            color: palette.gray[0],
+            textShadow: `0 1px 0 rgba(0,0,0,0.40), 0 3px 20px ${rgba(palette.indigo[500], 0.45)}`,
           }}
         >
           {studioName}
         </h1>
 
         {/* Under the wordmark rather than beside it: the hero name is a
-            fluid-size gradient headline, and an inline badge would ride its
-            baseline differently at every breakpoint. */}
+            fluid-size headline, and an inline badge would ride its baseline
+            differently at every breakpoint. */}
         {founderNumber != null && (
           <div className="mt-2 flex justify-center">
             <FounderBadge number={founderNumber} size="lg" />
@@ -549,7 +557,7 @@ function MobileQuickActions() {
     <div className="lg:hidden -mx-3 px-3">
       <SectionLabel icon={<Sparkles size={10} />}>Quick Actions</SectionLabel>
       <div className="relative">
-      <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
         {actions.map((a, i) => (
           <m.div key={a.label} className="shrink-0"
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -848,7 +856,7 @@ function TargetRing({ pct, colour, size = 132 }: { pct: number; colour: string; 
               of one. The arc runs from a washed tint into the full tone, so it
               reads as lit from one side rather than painted flat. */}
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity={0.92} />
+            <stop offset="0%" stopColor={palette.gray[0]} stopOpacity={0.92} />
             <stop offset="55%" stopColor={colour} stopOpacity={1} />
             <stop offset="100%" stopColor={colour} stopOpacity={0.85} />
           </linearGradient>
@@ -1002,7 +1010,7 @@ function MonthlyTarget() {
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-40"
           style={{ background: `radial-gradient(circle, ${tone.ring} 0%, transparent 70%)`, filter: 'blur(46px)' }} />
         <div className="absolute -bottom-24 -left-10 h-52 w-52 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #FFBB94 0%, transparent 70%)', filter: 'blur(52px)' }} />
+          style={{ background: `radial-gradient(circle, ${palette.indigo[300]} 0%, transparent 70%)`, filter: 'blur(52px)' }} />
         <svg className="absolute inset-0 h-full w-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="mt-grid" width="30" height="30" patternUnits="userSpaceOnUse">
@@ -1291,11 +1299,13 @@ function TodayRevenue({ d, loading }: { d: DashData; loading: boolean }) {
 // the selected insight and walks its cohort one contact at a time, naming who
 // is next and counting down what is left. That is honest about what a tap
 // does, and it is still one tap per client.
-export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
+export function AICoach({ d, ops, birthdays, studioName, excludeTop = false, reviews = [] }: {
   d: DashData;
   ops: OpsData | null;
   birthdays: CoachBirthday[];
   studioName: string;
+  /** Submitted member workouts the trainer still has to review. */
+  reviews?: CoachReview[];
   /** The cockpit's Next Best Action card promotes insights[0]; the board then
    *  lists the remainder so the same action never renders twice. */
   excludeTop?: boolean;
@@ -1319,8 +1329,9 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
       start_time: u.start_time,
     })),
     birthdays,
+    reviews,
     studioName,
-  }), [d, ops, birthdays, studioName]);
+  }), [d, ops, birthdays, reviews, studioName]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Which contact the next tap will reach. Reset whenever the cohort changes,
@@ -1528,14 +1539,14 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false }: {
                       genuinely looked and found nothing. Only that one has
                       earned the original sentence. */}
                   <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: C.muted }}>
-                    {selected.contacts.length === 0
+                    {selected.openHint ?? (selected.contacts.length === 0
                       ? 'Not loaded here — open the list to see who they are.'
-                      : 'No mobile number on file for these clients.'}
+                      : 'No mobile number on file for these clients.')}
                   </p>
                   <button type="button" onClick={() => router.push(selected.href)}
                     className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
                     style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
-                    Open the list <ChevronRight size={14} />
+                    {selected.openLabel ?? 'Open the list'} <ChevronRight size={14} />
                   </button>
                 </>
               ) : (
@@ -1747,7 +1758,14 @@ export function buildTodayQueue(roster: TodayClient[]): TodayRow[] {
 // importing the dashboard; re-exported here for callers that already do.
 export { programmeNote } from '@/lib/today-notes';
 
-function TodaySchedule() {
+function TodaySchedule({ pendingReviews, reviewsSettled, reviewsFailed }: {
+  pendingReviews: WorkoutPendingReview[];
+  /** False until the review read has answered — the card must not call the
+   *  day done while it is still checking. */
+  reviewsSettled: boolean;
+  /** True when the review read failed and there is no earlier answer to use. */
+  reviewsFailed: boolean;
+}) {
   const router = useRouter();
   const reduce = useReducedMotion();
 
@@ -1774,6 +1792,8 @@ function TodaySchedule() {
   // The day's ring: sessions finished out of sessions the day holds. A rest
   // day is not a session, so it is out of both.
   const dayTotal = done + queue.length;
+  const reviewCount = pendingReviews.length;
+  const latestReview = pendingReviews[0] ?? null;
 
   return (
     <Glass className="overflow-hidden">
@@ -1817,34 +1837,68 @@ function TodaySchedule() {
           </div>
         )}
 
-        {!loading && queue.length === 0 && (
-          <div className="flex flex-col items-center rounded-[20px] px-4 py-4 text-center"
-            style={{ background: done > 0 ? rowTones.live.wash : 'rgba(15,23,42,0.025)' }}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-full text-white"
-              style={{
-                background: done > 0 ? gradient(rowTones.live.from, rowTones.live.to) : gradient(todayMark.from, todayMark.to),
-                boxShadow: `0 8px 20px -8px ${done > 0 ? rowTones.live.glow : todayMark.glow}`,
-              }}>
-              {done > 0 ? <CheckCircle2 size={20} /> : <CalendarClock size={18} />}
-            </span>
-            <p className="mt-2 text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
-              {done > 0 ? 'All done for today' : 'Nothing on today'}
-            </p>
-            {done === 0 && (
+        {!loading && queue.length === 0 && !reviewsSettled && (
+          <div className="flex items-center gap-3 rounded-[18px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}>
+            <Skel w="w-9" h="h-9" r="rounded-full" />
+            <div className="flex-1 space-y-1.5"><Skel w="w-36" h="h-3" /><Skel w="w-24" h="h-2.5" /></div>
+          </div>
+        )}
+
+        {!loading && queue.length === 0 && reviewsSettled && reviewCount === 0 && (
+          done > 0 ? (
+            /* A finished day is one line, not a 150px empty state. The tall
+               centred block was the same shape as "nothing on today", which
+               made a completed day look like a screen waiting for input. */
+            <div className="flex items-center gap-3 rounded-[18px] px-3.5 py-2.5"
+              style={{ background: rowTones.live.wash }}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+                style={{
+                  background: gradient(rowTones.live.from, rowTones.live.to),
+                  boxShadow: `0 8px 20px -8px ${rowTones.live.glow}`,
+                }}>
+                <CheckCircle2 size={17} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
+                  {reviewsFailed ? 'Sessions done for today' : 'All done for today'}
+                </p>
+                {reviewsFailed && (
+                  <p className="mt-0.5 text-[11px] leading-[1.45]" style={{ color: C.muted }}>
+                    The review queue did not come back — check it before closing the day.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center rounded-[20px] px-4 py-4 text-center"
+              style={{ background: 'rgba(15,23,42,0.025)' }}>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full text-white"
+                style={{
+                  background: gradient(todayMark.from, todayMark.to),
+                  boxShadow: `0 8px 20px -8px ${todayMark.glow}`,
+                }}>
+                <CalendarClock size={18} />
+              </span>
+              <p className="mt-2 text-[14px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
+                Nothing on today
+              </p>
               <p className="mt-0.5 max-w-[34ch] text-[11.5px] leading-[1.5]" style={{ color: C.muted }}>
                 {/* Names all three sources: a studio whose training days live on
                     the enrolment form must not be told nobody trains today. */}
                 No bookings, programme day or enrolment today.
               </p>
-            )}
-            {done === 0 && (
+              {reviewsFailed && (
+                <p className="mt-1 max-w-[34ch] text-[11px] leading-[1.5]" style={{ color: C.muted }}>
+                  The review queue did not come back — check it before closing the day.
+                </p>
+              )}
               <button onClick={() => router.push('/pt-os/schedule-session')}
                 className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-[12.5px] font-[750] text-white transition-transform active:scale-95"
                 style={{ background: gradient(rowTones.next.from, rowTones.next.to), boxShadow: `0 8px 18px -8px ${rowTones.next.glow}` }}>
                 <CalendarPlus size={13} /> Schedule a session
               </button>
-            )}
-          </div>
+            </div>
+          )
         )}
 
         {shown.length > 0 && (
@@ -1924,7 +1978,7 @@ function TodaySchedule() {
                     {stateLabel && (
                       <span className="mb-0.5 inline-flex items-center rounded-full px-1.5 py-[1px] text-[10px] font-[820] uppercase tracking-[0.08em]"
                         style={r.live || nextUp
-                          ? { background: tone.ink, color: '#fff' }
+                          ? { background: tone.ink, color: palette.gray[0] }
                           : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', boxShadow: 'inset 0 0 0 1px var(--border)' }}>
                         {stateLabel}
                       </span>
@@ -1948,7 +2002,7 @@ function TodaySchedule() {
                   <span className="inline-flex h-[34px] shrink-0 items-center gap-0.5 rounded-full px-3 text-[12px] font-[800] transition-transform group-hover:translate-x-0.5 sm:px-3.5"
                     style={{
                       background: quietAction ? 'var(--bg-subtle)' : toneKey === 'waiting' ? C.ink : tone.ink,
-                      color: quietAction ? 'var(--text-primary)' : '#fff',
+                      color: quietAction ? 'var(--text-primary)' : palette.gray[0],
                       boxShadow: quietAction || toneKey === 'waiting' ? 'none' : `0 6px 14px -6px ${tone.glow}`,
                     }}>
                     {r.live ? 'Resume' : booked ? 'Start' : 'Open'} <ChevronRight size={13} />
@@ -1979,6 +2033,41 @@ function TodaySchedule() {
               </button>
             )}
           </div>
+        )}
+
+        {/* A submitted member workout is `completed` for the roster, so the
+            card above is right that the session happened — and wrong to imply
+            nothing is left. The review is the remaining work, and it is shown
+            here rather than only on the client's workout-log page, which the
+            dashboard had no reason to send anyone to. */}
+        {reviewCount > 0 && latestReview && (
+          <button
+            type="button"
+            onClick={() => router.push(`/pt-os/clients/${latestReview.client_id}/workout-log`)}
+            className="mt-2 flex w-full items-center gap-2.5 rounded-[18px] px-3 py-2.5 text-left transition-transform active:scale-[0.985]"
+            style={{
+              background: rgba(palette.amber[500], 0.12),
+              border: `1px solid ${rgba(palette.amber[500], 0.24)}`,
+            }}
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: gradient(palette.amber[400], palette.amber[600]) }}>
+              <ClipboardCheck size={16} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12.5px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
+                {reviewCount} self-{reviewCount === 1 ? 'workout' : 'workouts'} to review
+              </span>
+              <span className="mt-0.5 block truncate text-[11px] font-[560]" style={{ color: C.muted }}>
+                {done > 0 ? 'Today’s sessions are done. ' : ''}
+                Latest: {latestReview.client_name}
+              </span>
+            </span>
+            <span className="inline-flex h-[32px] shrink-0 items-center gap-0.5 rounded-full px-3 text-[11.5px] font-[800]"
+              style={{ background: 'var(--bg-card)', color: palette.amber[700], boxShadow: 'inset 0 0 0 1px var(--border)' }}>
+              Review <ChevronRight size={12} />
+            </span>
+          </button>
         )}
       </div>
     </Glass>
@@ -2044,7 +2133,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.warning}, #fbbf24)`, boxShadow: `0 5px 12px ${C.warning}40` }}>
+            style={{ background: `linear-gradient(135deg, ${C.warning}, ${palette.amber[400]})`, boxShadow: `0 5px 12px ${C.warning}40` }}>
             <CalendarClock size={14} />
           </span>
           <div>
@@ -2113,16 +2202,29 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
   const trainerSessions = ops?.trainer_sessions ?? [];
   const completionRate = stats && stats.this_month_total > 0
     ? (stats.this_month_completed / stats.this_month_total) * 100 : null;
-  const momDelta = stats && stats.last_month_completed > 0
-    ? ((stats.this_month_completed - stats.last_month_completed) / stats.last_month_completed) * 100 : null;
+  const momDelta = stats && stats.last_month_completed_to_date > 0
+    ? ((stats.this_month_completed - stats.last_month_completed_to_date)
+      / stats.last_month_completed_to_date) * 100
+    : null;
   const maxCompleted = Math.max(...trainerSessions.map(t => t.completed), 1);
+  // A solo studio has nobody to compare against, and "Unassigned" is not a
+  // person — it is the SQL label for a session whose client had no trainer on
+  // record. Rendering that as "Unassigned 11 done · Abhishek 0 done" blames
+  // the trainer for work they did. Show the breakdown only when there are two
+  // named trainers, or when the one named trainer and the unassigned bucket
+  // both hold completed work.
+  const namedTrainers = trainerSessions.filter((t) => t.trainer_name !== 'Unassigned');
+  const showTrainerBreakdown = namedTrainers.length > 1
+    || (namedTrainers.length === 1
+      && namedTrainers[0].completed > 0
+      && trainerSessions.length > 1);
 
   return (
     <Glass className="p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.success}, #34d399)`, boxShadow: `0 5px 12px ${C.success}40` }}>
+            style={{ background: `linear-gradient(135deg, ${C.success}, ${palette.emerald[400]})`, boxShadow: `0 5px 12px ${C.success}40` }}>
             <Activity size={14} />
           </span>
           <div>
@@ -2130,7 +2232,17 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
             <p className="text-[11px] font-[500]" style={{ color: C.muted }}>Workouts logged this month</p>
           </div>
         </div>
-        {momDelta !== null && <TrendBadge pct={momDelta} />}
+        {momDelta !== null && (
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            <TrendBadge pct={momDelta} />
+            {/* The comparison is equal-period: this month so far against last
+                month up to the same day. Unlabelled, the same percentage read
+                as a full-month comparison and distorted a normal month. */}
+            <span className="text-[9.5px] font-[600]" style={{ color: C.muted }}>
+              vs same point last mo.
+            </span>
+          </div>
+        )}
       </div>
 
       {loading && !ops && <div className="space-y-2">{[1,2,3].map(i=><Skel key={i} h="h-10" r="rounded-[12px]" />)}</div>}
@@ -2138,8 +2250,8 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
       {stats && (
         <>
           {/* Three counts off the workout log — sessions STARTED this month,
-              the subset FINISHED, and last month's finished total to read this
-              month against.
+              the subset FINISHED, and last month's finished total up to the
+              same day, so the tile and the badge share one basis.
 
               They used to come off pt_sessions, the booking diary, where
               nothing ever moves a row past 'scheduled': Done and Last month
@@ -2155,7 +2267,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
             {[
               { label: 'Total',    value: stats.this_month_total,     color: C.primary },
               { label: 'Done',     value: stats.this_month_completed, color: C.success },
-              { label: 'Last mo.', value: stats.last_month_completed, color: palette.indigo[700] },
+              { label: 'Last mo. to date', value: stats.last_month_completed_to_date, color: palette.indigo[700] },
             ].map(t => (
               <div key={t.label} className="rounded-[13px] p-2.5" style={{ background: `${t.color}0f` }}>
                 <p className="mb-0.5 flex items-center gap-1 text-[10.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: C.muted }}>
@@ -2174,14 +2286,14 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
                 <span className="text-[11px] font-[750]" style={{ color: C.successText }}>{completionRate.toFixed(0)}%</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.success}18` }}>
-                <m.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.success}, #34d399)` }}
+                <m.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.success}, ${palette.emerald[400]})` }}
                   initial={{ width: 0 }} animate={{ width: `${completionRate}%` }}
                   transition={{ duration: 0.8, ease: [0.16,1,0.3,1] }} />
               </div>
             </div>
           )}
 
-          {trainerSessions.length > 0 && (
+          {showTrainerBreakdown && (
             <div className="space-y-2.5">
               <p className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: C.muted }}>By Trainer</p>
               {trainerSessions.map((t, i) => {
@@ -2295,6 +2407,13 @@ export default function PtOsDashboard() {
     (signal) => http<{ data: CoachBirthday[] }>('/api/pt-os/clients/birthdays', { signal }),
     [],
   );
+  // One read, three consumers. Today's Sessions must not say "All done" while
+  // a submitted member workout is waiting, and both coach cards rank the same
+  // queue — so it is fetched once here rather than per card.
+  const reviews = useAsync<{ data: WorkoutPendingReview[] }>(
+    (signal) => http<{ data: WorkoutPendingReview[] }>('/api/pt-os/workout-log/pending-review', { signal }),
+    [],
+  );
 
   // The Consent Signed KPI was the only consumer of /api/pt-os/informed-consent
   // here, so the request went with the card rather than being left to load a
@@ -2314,11 +2433,15 @@ export default function PtOsDashboard() {
   // id and served a single client object, and every dashboard run
   // in that harness rendered "Something went wrong".
   const birthdayList = Array.isArray(birthdays.data?.data) ? birthdays.data.data : [];
+  const pendingReviews = useMemo(
+    () => (Array.isArray(reviews.data?.data) ? reviews.data.data : []),
+    [reviews.data],
+  );
   const founderNumber = useFounder();
 
   const refreshAll = useCallback(async () => {
-    await Promise.all([dash.refetch(), ops.refetch()]);
-  }, [dash.refetch, ops.refetch]);
+    await Promise.all([dash.refetch(), ops.refetch(), reviews.refetch()]);
+  }, [dash.refetch, ops.refetch, reviews.refetch]);
 
   /**
    * Keep the numbers current without a reload.
@@ -2426,7 +2549,11 @@ export default function PtOsDashboard() {
                 the parent's space-y utility targets `> * ~ *` and outranks a
                 plain mt-* on specificity; a class here would simply lose. */}
             <div style={{ marginTop: 8 }}>
-              <TodaySchedule />
+              <TodaySchedule
+                pendingReviews={pendingReviews}
+                reviewsSettled={reviews.hasResolved}
+                reviewsFailed={!!reviews.error && !reviews.data}
+              />
             </div>
 
             {/* 2.5 — Clients not cleared to train. Next to today's sessions
@@ -2440,11 +2567,11 @@ export default function PtOsDashboard() {
                 both answer "what happens next" — one is what is booked, this
                 is what should be. It derives from data already on this screen;
                 no request of its own. */}
-            <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} />
+            <NextBestActionCard d={d} ops={o} birthdays={birthdayList} studioName={studioName} reviews={pendingReviews} />
 
-            {/* 3 — Who to call. Above quick actions and the AI board: it is the
-                one list on this screen that changes what a trainer does in the
-                next hour, and below those two it never got seen. The roster
+            {/* 3 — Client signals. Above quick actions and the AI board: it is
+                the one list on this screen that changes what a trainer does in
+                the next hour, and below those two it never got seen. The roster
                 sweep's own section, heading included: who stopped coming, who
                 is paying but absent. A failed check says so in place rather
                 than rendering an empty, reassuring list. */}
@@ -2459,25 +2586,27 @@ export default function PtOsDashboard() {
             <AICoach d={d} ops={o}
               birthdays={birthdayList}
               studioName={studioName}
+              reviews={pendingReviews}
               excludeTop />
 
-            {/* 4.7 — Progress Radar. Where the six measured categories actually
-                stand, for the studio's most recently measured client. It reads
-                its own endpoints and fails soft: a broken response removes the
-                card, not the screen. */}
+            {/* 4.7 — Progress Radar. Where the seven measured categories
+                actually stand, for the studio's most recently measured client.
+                It reads its own endpoints and fails soft: a broken response
+                removes the card, not the screen. */}
             <ProgressRadarCard />
 
             {/* 3 — KPI grid.
-                Four cards, and four is now the whole set on every screen:
-                Outstanding has gone. It was the fifth, and it was the same
-                figure Today's Revenue already shows as Pending, one section
-                below — with the people it is owed by, how many are overdue,
-                and a link into the dues list. A tile carrying a duplicate of
-                a number that is better answered further down the page is a
-                tile spent saying something twice.
+                Three cards, not four. Outstanding went: it was the same figure
+                Today's Revenue already shows as Pending, further down the page —
+                with the people it is owed by, how many are overdue, and a link
+                into the dues list. A tile carrying a duplicate of a number that
+                is better answered further down the page is a tile spent saying
+                something twice.
 
-                Commission stays phone-and-tablet-only, so the desktop row is
-                Clients / Revenue / Active Share and the grid still fills. */}
+                Three in a two-column grid leaves one card alone on the second
+                row, which reads as a missing fourth rather than a layout. So
+                Active Clients spans the row on phones and tablets, and the
+                other two sit under it; from lg the three share one row. */}
             {/* 3.5 — The month's revenue target.
                 Above Key Metrics because it frames them: "PT Revenue ₹95.5K"
                 is a fact, and whether that is good depends entirely on what
@@ -2494,10 +2623,10 @@ export default function PtOsDashboard() {
 
             <div>
               <SectionLabel icon={<Gauge size={10} />}>Key Metrics</SectionLabel>
-              {/* Two up on a phone (all four, as a square block), three on desktop
-                    where Commission is hidden — so the row fills at both. It was
-                    lg:grid-cols-4 with one of the four hidden at lg, which left an
-                    empty fourth column the comment above claimed was filled. */}
+              {/* Two up on a phone for Revenue and Active Share, with Active
+                    Clients spanning the row above them; three across from lg.
+                    The old grid-cols-2 lg:grid-cols-3 left the third card
+                    orphaned on its own mobile row. */}
               <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
                 {/* No sparkline and no percentage. The only series this
                     endpoint carries is revenue, and revenue is not a client
@@ -2505,7 +2634,8 @@ export default function PtOsDashboard() {
                     revenue's growth as its own. A number with nothing under
                     it is the honest render. */}
                 <StatCard icon={<Users size={17} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
-                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active" />
+                  sub={`${d.expired_clients} expired`} delay={0} href="/pt-os/clients?status=active"
+                  className="col-span-2 aspect-auto lg:col-span-1 lg:aspect-[6/5]" />
                 <StatCard icon={<Wallet size={17} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
                   sub="this month" delay={0.05} href="/insights/revenue" trend={revTrend} pct={revMoM} format={fmtINR} />
                 {/* The Commission card (coach payouts) went with the multi-coach

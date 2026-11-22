@@ -5529,10 +5529,12 @@ export interface RosterSignalClient {
  * The sweep. `clients_detail` holds only the clients with something to say —
  * already sorted worst-first, longest-silence-first by the server, and not to
  * be re-sorted here: two independent sorts of the same data is how two screens
- * end up disagreeing about who to call first.
+ * end up disagreeing about who needs attention first.
  */
 export interface RosterSignalSweep {
   clients: number;
+  /** Clients whose paid term is still running. The sweep also reads finished terms. */
+  active_clients: number;
   clients_with_signals: number;
   critical: number;
   warning: number;

@@ -21,7 +21,7 @@ function opsWith(renewals: OpsData['renewals_due']): OpsData {
   return {
     today_sessions: [], today_unscheduled: [], renewals_due: renewals,
     top_dues: [],
-    session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0 },
+    session_stats: { this_month_total: 0, this_month_completed: 0, last_month_completed: 0, last_month_completed_to_date: 0 },
     trainer_sessions: [],
   };
 }
@@ -46,13 +46,14 @@ describe('NextBestActionCard', () => {
     expect(screen.getByText('Urgent')).toBeTruthy();
   });
 
-  it('offers reachable CTAs for the next contact: WhatsApp prefilled and a dialer', () => {
+  it('offers the next contact a prefilled WhatsApp and the list, and nothing else', () => {
     render(<NextBestActionCard d={DASH} ops={opsWith([ASHA])} birthdays={BIRTHDAYS} studioName="Iron Studio" />);
     const wa = screen.getByRole('link', { name: 'Send WhatsApp to Asha' });
     expect(wa.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/919876543210\?text=/);
     expect(wa.getAttribute('href')).toContain(encodeURIComponent('Asha'));
-    const tel = screen.getByRole('link', { name: 'Call Asha' });
-    expect(tel.getAttribute('href')).toBe('tel:+919876543210');
+    // The call button was a third control for a client the WhatsApp button
+    // already reached. The list is the second, and the only other action.
+    expect(screen.queryByRole('link', { name: /^call /i })).toBeNull();
     expect(screen.getByRole('link', { name: /open list/i }).getAttribute('href')).toBe('/pt-os/clients');
   });
 
@@ -113,5 +114,23 @@ describe('NextBestActionCard', () => {
       />,
     );
     expect(container.firstChild).toBeNull();
+  });
+
+  it('promotes a review queue to a screen action, not a WhatsApp message', () => {
+    // A submitted member workout is already done for the roster; the review
+    // is the remaining work. Messaging the client would be the wrong tap.
+    render(
+      <NextBestActionCard
+        d={{ ...DASH, expired_clients: 0, clients_with_balance: 0, total_outstanding: 0 }}
+        ops={opsWith([])} birthdays={[]} studioName="Iron Studio"
+        reviews={[{ client_id: 'c9', client_name: 'Amit Shukla' }]}
+      />,
+    );
+    expect(screen.getByText('1 self-workout to review')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /whatsapp/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^call /i })).toBeNull();
+    expect(screen.getByText(/reviews live in the client workout log/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /review latest/i }).getAttribute('href'))
+      .toBe('/pt-os/clients/c9/workout-log');
   });
 });
