@@ -115,6 +115,40 @@ describe('the standalone AI workout generator', () => {
     expect(await screen.findByText(/now live for this client/i)).toBeTruthy();
   });
 
+  it('saves without assigning when the trainer wants to edit first', async () => {
+    saveFromGeneration.mockResolvedValue({
+      message: 'ok', plan_id: 'p1', client_id: 'c1', name: 'Foundation',
+      saved: 18, unresolved: [], unknown_days: [], assigned: false,
+      other_active_assignments: 0,
+    });
+    render(<WorkoutGeneratorPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Generate Workout Plan/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Save as draft/i }));
+
+    await waitFor(() => expect(saveFromGeneration).toHaveBeenCalledWith({
+      generation_id: 'g1', assign: false,
+    }));
+    expect(await screen.findByText(/Saved as a draft/i)).toBeTruthy();
+  });
+
+  it('links each unresolved exercise to a prefilled library form', async () => {
+    saveFromGeneration.mockResolvedValue({
+      message: 'ok', plan_id: 'p1', client_id: 'c1', name: 'Foundation',
+      saved: 17, unknown_days: [], assigned: true, other_active_assignments: 0,
+      unresolved: [{ day: 'Monday', position: 2, name: 'Sled Push', reason: 'not in the exercise library' }],
+    });
+    render(<WorkoutGeneratorPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Generate Workout Plan/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Save & assign/i }));
+
+    const link = await screen.findByRole('link', { name: /Sled Push/ });
+    expect(link.getAttribute('href')).toBe(
+      '/pt-os/exercise-library/new?name=Sled%20Push&returnTo=%2Fpt-os%2Fworkout-plans%2Fp1%2Fbuilder%2Fadd-exercises',
+    );
+  });
+
   it.each([
     ['Progress this programme', 'adapt'],
     ['Start a new one', 'new'],

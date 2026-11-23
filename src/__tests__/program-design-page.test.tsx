@@ -96,11 +96,11 @@ describe('Program Design hub', () => {
     expect(screen.getByText(/Upper \/ lower/)).toBeTruthy();
     expect(screen.getByText(/50–60%/)).toBeTruthy();
     expect(await screen.findByRole('button', { name: /Continue to/ })).toBeTruthy();
-    // The rules generator was the only door here. The AI generator lives on
-    // the profile's AI tab, and this is the link that makes it reachable from
-    // the step it belongs to.
+    // The rules generator was the only door here. The AI generator is its own
+    // page and requires `client_id`, so the step links to it directly with the
+    // client pre-selected rather than through the profile's AI tab.
     expect(screen.getByRole('link', { name: /Generate with AI/ }))
-      .toHaveAttribute('href', '/pt-os/clients/c1?tab=ai');
+      .toHaveAttribute('href', '/ai/workout-generator?client_id=c1');
   });
 
   it('takes training days from the Interview, with enrolment as the fallback', async () => {

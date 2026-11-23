@@ -4634,6 +4634,13 @@ export type SavedFromGeneration = {
    */
   other_active_assignments?: number;
   /**
+   * Alternatives the proposal offered that were not stored: either the name
+   * does not resolve to a library row, or the frozen audit excluded it for
+   * this client. Returned so a trainer does not discover a missing option by
+   * opening the plan. Absent on a server that predates it.
+   */
+  dropped_alternatives?: Array<{ name: string; reason: string }>;
+  /**
    * Missing or stale screening paperwork. Saving assigns the plan, so the
    * server runs the same PAR-Q / consent gate as /workouts/assign: a hard
    * block is a 403 with the reason, and anything short of that comes back

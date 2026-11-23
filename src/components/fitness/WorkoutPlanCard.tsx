@@ -27,7 +27,7 @@
 // instead of rendering the "0" that used to read as a broken card.
 
 import { m, type Variants } from 'framer-motion'
-import { AlertTriangle, Edit3, Trash2, UserPlus, MoreHorizontal, Plus, User } from 'lucide-react'
+import { AlertTriangle, Copy, Edit3, Trash2, UserPlus, MoreHorizontal, Plus, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/components/ui/cn'
 
@@ -51,6 +51,7 @@ export interface WorkoutPlanCardProps {
   onOpen?: () => void
   onEdit?: () => void
   onAssign?: () => void
+  onDuplicate?: () => void
   onDelete?: () => void
   /** Shown instead of the progress block when the plan has no exercises. */
   onAddExercises?: () => void
@@ -68,7 +69,7 @@ const ACCENT_DEEP = '#852E4E'
 export function WorkoutPlanCard({
   name, goal, prescription, exerciseCount, progress = 0,
   clientName, currentWeek, durationWeeks, note,
-  onOpen, onEdit, onAssign, onDelete, onAddExercises,
+  onOpen, onEdit, onAssign, onDuplicate, onDelete, onAddExercises,
   compact = false, className, variants,
 }: WorkoutPlanCardProps) {
   const pct = Math.min(100, Math.max(0, Math.round(progress)))
@@ -139,7 +140,9 @@ export function WorkoutPlanCard({
               </p>
             )}
           </div>
-          {onDelete && <OverflowMenu onDelete={onDelete} planName={name} />}
+          {(onDuplicate || onDelete) && (
+            <OverflowMenu onDuplicate={onDuplicate} onDelete={onDelete} planName={name} />
+          )}
         </div>
 
         {/* Progress, or the reason there is none to show. */}
@@ -260,13 +263,18 @@ export function WorkoutPlanCard({
 }
 
 /**
- * Destructive actions, one tap out of the way.
+ * Secondary actions, one tap out of the way.
  *
  * Delete used to be a red button in the same row as Assign, the same size and
  * a thumb's width from it. It is rare and it is irreversible, so it belongs
  * behind a disclosure rather than beside the action a trainer presses daily.
+ * Duplicate lives here too: reuse is useful but not the daily primary.
  */
-function OverflowMenu({ onDelete, planName }: { onDelete: () => void; planName: string }) {
+function OverflowMenu({ onDuplicate, onDelete, planName }: {
+  onDuplicate?: () => void
+  onDelete?: () => void
+  planName: string
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -310,15 +318,28 @@ function OverflowMenu({ onDelete, planName }: { onDelete: () => void; planName: 
             boxShadow: '0 12px 32px rgba(15,23,42,0.16)',
           }}
         >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => { setOpen(false); onDelete() }}
-            className="flex w-full items-center gap-2 px-3 text-left text-[12.5px] font-[650] transition-colors hover:bg-black/[0.04]"
-            style={{ color: '#dc2626', minHeight: 44 }}
-          >
-            <Trash2 size={13} /> Delete plan
-          </button>
+          {onDuplicate && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onDuplicate() }}
+              className="flex w-full items-center gap-2 px-3 text-left text-[12.5px] font-[650] transition-colors hover:bg-black/[0.04]"
+              style={{ color: 'var(--text-primary)', minHeight: 44 }}
+            >
+              <Copy size={13} /> Duplicate plan
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onDelete() }}
+              className="flex w-full items-center gap-2 px-3 text-left text-[12.5px] font-[650] transition-colors hover:bg-black/[0.04]"
+              style={{ color: '#dc2626', minHeight: 44 }}
+            >
+              <Trash2 size={13} /> Delete plan
+            </button>
+          )}
         </div>
       )}
     </div>

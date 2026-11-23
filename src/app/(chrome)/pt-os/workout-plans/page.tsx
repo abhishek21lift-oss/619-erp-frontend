@@ -220,6 +220,16 @@ function Inner() {
     if (ok) { setAssignPlan(null); fetchData(); }
   }, [assignPlan, assignPlanToClient, fetchData]);
 
+  const handleDuplicatePlan = useCallback(async (plan: WorkoutPlan) => {
+    try {
+      const res = await api.workouts.plans.duplicate(plan.id);
+      toast.success(`Duplicated as "${res.plan.name}" — assign it when ready.`);
+      fetchData();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Could not duplicate plan.'));
+    }
+  }, [toast, fetchData]);
+
   const handleDeletePlan = useCallback(async (plan: WorkoutPlan) => {
     if (!window.confirm(`Delete "${plan.name}"? This cannot be undone.`)) return;
     try {
@@ -566,6 +576,7 @@ function Inner() {
                           onOpen={() => router.push(builderHref)}
                           onEdit={() => router.push(editHref)}
                           onAssign={() => setAssignPlan(plan)}
+                          onDuplicate={() => handleDuplicatePlan(plan)}
                           onDelete={() => handleDeletePlan(plan)}
                           onAddExercises={() => router.push(editHref)}
                         />
@@ -762,7 +773,7 @@ function AssignClientModal({
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
           <ShieldAlert size={14} color="#d97706" style={{ marginTop: 1, flexShrink: 0 }} />
           <p style={{ margin: 0, fontSize: 11.5, color: '#92400e', lineHeight: 1.5 }}>
-            Assignment is blocked unless the client has a PAR-Q screening on file with a &quot;cleared&quot; workout gate status and a completed Informed Consent.
+            A medical stop blocks assignment: a high-risk PAR-Q without valid clearance, revoked consent, or a physician&apos;s advice against exercise. An expired or frozen term blocks it too, and a client who has never enrolled needs completed screening first. Otherwise, missing or out-of-date screening is a warning — the plan is assigned and the outstanding item is shown afterwards.
           </p>
         </div>
 

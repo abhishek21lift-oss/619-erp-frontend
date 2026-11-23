@@ -690,6 +690,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "workouts.plans.create → /api/workouts/plans",
   "workouts.plans.delete → /api/workouts/plans/",
   "workouts.plans.detail → /api/workouts/plans/",
+  "workouts.plans.duplicate → /api/workouts/plans/",
   "workouts.plans.exercises.add → /api/workouts/plans/",
   "workouts.plans.exercises.patch → /api/workouts/plans/",
   "workouts.plans.exercises.remove → /api/workouts/plans/",
