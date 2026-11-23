@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { gotoApp, apiToken, apiGet, apiPost, apiDelete } from './helpers/session';
 
 /**
- * Cardio & FITT calculator → saved draft → builder → persisted prescription.
+ * Cardio Calculator → saved draft → builder → persisted prescription.
  *
  * The round trip is the point: a calculator that renders the right numbers but
  * posts a different shape, or a builder that reports "Prescribed" without the
@@ -51,7 +51,7 @@ async function fillValidCalculator(page: import('@playwright/test').Page): Promi
   await page.getByLabel('Modality', { exact: true }).fill('Running');
 }
 
-test.describe('Cardio & FITT calculator', () => {
+test.describe('Cardio Calculator', () => {
   // The first Next dev compile of a route can outlast the default 30s.
   test.describe.configure({ timeout: 120_000 });
 
@@ -66,7 +66,7 @@ test.describe('Cardio & FITT calculator', () => {
 
   test('saves a draft, applies it in the builder, persists it, and survives reload', async ({ page }) => {
     await gotoApp(page, '/pt-os/cardio-calculator');
-    await expect(page.getByRole('heading', { name: 'Cardio & FITT' })).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByRole('heading', { name: 'Cardio Calculator' })).toBeVisible({ timeout: 25_000 });
     await fillValidCalculator(page);
 
     const save = page.getByRole('button', { name: /Save for plan builder/i });
@@ -109,7 +109,7 @@ test.describe('Cardio & FITT calculator', () => {
 
   test('dismissing a draft writes nothing and clears it across reloads', async ({ page }) => {
     await gotoApp(page, '/pt-os/cardio-calculator');
-    await expect(page.getByRole('heading', { name: 'Cardio & FITT' })).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByRole('heading', { name: 'Cardio Calculator' })).toBeVisible({ timeout: 25_000 });
     await fillValidCalculator(page);
     await page.getByRole('button', { name: /Save for plan builder/i }).click();
     await expect(page.getByText(/Saved for the plan builder/i)).toBeVisible();
@@ -134,7 +134,7 @@ test.describe('Cardio & FITT calculator', () => {
 
   test('invalid inputs and the 81st modality character block saving', async ({ page }) => {
     await gotoApp(page, '/pt-os/cardio-calculator');
-    await expect(page.getByRole('heading', { name: 'Cardio & FITT' })).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByRole('heading', { name: 'Cardio Calculator' })).toBeVisible({ timeout: 25_000 });
 
     const save = page.getByRole('button', { name: /Save for plan builder/i });
     await page.getByLabel('Age (estimate only)').fill('200');

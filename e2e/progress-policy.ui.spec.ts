@@ -48,7 +48,7 @@ test.describe('Progress hub — studio re-test policy', () => {
 
   test('the saved cadence survives the journey and is read back from the API', async ({ page }) => {
     await gotoApp(page, `/pt-os/progress?client_id=${ALPHA.clientId}`);
-    await expect(page.getByRole('heading', { name: 'Progress Hub' })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Client Progress' })).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('tab', { name: 'Re-Testing Calendar' }).click();
     await expect(page.getByText('Studio re-test policy')).toBeVisible({ timeout: 20_000 });
