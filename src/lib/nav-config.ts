@@ -88,7 +88,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/availability',      label: 'Availability',        icon: 'CalendarClock' },
       { href: '/pt-os/session-balance',   label: 'Session Balance',     icon: 'Gauge' },
       { href: '/pt-os/sessions',          label: 'Session History',     icon: 'History' },
-      { href: '/checkin/dashboard',       label: 'Attendance Dashboard', icon: 'Monitor', feature: 'attendance', roles: ['trainer'] },
+      { href: '/checkin/dashboard',       label: 'Check-in Dashboard',  icon: 'Monitor', feature: 'attendance', roles: ['trainer'] },
       { href: '/attendance',              label: 'Attendance Records',  icon: 'ClipboardList', feature: 'attendance', roles: ['trainer'] },
     ],
   },
@@ -101,9 +101,9 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/workout-plans',       label: 'Workouts',             icon: 'Dumbbell',    matchPrefix: '/pt-os/workout-plans' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
-      { href: '/pt-os/macrocycle',          label: 'Macrocycle',           icon: 'Layers' },
+      { href: '/pt-os/macrocycle',          label: 'Training Cycles',      icon: 'Layers' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },
-      { href: '/pt-os/cardio-calculator',   label: 'Cardio & FITT',        icon: 'HeartPulse' },
+      { href: '/pt-os/cardio-calculator',   label: 'Cardio Calculator',    icon: 'HeartPulse' },
       // One photo destination for the studio. The per-client gallery is the
       // Photos tab inside the client record.
       { href: '/training/transformations',  label: 'Photos & Transformations', icon: 'Sparkles', roles: ['trainer'], feature: 'progress_photos' },
@@ -118,7 +118,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // Progress and Reports were two accordions that both answer "how is
       // this going?". One group, ordered from the client outward: their own
       // progress first, then the studio's numbers.
-      { href: '/pt-os/progress',           label: 'Progress Hub',        icon: 'LineChart' },
+      { href: '/pt-os/progress',           label: 'Client Progress',     icon: 'LineChart' },
       { href: '/pt-os/progress-report',    label: 'Progress Report',     icon: 'TrendingUp' },
       { href: '/pt-os/weekly-checkin',     label: 'Weekly Check-in',     icon: 'ClipboardCheck' },
       // One revenue page: All Reports and PT Revenue Report were thinner

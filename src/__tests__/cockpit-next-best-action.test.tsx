@@ -39,7 +39,7 @@ const ASHA = {
 describe('NextBestActionCard', () => {
   it('promotes only the top insight — the lower-ranked one stays on the board', () => {
     render(<NextBestActionCard d={DASH} ops={opsWith([ASHA])} birthdays={BIRTHDAYS} studioName="Iron Studio" />);
-    expect(screen.getByText('Next Best Action')).toBeTruthy();
+    expect(screen.getByText('Do this next')).toBeTruthy();
     expect(screen.getByText('1 package expiring this week')).toBeTruthy();
     // The birthday is real but ranked below; the board below the card owns it.
     expect(screen.queryByText(/birthday/i)).toBeNull();

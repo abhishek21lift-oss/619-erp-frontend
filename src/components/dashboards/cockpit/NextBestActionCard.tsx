@@ -97,7 +97,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName, revi
   } as const;
 
   return (
-    <section className="glass-panel relative overflow-hidden p-4 sm:p-5" aria-label="Next best action">
+    <section className="glass-panel relative overflow-hidden p-4 sm:p-5" aria-label="Do this next">
       {/* Urgency wash — decoration over the glass, never the surface itself. */}
       <div aria-hidden className="pointer-events-none absolute inset-0"
         style={{ background: `radial-gradient(120% 90% at 100% 0%, ${t.wash}, transparent 62%)` }} />
@@ -110,7 +110,7 @@ export default function NextBestActionCard({ d, ops, birthdays, studioName, revi
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="text-[15px] font-[800] tracking-[-0.015em] sm:text-[16px]" style={{ color: 'var(--text-primary)' }}>
-              Next Best Action
+              Do this next
             </h3>
           </div>
           {/* Urgency in words as well as colour. */}

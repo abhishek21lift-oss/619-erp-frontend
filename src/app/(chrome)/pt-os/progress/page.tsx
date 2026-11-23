@@ -152,7 +152,7 @@ function ProgressRoster() {
       <PageHero
         compact
         accent="brand"
-        title="Progress Hub"
+        title="Client Progress"
         subtitle={data ? `Studio date ${date(data.today)}` : 'Re-tests · daily habits · seven-domain change'}
         icon={<LineChart size={18} />}
       />
@@ -420,7 +420,7 @@ function ProgressHub({ clientId }: { clientId: string }) {
   if (failed && !data) {
     return (
       <PageContainer>
-        <PageHero title="Progress Hub" subtitle="Client progress" icon={<LineChart size={18} />} />
+        <PageHero title="Client Progress" subtitle="Client progress" icon={<LineChart size={18} />} />
         <PageActions>
           <Button variant="secondary" onClick={() => router.push('/pt-os/progress')}>Change client</Button>
         </PageActions>
@@ -433,7 +433,7 @@ function ProgressHub({ clientId }: { clientId: string }) {
   return (
     <PageContainer>
       <PageHero
-        title="Progress Hub"
+        title="Client Progress"
         subtitle={`${data.client.name} · ${periodLabel(data.dashboard.period.start_date, data.dashboard.period.end_date)}`}
         icon={<ClientAvatar name={data.client.name} photoUrl={data.client.photo_url} />}
       >

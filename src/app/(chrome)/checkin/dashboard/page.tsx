@@ -99,7 +99,7 @@ export default function DashboardPage() {
       <div className="mb-5 space-y-3">
         <PageHero
           icon={<Activity size={20} />}
-          title="Attendance Dashboard"
+          title="Check-in Dashboard"
           subtitle={`Live · refreshes every 30s · updated ${lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
         />
         <PageActions>

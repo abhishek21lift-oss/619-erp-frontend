@@ -87,6 +87,14 @@ describe('groups describe their contents', () => {
     expect(packages?.feature).toBe('packages');
   });
 
+  it('names the jargon in plain language', () => {
+    const byHref = new Map(trainerItems().map((i) => [i.href, i.label]));
+    expect(byHref.get('/pt-os/progress')).toBe('Client Progress');
+    expect(byHref.get('/pt-os/macrocycle')).toBe('Training Cycles');
+    expect(byHref.get('/pt-os/cardio-calculator')).toBe('Cardio Calculator');
+    expect(byHref.get('/checkin/dashboard')).toBe('Check-in Dashboard');
+  });
+
   it('uses ids that match their labels', () => {
     expect(NAV_GROUPS.map((g) => g.id)).toEqual([
       'clients', 'sessions', 'programs', 'insights', 'finance',

@@ -22,14 +22,14 @@ type Plan = {
 const plans = (token: string) => apiGet<Plan[]>('/api/workouts/plans', token);
 const idsOf = (rows: Plan[]) => new Set(rows.map((p) => p.id));
 
-test.describe('Macrocycle — create one programme per phase', () => {
+test.describe('Training Cycles — create one programme per phase', () => {
   let token: string;
   const created: string[] = [];
 
   test.beforeEach(async ({ page }) => {
     token = await apiToken();
     await gotoApp(page, '/pt-os/macrocycle');
-    await expect(page.getByRole('heading', { name: 'Macrocycle' })).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByRole('heading', { name: 'Training Cycles' })).toBeVisible({ timeout: 25_000 });
   });
 
   test.afterAll(async () => {
