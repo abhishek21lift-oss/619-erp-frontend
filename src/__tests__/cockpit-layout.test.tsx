@@ -67,7 +67,7 @@ describe('cockpit section order', () => {
     await screen.findByText('Active Clients', undefined, { timeout: 3000 });
     await assertOrder([
       /Today.s Sessions/i,
-      'Next Best Action',
+      'Do this next',
       'Client signals',
       'This Month',
       'Key Metrics',
@@ -96,7 +96,7 @@ describe('cockpit section order', () => {
     // A full cockpit render under a loaded machine can outrun findBy's
     // one-second default; the assertion is about presence, not speed.
     await screen.findByText(/roster check did not come back/i, undefined, { timeout: 3000 });
-    expect(screen.getByText('Next Best Action')).toBeTruthy();
+    expect(screen.getByText('Do this next')).toBeTruthy();
     expect(screen.getByText('Active Clients')).toBeTruthy();
   });
 });

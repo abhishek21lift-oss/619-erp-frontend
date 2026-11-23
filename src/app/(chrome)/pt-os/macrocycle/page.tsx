@@ -119,7 +119,7 @@ export default function MacrocyclePage() {
       <PageContainer>
         <PageHero
           icon={<CalendarRange size={20} color="#fff" />}
-          title="Macrocycle"
+          title="Training Cycles"
 
         />
 

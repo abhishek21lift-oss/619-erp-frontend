@@ -20,7 +20,7 @@ const FAQS = [
   { q: 'How do I record a payment?', a: 'Go to Finance → Record Payment, choose the client and enter the amount you received.' },
   { q: 'How do I start a client on a programme?', a: 'Open the client and choose Enroll to set up their PT term, then use Workout programmes on their profile to assign a plan.' },
   { q: 'How do I check attendance?', a: 'Open Check In in the sidebar to scan walk-ins, or Sessions → Attendance Records to review the register.' },
-  { q: 'How do I see my reports?', a: 'Open Reports for Revenue Report, Renewal Report and Attendance Report.' },
+  { q: 'How do I see my reports?', a: 'Open Progress & Reports for Revenue Report, Renewal Report and Attendance Report.' },
   { q: 'How do I change my password?', a: 'Open My Profile → Security. Members reset theirs from the member sign-in page.' },
 ];
 

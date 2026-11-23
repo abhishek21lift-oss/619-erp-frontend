@@ -472,7 +472,7 @@ export default function CardioCalculatorPage() {
       <PageContainer>
         <PageHero
           icon={<HeartPulse size={20} color="#fff" />}
-          title="Cardio & FITT"
+          title="Cardio Calculator"
         />
 
         <div className="space-y-5">
