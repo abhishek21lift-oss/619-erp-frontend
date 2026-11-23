@@ -75,6 +75,19 @@ export type DashData = {
   revenueTrend: Array<{
     label: string; month: string; revenue: number; incentives: number;
   }>;
+  /**
+   * First-run only. Null (or absent, on a backend that predates it) once the
+   * studio has an active or expired term, because the checklist is gone by
+   * then. The counts are "clients who have finished this step", not booleans:
+   * a studio can have two clients and intake done for one.
+   */
+  setup?: SetupProgress | null;
+};
+
+export type SetupProgress = {
+  clients_added: number;
+  intake_complete: number;
+  plan_assigned: number;
 };
 
 type SessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
@@ -298,15 +311,38 @@ function Skel({ w = 'w-full', h = 'h-4', r = 'rounded-xl' }: { w?: string; h?: s
  * `active_pt_clients` only counts clients whose PT term has started, and
  * `expired_clients` only counts finished terms. A studio with neither has no
  * money, renewal or session history to show yet, so the zero-value cards are
- * withheld and the next three actions take their place. Pending clients are
- * deliberately covered by the second line: "Open Clients" finishes an
- * enrolment that has not become an active term yet.
+ * withheld and this checklist takes their place.
+ *
+ * The three steps are derived, not decorative. The dashboard returns how many
+ * clients have finished each one (`setup`), so the card can say "intake done"
+ * instead of repeating the same three instructions forever. When all three
+ * are done it stops being a checklist and points at the one thing left:
+ * enrolling the client in PT, which is what makes the numbers appear.
+ *
+ * `setup` is absent on an older backend and on a studio that already has an
+ * active or expired term; both fall back to all-zero, i.e. the first step.
  */
-function NewStudioCard() {
+function NewStudioCard({ setup }: { setup?: SetupProgress | null }) {
+  const added = (setup?.clients_added ?? 0) > 0;
+  const intake = (setup?.intake_complete ?? 0) > 0;
+  const plan = (setup?.plan_assigned ?? 0) > 0;
+  const done = [added, intake, plan];
+  const doneCount = done.filter(Boolean).length;
+  const complete = doneCount === 3;
+
   const steps = [
-    { icon: UserPlus, title: 'Add the client', body: 'Name, contact and the basics.' },
-    { icon: ClipboardCheck, title: 'Complete the intake', body: 'Tour, consent, PAR-Q, goals.' },
-    { icon: Dumbbell, title: 'Build and assign a plan', body: 'Start from a template or the builder.' },
+    {
+      icon: UserPlus, title: 'Add the client', body: 'Name, contact and the basics.',
+      href: '/pt-os/new-client', done: added,
+    },
+    {
+      icon: ClipboardCheck, title: 'Complete the intake', body: 'Consent, PAR-Q and goals.',
+      href: '/pt-os/clients?status=pending', done: intake,
+    },
+    {
+      icon: Dumbbell, title: 'Build and assign a plan', body: 'Start from a template or the builder.',
+      href: '/pt-os/workout-plans', done: plan,
+    },
   ];
 
   return (
@@ -314,52 +350,87 @@ function NewStudioCard() {
       <div className="flex items-start gap-3.5">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white"
           style={{
-            background: `linear-gradient(135deg, ${palette.indigo[500]}, ${palette.indigo[600]})`,
-            boxShadow: `0 8px 18px ${rgba(palette.indigo[500], 0.28)}`,
+            background: complete
+              ? `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.emerald[600]})`
+              : `linear-gradient(135deg, ${palette.indigo[500]}, ${palette.indigo[600]})`,
+            boxShadow: `0 8px 18px ${rgba(complete ? palette.emerald[500] : palette.indigo[500], 0.28)}`,
           }}>
-          <Sparkles size={18} />
+          {complete ? <CheckCircle2 size={18} /> : <Sparkles size={18} />}
         </span>
         <div className="min-w-0">
           <h3 className="text-[16px] font-[820] tracking-[-0.02em]" style={{ color: C.ink }}>
-            No active clients yet
+            {complete ? 'Setup complete' : 'No active clients yet'}
           </h3>
           <p className="mt-1 text-[12.5px] leading-[1.55]" style={{ color: C.muted }}>
-            Add your first client and the dashboard fills in as you go. Already added someone?
-            Open Clients to finish their enrolment.
+            {complete
+              ? 'Intake and the plan are done. Enrol the client in PT to activate their term — the dashboard fills in from there.'
+              : 'Add your first client and the dashboard fills in as you go. Already added someone? Open Clients to finish their enrolment.'}
           </p>
+          {!complete && (
+            <p className="mt-1.5 text-[11px] font-[700] tabular-nums" style={{ color: C.primary }}>
+              {doneCount} of 3 done
+            </p>
+          )}
         </div>
       </div>
 
-      <ol className="mt-4 grid gap-2 sm:grid-cols-3">
-        {steps.map((s, i) => (
-          <li key={s.title} className="flex items-start gap-2.5 rounded-[14px] px-3 py-2.5"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
-              style={{ background: rgba(C.primary, 0.10), color: C.primary }}>
-              <s.icon size={14} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[11.5px] font-[750]" style={{ color: C.ink }}>{i + 1}. {s.title}</p>
-              <p className="mt-0.5 text-[10.5px] leading-[1.45]" style={{ color: C.muted }}>{s.body}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      {!complete && (
+        <ol className="mt-4 grid gap-2 sm:grid-cols-3">
+          {steps.map((s, i) => (
+            <li key={s.title}>
+              <Link href={s.href}
+                className="flex h-full items-start gap-2.5 rounded-[14px] px-3 py-2.5 transition-colors hover:border-[var(--border-strong)]"
+                style={{
+                  background: s.done ? 'var(--success-soft)' : 'var(--bg-subtle)',
+                  border: '1px solid var(--border)',
+                }}>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
+                  style={{
+                    background: s.done ? rgba(palette.emerald[500], 0.14) : rgba(C.primary, 0.10),
+                    color: s.done ? palette.emerald[600] : C.primary,
+                  }}>
+                  {s.done ? <CheckCircle2 size={14} /> : <s.icon size={14} />}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[11.5px] font-[750]" style={{ color: C.ink }}>
+                    {s.done ? s.title : `${i + 1}. ${s.title}`}
+                    {s.done && <span className="sr-only"> — done</span>}
+                  </p>
+                  <p className="mt-0.5 text-[10.5px] leading-[1.45]" style={{ color: C.muted }}>{s.body}</p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Link href="/pt-os/new-client"
-          className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-5 text-[13px] font-[750] text-white transition-transform active:scale-[0.98]"
-          style={{
-            background: `linear-gradient(135deg, ${palette.indigo[500]}, ${palette.indigo[600]})`,
-            boxShadow: `0 8px 18px ${rgba(palette.indigo[500], 0.28)}`,
-          }}>
-          <UserPlus size={15} /> Add your first client
-        </Link>
-        <Link href="/pt-os/clients"
-          className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-[700]"
-          style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-          Open Clients <ChevronRight size={14} />
-        </Link>
+        {complete ? (
+          <Link href="/pt-os/clients?status=pending"
+            className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-5 text-[13px] font-[750] text-white transition-transform active:scale-[0.98]"
+            style={{
+              background: `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.emerald[600]})`,
+              boxShadow: `0 8px 18px ${rgba(palette.emerald[500], 0.28)}`,
+            }}>
+            <CheckCircle2 size={15} /> Enrol in PT
+          </Link>
+        ) : (
+          <Link href={added ? '/pt-os/clients?status=pending' : '/pt-os/new-client'}
+            className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-5 text-[13px] font-[750] text-white transition-transform active:scale-[0.98]"
+            style={{
+              background: `linear-gradient(135deg, ${palette.indigo[500]}, ${palette.indigo[600]})`,
+              boxShadow: `0 8px 18px ${rgba(palette.indigo[500], 0.28)}`,
+            }}>
+            {added ? <><ClipboardCheck size={15} /> Finish enrolment</> : <><UserPlus size={15} /> Add your first client</>}
+          </Link>
+        )}
+        {!added && (
+          <Link href="/pt-os/clients"
+            className="inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-[700]"
+            style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            Open Clients <ChevronRight size={14} />
+          </Link>
+        )}
       </div>
     </Glass>
   );
@@ -1382,7 +1453,7 @@ export function AICoach({ d, ops, birthdays, studioName, excludeTop = false, rev
   studioName: string;
   /** Submitted member workouts the trainer still has to review. */
   reviews?: CoachReview[];
-  /** The cockpit's Next Best Action card promotes insights[0]; the board then
+  /** The cockpit's Do this next card promotes insights[0]; the board then
    *  lists the remainder so the same action never renders twice. */
   excludeTop?: boolean;
 }) {
@@ -2627,7 +2698,7 @@ export default function PtOsDashboard() {
                 above Today so the first thing a new trainer reads is the next
                 step, not an empty roster. `firstRun` still yields to a booked
                 session for a pending client: real work outranks onboarding. */}
-            {firstRun && <NewStudioCard />}
+            {firstRun && <NewStudioCard setup={d.setup} />}
 
             {/* 2 — Today's sessions.
                 Directly under the hero, above revenue and retention: it is the
@@ -2660,7 +2731,7 @@ export default function PtOsDashboard() {
                 because that is when it matters: before someone is trained. */}
             <ScreeningGaps />
 
-            {/* 2.75 — Next Best Action.
+            {/* 2.75 — Do this next.
                 The single highest-ranked result of the same prioritisation the
                 AI Coach board runs, promoted to its own card with the actions
                 the board keeps one tap deep. Placed with the schedule because
@@ -2755,7 +2826,7 @@ export default function PtOsDashboard() {
                 <MobileQuickActions />
 
                 {/* The AI Coach board keeps the remainder of the same ranking
-                    Next Best Action promoted the top of: excludeTop means one
+                    Do this next promoted the top of: excludeTop means one
                     action never prints twice. */}
                 <AICoach d={d} ops={o}
                   birthdays={birthdayList}
