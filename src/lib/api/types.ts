@@ -1458,8 +1458,12 @@ export interface WorkoutPlanExercise {
   superset_group?: string | null;
   /** True when the week resolved for a powerlifting block is a deload. */
   is_deload?: boolean;
-  /** Named swaps for this movement, as written. */
-  alternatives?: Array<string | { name: string; reason?: string }> | null;
+  /**
+   * Named swaps for this movement, as written. The AI save path stores
+   * `{ name, exercise_id }` once the name resolves, so a surface can open the
+   * library row directly; trainer-entered lists may still be plain strings.
+   */
+  alternatives?: Array<string | { name: string; exercise_id?: string; reason?: string }> | null;
   /** Coaching cues for this movement, as written. */
   cues?: string[] | null;
   /**
@@ -3990,7 +3994,7 @@ export type MeWorkoutExercise = {
   /** Exercises sharing a value are performed together. */
   superset_group?: string | null;
   /** Named substitutes for a movement the client cannot do as written. */
-  alternatives?: Array<string | { name: string; reason?: string }> | null;
+  alternatives?: Array<string | { name: string; exercise_id?: string; reason?: string }> | null;
   /** Coaching cues for this movement, as written. */
   cues?: string[] | null;
   /** True when the resolved week is a deload. */
