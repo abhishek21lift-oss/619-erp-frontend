@@ -51,6 +51,7 @@ const dashData = {
   total_monthly_commission: 20000,
   total_outstanding: 15000,
   trainers: [],
+  setup: null as null | { clients_added: number; intake_complete: number; plan_assigned: number },
   // Three months, which is the floor for drawing a sparkline at all — see
   // "too few months to be a shape" below.
   revenueTrend: [
@@ -86,6 +87,7 @@ describe('PT-OS dashboard KPIs', () => {
     // with clients.
     dashData.active_pt_clients = 12;
     dashData.expired_clients = 3;
+    dashData.setup = null;
     // One test trims the series to prove the floor; put it back.
     dashData.revenueTrend = [...FULL_TREND];
     // And the session-stats test below changes these.
@@ -113,11 +115,42 @@ describe('PT-OS dashboard KPIs', () => {
     render(<PtOsDashboard />);
 
     expect(await screen.findByText('No active clients yet')).toBeTruthy();
+    expect(screen.getByText('0 of 3 done')).toBeTruthy();
     expect(screen.getByRole('link', { name: /add your first client/i }).getAttribute('href'))
       .toBe('/pt-os/new-client');
     expect(screen.queryByText('Key Metrics')).toBeNull();
     expect(screen.queryByText('Active Clients')).toBeNull();
     expect(screen.queryByText('Money')).toBeNull();
+  });
+
+  it('ticks the setup steps the studio has actually finished', async () => {
+    dashData.active_pt_clients = 0;
+    dashData.expired_clients = 0;
+    dashData.setup = { clients_added: 1, intake_complete: 1, plan_assigned: 0 };
+    render(<PtOsDashboard />);
+
+    expect(await screen.findByText('2 of 3 done')).toBeTruthy();
+    // The finished rows say so; the remaining one is still numbered.
+    expect(screen.getAllByText(/— done/)).toHaveLength(2);
+    expect(screen.getByText('3. Build and assign a plan')).toBeTruthy();
+    // The primary action moves from "add" to "finish", and no longer offers
+    // a second "Open Clients" link that says the same thing.
+    expect(screen.getByRole('link', { name: /finish enrolment/i }).getAttribute('href'))
+      .toBe('/pt-os/clients?status=pending');
+    expect(screen.queryByRole('link', { name: /add your first client/i })).toBeNull();
+  });
+
+  it('replaces the checklist with the one remaining step when setup is done', async () => {
+    dashData.active_pt_clients = 0;
+    dashData.expired_clients = 0;
+    dashData.setup = { clients_added: 1, intake_complete: 1, plan_assigned: 1 };
+    render(<PtOsDashboard />);
+
+    expect(await screen.findByText('Setup complete')).toBeTruthy();
+    expect(screen.queryByText('0 of 3 done')).toBeNull();
+    expect(screen.queryByText('Build and assign a plan')).toBeNull();
+    expect(screen.getByRole('link', { name: /enrol in pt/i }).getAttribute('href'))
+      .toBe('/pt-os/clients?status=pending');
   });
 
   it('keeps today when a pending client has a booked session', async () => {
