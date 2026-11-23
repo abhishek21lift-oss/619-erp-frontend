@@ -78,11 +78,25 @@ export const workouts = {
      * generated name in eight is one. That is information for the trainer, not
      * a failure.
      */
-    saveFromGeneration: (data: { generation_id: string; name?: string }) =>
+    saveFromGeneration: (data: { generation_id: string; name?: string; assign?: boolean }) =>
       http<SavedFromGeneration>('/api/workouts/plans/from-generation', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+
+    /**
+     * Copy a plan into a new, unassigned programme.
+     *
+     * Reuse without coupling: assigning the SAME plan to two clients means an
+     * edit for one changes the other, which is not what a trainer means by
+     * "run this block again". The copy carries every stored field, including
+     * the protocol blocks and powerlifting metadata.
+     */
+    duplicate: (id: string, data?: { name?: string }) =>
+      http<{ message: string; plan: WorkoutPlan; copied_exercises: number }>(
+        `/api/workouts/plans/${id}/duplicate`,
+        { method: 'POST', body: JSON.stringify(data ?? {}) },
+      ),
 
     delete: (id: string) =>
       http<{ message: string }>(`/api/workouts/plans/${id}`, { method: 'DELETE' }),

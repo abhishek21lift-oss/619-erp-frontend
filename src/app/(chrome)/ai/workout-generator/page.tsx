@@ -424,10 +424,14 @@ export default function WorkoutGeneratorPage() {
   };
 
   /**
-   * Save & assign — the generation id is the whole request. The server writes
-   * the plan from the frozen proposal and assigns it, screening gate included.
+   * Save the frozen proposal. The generation id is the whole request; the
+   * server writes the plan from its own ledger.
+   *
+   * `assign` defaults to true — the ordinary path, gate included. A draft
+   * (`assign: false`) is for a plan that needs work in the builder first: it
+   * is written unassigned, so an unfinished programme never reaches Today.
    */
-  const savePlan = async () => {
+  const savePlan = async (assign = true) => {
     if (!generationId || savingRef.current) return;
     // A critical finding is the audit's fact about this exact proposal; the
     // server refuses it too, but the button should not invite the attempt.
@@ -435,7 +439,9 @@ export default function WorkoutGeneratorPage() {
     savingRef.current = true;
     setSavingPlan(true); setSaveError('');
     try {
-      setSaved(await api.workouts.plans.saveFromGeneration({ generation_id: generationId }));
+      setSaved(await api.workouts.plans.saveFromGeneration(
+        assign ? { generation_id: generationId } : { generation_id: generationId, assign: false },
+      ));
     } catch (e: unknown) {
       setSaveError(errorMessage(e, 'Could not save the programme'));
     } finally {
@@ -714,16 +720,36 @@ export default function WorkoutGeneratorPage() {
                   <div role="status" className="text-[13px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                     <div className="text-[14px] font-[750]">
                       {saved.assigned === false
-                        ? 'Saved, but not assigned — it will not appear on Today.'
+                        ? 'Saved as a draft — not assigned, so it will not appear on Today. Edit it in the builder, then assign it when it is ready.'
                         : (saved.other_active_assignments ?? 0) > 0
                           ? `Saved and assigned — this client is now on ${(saved.other_active_assignments ?? 0) + 1} active programmes. A started session uses the one that prescribes today's workout; choose the programme explicitly if that is not the right one.`
                           : `Saved ${saved.saved} exercises to ${saved.name} — now live for this client.`}
                     </div>
                     {saved.unresolved.length > 0 && (
-                      <p className="mb-0 mt-2" style={{ color: 'var(--text-muted)' }}>
-                        {saved.unresolved.length} not in the library — create them in the Exercise Library, then add them in the builder:{' '}
-                        {saved.unresolved.map((u) => u.name).join(', ')}
-                      </p>
+                      <div className="mt-2" style={{ color: 'var(--text-muted)' }}>
+                        <p className="mb-1">
+                          {saved.unresolved.length} exercise{saved.unresolved.length === 1 ? '' : 's'} not in the library, so not in the saved plan. Create each one, then add it in the builder:
+                        </p>
+                        <ul className="mb-0 list-disc pl-5">
+                          {saved.unresolved.map((u, i) => {
+                            const label = `${u.name}${u.day ? ` · ${u.day}` : ''}`;
+                            const creatable = u.name && u.name !== '(unnamed)';
+                            return (
+                              <li key={`${u.day}-${u.position}-${i}`}>
+                                {creatable ? (
+                                  <Link
+                                    className="font-[650]"
+                                    style={{ color: ACCENT }}
+                                    href={`/pt-os/exercise-library/new?name=${encodeURIComponent(u.name)}&returnTo=${encodeURIComponent(`/pt-os/workout-plans/${saved.plan_id}/builder/add-exercises`)}`}
+                                  >
+                                    {label}
+                                  </Link>
+                                ) : label}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
                     )}
                     {!!saved.screening_warnings?.length && (
                       <p className="mb-0 mt-2" style={{ color: '#92400e' }}>
@@ -742,15 +768,27 @@ export default function WorkoutGeneratorPage() {
                       <p className="mb-0 mt-1 text-[12.5px] leading-relaxed" style={{ color: criticalCount ? '#DC2626' : 'var(--text-muted)' }}>
                         {criticalCount
                           ? `Cannot save — ${criticalCount} critical safety finding${criticalCount === 1 ? '' : 's'}. Regenerate the programme.`
-                          : 'Save & assign writes it to this client and makes it their live programme.'}
+                          : 'Save & assign makes it their live programme. Save as draft keeps it unassigned so you can edit it in the builder first.'}
                       </p>
                     </div>
-                    <button onClick={savePlan} disabled={savingPlan || criticalCount > 0}
-                      className="flex items-center justify-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[750] text-white"
-                      style={{ background: ACCENT_GRADIENT, opacity: savingPlan ? 0.6 : 1 }}>
-                      {savingPlan ? <Loader2 size={14} className="animate-spin" /> : null}
-                      {savingPlan ? 'Saving…' : 'Save & assign'}
-                    </button>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button onClick={() => { void savePlan(false); }} disabled={savingPlan || criticalCount > 0}
+                        className="flex items-center justify-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[700]"
+                        style={{
+                          border: '1px solid var(--border)',
+                          background: 'transparent',
+                          color: 'var(--text-secondary)',
+                          opacity: savingPlan ? 0.6 : 1,
+                        }}>
+                        Save as draft
+                      </button>
+                      <button onClick={() => { void savePlan(); }} disabled={savingPlan || criticalCount > 0}
+                        className="flex items-center justify-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[750] text-white"
+                        style={{ background: ACCENT_GRADIENT, opacity: savingPlan ? 0.6 : 1 }}>
+                        {savingPlan ? <Loader2 size={14} className="animate-spin" /> : null}
+                        {savingPlan ? 'Saving…' : 'Save & assign'}
+                      </button>
+                    </div>
                   </div>
                 )}
                 {saveError && (
