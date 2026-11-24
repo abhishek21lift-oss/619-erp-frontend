@@ -1,9 +1,10 @@
-// Built-in edit is a duplicate-and-edit, not an edit in place.
+// Built-in edit opens a create form prefilled from the shared row.
 //
 // The card only reports that Edit was clicked. This drives the library page
 // itself, because the decision lives there: a row with `can_edit: false` must
-// call the duplicate endpoint and open the copy's editor; a custom row must go
-// straight to its own editor.
+// open the new-exercise form with the built-in as a template; a custom row must
+// go straight to its own editor. The copy is written only on save, so an
+// abandoned edit leaves no `(Copy)` row behind.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -81,15 +82,17 @@ beforeEach(() => {
 });
 
 describe('editing a built-in exercise', () => {
-  it('duplicates it and opens the copy, never the shared row', async () => {
+  it('opens a prefilled create form, never the shared row', async () => {
     render(<ExerciseLibraryPage />);
 
     fireEvent.click(await screen.findByRole('button', { name: /exercise actions/i }));
     fireEvent.click(screen.getByRole('menuitem', { name: /duplicate & edit/i }));
 
-    await waitFor(() => expect(duplicate).toHaveBeenCalledWith('builtin-1'));
-    expect(push).toHaveBeenCalledWith('/pt-os/exercise-library/copy-1/edit');
-    expect(success).toHaveBeenCalledWith('Created "Barbell Squat (Copy)" — editing the copy');
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/pt-os/exercise-library/new?template=builtin-1'));
+    // Nothing is written until the trainer saves, so an abandoned edit cannot
+    // leave an orphan copy in the library.
+    expect(duplicate).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
   }, 15000);
 
   it('opens a custom row directly, with no copy in between', async () => {

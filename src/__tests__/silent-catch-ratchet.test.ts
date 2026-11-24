@@ -96,7 +96,7 @@ const KNOWN = [
   // entry is gone.
   'app/(chrome)/pt-os/clients/[id]/workout-log/page.tsx:178',
   'app/(chrome)/pt-os/exercise-library/[id]/edit/page.tsx:28',
-  'app/(chrome)/pt-os/exercise-library/new/page.tsx:56',
+  'app/(chrome)/pt-os/exercise-library/new/page.tsx:62',
   // The goal wizard reads the Client Interview and the Module 5 re-test
   // schedule as optional context. Neither is a number the trainer acts on:
   // the step shows "Not recorded"/"No re-test scheduled" and the goal can
