@@ -1371,7 +1371,7 @@ export interface LibraryExercise {
   use_count?: number;
   used_at?: string;
 
-  /** Detail endpoint only. */
+  /** Served by the list and detail endpoints; the card prefers this map. */
   muscles?: ExerciseMuscleLink[];
   progressions?: ExerciseRelation[];
   regressions?: ExerciseRelation[];

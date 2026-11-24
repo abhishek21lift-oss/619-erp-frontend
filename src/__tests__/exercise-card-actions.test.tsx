@@ -80,4 +80,29 @@ describe('library exercise actions', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /^delete$/i }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('shows secondary muscles from the map even when the legacy text is null', () => {
+    // `Pull Ups` and `Push Ups` have the right exercise_muscles rows but a null
+    // `secondary_muscles` text column; the list now sends the map, and the
+    // card must read it rather than showing only the primary.
+    render(
+      <ExerciseCard
+        exercise={ex({
+          name: 'Pull Ups',
+          primary_muscle: 'Lats',
+          secondary_muscles: null,
+          muscles: [
+            { slug: 'lats', name: 'Lats', body_region: 'back', role: 'primary' },
+            { slug: 'biceps', name: 'Biceps', body_region: 'arms', role: 'secondary' },
+            { slug: 'middle-back', name: 'Middle Back', body_region: 'back', role: 'secondary' },
+          ],
+        })}
+        onOpen={vi.fn()}
+        onToggleFavorite={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Biceps/)).toBeInTheDocument();
+    expect(screen.getByText(/Middle Back/)).toBeInTheDocument();
+  });
 });
