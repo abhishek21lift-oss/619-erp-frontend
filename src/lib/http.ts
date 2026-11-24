@@ -437,9 +437,12 @@ const _refreshPromises = new Map<PagePortal, Promise<boolean>>();
 
 // Renew the access token via the rotating refresh-token cookie. Resilient to
 // transient failures: a 401 means the refresh token is genuinely gone (give up
-// → the caller logs out), but a network error or 5xx is treated as transient
-// — e.g. a free-tier backend cold-starting after idle — and retried with
-// backoff so a momentary blip doesn't force a full re-login.
+// → the caller logs out), but a network error, a 5xx, or a 409
+// REFRESH_IN_PROGRESS is treated as transient — a free-tier backend cold-start,
+// or another tab winning the rotation a millisecond earlier — and retried with
+// backoff so a momentary blip doesn't force a full re-login. Do not make all
+// 4xx terminal: the 409 exists so the losing tab retries with the cookie the
+// winner just set instead of signing the browser out.
 function tryRefreshToken(): Promise<boolean> {
   const portal = currentPortal();
   const existing = _refreshPromises.get(portal);

@@ -11,7 +11,6 @@ import {
 import { accessCookieName, portalForPage } from '@/lib/portals';
 
 const PUBLIC_ASSET_PREFIXES: string[] = [
-  '/checkin',
   '/_next',
   '/api/health',
   '/api/auth',
