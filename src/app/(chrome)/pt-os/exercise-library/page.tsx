@@ -92,8 +92,18 @@ function ExerciseLibrary() {
   }, [lib, toast]);
 
   const handleDuplicate = useCallback(async (ex: LibraryExercise) => {
+    // Ask for the name up front. The old path sent no name and the server
+    // defaulted to `${name} (Copy)`, which is how `Ab Roller (Copy)` and the
+    // no-space duplicate spellings entered the library.
+    const requested = window.prompt(`Name for the copy of "${ex.name}"`, `${ex.name} (Copy)`);
+    if (requested === null) return;
+    const name = requested.trim();
+    if (!name) {
+      toast.error('A name is required');
+      return;
+    }
     try {
-      const res = await api.exercises.duplicate(ex.id);
+      const res = await api.exercises.duplicate(ex.id, name);
       toast.success(`Created "${res.exercise.name}"`);
       await lib.refetch();
       setDetailId(res.exercise.id);
@@ -138,22 +148,17 @@ function ExerciseLibrary() {
   // Authoring lives at its own URL, so a half-written exercise survives a
   // reload and Back does the obvious thing.
   const openCreate = useCallback(() => { router.push('/pt-os/exercise-library/new'); }, [router]);
-  const openEdit = useCallback(async (ex: LibraryExercise) => {
-    // A built-in belongs to every studio, so editing it in place would change
-    // it for all of them. The copy is the trainer's own row, and the editor
-    // opens on that instead.
+  const openEdit = useCallback((ex: LibraryExercise) => {
     if (ex.can_edit !== false) {
       router.push(`/pt-os/exercise-library/${ex.id}/edit`);
       return;
     }
-    try {
-      const res = await api.exercises.duplicate(ex.id);
-      toast.success(`Created "${res.exercise.name}" — editing the copy`);
-      router.push(`/pt-os/exercise-library/${res.exercise.id}/edit`);
-    } catch (err) {
-      toast.error(errorMessage(err, 'Could not duplicate exercise'));
-    }
-  }, [router, toast]);
+    // A built-in belongs to every studio, so editing it in place would change
+    // it for all of them. Open a create form prefilled from it instead: the
+    // copy is written only when the trainer saves, so abandoning the edit
+    // leaves no orphan `(Copy)` row behind.
+    router.push(`/pt-os/exercise-library/new?template=${ex.id}`);
+  }, [router]);
 
   const showingFrom = total === 0 ? 0 : lib.page * PAGE_SIZE + 1;
   const showingTo   = Math.min((lib.page + 1) * PAGE_SIZE, total);

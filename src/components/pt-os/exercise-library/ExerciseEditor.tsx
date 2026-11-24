@@ -57,18 +57,29 @@ export interface ExerciseEditorProps {
   meta: ExerciseMeta | null;
   /** Create mode only: the name typed in the builder's search, prefilled. */
   initialName?: string;
+  /**
+   * Create mode only: prefill from an existing exercise without saving a copy.
+   * Editing a built-in uses this, so abandoning the form leaves no orphan row.
+   */
+  template?: LibraryExercise | null;
   onClose: () => void;
   onSaved: (ex: LibraryExercise, created: boolean) => void;
 }
 
 const DRAFT_KEY = '619:exercise-draft:v1';
 
+/** A template gets its own draft, so one built-in's half-written copy cannot
+ *  reappear when the trainer starts a different one. */
+function draftKeyFor(template: LibraryExercise | null | undefined) {
+  return template ? `${DRAFT_KEY}:template:${template.id}` : DRAFT_KEY;
+}
+
 function slugify(s: string) {
   return s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 export function ExerciseEditor({
-  exercise, meta, initialName, onClose, onSaved,
+  exercise, meta, initialName, template, onClose, onSaved,
 }: ExerciseEditorProps) {
   const { toast } = useToast();
   const isEdit = Boolean(exercise);
@@ -80,9 +91,10 @@ export function ExerciseEditor({
     conflict?: string;
   }>({ state: 'idle' });
 
-  const secondaryFromServer = React.useMemo(
-    () => (exercise?.muscles || []).filter((m) => m.role === 'secondary').map((m) => m.slug),
-    [exercise]
+  const secondarySlugs = React.useMemo(
+    () => ((exercise ?? template)?.muscles || [])
+      .filter((m) => m.role === 'secondary').map((m) => m.slug),
+    [exercise, template]
   );
 
   /**
@@ -93,32 +105,46 @@ export function ExerciseEditor({
    * dirty check compared the two — so a mis-ordered update made a freshly
    * opened form report itself as edited.
    */
-  const initialValues = React.useMemo<ExerciseFormState>(() => {
+  const initial = React.useMemo<{ values: ExerciseFormState; restoredDraft: boolean }>(() => {
+    const secondaryIds = (meta?.all_muscles || [])
+      .filter((m) => secondarySlugs.includes(m.slug))
+      .map((m) => m.id!)
+      .filter(Boolean);
+
     if (exercise) {
-      const secondaryIds = (meta?.all_muscles || [])
-        .filter((m) => secondaryFromServer.includes(m.slug))
-        .map((m) => m.id!)
-        .filter(Boolean);
-      return exerciseToFormValues(exercise, secondaryIds);
+      return { values: exerciseToFormValues(exercise, secondaryIds), restoredDraft: false };
     }
 
-    // Create mode: restore an autosaved draft if one survived a refresh.
+    // Create mode: restore an autosaved draft if one survived a refresh. A
+    // template's draft is keyed to that template, so switching built-ins
+    // cannot restore the wrong half-written copy.
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
+      const raw = localStorage.getItem(draftKeyFor(template));
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
         // Shape-checked rather than cast. The draft comes out of localStorage,
         // and one written by an older version of this form — before a field
         // existed, or under its old name — produced `undefined` where a string
         // belongs, and then `undefined.trim()` on save.
-        if (isExerciseDraft(parsed)) return parsed;
+        if (isExerciseDraft(parsed)) return { values: parsed, restoredDraft: true };
       }
     } catch { /* a corrupt draft is not worth failing the dialog over */ }
 
+    if (template) {
+      const values = exerciseToFormValues(template, secondaryIds);
+      // A copy needs its own name. `(Custom)` is a starting point the trainer
+      // can replace; the point is that it is not silently the built-in's name.
+      values.name = `${template.name} (Custom)`.slice(0, 120);
+      return { values, restoredDraft: false };
+    }
+
     const blank = blankExercise();
     if (initialName) blank.name = initialName.slice(0, 120);
-    return blank;
-  }, [exercise, meta, secondaryFromServer, initialName]);
+    return { values: blank, restoredDraft: false };
+  }, [exercise, template, meta, secondarySlugs, initialName]);
+
+  const initialValues = initial.values;
+  const draftKey = draftKeyFor(template);
 
   const f = useAppForm({
     schema: exerciseSchema,
@@ -133,7 +159,7 @@ export function ExerciseEditor({
 
       setSaved(true);
       if (!isEdit) {
-        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+        try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
       }
       toast.success(isEdit ? 'Exercise updated' : `"${res.exercise.name}" added to the library`);
 
@@ -153,22 +179,20 @@ export function ExerciseEditor({
   // exercise appearing in a "new" form reads as a bug.
   const announcedDraft = React.useRef(false);
   React.useEffect(() => {
-    // A prefilled name is not a restored draft — only say so when the values
-    // that opened the form differ from the name the builder handed over.
-    if (isEdit || announcedDraft.current || !initialValues.name || initialValues.name === initialName) return;
+    if (isEdit || announcedDraft.current || !initial.restoredDraft) return;
     announcedDraft.current = true;
     toast.info('Restored your unsaved draft');
-  }, [isEdit, initialValues.name, initialName, toast]);
+  }, [isEdit, initial.restoredDraft, toast]);
 
   // Autosave the draft — create mode only. Editing writes through the API, so
   // a local draft there would be a second, staler source of truth.
   React.useEffect(() => {
     if (isEdit || !isDirty) return;
     const t = setTimeout(() => {
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(values)); } catch { /* quota */ }
+      try { localStorage.setItem(draftKey, JSON.stringify(values)); } catch { /* quota */ }
     }, 800);
     return () => clearTimeout(t);
-  }, [values, isEdit, isDirty]);
+  }, [values, isEdit, isDirty, draftKey]);
 
   // Live duplicate detection. Checking after save, when everything is already
   // written, is a worse experience than an inline warning at the top.

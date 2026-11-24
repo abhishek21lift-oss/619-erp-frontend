@@ -18,15 +18,18 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/components/Guard', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
-vi.mock('@/lib/api', () => ({ api: { exercises: { meta: async () => ({}) } } }));
+const { mockGet } = vi.hoisted(() => ({ mockGet: vi.fn() }));
+vi.mock('@/lib/api', () => ({ api: { exercises: { meta: async () => ({}), get: mockGet } } }));
 vi.mock('@/components/pt-os/exercise-library/ExerciseEditor', () => ({
   ExerciseEditor: (props: {
     initialName?: string;
+    template?: { id: string; name: string } | null;
     onSaved: (ex: { id: string }) => void;
     onClose: () => void;
   }) => (
     <div>
       <span data-testid="initial-name">{props.initialName}</span>
+      <span data-testid="template-name">{props.template?.name ?? ''}</span>
       <button
         onClick={() => {
           props.onSaved({ id: 'ex-new' });
@@ -45,6 +48,7 @@ const save = () => fireEvent.click(screen.getByText('save'));
 
 beforeEach(() => {
   push.mockReset();
+  mockGet.mockReset();
   params = new URLSearchParams('');
 });
 
@@ -75,5 +79,17 @@ describe('returning to the screen that asked for the exercise', () => {
     render(<NewExercisePage />);
     save();
     expect(push).toHaveBeenCalledWith('/pt-os/exercise-library');
+  });
+
+  it('loads a built-in as a template without writing a copy', async () => {
+    // Editing a built-in lands here with `template=<id>`. The page fetches the
+    // shared row for its values; the editor saves a NEW row, so abandoning the
+    // form leaves the library unchanged.
+    params = new URLSearchParams('template=builtin-1');
+    mockGet.mockResolvedValue({ id: 'builtin-1', name: 'Barbell Squat' });
+    render(<NewExercisePage />);
+
+    expect(await screen.findByTestId('template-name')).toHaveTextContent('Barbell Squat');
+    expect(mockGet).toHaveBeenCalledWith('builtin-1');
   });
 });

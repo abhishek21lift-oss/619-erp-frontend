@@ -45,7 +45,13 @@ function NewExerciseContent() {
   const sp = useSearchParams();
   const returnTo = safeReturnTo(sp.get('returnTo'));
   const initialName = sp.get('name')?.trim().slice(0, 120) ?? '';
+  // Editing a built-in opens this page with `template=<id>`. The copy is
+  // written only when the trainer saves, so abandoning the form leaves no
+  // orphan `(Copy)` row in the library.
+  const templateId = sp.get('template')?.trim() ?? '';
   const [meta, setMeta] = useState<ExerciseMeta | null>(null);
+  const [template, setTemplate] = useState<LibraryExercise | null>(null);
+  const [templateState, setTemplateState] = useState<'loading' | 'ready'>(templateId ? 'loading' : 'ready');
   // onSaved and onClose fire back-to-back after a save; the close handler is
   // the one that navigates, so it must know an id was just created.
   const savedId = useRef<string | null>(null);
@@ -55,6 +61,23 @@ function NewExerciseContent() {
     // not worth blocking authoring over.
     api.exercises.meta().then(setMeta).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!templateId) return;
+    let alive = true;
+    api.exercises.get(templateId)
+      .then((ex) => {
+        if (!alive) return;
+        setTemplate(ex);
+        setTemplateState('ready');
+      })
+      .catch(() => {
+        // A deleted or invisible template is not a dead end: fall back to a
+        // blank create form rather than refusing to author.
+        if (alive) setTemplateState('ready');
+      });
+    return () => { alive = false; };
+  }, [templateId]);
 
   const back = useCallback(() => {
     if (returnTo && savedId.current) router.push(withNewExercise(returnTo, savedId.current));
@@ -67,9 +90,20 @@ function NewExerciseContent() {
     savedId.current = ex.id;
   }, []);
 
+  if (templateState === 'loading') {
+    return (
+      <main className="mx-auto w-full max-w-3xl space-y-3.5 pt-1" aria-busy="true">
+        <div className="h-[168px] animate-pulse rounded-[26px] bg-slate-200/70 dark:bg-white/[0.06]" />
+        <div className="h-[220px] animate-pulse rounded-[22px] bg-slate-200/50 dark:bg-white/[0.04]" />
+        <p className="sr-only">Loading the exercise to copy…</p>
+      </main>
+    );
+  }
+
   return (
     <ExerciseEditor
       exercise={null}
+      template={template}
       meta={meta}
       initialName={initialName}
       onClose={back}
