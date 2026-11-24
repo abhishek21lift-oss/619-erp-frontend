@@ -187,6 +187,17 @@ describe('being public is not accidentally contagious', () => {
     expect(isPublic('/auth/set-password')).toBe(true);
     expect(isPublic('/authorised-users')).toBe(false);
   });
+
+  it('gates the staff check-in kiosk at the proxy too', () => {
+    // The kiosk is staff-operated: the page renders under <Guard
+    // role="trainer"> and the POST it makes is requireTrainer. It sat in the
+    // asset-prefix list, which skipped the edge gate entirely — so a
+    // signed-out visitor got the shell and a dead screen instead of the
+    // sign-in redirect that preserves where they were going.
+    for (const p of ['/checkin/qr-scanner', '/checkin/dashboard']) {
+      expect([p, isPublic(p)]).toEqual([p, false]);
+    }
+  });
 });
 
 describe('the matcher actually runs on these paths', () => {
