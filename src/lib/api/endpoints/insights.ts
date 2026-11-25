@@ -12,6 +12,7 @@ import type {
   AiFitnessTestAnalysis, AiHealthResponse, AiKnowledgeDocument, AiKnowledgeGrounding, AiMessage, AiModelStat,
   AiPostureInsights, AiProgressAnalysis, AiProgressDataCounts, AiProviderSettings, AiUsageStats, AiWorkoutParams, AiWorkoutPlan,
   AiWorkoutGenerationResult, AiWorkoutContext, AiWeightPoint,
+  AiOpsQueue, AiOpsItem, AiOpsItemDetail, AiOpsDelivery,
   DuesItem, DuesSummary, ProfileDevice, ProfileSession, SearchResponse,
 } from '../types';
 
@@ -254,6 +255,38 @@ export const ai = {
       http<{ message: string }>(`/api/ai/knowledge/${id}`, { method: 'DELETE' }),
     reindex: (id: string) =>
       http<{ message: string }>(`/api/ai/knowledge/${id}/reindex`, { method: 'POST' }),
+  },
+
+  // ── AI Ops Queue (trainer's approval inbox) ─────────────────────────
+  // GET /queue is deterministic and cheap. POST /refresh is the only call
+  // that spends a model token; the server enforces a five-minute cooldown.
+  opsQueue: {
+    queue: () =>
+      http<{ data: AiOpsQueue }>('/api/ai/ops/queue'),
+    refresh: () =>
+      http<{ data: AiOpsQueue }>('/api/ai/ops/refresh', { method: 'POST' }),
+    item: (id: string) =>
+      http<{ data: AiOpsItemDetail }>(`/api/ai/ops/items/${encodeURIComponent(id)}`),
+    approve: (id: string, body?: string) =>
+      http<{ data: { item: AiOpsItem; delivery: AiOpsDelivery } }>(
+        `/api/ai/ops/items/${encodeURIComponent(id)}/approve`,
+        { method: 'POST', body: JSON.stringify(body === undefined ? {} : { body }) },
+      ),
+    snooze: (id: string, days: 1 | 3 | 7) =>
+      http<{ data: AiOpsItem }>(
+        `/api/ai/ops/items/${encodeURIComponent(id)}/snooze`,
+        { method: 'POST', body: JSON.stringify({ days }) },
+      ),
+    dismiss: (id: string, reason: 'not_relevant' | 'already_handled' | 'asked_not_to_contact' | 'other') =>
+      http<{ data: AiOpsItem }>(
+        `/api/ai/ops/items/${encodeURIComponent(id)}/dismiss`,
+        { method: 'POST', body: JSON.stringify({ reason }) },
+      ),
+    resolve: (id: string) =>
+      http<{ data: AiOpsItem }>(
+        `/api/ai/ops/items/${encodeURIComponent(id)}/resolve`,
+        { method: 'POST' },
+      ),
   },
 
 };

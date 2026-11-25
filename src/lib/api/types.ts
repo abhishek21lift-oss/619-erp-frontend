@@ -6193,3 +6193,88 @@ export interface MeBookingAvailability {
   days: { date: string; slots: { start: string; end: string }[] }[];
   settings: { slot_minutes: number; cancel_cutoff_hours: number; horizon_days: number };
 }
+
+// ── AI Ops Queue ───────────────────────────────────────────────────────────
+// The server decides the score, band, reasons and channel. The browser renders
+// them; it never recomputes priority or invents an action.
+
+export type AiOpsBand = 'critical' | 'high' | 'medium' | 'low';
+export type AiOpsItemStatus = 'open' | 'snoozed' | 'actioned' | 'dismissed' | 'resolved';
+export type AiOpsAiStatus = 'ok' | 'cooldown' | 'failed' | 'not_generated';
+
+export interface AiOpsReason {
+  code: string;
+  label: string;
+  points: number;
+  family: 'churn' | 'engagement' | 'training' | 'screening' | 'leads';
+  evidence: Record<string, unknown>;
+  due_at: string | null;
+  days_quiet?: number | null;
+}
+
+export interface AiOpsDraft {
+  body: string;
+  channel: 'whatsapp';
+  source: 'ai' | 'template' | 'trainer';
+  model?: string | null;
+  generated_at: string;
+  confidence?: number | null;
+}
+
+export interface AiOpsRecommendedAction {
+  kind: 'message' | 'internal';
+  label: string;
+  href: string | null;
+  reason_code: string | null;
+}
+
+export interface AiOpsChannel {
+  status: 'connected' | 'unavailable';
+  reason: 'not_connected' | 'no_recipient' | 'opted_out' | null;
+}
+
+export interface AiOpsItem {
+  id: string;
+  subject: { type: 'client' | 'lead'; id: string; name: string; photo_url: string | null };
+  status: AiOpsItemStatus;
+  priority_score: number;
+  priority_band: AiOpsBand;
+  reasons: AiOpsReason[];
+  next_due_at: string | null;
+  recommended_action: AiOpsRecommendedAction | null;
+  draft: AiOpsDraft | null;
+  channel: AiOpsChannel;
+  last_contacted_at: string | null;
+  last_actioned_at: string | null;
+  last_error: { code: string; message: string } | null;
+  created_at: string;
+}
+
+export interface AiOpsQueue {
+  as_of: string;
+  brief: { text: string; source: 'ai' | 'template'; generated_at: string } | null;
+  ai: { status: AiOpsAiStatus; message: string | null; last_generated_at: string | null };
+  counts: {
+    total: number;
+    by_band: Record<AiOpsBand, number>;
+    by_family: Record<AiOpsReason['family'], number>;
+  };
+  items: AiOpsItem[];
+}
+
+export interface AiOpsEvent {
+  id: string;
+  event_type: string;
+  actor_role: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AiOpsItemDetail { item: AiOpsItem; events: AiOpsEvent[] }
+
+export interface AiOpsDelivery {
+  status: 'sent' | 'failed';
+  communication_log_id: string;
+  provider_id: string | null;
+  error: string | null;
+}
