@@ -1,5 +1,6 @@
 /**
- * The one place that knows how /api/ai/chat talks.
+ * The one place that knows how the AI chat endpoints talk — the trainer's
+ * /api/ai/chat and the member's /api/me/ai/chat.
  *
  * The endpoint answers with Server-Sent Events, and consuming SSE correctly is
  * more finicky than it looks: a chunk boundary can land mid-line, so the tail
@@ -32,6 +33,11 @@ export interface AiStreamEvent {
    * of the two happened, and the reader is entitled to know.
    */
   grounding?: 'unavailable';
+  /**
+   * The member assistant's proposed message to the trainer. A proposal only:
+   * the member edits it and sends through the ordinary message API.
+   */
+  proposedMessage?: string | null;
 }
 
 export interface AiStreamHandlers {
@@ -44,6 +50,8 @@ export interface AiStreamHandlers {
   onTools?: (tools: string[]) => void;
   /** Fires when the answer was produced WITHOUT the studio's documents. */
   onGrounding?: (grounding: 'unavailable') => void;
+  /** Fires once when a member answer carries a draft, null when it does not. */
+  onDraft?: (draft: string | null) => void;
 }
 
 export interface AiStreamRequest {
@@ -88,16 +96,24 @@ async function chatFailureMessage(res: Response): Promise<string> {
  * Aborting is not an error: whatever streamed before the abort is returned,
  * because the user pressing Stop wants to keep what they can already read.
  */
-export async function streamAiChat(
-  { message, conversationId, clientId, regenerate, signal }: AiStreamRequest,
-  handlers: AiStreamHandlers = {},
-): Promise<{ text: string; conversationId: string | null; aborted: boolean }> {
+async function streamAt(
+  path: string,
+  body: unknown,
+  handlers: AiStreamHandlers,
+  signal?: AbortSignal,
+): Promise<{
+  text: string;
+  conversationId: string | null;
+  aborted: boolean;
+  proposedMessage: string | null;
+}> {
   let text = '';
-  let convId = conversationId ?? null;
+  let convId: string | null = null;
+  let proposedMessage: string | null = null;
 
   let res: Response;
   try {
-    res = await fetch(`${apiBase()}/api/ai/chat`, {
+    res = await fetch(`${apiBase()}${path}`, {
       method: 'POST',
       credentials: 'include',
       // Raw fetch() rather than http()/httpSSE() because this renders tokens
@@ -107,15 +123,12 @@ export async function streamAiChat(
       // with the org switcher pinned, or impersonating a studio.
       headers: { 'Content-Type': 'application/json', ...tenantAuthHeaders() },
       signal,
-      body: JSON.stringify({
-        message,
-        conversation_id: conversationId ?? undefined,
-        client_id: clientId ?? undefined,
-        regenerate,
-      }),
+      body: JSON.stringify(body),
     });
   } catch (err) {
-    if (signal?.aborted) return { text, conversationId: convId, aborted: true };
+    if (signal?.aborted) {
+      return { text, conversationId: convId, aborted: true, proposedMessage };
+    }
     throw err;
   }
 
@@ -150,6 +163,10 @@ export async function streamAiChat(
               convId = evt.conversation_id;
               handlers.onConversationId?.(evt.conversation_id);
             }
+            if (evt.type === 'done' && evt.proposedMessage !== undefined) {
+              proposedMessage = evt.proposedMessage ?? null;
+              handlers.onDraft?.(proposedMessage);
+            }
             break;
           case 'sources':
             if (evt.sources) handlers.onSources?.(evt.sources);
@@ -171,9 +188,53 @@ export async function streamAiChat(
     }
   } catch (err) {
     // Stop is a user decision, not a failure — keep what arrived.
-    if (signal?.aborted) return { text, conversationId: convId, aborted: true };
+    if (signal?.aborted) {
+      return { text, conversationId: convId, aborted: true, proposedMessage };
+    }
     throw err;
   }
 
-  return { text, conversationId: convId, aborted: false };
+  // A mock or a race can end the body without rejecting after an abort; the
+  // signal is still the truth about what the member did.
+  return { text, conversationId: convId, aborted: Boolean(signal?.aborted), proposedMessage };
+}
+
+/** Streams one trainer answer. */
+export async function streamAiChat(
+  { message, conversationId, clientId, regenerate, signal }: AiStreamRequest,
+  handlers: AiStreamHandlers = {},
+): Promise<{ text: string; conversationId: string | null; aborted: boolean }> {
+  const { text, conversationId: convId, aborted } = await streamAt(
+    '/api/ai/chat',
+    {
+      message,
+      conversation_id: conversationId ?? undefined,
+      client_id: clientId ?? undefined,
+      regenerate,
+    },
+    handlers,
+    signal,
+  );
+  return { text, conversationId: convId, aborted };
+}
+
+export interface MemberAiStreamRequest {
+  message: string;
+  signal?: AbortSignal;
+}
+
+/**
+ * Streams one member answer. The body carries only the message: the client,
+ * studio and thread all come from the session on the server.
+ */
+export async function streamMemberAiChat(
+  { message, signal }: MemberAiStreamRequest,
+  handlers: AiStreamHandlers = {},
+): Promise<{ text: string; proposedMessage: string | null; aborted: boolean }> {
+  const result = await streamAt('/api/me/ai/chat', { message }, handlers, signal);
+  return {
+    text: result.text,
+    proposedMessage: result.proposedMessage,
+    aborted: result.aborted,
+  };
 }

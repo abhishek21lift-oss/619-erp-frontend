@@ -3880,6 +3880,18 @@ export type MeMessageThread = {
   with: { studio_name: string | null; trainer_name: string | null };
 };
 
+/** One turn in the member's own AI thread (GET /api/me/ai/history). */
+export type MeAiMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+};
+
+export type MeAiHistory = {
+  messages: MeAiMessage[];
+  configured: boolean;
+};
+
 /** One conversation in the trainer's inbox (GET /api/messages). */
 export type StudioConversation = {
   client_id: string;

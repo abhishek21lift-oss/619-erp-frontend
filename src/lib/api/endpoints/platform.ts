@@ -15,6 +15,7 @@ import type {
   ClientActivationPreview, ClientLoginStatus,
   MeProfile, MeCoach, MeMembership, MeSessionBalance, MePayment, MeAttendance, MeMeasurement, MeSession,
   MeWorkoutState, MeWorkoutSession, MeDietPlan, MeCheckin, MeCheckinInput, MeContact, MeContactInput, MeForms, MeAchievements, MeMessageThread, ChatMessage, MePhoto, MePhotoType,
+  MeAiHistory,
   MeLastPerformance, MeWorkoutLogInput, MeWorkoutSummary, MeGoals, MeGoal, MeGoalInput, MeRecap, MeRenewal,
   MeRequestState, MePauseInput, MeFitnessHistory,
   MeFormCheck, SessionFeedback, SessionFeedbackInput,
@@ -994,6 +995,10 @@ export const me = {
   messagesUnread: () => http<{ data: { unread: number } }>('/api/me/messages/unread-count'),
   sendMessage: (body: string) =>
     http<{ data: ChatMessage }>('/api/me/messages', { method: 'POST', body: JSON.stringify({ body }) }),
+  /** The member's own AI thread. The stream endpoint is lib/ai-stream.ts. */
+  aiHistory: () => http<{ data: MeAiHistory }>('/api/me/ai/history'),
+  aiClear: () =>
+    http<{ data: { cleared: boolean } }>('/api/me/ai/history', { method: 'DELETE' }),
   /** Progress photos, the trainer's and the member's own. */
   photos: () => http<{ data: MePhoto[] }>('/api/me/progress-photos'),
   /** Multipart upload. The server decides the type from the bytes; send a compressed JPEG. */
