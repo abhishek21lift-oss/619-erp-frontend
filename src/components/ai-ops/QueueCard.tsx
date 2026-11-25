@@ -126,6 +126,7 @@ export default function QueueCard({ item, busy, error, onOpen, onApprove }: Queu
           variant="secondary"
           size="md"
           className="min-h-11 flex-1 sm:min-h-0"
+          data-ops-open={item.id}
           onClick={() => onOpen(item)}
         >
           Review{isMessage ? ' & send' : ''}

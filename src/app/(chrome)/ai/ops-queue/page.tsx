@@ -266,6 +266,21 @@ export default function AiOpsQueuePage() {
     }
   };
 
+  // Closing the sheet returns focus to the card that opened it. The page opens
+  // the dialog from state, not a DialogTrigger, so Radix has no trigger to
+  // restore to on its own; without this, focus falls back to <body> and a
+  // keyboard user loses their place in the queue.
+  const closeSheet = useCallback(() => {
+    const id = selected?.id ?? null;
+    setSelected(null);
+    setActionError(null);
+    setErrorItemId(null);
+    if (!id) return;
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(`[data-ops-open="${id}"]`)?.focus();
+    });
+  }, [selected]);
+
   const filtered = useMemo(
     () => (queue ? queue.items.filter((item) => matchesFilter(item, filter)) : []),
     [queue, filter],
@@ -364,7 +379,7 @@ export default function AiOpsQueuePage() {
             </Button>
           </div>
         ) : loading && !queue ? (
-          <div className="space-y-3">
+          <div className="space-y-3" aria-busy="true" aria-label="Loading queue">
             {[0, 1, 2].map((index) => (
               <div key={index} className="rounded-[18px] border border-[var(--border)] bg-[var(--bg-card)] p-4">
                 <div className="flex items-center gap-3">
@@ -422,11 +437,7 @@ export default function AiOpsQueuePage() {
           item={selected}
           open={Boolean(selected)}
           onOpenChange={(open) => {
-            if (!open) {
-              setSelected(null);
-              setActionError(null);
-              setErrorItemId(null);
-            }
+            if (!open) closeSheet();
           }}
           onApprove={handleApprove}
           onSnooze={handleSnooze}
