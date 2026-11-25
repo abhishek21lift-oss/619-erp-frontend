@@ -286,6 +286,29 @@ describe('approval', () => {
     expect(screen.getByRole('article', { name: /Ravi/ })).toBeInTheDocument();
   });
 
+  it('keeps the edited message after a failed send so Retry does not lose it', async () => {
+    approveMock.mockResolvedValue({
+      data: {
+        item: { ...renewal, last_error: { code: 'SEND_FAILED', message: 'gateway_timeout' } },
+        delivery: { status: 'failed', communication_log_id: 'log-1', provider_id: null, error: 'gateway_timeout' },
+      },
+    });
+
+    await renderPage();
+
+    fireEvent.click(within(card(/Ravi/)).getByRole('button', { name: /review & send/i }));
+    const message = await screen.findByLabelText('Message');
+    fireEvent.change(message, { target: { value: 'Hi Ravi, shall we talk tomorrow?' } });
+    fireEvent.click(screen.getByRole('button', { name: /approve & send/i }));
+
+    await waitFor(() => expect(approveMock).toHaveBeenCalledWith(
+      'i1', 'Hi Ravi, shall we talk tomorrow?',
+    ));
+    const dialog = await screen.findByRole('dialog');
+    await within(dialog).findByText(/gateway_timeout/i);
+    expect(within(dialog).getByLabelText('Message')).toHaveValue('Hi Ravi, shall we talk tomorrow?');
+  });
+
   it('reports an already-actioned item and refetches the queue', async () => {
     approveMock.mockRejectedValue(new ApiError('This item was already actioned', 409, 'ALREADY_ACTIONED'));
 

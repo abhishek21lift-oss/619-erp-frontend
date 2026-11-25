@@ -82,10 +82,24 @@ export default function ItemSheet({
   const [body, setBody] = useState('');
   const [dismissReason, setDismissReason] = useState<DismissReason | ''>('');
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  const loadedItemId = useRef<string | null>(null);
 
   useEffect(() => {
-    setBody(open && item ? item.draft?.body ?? '' : '');
-    setDismissReason('');
+    if (!open || !item) {
+      loadedItemId.current = null;
+      setBody('');
+      setDismissReason('');
+      return;
+    }
+
+    // A failed send returns a fresh item object for the same id. Keep the
+    // trainer's edit in that case; only load the draft when the sheet opens on
+    // a different item, or after it has been closed.
+    if (loadedItemId.current !== item.id) {
+      loadedItemId.current = item.id;
+      setBody(item.draft?.body ?? '');
+      setDismissReason('');
+    }
   }, [open, item]);
 
   if (!item) return null;
