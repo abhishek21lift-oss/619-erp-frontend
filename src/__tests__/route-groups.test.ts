@@ -72,6 +72,7 @@ const BARE = [
   'member/feedback',
   'member/fitness',
   'member/account',
+  'member/ai',
   'member/coach',
   'member/records',
   'member/card',

@@ -113,6 +113,9 @@ export const JOURNEYS = {
   'e2e/member-feedback.ui.spec.ts': [
     'src/app/(bare)/member/feedback/page.tsx',
   ],
+  'e2e/member-ai-draft.ui.spec.ts': [
+    'src/components/member/MemberAiThread.tsx',
+  ],
 };
 
 /** Every form file some journey claims to cover. */

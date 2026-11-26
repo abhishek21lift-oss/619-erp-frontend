@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Send, Sparkles, Square } from 'lucide-react';
 import { ChatMarkdown } from '@/components/fitness/ChatMarkdown';
 import { MC } from '@/components/member/MemberUI';
+import { FormField, TextArea } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { MeAiMessage } from '@/lib/api';
 import { streamMemberAiChat } from '@/lib/ai-stream';
@@ -218,23 +219,23 @@ export default function MemberAiThread({
             className="rounded-[16px] p-3.5"
             style={{ background: 'var(--bg-subtle)', border: `1px solid ${rgba(MC.primary, 0.35)}` }}
           >
-            <label htmlFor="member-ai-draft" className="block text-[12px] font-[750]" style={{ color: MC.ink }}>
-              Message to your trainer
-            </label>
-            <textarea
-              id="member-ai-draft"
-              aria-label="Message to your trainer"
-              value={draft.body}
-              onChange={(e) => setDraft({ ...draft, body: e.target.value, sent: false, error: null })}
-              disabled={draft.sending || draft.sent}
-              rows={4}
-              className="mt-2 w-full resize-none rounded-[12px] px-3 py-2 text-[13px] leading-relaxed outline-none"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                color: MC.ink,
-              }}
-            />
+            <FormField
+              label="Message to your trainer"
+              labelClassName="text-[12px] font-[750]"
+            >
+              <TextArea
+                value={draft.body}
+                onChange={(e) => setDraft({ ...draft, body: e.target.value, sent: false, error: null })}
+                disabled={draft.sending || draft.sent}
+                rows={4}
+                className="w-full resize-none rounded-[12px] px-3 py-2 text-[13px] leading-relaxed outline-none"
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  color: MC.ink,
+                }}
+              />
+            </FormField>
             {draft.error && (
               <p role="alert" className="mt-2 text-[12px] font-[650]" style={{ color: MC.dangerText }}>
                 {draft.error}
@@ -291,19 +292,19 @@ export default function MemberAiThread({
           className="mt-2 flex items-end gap-2"
           onSubmit={(e) => { e.preventDefault(); void send(input); }}
         >
-          <textarea
-            aria-label="Message your AI coach"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            rows={1}
-            placeholder="Ask about your plan, progress or payments"
-            className="min-h-[44px] flex-1 resize-none rounded-[14px] px-3 py-2.5 text-[14px] leading-snug outline-none"
-            style={{
-              background: 'var(--bg-subtle)',
-              border: '1px solid var(--border)',
-              color: MC.ink,
-            }}
-          />
+          <FormField label="Message your AI coach" labelHidden className="min-w-0 flex-1">
+            <TextArea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              rows={1}
+              className="min-h-[44px] w-full resize-none rounded-[14px] px-3 py-2.5 text-[14px] leading-snug outline-none"
+              style={{
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border)',
+                color: MC.ink,
+              }}
+            />
+          </FormField>
           {sending ? (
             <button
               type="button"

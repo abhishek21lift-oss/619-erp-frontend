@@ -52,8 +52,13 @@ const files = sourceFiles();
  * routes through. `lib/client-ai.ts` fetch()es directly exactly like the /api
  * escapes do, and Phase 3 proved one can lose the impersonation identity
  * silently if it is left out of this scan.
+ *
+ * `lib/ai-stream.ts` now builds its URL as `${apiBase()}${path}` so the two
+ * streaming features can share one helper. There is no /api/ literal on the
+ * fetch line, and a scan that only looked for one stopped seeing the call
+ * entirely — the "known call sites" test caught it. Both shapes count.
  */
-const API_FETCH = /fetch\(\s*[`'"][^`'"]*\/(api|ai)\//;
+const API_FETCH = /fetch\(\s*[`'"](?:[^`'"]*\/(api|ai)\/|\$\{apiBase\(\)\})/;
 
 /**
  * Every direct API fetch, paired with the CALL's own init object.

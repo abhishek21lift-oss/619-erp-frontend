@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowUpRight, Clock } from 'lucide-react';
 import type { AiOpsItem, AiOpsReason } from '@/lib/api';
 import {
   Badge, Button, Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, TextArea,
+  DialogHeader, DialogTitle, FormField, SelectInput, TextArea,
 } from '@/components/ui';
 
 const BAND_TONE = {
@@ -201,7 +201,6 @@ export default function ItemSheet({
                 maxLength={1200}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="Write the WhatsApp message this client will receive."
               />
               <p className={`text-[11.5px] font-medium ${channelBlocked ? 'text-[var(--warning-text)]' : 'text-[var(--success-text)]'}`}>
                 {channelBlocked
@@ -269,19 +268,18 @@ export default function ItemSheet({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="ops-dismiss-reason" className="sr-only">Dismiss reason</label>
-              <select
-                id="ops-dismiss-reason"
-                aria-label="Dismiss reason"
-                value={dismissReason}
-                onChange={(event) => setDismissReason(event.target.value as DismissReason | '')}
-                className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-[var(--border-2)] bg-[var(--bg-card)] px-3 text-[12.5px] text-[var(--text-primary)] sm:min-h-9"
-              >
-                <option value="">Choose a dismiss reason…</option>
-                {DISMISS_REASONS.map((reason) => (
-                  <option key={reason.value} value={reason.value}>{reason.label}</option>
-                ))}
-              </select>
+              <FormField label="Dismiss reason" labelHidden className="min-w-0 flex-1">
+                <SelectInput
+                  value={dismissReason}
+                  onChange={(event) => setDismissReason(event.target.value as DismissReason | '')}
+                  className="min-h-11 w-full rounded-[10px] border border-[var(--border-2)] bg-[var(--bg-card)] px-3 text-[12.5px] text-[var(--text-primary)] sm:min-h-9"
+                >
+                  <option value="">Choose a dismiss reason…</option>
+                  {DISMISS_REASONS.map((reason) => (
+                    <option key={reason.value} value={reason.value}>{reason.label}</option>
+                  ))}
+                </SelectInput>
+              </FormField>
               <Button
                 variant="outline"
                 size="sm"
