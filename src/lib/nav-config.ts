@@ -202,6 +202,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/ai/workout-generator', label: 'AI Workout Generator', icon: 'Dumbbell' },
       { href: '/ai/diet-generator',    label: 'AI Diet Generator',    icon: 'Apple' },
       { href: '/ai/progress-analysis', label: 'AI Progress Analysis', icon: 'TrendingUp' },
+      { href: '/ai/ops-queue',         label: 'AI Ops Queue',        icon: 'Inbox',       roles: ['trainer'] },
       { href: '/ai/business-insights', label: 'Business Insights',    icon: 'BarChart3',  roles: ['trainer'] },
       { href: '/ai-coach/knowledge',   label: 'Knowledge Base',       icon: 'BookOpen',   roles: ['trainer'], feature: 'ai_knowledge_base' },
     ],

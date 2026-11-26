@@ -89,7 +89,7 @@ for (const file of walk(SRC)) {
 
   const platformControls =
     (source.match(
-      /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput|SoftTextField|SoftField|SoftInput|AuthInput)[\s/>]/g,
+      /<(TextField|TextAreaField|NumberField|SelectField|DateFieldControl|MonthFieldControl|CheckboxField|RadioField|SearchField|TextFieldRow|FormField|FloatInput|SoftTextField|SoftField|SoftInput|AuthInput|TextArea|TextInput|SelectInput)[\s/>]/g,
     ) ?? []).length;
 
   const total = Object.values(kinds).reduce((a, b) => a + b, 0);

@@ -49,6 +49,7 @@ import InstallAppCard from '@/components/member/InstallAppCard';
 import HomeHighlights from '@/components/member/HomeHighlights';
 import RenewalBanner from '@/components/member/RenewalBanner';
 import HomeHero, { HomeActions } from '@/components/member/HomeHero';
+import MemberAiEntry from '@/components/member/MemberAiEntry';
 import { accentGradient, heroGradient, spectrum } from '@/components/member/memberTheme';
 import type { Accent } from '@/components/member/memberTheme';
 import ClientAvatar from '@/components/pt-os/ClientAvatar';
@@ -198,6 +199,9 @@ function MemberDashboard() {
         sessions={achievements ? achievements.totals.sessions : null}
       />
       <HomeActions />
+
+      {/* ── The member's assistant, when the studio has the AI suite ──────── */}
+      <MemberAiEntry variant="card" />
 
       {/* ── A completed session still waiting for its four taps ────────────── */}
       <FeedbackPrompt />

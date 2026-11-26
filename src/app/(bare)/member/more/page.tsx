@@ -16,7 +16,7 @@
  * claim about the member, not about the network.
  */
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { m, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
@@ -30,6 +30,7 @@ import { triggerHaptic } from '@/components/common/PullToRefresh/utils';
 import { CountUp, EASE, LoadError, MC, longDate } from '@/components/member/MemberUI';
 import { loadMemberNotifications } from '@/components/member/memberNotifications';
 import InstallAppCard from '@/components/member/InstallAppCard';
+import MemberAiEntry from '@/components/member/MemberAiEntry';
 import CoachCard from '@/components/member/CoachCard';
 import PayBalanceButton from '@/components/member/PayBalanceButton';
 import { daysLeft, elapsedPct } from '@/components/member/planDates';
@@ -198,8 +199,12 @@ function ProfileBody() {
           </h2>
           <ul className="overflow-hidden rounded-[18px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             {g.rows.map((row, j) => (
-              <MenuRow key={row.href} row={row} accent={g.accent} last={j === g.rows.length - 1}
-                count={row.badge ? unread[row.badge] : 0} />
+              <Fragment key={row.href}>
+                <MenuRow row={row} accent={g.accent} last={j === g.rows.length - 1}
+                  count={row.badge ? unread[row.badge] : 0} />
+                {/* The assistant sits with the other ways to reach the studio. */}
+                {row.href === '/member/messages' && <MemberAiEntry variant="row" />}
+              </Fragment>
             ))}
           </ul>
         </m.section>

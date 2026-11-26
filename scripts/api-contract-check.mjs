@@ -28,7 +28,7 @@
 //
 // ── Usage ──────────────────────────────────────────────────────────────────
 //
-//   node scripts/api-contract-check.mjs [--backend ../619-erp-backend]
+//   node scripts/api-contract-check.mjs [--backend ../619-erp-backend] [--frontend src]
 //
 // Exits 0 when every call resolves, 1 when any does not, and 0 with a notice
 // when the backend checkout is not beside this one — CI that has only this
@@ -39,13 +39,21 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const FE_SRC = path.join(HERE, '..', 'src');
 
 const argIdx = process.argv.indexOf('--backend');
 const BE_ROOT = path.resolve(
   argIdx !== -1 && process.argv[argIdx + 1]
     ? process.argv[argIdx + 1]
     : process.env.BACKEND_PATH ?? path.join(HERE, '..', '..', '619-erp-backend'),
+);
+
+// Overridable so a test can point the check at a small fixture instead of the
+// real src tree. The default is the tree this script ships in.
+const feIdx = process.argv.indexOf('--frontend');
+const FE_SRC = path.resolve(
+  feIdx !== -1 && process.argv[feIdx + 1]
+    ? process.argv[feIdx + 1]
+    : path.join(HERE, '..', 'src'),
 );
 
 const serverJs = path.join(BE_ROOT, 'src', 'server.js');
@@ -83,6 +91,36 @@ const resolveFrom = (fromFile, rel) => {
   return null;
 };
 
+/**
+ * The arguments of the call whose opening '(' sits at `open`.
+ *
+ * Reading to the end of the line was the bug: a mount with several guards is
+ * routinely written across lines, so its `require()` sat on a later line and
+ * was invisible. Every endpoint behind such a mount looked unserved — the
+ * member AI routes were reported missing against a backend that served them.
+ *
+ * Scan to the matching close paren instead, skipping parens inside strings.
+ */
+function callArguments(src, open) {
+  let depth = 0;
+  let quote = null;
+  for (let i = open; i < src.length; i += 1) {
+    const ch = src[i];
+    if (quote) {
+      if (ch === '\\') i += 1;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') quote = ch;
+    else if (ch === '(') depth += 1;
+    else if (ch === ')') {
+      depth -= 1;
+      if (depth === 0) return src.slice(open + 1, i);
+    }
+  }
+  return '';
+}
+
 const routes = [];
 
 function collectRouter(file, prefix, seen) {
@@ -113,8 +151,8 @@ function collectRouter(file, prefix, seen) {
   }
 
   // Nested mounts, with or without a path of their own.
-  for (const u of src.matchAll(/router\.use\(([^\n]*)/g)) {
-    const rest = u[1];
+  for (const u of src.matchAll(/router\.use\(/g)) {
+    const rest = callArguments(src, u.index + u[0].length - 1);
     const withPath = rest.match(/^\s*(['"`])([^'"`]*)\1/);
     const childPrefix = prefix.replace(/\/$/, '') + (withPath ? withPath[2].replace(/\/$/, '') : '');
     for (const rq of rest.matchAll(/require\(\s*['"`]([^'"`]+)['"`]\s*\)/g)) {
@@ -133,11 +171,16 @@ for (const d of server.matchAll(/const\s+([A-Za-z_$][\w$]*)\s*=\s*require\(\s*['
   varModule[d[1]] = d[2];
 }
 
-for (const m of server.matchAll(/app\.use\(\s*(['"`])(\/api[^'"`]*)\1([^\n]*)/g)) {
-  const prefix = m[2];
-  const rest = m[3];
+for (const m of server.matchAll(/app\.use\(/g)) {
+  const rest = callArguments(server, m.index + m[0].length - 1);
+  const mount = rest.match(/^\s*(['"`])(\/api[^'"`]*)\1/);
+  if (!mount) continue;
+  const prefix = mount[2];
   const mods = [...rest.matchAll(/require\(\s*['"`](\.[^'"`]+)['"`]\s*\)/g)].map((x) => x[1]);
-  for (const v of [...rest.matchAll(/,\s*([A-Za-z_$][\w$]*)\s*\)/g)].map((x) => x[1])) {
+  // A mount may hand over a router held in a variable declared earlier:
+  //   const memberAi = require('./modules/member-ai/member-ai.routes');
+  //   app.use('/api/me/ai', auth, ..., memberAi);
+  for (const v of [...rest.matchAll(/,\s*([A-Za-z_$][\w$]*)\s*$/g)].map((x) => x[1])) {
     if (varModule[v]) mods.push(varModule[v]);
   }
   for (const rel of mods) {
