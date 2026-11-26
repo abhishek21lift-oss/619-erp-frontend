@@ -4,10 +4,10 @@
 // Method names, URLs and request shapes are unchanged; index.ts composes these
 // back into the same `api` object every consumer already imports.
 
-import { http } from '../../http';
+import { http, ApiError } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ChatMessage, StudioConversation, StudioMessageThread,
+  ChatChannel, ChatMessage, InboxDraft, StudioConversation, StudioMessageThread,
   SupportTicket, TicketCategory, TicketMessage, TicketPriority,
 } from '../types';
 
@@ -78,6 +78,31 @@ export const notifications = {
 // ── Member ↔ studio messages (trainer side) ────────────────────
 // The member's side is api.me.messages. Every client id here is checked
 // against the caller's studio server-side; another studio's is a 404.
+/**
+ * A 502 from this route can still carry a row.
+ *
+ * The backend creates the thread row before handing it to WhatsApp, so a send
+ * that fails is a message the trainer can see and retry — not a lost request.
+ * Treating that body as a plain error would leave the composer full and the
+ * bubble missing, and the trainer would send a second copy.
+ */
+function isFailedRow(payload: unknown): payload is { data: ChatMessage } {
+  if (!payload || typeof payload !== 'object') return false;
+  const data = (payload as { data?: unknown }).data;
+  return Boolean(
+    data && typeof data === 'object' && typeof (data as { id?: unknown }).id === 'string',
+  );
+}
+
+async function sendOrReturnFailedRow(request: Promise<{ data: ChatMessage }>) {
+  try {
+    return await request;
+  } catch (err) {
+    if (err instanceof ApiError && isFailedRow(err.payload)) return { data: err.payload.data };
+    throw err;
+  }
+}
+
 export const clientMessages = {
   inbox: () => http<{ data: StudioConversation[] }>('/api/messages'),
   unreadCount: () => http<{ data: { unread: number } }>('/api/messages/unread-count'),
@@ -86,10 +111,22 @@ export const clientMessages = {
     http<{ data: StudioMessageThread }>(
       `/api/messages/${encodeURIComponent(clientId)}${before ? `?before=${encodeURIComponent(before)}` : ''}`,
     ),
-  send: (clientId: string, body: string) =>
-    http<{ data: ChatMessage }>(`/api/messages/${encodeURIComponent(clientId)}`, {
-      method: 'POST', body: JSON.stringify({ body }),
-    }),
+  send: (clientId: string, body: string, channel?: ChatChannel) =>
+    sendOrReturnFailedRow(http<{ data: ChatMessage }>(`/api/messages/${encodeURIComponent(clientId)}`, {
+      method: 'POST',
+      body: JSON.stringify(channel ? { body, channel } : { body }),
+    })),
+  retry: (clientId: string, messageId: string) =>
+    sendOrReturnFailedRow(http<{ data: ChatMessage }>(
+      `/api/messages/${encodeURIComponent(clientId)}/${encodeURIComponent(messageId)}/retry`,
+      { method: 'POST', body: '{}' },
+    )),
+  /** A proposal only: the draft is not written to the thread until a human sends it. */
+  aiDraft: (clientId: string) =>
+    http<{ data: InboxDraft }>(
+      `/api/messages/${encodeURIComponent(clientId)}/ai-draft`,
+      { method: 'POST', body: '{}' },
+    ),
 };
 
 // ── Automation & Communication ─────────────────────────────────

@@ -129,7 +129,9 @@ export default function ChatThread({
     const tempId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     stick.current = true;
     setMessages((prev) => [...prev, {
-      id: tempId, sender: me, body, read_at: null, created_at: new Date().toISOString(), pending: 'sending',
+      id: tempId, sender: me, body, read_at: null, created_at: new Date().toISOString(),
+      channel: 'in_app', message_type: 'text', delivery_status: null, failure_reason: null,
+      pending: 'sending',
     }]);
     void deliver(tempId, body);
   }, [me, deliver]);
