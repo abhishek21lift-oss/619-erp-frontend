@@ -14,7 +14,7 @@
  * return key is how people write a second line.
  */
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { palette } from '@/lib/palette';
 
@@ -22,13 +22,45 @@ export const CHAT_MAX = 2000;
 const WARN_AT = 1800;
 const MAX_ROWS_PX = 132;
 
-export default function ChatComposer({ onSend, accent = palette.blue[500] }: {
+export default function ChatComposer({
+  onSend,
+  accent = palette.blue[500],
+  draftText,
+  draftKey,
+  draftNote,
+  onEdit,
+}: {
   onSend: (body: string) => void;
   /** Colour of the send control — the same accent as the viewer's bubbles. */
   accent?: string;
+  /** Text to drop into the field. Only applied when `draftKey` changes. */
+  draftText?: string;
+  /**
+   * A new value replaces whatever is in the field. Deliberately not `draftText`
+   * itself: the field belongs to the person typing, and a parent re-render must
+   * not wipe an edit because a stale prop changed identity.
+   */
+  draftKey?: number;
+  /** A short note above the field, e.g. "AI draft — edit before sending". */
+  draftNote?: string;
+  /** Called on any edit, so the parent can clear a note or a refusal line. */
+  onEdit?: () => void;
 }) {
   const [text, setText] = useState('');
+  const [note, setNote] = useState<string | null>(null);
   const ref = useRef<HTMLTextAreaElement>(null);
+  // The latest values, read only when a key fires. Keeping them in a ref is
+  // what lets the effect depend on the key alone.
+  const latest = useRef({ draftText, draftNote });
+  latest.current = { draftText, draftNote };
+
+  useEffect(() => {
+    if (draftKey === undefined) return;
+    setText(latest.current.draftText ?? '');
+    setNote(latest.current.draftNote ?? null);
+    ref.current?.focus();
+  }, [draftKey]);
+
   const trimmed = text.trim();
   const over = text.length > CHAT_MAX;
   const canSend = trimmed.length > 0 && !over;
@@ -54,10 +86,19 @@ export default function ChatComposer({ onSend, accent = palette.blue[500] }: {
     <div className="flex items-end gap-2 border-t px-2 pb-2 pt-2.5"
       style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}>
       <div className="min-w-0 flex-1">
+        {note && (
+          <p className="mb-1 px-3 text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }} aria-live="polite">
+            {note}
+          </p>
+        )}
         <textarea
           ref={ref}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (note) setNote(null);
+            onEdit?.();
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !coarse && !e.nativeEvent.isComposing) {
               e.preventDefault();
