@@ -15,6 +15,10 @@ const message = (over: Partial<ChatMessage>): ChatMessage => ({
   body: 'Hello',
   read_at: null,
   created_at: new Date().toISOString(),
+  channel: 'in_app',
+  message_type: 'text',
+  delivery_status: null,
+  failure_reason: null,
   ...over,
 });
 

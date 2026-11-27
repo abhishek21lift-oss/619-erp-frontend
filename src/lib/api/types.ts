@@ -3863,6 +3863,20 @@ export type MePhoto = {
   by_me: boolean;
 };
 
+/** Where a message travelled: inside the app, or through the studio's WhatsApp. */
+export type ChatChannel = 'in_app' | 'whatsapp';
+
+/** What a WhatsApp message carried. Only `text` is produced by the inbox today. */
+export type ChatMessageType =
+  | 'text' | 'image' | 'video' | 'audio' | 'document'
+  | 'sticker' | 'location' | 'contact' | 'other';
+
+/**
+ * WhatsApp's delivery ladder. `null` for in-app messages: they have no
+ * provider, so they have no receipts.
+ */
+export type ChatDeliveryStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed';
+
 /** One message in a member ↔ studio conversation. */
 export type ChatMessage = {
   id: string;
@@ -3872,6 +3886,11 @@ export type ChatMessage = {
   /** Set when the OTHER side opened the thread. */
   read_at: string | null;
   created_at: string;
+  channel: ChatChannel;
+  message_type: ChatMessageType;
+  delivery_status: ChatDeliveryStatus | null;
+  /** The gateway's sanitised reason, for a failed WhatsApp send. */
+  failure_reason: string | null;
 };
 
 /** The member's conversation with their studio (GET /api/me/messages). */
@@ -3901,6 +3920,8 @@ export type StudioConversation = {
   last_sender: 'member' | 'studio';
   last_body: string;
   last_at: string;
+  /** The channel of the newest message, so the inbox can label the row. */
+  last_channel: ChatChannel;
   /** The member's messages the trainer has not opened. */
   unread: number;
   /** False when the client has no active app login, so a reply cannot be read. */
@@ -3910,7 +3931,15 @@ export type StudioConversation = {
 /** One thread, trainer side (GET /api/messages/:clientId). */
 export type StudioMessageThread = {
   messages: ChatMessage[];
+  /** Computed by the server: which channel the composer starts on, and whether WhatsApp can send at all. */
+  channels: { default: ChatChannel; whatsapp_available: boolean };
   client: { id: string; name: string; photo_url: string | null; member_code: string | null; has_login: boolean };
+};
+
+/** A proposal-only reply from the AI (POST /api/messages/:clientId/ai-draft). */
+export type InboxDraft = {
+  draft: string;
+  meta: { model: string | null; used_fallback: boolean };
 };
 
 /** What a member may change about themselves (PATCH /api/me/profile). */
