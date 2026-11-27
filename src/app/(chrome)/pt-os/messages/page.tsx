@@ -22,13 +22,16 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, ArrowUpRight, Loader2, MessagesSquare, PenSquare, Search, UserX, X } from 'lucide-react';
+import {
+  ArrowLeft, ArrowUpRight, Loader2, MessageCircle, MessagesSquare, PenSquare, Search, Sparkles, UserX, X,
+} from 'lucide-react';
 import Guard from '@/components/Guard';
 import ChatThread from '@/components/chat/ChatThread';
 import ClientPicker, { ClientAvatar } from '@/components/pt-os/shared/ClientPicker';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { StudioConversation, StudioMessageThread } from '@/lib/api';
+import type { ChatChannel, ChatMessage, StudioConversation, StudioMessageThread } from '@/lib/api';
+import { useFeatures } from '@/lib/features-context';
 import { palette } from '@/lib/palette';
 
 const INK = 'var(--text-primary)';
@@ -217,6 +220,9 @@ function MessagesContent() {
                           </span>
                           <span className="mt-0.5 flex items-center justify-between gap-2">
                             <span className="truncate text-[12.5px]" style={{ color: c.unread ? INK : MUTED, fontWeight: c.unread ? 600 : 500 }}>
+                              {c.last_channel === 'whatsapp' && (
+                                <MessageCircle size={11} aria-label="WhatsApp" className="mr-1 inline-block align-[-1px]" />
+                              )}
                               {c.last_sender === 'studio' ? 'You: ' : ''}{c.last_body}
                             </span>
                             {c.unread > 0 && (
@@ -259,8 +265,14 @@ function MessagesContent() {
 }
 
 function ThreadPane({ clientId, onChanged }: { clientId: string; onChanged: () => void }) {
+  const { enabled } = useFeatures();
   const [thread, setThread] = useState<StudioMessageThread | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
+  // A draft is text in the composer, never a sent message. The key lets
+  // ChatThread apply a new draft without wiping what the trainer is typing.
+  const [draft, setDraft] = useState<{ text: string; key: number } | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   useEffect(() => {
     api.clientMessages.thread(clientId)
@@ -269,11 +281,32 @@ function ThreadPane({ clientId, onChanged }: { clientId: string; onChanged: () =
   }, [clientId, onChanged]);
 
   const reload = useCallback(async () => (await api.clientMessages.thread(clientId)).data.messages, [clientId]);
-  const send = useCallback(async (body: string) => {
-    const saved = (await api.clientMessages.send(clientId, body)).data;
+  const send = useCallback(async (body: string, channel?: ChatChannel) => {
+    const saved = (await api.clientMessages.send(clientId, body, channel)).data;
     onChanged();
     return saved;
   }, [clientId, onChanged]);
+
+  // The inbox line shows the failed text until a retry lands, so refresh it
+  // with the same callback a normal send uses.
+  const retryMessage = useCallback(async (m: ChatMessage) => {
+    const saved = (await api.clientMessages.retry(clientId, m.id)).data;
+    onChanged();
+    return saved;
+  }, [clientId, onChanged]);
+
+  const requestDraft = useCallback(async () => {
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const { data } = await api.clientMessages.aiDraft(clientId);
+      setDraft({ text: data.draft, key: Date.now() });
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : 'Could not draft a reply.');
+    } finally {
+      setDrafting(false);
+    }
+  }, [clientId]);
 
   if (state === 'loading') return <Centered><Loader2 size={22} className="animate-spin" style={{ color: ACCENT }} /></Centered>;
   if (state !== 'ready' || !thread) {
@@ -329,6 +362,31 @@ function ThreadPane({ clientId, onChanged }: { clientId: string; onChanged: () =
           initial={thread.messages}
           reload={reload}
           send={send}
+          channels={thread.channels}
+          retryMessage={retryMessage}
+          draftText={draft?.text}
+          draftKey={draft?.key}
+          draftNote="AI draft — edit before sending"
+          composerExtra={enabled('ai_suite') ? (
+            <div className="flex flex-wrap items-center gap-2 px-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                iconLeft={drafting
+                  ? <Loader2 size={13} className="animate-spin" />
+                  : <Sparkles size={13} />}
+                onClick={() => void requestDraft()}
+                disabled={drafting}
+              >
+                {drafting ? 'Drafting…' : 'Draft reply'}
+              </Button>
+              {draftError && (
+                <span className="text-[11px] font-[600]" style={{ color: palette.red[600] }} aria-live="polite">
+                  {draftError}
+                </span>
+              )}
+            </div>
+          ) : null}
           notice={thread.client.has_login ? null : (
             <p className="mx-2 mb-1 flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[12px] font-[600]"
               style={{ background: 'var(--warning-soft)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' }}>
