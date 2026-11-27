@@ -221,6 +221,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "invoices.get → /api/invoices/",
   "invoices.list → /api/invoices",
   "invoices.markPaid → /api/invoices/",
+  "invoices.remind → /api/invoices/",
   "invoices.send → /api/invoices/",
   "invoices.update → /api/invoices/",
   "me.achievements → /api/me/achievements",
