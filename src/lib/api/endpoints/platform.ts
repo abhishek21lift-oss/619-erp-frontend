@@ -1053,7 +1053,7 @@ export const me = {
    * session. 403 SELF_WORKOUT_NOT_ALLOWED when the trainer has not enabled it.
    */
   startWorkout: (body: { assignment_id?: string | null; day_of_week?: number | null } = {}) =>
-    http<{ data: { session: MeWorkoutSession; resumed: boolean } }>('/api/me/workout/sessions', {
+    http<{ data: { session: MeWorkoutSession; resumed: boolean; conflict?: boolean } }>('/api/me/workout/sessions', {
       method: 'POST', body: JSON.stringify(body),
     }),
   /** Autosave the in-progress workout. Safe on every change; 409 once submitted. */

@@ -23,6 +23,7 @@ vi.mock('@/lib/api', () => ({
         },
       }),
       logWorkout: vi.fn(),
+      discardWorkout: vi.fn().mockResolvedValue(undefined),
     },
   },
 }));
@@ -41,6 +42,7 @@ function draft() {
 describe('GuidedWorkout submit', () => {
   beforeEach(() => {
     vi.mocked(api.me.submitWorkout).mockClear();
+    vi.mocked(api.me.discardWorkout).mockClear();
   });
 
   it('posts the canonical log input, not the UI draft', async () => {
@@ -63,5 +65,26 @@ describe('GuidedWorkout submit', () => {
     expect(set).toMatchObject({ weight_kg: 60, reps: 8 });
     expect(set).not.toHaveProperty('weight');
     expect(set).not.toHaveProperty('done');
+  });
+
+  // An empty session is not a workout. If it is left open on the server, every
+  // later start resumes it for 24 hours instead of starting the tapped day.
+  it('discards an empty session on the server when closed', async () => {
+    const onClose = vi.fn();
+    const onDiscarded = vi.fn();
+    render(
+      <GuidedWorkout
+        initial={draft()}
+        session={{ id: 'ws1', started_at: '2026-11-13T05:00:00.000Z' } as never}
+        onClose={onClose}
+        onDiscarded={onDiscarded}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /close workout/i }));
+
+    await waitFor(() => expect(api.me.discardWorkout).toHaveBeenCalledWith('ws1'));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(onDiscarded).toHaveBeenCalled();
   });
 });

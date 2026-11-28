@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { m } from 'framer-motion';
-import { ChevronRight, Loader2, Play, RotateCcw } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Loader2, Play, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { MeLastPerformance, MeSession, MeWorkoutPlan, MeWorkoutSession } from '@/lib/api';
 import { ApiError } from '@/lib/http';
@@ -41,6 +41,12 @@ function todayIso(): number {
   return d === 0 ? 7 : d;
 }
 
+/** The day a saved draft was training, when its name is one of ours. */
+function dayOfWeekOf(name: string | null | undefined): number | null {
+  const i = DAY_NAMES.indexOf(String(name || ''));
+  return i >= 0 ? i : null;
+}
+
 type Source = {
   title: string;
   assignment_id: string | null;
@@ -49,6 +55,10 @@ type Source = {
   exercises: {
     name: string; sets: number | null; reps: string | number | null; target_weight: number | null;
     rest_seconds?: number | null; notes?: string | null; media_url?: string | null; video_url?: string | null;
+    tracking_mode?: string | null;
+    target_duration_seconds?: number | null;
+    target_distance?: number | null;
+    target_distance_unit?: string | null;
   }[];
 };
 
@@ -71,7 +81,16 @@ function fromSession(s: MeSession): Source {
     workout_day: s.workout_day,
     exercises: s.exercises.map((e) => {
       const heaviest = e.sets.reduce<number | null>((w, x) => (x.weight_kg !== null && (w === null || x.weight_kg > w) ? x.weight_kg : w), null);
-      return { name: e.name, sets: e.sets.length || null, reps: e.sets[0]?.reps ?? null, target_weight: heaviest };
+      return {
+        name: e.name,
+        sets: e.sets.length || null,
+        reps: e.sets[0]?.reps ?? null,
+        target_weight: heaviest,
+        tracking_mode: e.tracking_mode ?? null,
+        target_duration_seconds: e.target_duration_seconds ?? null,
+        target_distance: e.target_distance ?? null,
+        target_distance_unit: e.target_distance_unit ?? null,
+      };
     }),
   };
 }
@@ -115,7 +134,7 @@ function draftFromSession(s: MeWorkoutSession, source: Source | null, last: MeLa
   };
 }
 
-export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, openSession, onSaved }: {
+export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, openSession, onSaved, today: studioDay }: {
   plans: MeWorkoutPlan[];
   sessions: MeSession[];
   /** The trainer's permission to start a workout without them. */
@@ -124,12 +143,18 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
   openSession: MeWorkoutSession | null;
   /** A workout was saved — the page refreshes its session history. */
   onSaved: () => void;
+  /** The studio's weekday (1 = Monday … 7 = Sunday); the device's when absent. */
+  today?: number;
 }) {
   const [open, setOpen] = useState<WorkoutDraft | null>(null);
   const [active, setActive] = useState<MeWorkoutSession | null>(null);
   const [saved, setSaved] = useState<WorkoutDraft | null>(null);
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<{
+    session: MeWorkoutSession;
+    pending: { key: string; source: Source; dayOfWeek: number | null; keep?: WorkoutDraft };
+  } | null>(null);
   const pushed = useRef(false);
 
   useEffect(() => { setSaved(loadDraft()); }, []);
@@ -151,27 +176,63 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
   const show = (draft: WorkoutDraft, session: MeWorkoutSession | null) => {
     window.history.pushState({ guidedWorkout: true }, '');
     pushed.current = true;
+    setConflict(null);
+    setError(null);
     setActive(session);
     setOpen(draft);
+  };
+
+  const resumeSession = async (session: MeWorkoutSession) => {
+    const stored = storedDraft(session);
+    if (stored) { show(stored, session); return; }
+    const exercises = session.prescribed?.exercises ?? [];
+    if (exercises.length === 0) return;
+    setStarting('resume');
+    try {
+      let last: MeLastPerformance = {};
+      try {
+        last = (await api.me.lastPerformance(exercises.map((x) => x.name))).data ?? {};
+      } catch {
+        // The prescription is enough to start.
+      }
+      show(draftFromSession(session, null, last), session);
+    } finally {
+      setStarting(null);
+    }
   };
 
   const start = async (key: string, source: Source, dayOfWeek: number | null, keep?: WorkoutDraft) => {
     if (source.exercises.length === 0) return;
     setStarting(key);
     setError(null);
+    setConflict(null);
     try {
       const { data } = await api.me.startWorkout({
         assignment_id: source.assignment_id,
         day_of_week: dayOfWeek,
       });
-      if (keep) { show({ ...keep, session_id: data.session.id }, data.session); return; }
+      // The server kept an open session from a different day or programme.
+      // Do not build the tapped day's draft on its prescription: ask first.
+      if (data.conflict) {
+        setConflict({ session: data.session, pending: { key, source, dayOfWeek, keep } });
+        return;
+      }
+      // A local draft from another session must never be written into this
+      // one; use what the open session itself prescribed instead. A draft with
+      // no session_id predates server sessions and has nothing to conflict
+      // with, so it is still adopted.
+      const staleKeep = Boolean(
+        keep?.session_id && data.resumed && keep.session_id !== data.session.id,
+      );
+      if (keep && !staleKeep) { show({ ...keep, session_id: data.session.id }, data.session); return; }
+      const names = (staleKeep ? data.session.prescribed?.exercises ?? [] : source.exercises).map((x) => x.name);
       let last: MeLastPerformance = {};
       try {
-        last = (await api.me.lastPerformance(source.exercises.map((x) => x.name))).data ?? {};
+        last = (await api.me.lastPerformance(names)).data ?? {};
       } catch {
         // Without history the sets start from the plan's targets — still a workout.
       }
-      show(draftFromSession(data.session, source, last), data.session);
+      show(draftFromSession(data.session, staleKeep ? null : source, last), data.session);
     } catch (err) {
       // The server knows why it refused — a revoked permission or the daily
       // cap — and its message is the one the member needs. Other failures
@@ -189,26 +250,38 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
   };
 
   const resumeOpen = async () => {
-    if (!openSession) return;
-    const stored = storedDraft(openSession);
-    if (stored) { show(stored, openSession); return; }
-    const exercises = openSession.prescribed?.exercises ?? [];
-    if (exercises.length === 0) return;
-    setStarting('resume');
-    try {
-      let last: MeLastPerformance = {};
-      try {
-        last = (await api.me.lastPerformance(exercises.map((x) => x.name))).data ?? {};
-      } catch {
-        // The prescription is enough to start.
-      }
-      show(draftFromSession(openSession, null, last), openSession);
-    } finally {
-      setStarting(null);
-    }
+    if (openSession) await resumeSession(openSession);
   };
 
-  const today = todayIso();
+  const resumeConflict = async () => {
+    const c = conflict;
+    if (!c) return;
+    setConflict(null);
+    await resumeSession(c.session);
+  };
+
+  const discardAndStart = async () => {
+    const c = conflict;
+    if (!c) return;
+    setConflict(null);
+    setStarting(c.pending.key);
+    try {
+      await api.me.discardWorkout(c.session.id);
+    } catch {
+      // Already gone is fine; the retry below is the real test.
+    }
+    // Refresh the page's open_session before retrying, so a stale Resume hero
+    // cannot point at the session we just discarded.
+    onSaved();
+    await start(c.pending.key, c.pending.source, c.pending.dayOfWeek, c.pending.keep);
+  };
+
+  const today = studioDay ?? todayIso();
+  const conflictDraft = conflict
+    ? storedDraft(conflict.session)
+      ?? (saved?.session_id === conflict.session.id ? saved : null)
+    : null;
+  const conflictSets = conflictDraft ? loggedSetCount(conflictDraft) : 0;
   const plan = plans.find((p) => p.days.some((d) => d.day_of_week === today || d.day_of_week === 0)) ?? null;
   const todayDay = plan?.days.find((d) => d.day_of_week === today) ?? plan?.days.find((d) => d.day_of_week === 0) ?? null;
   const lastSession = sessions.find((s) => s.exercises.some((e) => e.sets.length > 0)) ?? null;
@@ -221,7 +294,7 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
     : null;
 
   let hero: { key: string; label: string; sub: string; icon: ReactNode; run: () => void } | null = null;
-  if (saved) {
+  if (saved && (!openSession || saved.session_id === openSession.id)) {
     const n = loggedSetCount(saved);
     hero = {
       key: 'resume', label: 'Resume your workout',
@@ -229,7 +302,19 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
       icon: <Play size={18} fill="currentColor" aria-hidden />,
       run: () => {
         if (openSession) show(saved, openSession);
-        else void start('resume', sourceFromDraft(saved), null, saved);
+        else {
+          // Start the session on the day the draft was training, not on
+          // whichever day happens to be first in the programme. If the plan
+          // no longer has that day, let the server pick its default.
+          const named = dayOfWeekOf(saved.workout_day);
+          const draftPlan = saved.assignment_id
+            ? plans.find((p) => p.assignment_id === saved.assignment_id)
+            : null;
+          const dow = named !== null && (!draftPlan || draftPlan.days.some((d) => d.day_of_week === named))
+            ? named
+            : null;
+          void start('resume', sourceFromDraft(saved), dow, saved);
+        }
       },
     };
   } else if (openSession) {
@@ -287,6 +372,44 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
         </p>
       )}
 
+      {conflict && (
+        <div role="alertdialog" aria-labelledby="workout-conflict"
+          className="mb-3 rounded-[16px] p-3.5"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <div className="flex items-start gap-2.5">
+            <span className="mt-0.5 shrink-0" style={{ color: MC.warning }}>
+              <AlertTriangle size={16} aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p id="workout-conflict" className="text-[12.5px] font-[750]" style={{ color: MC.ink }}>
+                You have an unfinished {conflict.session.workout_day || 'workout'}
+                {conflictSets > 0 ? ` with ${conflictSets} set${conflictSets === 1 ? '' : 's'} logged` : ''}.
+              </p>
+              <p className="mt-0.5 text-[11.5px] leading-relaxed" style={{ color: MC.muted }}>
+                Discard it and start {conflict.pending.source.title}?
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <button type="button" disabled={starting !== null} onClick={() => void resumeConflict()}
+                  className="inline-flex h-9 items-center rounded-full px-3 text-[12px] font-[700]"
+                  style={{ background: 'var(--bg-subtle)', color: MC.ink }}>
+                  Resume open workout
+                </button>
+                <button type="button" disabled={starting !== null} onClick={() => void discardAndStart()}
+                  className="inline-flex h-9 items-center rounded-full px-3 text-[12px] font-[700]"
+                  style={{ background: rgba(MC.danger, 0.1), color: MC.dangerText }}>
+                  Discard &amp; start
+                </button>
+                <button type="button" disabled={starting !== null} onClick={() => setConflict(null)}
+                  className="inline-flex h-9 items-center rounded-full px-3 text-[12px] font-[700]"
+                  style={{ color: MC.muted }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {otherDays.length > 0 && (
         <details className="group mb-4">
           <summary className="flex cursor-pointer list-none items-center gap-1 px-1 text-[12px] font-[700]" style={{ color: MC.primaryText }}>
@@ -312,7 +435,9 @@ export default function WorkoutLauncher({ plans, sessions, allowSelfWorkout, ope
       )}
 
       {open && (
-        <GuidedWorkout initial={open} session={active} onClose={close} onSaved={() => { setSaved(null); onSaved(); }} />
+        <GuidedWorkout initial={open} session={active} onClose={close}
+          onSaved={() => { setSaved(null); onSaved(); }}
+          onDiscarded={() => { setSaved(null); onSaved(); }} />
       )}
     </>
   );
