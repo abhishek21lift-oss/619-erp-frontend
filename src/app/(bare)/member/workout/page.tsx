@@ -42,6 +42,15 @@ function todayIso(): number {
   return d === 0 ? 7 : d;
 }
 
+/** Weekday of the studio's YYYY-MM-DD, without letting the device's zone shift it. */
+function dayOfDate(ymd: string | null | undefined): number | null {
+  if (!ymd) return null;
+  const d = new Date(`${ymd}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  const day = d.getUTCDay();
+  return day === 0 ? 7 : day;
+}
+
 export default function MemberWorkoutPage() {
   return (
     <Guard role="member">
@@ -56,6 +65,7 @@ function WorkoutBody() {
   const [plans, setPlans] = useState<MeWorkoutPlan[] | null>(null);
   const [allowSelfWorkout, setAllowSelfWorkout] = useState(false);
   const [openSession, setOpenSession] = useState<MeWorkoutSession | null>(null);
+  const [studioToday, setStudioToday] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   // Sessions load on their own: a failure there must not blank the programme,
   // so it only hides the history section.
@@ -70,6 +80,7 @@ function WorkoutBody() {
       setPlans(r.data ?? []);
       setAllowSelfWorkout(r.allow_self_workout === true);
       setOpenSession(r.open_session ?? null);
+      setStudioToday(r.today ?? null);
     })
     .catch(() => setFailed(true));
 
@@ -81,6 +92,7 @@ function WorkoutBody() {
         setPlans(r.data ?? []);
         setAllowSelfWorkout(r.allow_self_workout === true);
         setOpenSession(r.open_session ?? null);
+        setStudioToday(r.today ?? null);
       })
       .catch(() => { if (alive) setFailed(true); });
     api.me.sessions()
@@ -91,6 +103,8 @@ function WorkoutBody() {
 
   if (failed) return <><PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme" /><LoadError what="programme" /></>;
   if (!plans) return <PageSkeleton />;
+
+  const today = dayOfDate(studioToday) ?? todayIso();
 
   const gated = !allowSelfWorkout && !openSession;
   const note = gated ? (
@@ -106,7 +120,8 @@ function WorkoutBody() {
         <PageTitle accent="workout" icon={<Dumbbell size={20} />} title="My programme" />
         {note}
         <WorkoutLauncher plans={[]} sessions={sessions} allowSelfWorkout={allowSelfWorkout}
-          openSession={openSession} onSaved={() => { void loadWorkout(); void loadSessions(); }} />
+          openSession={openSession} today={today}
+          onSaved={() => { void loadWorkout(); void loadSessions(); }} />
         <div className="mb-5">
           <EmptyState
             icon={<Dumbbell size={20} />}
@@ -114,7 +129,7 @@ function WorkoutBody() {
             body="When your trainer assigns your programme, your exercises for each training day will appear here."
           />
         </div>
-        <SessionHistory sessions={sessions} />
+        <SessionHistory sessions={sessions} today={studioToday} />
       </>
     );
   }
@@ -125,23 +140,24 @@ function WorkoutBody() {
  />
       {note}
       <WorkoutLauncher plans={plans} sessions={sessions} allowSelfWorkout={allowSelfWorkout}
-        openSession={openSession} onSaved={() => { void loadWorkout(); void loadSessions(); }} />
+        openSession={openSession} today={today}
+        onSaved={() => { void loadWorkout(); void loadSessions(); }} />
       {plans.map((p, i) => (
         <PlanBlock
           key={p.assignment_id}
           plan={p}
           titled={plans.length > 1}
           current={plans.length > 1 && i === 0}
+          today={today}
         />
       ))}
-      <SessionHistory sessions={sessions} />
+      <SessionHistory sessions={sessions} today={studioToday} />
     </>
   );
 }
 
 /** `titled`: name the section after the plan only when there is more than one — otherwise the page title already says it. */
-function PlanBlock({ plan, titled, current = false }: { plan: MeWorkoutPlan; titled: boolean; current?: boolean }) {
-  const today = todayIso();
+function PlanBlock({ plan, titled, current = false, today }: { plan: MeWorkoutPlan; titled: boolean; current?: boolean; today: number }) {
   const firstOpen = useMemo(() => {
     const days = plan.days.map((d) => d.day_of_week);
     return days.includes(today) ? today : days[0];

@@ -4016,7 +4016,16 @@ export type MeSession = MeWorkoutReview & {
   status: 'completed' | 'in_progress' | string;
   /** Who logged it: the trainer at the studio, or the member in the guided workout. */
   source?: 'studio' | 'member';
-  exercises: { name: string; sets: MeSessionSet[] }[];
+  exercises: {
+    name: string;
+    sets: MeSessionSet[];
+    /** How the member logged it; absent on sessions recorded before tracking modes. */
+    tracking_mode?: string | null;
+    /** Time/distance targets from the prescription snapshot, for a repeat. */
+    target_duration_seconds?: number | null;
+    target_distance?: number | null;
+    target_distance_unit?: string | null;
+  }[];
 };
 
 /** One exercise in the member's programme, for the week they have reached. */
@@ -4093,6 +4102,8 @@ export type MeWorkoutState = {
   data: MeWorkoutPlan[];
   allow_self_workout: boolean;
   open_session: MeWorkoutSession | null;
+  /** The studio's calendar day (YYYY-MM-DD); absent on older servers. */
+  today?: string;
 };
 
 export type MeDietMeal = {

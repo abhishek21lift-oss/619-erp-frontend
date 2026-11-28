@@ -1,10 +1,11 @@
 /**
  * Guided workout: the workout in progress, kept on the phone.
  *
- * Nothing is sent until the member taps Finish — then the whole workout goes
- * to the server in one request (see the backend's member-training.service).
- * Until then it lives here and in localStorage, so a locked phone, a reload or
- * a dropped connection never loses a set.
+ * Every change is saved here and in localStorage first, so a locked phone, a
+ * reload or a dropped connection never loses a set. The screen also autosaves
+ * the draft to the server (GuidedWorkout.tsx) so the workout can be resumed on
+ * another device; the finished workout is submitted once, in one request (see
+ * the backend's member-training.service).
  *
  * Pure functions and types only; the screen is GuidedWorkout.tsx.
  */

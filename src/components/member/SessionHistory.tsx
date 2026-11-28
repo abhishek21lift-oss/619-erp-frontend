@@ -22,11 +22,16 @@ function setLabel(x: MeSessionSet): string {
   return x.weight_kg != null ? `${x.weight_kg} kg` : '—';
 }
 
-export default function SessionHistory({ sessions }: { sessions: MeSession[] }) {
+export default function SessionHistory({ sessions, today }: { sessions: MeSession[]; today?: string | null }) {
   const [open, setOpen] = useState<string | null>(null);
   if (sessions.length === 0) return null;
 
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  // The studio's month when the page knows it; the device's otherwise. The
+  // session dates are the studio's days, so the count must use the same
+  // calendar — a phone in another zone is a month behind on the 1st.
+  const now = new Date();
+  const thisMonth = today?.slice(0, 7)
+    ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const doneThisMonth = sessions.filter((s) => s.status === 'completed'
     && String(s.session_date).slice(0, 7) === thisMonth).length;
 
@@ -36,6 +41,9 @@ export default function SessionHistory({ sessions }: { sessions: MeSession[] }) 
       <div className="space-y-2">
         {sessions.map((s) => {
           const isOpen = open === s.id;
+          const statusLabel = s.status === 'completed' ? null
+            : s.status === 'abandoned' ? 'Abandoned'
+              : 'In progress';
           const prs = s.exercises.reduce((n, e) => n + e.sets.filter((x) => x.is_pr).length, 0);
           const meta = [
             s.workout_day,
@@ -54,8 +62,8 @@ export default function SessionHistory({ sessions }: { sessions: MeSession[] }) 
                 <div className="min-w-0 flex-1">
                   <p className="text-[13.5px] font-[720]" style={{ color: MC.ink }}>
                     {longDate(s.session_date) ?? s.session_date}
-                    {s.status !== 'completed' && (
-                      <span className="ml-2 text-[10.5px] font-[650]" style={{ color: MC.muted }}>In progress</span>
+                    {statusLabel && (
+                      <span className="ml-2 text-[10.5px] font-[650]" style={{ color: MC.muted }}>{statusLabel}</span>
                     )}
                   </p>
                   <p className="mt-0.5 truncate text-[11.5px]" style={{ color: MC.muted }}>

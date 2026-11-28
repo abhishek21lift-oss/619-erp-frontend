@@ -47,6 +47,7 @@ export default function GuidedWorkout({
   session,
   onClose,
   onSaved,
+  onDiscarded,
 }: {
   initial: WorkoutDraft;
   /** The server session this draft belongs to; null for a draft from before server sessions. */
@@ -55,6 +56,8 @@ export default function GuidedWorkout({
   onClose: () => void;
   /** The workout reached the server. */
   onSaved?: (summary: MeWorkoutSummary) => void;
+  /** The workout was discarded; the server session is no longer open. */
+  onDiscarded?: () => void;
 }) {
   const [draft, setDraft] = useState<WorkoutDraft>(initial);
   const [phase, setPhase] = useState<Phase>('train');
@@ -84,9 +87,18 @@ export default function GuidedWorkout({
 
   const requestClose = useCallback(() => {
     if (phase === 'done') { onClose(); return; }
-    if (loggedSetCount(draft) === 0) { clearDraft(); onClose(); return; }
+    if (loggedSetCount(draft) === 0) {
+      // An empty session is not a workout. Discard it on the server too, or
+      // it stays open for 24 hours and every later start resumes it instead
+      // of starting the day the member actually tapped.
+      if (!session) { clearDraft(); onClose(); return; }
+      void api.me.discardWorkout(session.id)
+        .catch(() => { /* already gone is fine */ })
+        .then(() => { clearDraft(); onDiscarded?.(); onClose(); });
+      return;
+    }
     setConfirmClose(true);
-  }, [draft, phase, onClose]);
+  }, [draft, phase, onClose, onDiscarded, session]);
 
   const shellRef = useDialogA11y({ open: true, onClose: confirmClose ? undefined : requestClose, escapeCloses: !confirmClose });
 
@@ -208,6 +220,7 @@ export default function GuidedWorkout({
     }
     clearDraft();
     setConfirmClose(false);
+    onDiscarded?.();
     onClose();
   };
 

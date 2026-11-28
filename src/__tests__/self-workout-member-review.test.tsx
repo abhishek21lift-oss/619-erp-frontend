@@ -28,4 +28,24 @@ describe('member session history review', () => {
     fireEvent.click(screen.getByRole('button', { name: /12 Nov|November|2026/i }));
     expect(screen.getByText(/good depth — slow the eccentric next time/i)).toBeInTheDocument();
   });
+
+  it('does not call an abandoned session "In progress"', () => {
+    render(<SessionHistory sessions={[{
+      ...session, status: 'abandoned', review_status: null, review_feedback: null,
+    }]} />);
+    expect(screen.getByText('Abandoned')).toBeInTheDocument();
+    expect(screen.queryByText('In progress')).not.toBeInTheDocument();
+  });
+
+  // session_date is the studio's day. A phone in another zone would otherwise
+  // count the 1st of the month in the previous month's total.
+  it('counts the studio month when the page passes one', () => {
+    render(<SessionHistory sessions={[session]} today="2026-11-30" />);
+    expect(screen.getByText('1 this month')).toBeInTheDocument();
+  });
+
+  it('does not count a session from another studio month', () => {
+    render(<SessionHistory sessions={[session]} today="2026-12-01" />);
+    expect(screen.getByText('0 this month')).toBeInTheDocument();
+  });
 });
